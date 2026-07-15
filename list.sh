@@ -2,6 +2,6 @@
 
 (
   cd "$(dirname "$0")" && \
-  find . -maxdepth 2 -name go.mod | cut -d'/' -f-2
+  find . -maxdepth 2 -name go.mod | cut -d'/' -f2
 )
 
