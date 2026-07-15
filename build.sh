@@ -10,10 +10,7 @@ function cmd_comps_run() {
 }
 
 function cmd_clean() {
-  local _k=""
-  find -name target | while read _k; do
-    rm -rf "$_k"
-  done
+  cmd_comps_run clean "$@"
 }
 
 function cmd_update() {
@@ -34,7 +31,7 @@ function cmd_run_box() {
 }
 
 function cmd_test() {
-  cmd_test_unit
+  cmd_comps_run test "$@"
 }
 
 
