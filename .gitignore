@@ -22,4 +22,6 @@ node_modules
 .idea
 
 go.work
+go.work.sum
+
 
