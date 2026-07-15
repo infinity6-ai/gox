@@ -41,8 +41,8 @@ function cmd_fmt() {
   go fmt ./...
 }
 
+_comp="${1?"comp is required"}"; shift; 
 _cmd="${1?"cmd is required"}"; shift; 
-_comp="${2?"comp is required"}"; shift; 
 cd "$(dirname "$0")/$_comp"; 
 "cmd_${_cmd}" "$@"
 
