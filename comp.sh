@@ -33,10 +33,6 @@ function cmd_test_remote() {
   i6dev golang test_remote "$@"
 }
 
-function cmd_test_all() {
-  i6dev golang test_all "$@"
-}
-
 function cmd_fmt() {
   go fmt ./...
 }

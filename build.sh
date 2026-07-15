@@ -33,11 +33,6 @@ function cmd_run_box() {
   cmd_run "$@"
 }
 
-function cmd_test_unit() {
-  i6dev golang test_unit "$@"
-  #strace go test -run '^TestUnit.*$' ./...
-}
-
 function cmd_test() {
   cmd_test_unit
 }
