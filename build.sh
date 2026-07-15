@@ -14,7 +14,8 @@ function cmd_clean() {
 }
 
 function cmd_update() {
-  i6dev golang update
+  i6dev golang auth
+  I6DEV_GOLANG_AUTH_DISABLED="true" cmd_comps_run update "$@"
 }
 
 function cmd_run() {
