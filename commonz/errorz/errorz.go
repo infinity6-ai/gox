@@ -1,9 +1,7 @@
 package errorz
 
 import (
-	"fmt"
-	"runtime"
-	"strings"
+	"github.com/infinity6-ai/gox/commonz/runtimez"
 )
 
 // customError holds the original error and the stack trace data.
@@ -37,34 +35,6 @@ func New(cause error) error {
 	// getStackTrace() would be the same helper function from the previous response
 	return &customError{
 		cause: cause,
-		stack: getStackTrace(),
+		stack: runtimez.StackTraceString(3),
 	}
-}
-
-// getStackTrace captures the call stack of the current goroutine.
-func getStackTrace() string {
-	const maxDepth = 32
-	var pcs [maxDepth]uintptr
-
-	// Skip 3 frames to avoid including runtime.Callers, getStackTrace, and errorz.New
-	// in the final output.
-	n := runtime.Callers(3, pcs[:])
-	if n == 0 {
-		return "no stack trace available"
-	}
-
-	frames := runtime.CallersFrames(pcs[:n])
-	var sb strings.Builder
-
-	for {
-		frame, more := frames.Next()
-		// Format: /path/to/file.go:line_number (Function.Name)
-		fmt.Fprintf(&sb, "\t%s:%d (%s)\n", frame.File, frame.Line, frame.Function)
-
-		if !more {
-			break
-		}
-	}
-
-	return strings.TrimSuffix(sb.String(), "\n")
 }
