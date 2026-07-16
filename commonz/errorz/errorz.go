@@ -163,7 +163,7 @@ func StackTrace(err error) string {
 // information like stack traces and payloads, returning a machine-readable *Data struct.
 //
 //   - If the error is not a StructuredError, it's wrapped as a generic internal error.
-//   - If it's a business-facing StructuredError, its data is returned but with the payload removed.
+//   - If it's a business-facing StructuredError, its data is returned, including the payload.
 //   - If it's a non-business StructuredError, internal details are replaced with a
 //     generic "InternalError" message, while retaining the original code and name.
 func BusinessData(err error) *Data {
@@ -178,10 +178,8 @@ func BusinessData(err error) *Data {
 		// Not a structured error. Wrap it as a generic internal error.
 		data = Detail(500, "InternalError", "", false, err).Data()
 	} else if se.Business() {
-		// It's a business-facing error. Use its data directly...
+		// It's a business-facing error. Use its data directly, including the payload.
 		data = se.Data()
-		// ...but strip the payload as it may contain sensitive details.
-		data.Payload = ""
 	} else {
 		// It's a non-business structured error. Sanitize it completely by replacing
 		// the cause with a generic message, ensuring no internal details leak.

@@ -161,7 +161,7 @@ func TestUnitBusinessDataFunction_BusinessStructuredError(t *testing.T) {
 	assert.True(t, result.Business)
 	assert.Equal(t, 400, result.Code)
 	assert.Equal(t, "UserInputInvalid", result.Name)
-	assert.Equal(t, "", result.Payload) // Payload should be stripped
+	assert.Equal(t, "invalid ID", result.Payload) // Payload should be retained
 	assert.Equal(t, "invalid user ID", result.Cause)
 	assert.Empty(t, result.Stack) // Stack is always empty in BusinessData output
 }
@@ -198,7 +198,7 @@ func TestUnitBusinessDataFunction_WrappedBusinessStructuredError(t *testing.T) {
 	assert.True(t, result.Business)
 	assert.Equal(t, 400, result.Code)
 	assert.Equal(t, "UserInputInvalid", result.Name)
-	assert.Equal(t, "", result.Payload) // Payload should be stripped
+	assert.Equal(t, "invalid ID", result.Payload) // Payload should be retained
 	assert.Equal(t, "invalid user ID", result.Cause)
 	assert.Empty(t, result.Stack) // Stack is always empty in BusinessData output
 }
