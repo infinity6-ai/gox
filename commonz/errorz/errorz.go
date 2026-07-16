@@ -172,20 +172,29 @@ func BusinessData(err error) *Data {
 	}
 
 	var se StructuredError
+	var initialData *Data // This will hold the initial Data before stripping
+
 	if !errors.As(err, &se) {
 		// Not a StructuredError, wrap as generic internal error, then get its data.
 		sanitizedErr := Detail(500, "InternalError", "", false, err)
-		return sanitizedErr.Data()
-	}
-
-	if se.Business() {
+		initialData = sanitizedErr.Data()
+	} else if se.Business() {
 		// Already a business-facing error, return its data.
-		return se.Data()
+		initialData = se.Data()
+	} else {
+		// StructuredError but not business-facing, hide internal details, then get its data.
+		// We retain Code and Name if available from the original StructuredError,
+		// but replace the cause with a generic message and mark as non-business.
+		sanitizedErr := Detail(se.Code(), se.Name(), "", false, errors.New("InternalError"))
+		initialData = sanitizedErr.Data()
 	}
 
-	// StructuredError but not business-facing, hide internal details, then get its data.
-	// We retain Code and Name if available from the original StructuredError,
-	// but replace the cause with a generic message and mark as non-business.
-	sanitizedErr := Detail(se.Code(), se.Name(), "", false, errors.New("InternalError"))
-	return sanitizedErr.Data()
+	// Apply the stripping logic
+	initialData.Stack = "" // Always remove stack
+
+	if initialData.Business { // If it's a business error after sanitization
+		initialData.Payload = "" // Strip payload for business errors
+	}
+
+	return initialData
 }

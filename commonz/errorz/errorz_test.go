@@ -151,7 +151,7 @@ func TestUnitBusinessDataFunction_StandardError(t *testing.T) {
 	assert.Equal(t, "InternalError", result.Name)
 	assert.Equal(t, "", result.Payload)
 	assert.Equal(t, stdErr.Error(), result.Cause)
-	assert.NotEmpty(t, result.Stack)
+	assert.Empty(t, result.Stack) // Stack is always empty in BusinessData output
 }
 
 func TestUnitBusinessDataFunction_BusinessStructuredError(t *testing.T) {
@@ -161,9 +161,9 @@ func TestUnitBusinessDataFunction_BusinessStructuredError(t *testing.T) {
 	assert.True(t, result.Business)
 	assert.Equal(t, 400, result.Code)
 	assert.Equal(t, "UserInputInvalid", result.Name)
-	assert.Equal(t, "invalid ID", result.Payload)
+	assert.Equal(t, "", result.Payload) // Payload should be stripped
 	assert.Equal(t, "invalid user ID", result.Cause)
-	assert.NotEmpty(t, result.Stack)
+	assert.Empty(t, result.Stack) // Stack is always empty in BusinessData output
 }
 
 func TestUnitBusinessDataFunction_NonBusinessStructuredError(t *testing.T) {
@@ -173,9 +173,9 @@ func TestUnitBusinessDataFunction_NonBusinessStructuredError(t *testing.T) {
 	assert.False(t, result.Business)
 	assert.Equal(t, 500, result.Code)
 	assert.Equal(t, "DBConnection", result.Name)
-	assert.Equal(t, "", result.Payload)
+	assert.Equal(t, "", result.Payload) // Payload should be stripped
 	assert.Equal(t, errors.New("InternalError").Error(), result.Cause)
-	assert.NotEmpty(t, result.Stack)
+	assert.Empty(t, result.Stack) // Stack is always empty in BusinessData output
 }
 
 func TestUnitBusinessDataFunction_WrappedStandardError(t *testing.T) {
@@ -187,7 +187,7 @@ func TestUnitBusinessDataFunction_WrappedStandardError(t *testing.T) {
 	assert.Equal(t, "InternalError", result.Name)
 	assert.Equal(t, "", result.Payload)
 	assert.Equal(t, wrappedStdErr.Error(), result.Cause)
-	assert.NotEmpty(t, result.Stack)
+	assert.Empty(t, result.Stack) // Stack is always empty in BusinessData output
 }
 
 func TestUnitBusinessDataFunction_WrappedBusinessStructuredError(t *testing.T) {
@@ -198,9 +198,9 @@ func TestUnitBusinessDataFunction_WrappedBusinessStructuredError(t *testing.T) {
 	assert.True(t, result.Business)
 	assert.Equal(t, 400, result.Code)
 	assert.Equal(t, "UserInputInvalid", result.Name)
-	assert.Equal(t, "invalid ID", result.Payload)
+	assert.Equal(t, "", result.Payload) // Payload should be stripped
 	assert.Equal(t, "invalid user ID", result.Cause)
-	assert.NotEmpty(t, result.Stack)
+	assert.Empty(t, result.Stack) // Stack is always empty in BusinessData output
 }
 
 func TestUnitBusinessDataFunction_WrappedNonBusinessStructuredError(t *testing.T) {
@@ -211,7 +211,7 @@ func TestUnitBusinessDataFunction_WrappedNonBusinessStructuredError(t *testing.T
 	assert.False(t, result.Business)
 	assert.Equal(t, 500, result.Code)
 	assert.Equal(t, "DBConnection", result.Name)
-	assert.Equal(t, "", result.Payload)
+	assert.Equal(t, "", result.Payload) // Payload should be stripped
 	assert.Equal(t, errors.New("InternalError").Error(), result.Cause)
-	assert.NotEmpty(t, result.Stack)
+	assert.Empty(t, result.Stack) // Stack is always empty in BusinessData output
 }
