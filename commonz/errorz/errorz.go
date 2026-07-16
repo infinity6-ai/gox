@@ -1,104 +1,70 @@
 package errorz
 
-// type WrapperError struct {
-// 	Cause   error
-// 	Payload any
-// }
+import (
+	"fmt"
+	"runtime"
+	"strings"
+)
 
-// func (e *WrapperError) Error() string {
-// 	return e.Cause.Error()
-// }
+// customError holds the original error and the stack trace data.
+type customError struct {
+	cause error
+	stack string
+}
 
-// func New(code int, payload any, err error) *WrapperError {
-// 	return &WrapperError{
-// 		Cause:   err,
-// 		Payload: payload,
-// 	}
-// }
+// Error implements the error interface.
+// It ONLY returns the original error message, keeping logs clean.
+func (e *customError) Error() string {
+	return e.cause.Error()
+}
 
-// func Newf(format string, a ...any) *Errorz {
-// 	return &Errorz{
-// 		Code:   code,
-// 		Params: params,
-// 		Error:  fmt.Errorf(format, a...),
-// 	}
-// }
+// Unwrap allows errors.Is and errors.As to work perfectly.
+func (e *customError) Unwrap() error {
+	return e.cause
+}
 
-// type Errorz struct {
-// 	Message string `json:"message"`
-// 	Code    string `json:"code"`
-// 	Details any    `json:"details,omitempty"`
-// 	Cause   error  `json:"-"`
-// }
+// StackTrace exposes the stack trace to loggers that know to look for it.
+func (e *customError) StackTrace() string {
+	return e.stack
+}
 
-// func New(code, message string) *Errorz {
-// 	return &Errorz{
-// 		Code:    code,
-// 		Message: message,
-// 	}
-// }
+// New wraps the error and captures the stack.
+func New(cause error) error {
+	if cause == nil {
+		return nil
+	}
 
-// func Newf(code, format string, a ...any) *Errorz {
-// 	return &Errorz{
-// 		Code:    code,
-// 		Message: fmt.Sprintf(format, a...),
-// 	}
-// }
+	// getStackTrace() would be the same helper function from the previous response
+	return &customError{
+		cause: cause,
+		stack: getStackTrace(),
+	}
+}
 
-// func Wrap(err error, code, message string) *Errorz {
-// 	return &Errorz{
-// 		Code:    code,
-// 		Message: message,
-// 		Cause:   err,
-// 	}
-// }
+// getStackTrace captures the call stack of the current goroutine.
+func getStackTrace() string {
+	const maxDepth = 32
+	var pcs [maxDepth]uintptr
 
-// func Wrapf(err error, code, format string, a ...any) *Errorz {
-// 	return &Errorz{
-// 		Code:    code,
-// 		Message: fmt.Sprintf(format, a...),
-// 		Cause:   err,
-// 	}
-// }
+	// Skip 3 frames to avoid including runtime.Callers, getStackTrace, and errorz.New
+	// in the final output.
+	n := runtime.Callers(3, pcs[:])
+	if n == 0 {
+		return "no stack trace available"
+	}
 
-// func (e *Errorz) Error() string {
-// 	if e.Cause != nil {
-// 		return fmt.Sprintf("code: %s, message: %s, cause: %v", e.Code, e.Message, e.Cause)
-// 	}
-// 	return fmt.Sprintf("code: %s, message: %s", e.Code, e.Message)
-// }
+	frames := runtime.CallersFrames(pcs[:n])
+	var sb strings.Builder
 
-// func (e *Errorz) Unwrap() error {
-// 	return e.Cause
-// }
+	for {
+		frame, more := frames.Next()
+		// Format: /path/to/file.go:line_number (Function.Name)
+		fmt.Fprintf(&sb, "\t%s:%d (%s)\n", frame.File, frame.Line, frame.Function)
 
-// func GetCode(err error) string {
-// 	if err == nil {
-// 		return ""
-// 	}
-// 	if appErr, ok := err.(*Errorz); ok {
-// 		return appErr.Code
-// 	}
-// 	return ""
-// }
+		if !more {
+			break
+		}
+	}
 
-// func GetMessage(err error) string {
-// 	if err == nil {
-// 		return ""
-// 	}
-// 	if appErr, ok := err.(*Errorz); ok {
-// 		return appErr.Message
-// 	}
-// 	return err.Error()
-// }
-
-// func IsCode(err error, code string) bool {
-// 	if err == nil {
-// 		return false
-// 	}
-// 	if appErr, ok := err.(*Errorz); ok {
-// 		return appErr.Code == code
-// 	}
-// 	return false
-
-// }
+	return strings.TrimSuffix(sb.String(), "\n")
+}
