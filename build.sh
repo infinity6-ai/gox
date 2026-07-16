@@ -9,8 +9,11 @@ function cmd_comp_list() {
 function cmd_comp_create() {
   local _name="${1?'_comp_name'}"
   mkdir -p "$_name"
-  [ -f "$_name/go.mod" ] || (cd "$_name" && go mod init "github.com/infinity6-ai/gox/noopz")
-  go mod edit -go="$(i6dev util env I6_GO_VERSION)" "$_name/go.mod"
+  if [ ! -f "$_name/go.mod" ]; then
+    echo "module github.com/infinity6-ai/gox/$_name" > "$_name/go.mod"
+    echo "" >> "$_name/go.mod"
+    echo "go $(i6dev util env I6_GO_VERSION)" >> "$_name/go.mod"
+  fi
 }
 
 function cmd_comps_run() {
