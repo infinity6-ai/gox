@@ -61,31 +61,30 @@ func TestUnitStackTraceContentAndSkip(t *testing.T) {
 	assert.Equal(t, originalErr, unwrapped)
 }
 
-func TestUnitStackTraceFunction(t *testing.T) {
-	t.Run("with detailed error", func(t *testing.T) {
-		detailedErr := errorz.New(errors.New("i'm a detailed error"))
-		stack := errorz.StackTrace(detailedErr)
-		assert.NotEmpty(t, stack)
-		assert.Equal(t, detailedErr.StackTrace(), stack)
-	})
-
-	t.Run("with wrapped detailed error", func(t *testing.T) {
-		detailedErr := errorz.New(errors.New("i'm a detailed error"))
-		wrappedErr := fmt.Errorf("i'm wrapping a detailed error: %w", detailedErr)
-
-		stack := errorz.StackTrace(wrappedErr)
-		assert.NotEmpty(t, stack)
-		assert.Equal(t, detailedErr.StackTrace(), stack)
-	})
-
-	t.Run("with standard error", func(t *testing.T) {
-		err := errors.New("i'm a standard error")
-		stack := errorz.StackTrace(err)
-		assert.Empty(t, stack)
-	})
-
-	t.Run("with nil error", func(t *testing.T) {
-		stack := errorz.StackTrace(nil)
-		assert.Empty(t, stack)
-	})
+func TestUnitStackTraceFunction_WithDetailedError(t *testing.T) {
+	detailedErr := errorz.New(errors.New("i'm a detailed error"))
+	stack := errorz.StackTrace(detailedErr)
+	assert.NotEmpty(t, stack)
+	assert.Equal(t, detailedErr.StackTrace(), stack)
 }
+
+func TestUnitStackTraceFunction_WithWrappedDetailedError(t *testing.T) {
+	detailedErr := errorz.New(errors.New("i'm a detailed error"))
+	wrappedErr := fmt.Errorf("i'm wrapping a detailed error: %w", detailedErr)
+
+	stack := errorz.StackTrace(wrappedErr)
+	assert.NotEmpty(t, stack)
+	assert.Equal(t, detailedErr.StackTrace(), stack)
+}
+
+func TestUnitStackTraceFunction_WithStandardError(t *testing.T) {
+	err := errors.New("i'm a standard error")
+	stack := errorz.StackTrace(err)
+	assert.Empty(t, stack)
+}
+
+func TestUnitStackTraceFunction_WithNilError(t *testing.T) {
+	stack := errorz.StackTrace(nil)
+	assert.Empty(t, stack)
+}
+
