@@ -13,4 +13,7 @@ func TestUnitStackTraceString(t *testing.T) {
 	assert.NotEmpty(t, stack)
 	assert.True(t, strings.Contains(stack, "runtimez_test.go"))
 	assert.True(t, strings.Contains(stack, "TestUnitStackTraceString"))
+
+	lines := strings.Split(stack, "\n")
+	assert.Regexp(t, `^.*runtimez_test.go:[0-9]+\ \(.+\)$`, lines[0])
 }
