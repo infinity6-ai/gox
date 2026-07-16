@@ -1,6 +1,8 @@
 package errorz
 
 import (
+	"errors"
+
 	"github.com/infinity6-ai/gox/commonz/runtimez"
 )
 
@@ -43,4 +45,19 @@ func New(cause error) DetailedError {
 		cause: cause,
 		stack: runtimez.StackTraceString(3),
 	}
+}
+
+// StackTrace searches for a DetailedError in the error chain and returns its
+// stack trace. If no DetailedError is found, it returns an empty string.
+func StackTrace(err error) string {
+	if err == nil {
+		return ""
+	}
+
+	var de DetailedError
+	if errors.As(err, &de) {
+		return de.StackTrace()
+	}
+
+	return ""
 }
