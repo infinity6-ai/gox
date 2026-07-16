@@ -10,10 +10,11 @@ import (
 
 func TestUnitNew(t *testing.T) {
 	err := errors.New("test error")
-	wrappedErr := errorz.New(err)
+	detailedErr := errorz.New(err)
 
-	assert.NotNil(t, wrappedErr)
-	assert.Equal(t, "test error", wrappedErr.Error())
+	assert.NotNil(t, detailedErr)
+	assert.Equal(t, "test error", detailedErr.Error())
+	assert.NotEmpty(t, detailedErr.StackTrace())
 }
 
 func TestUnitNewWithNil(t *testing.T) {

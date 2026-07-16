@@ -26,13 +26,18 @@ func (e *customError) StackTrace() string {
 	return e.stack
 }
 
+// DetailedError is an error with a stack trace.
+type DetailedError interface {
+	error
+	StackTrace() string
+}
+
 // New wraps the error and captures the stack.
-func New(cause error) error {
+func New(cause error) DetailedError {
 	if cause == nil {
 		return nil
 	}
 
-	// getStackTrace() would be the same helper function from the previous response
 	return &customError{
 		cause: cause,
 		stack: runtimez.StackTraceString(3),
