@@ -137,71 +137,81 @@ func TestUnitStackTraceFunction_WithNilError(t *testing.T) {
 	assert.Empty(t, stack)
 }
 
-func TestUnitBusinessFunction_NilError(t *testing.T) {
-	result := errorz.Business(nil)
+func TestUnitBusinessDataFunction_NilError(t *testing.T) {
+	result := errorz.BusinessData(nil)
 	assert.Nil(t, result)
 }
 
-func TestUnitBusinessFunction_StandardError(t *testing.T) {
+func TestUnitBusinessDataFunction_StandardError(t *testing.T) {
 	stdErr := errors.New("something went wrong")
-	result := errorz.Business(stdErr)
+	result := errorz.BusinessData(stdErr)
 	assert.NotNil(t, result)
-	assert.False(t, result.Business())
-	assert.Equal(t, 500, result.Code())
-	assert.Equal(t, "InternalError", result.Name())
-	assert.Equal(t, "", result.Payload())
-	assert.Equal(t, stdErr, errors.Unwrap(result))
+	assert.False(t, result.Business)
+	assert.Equal(t, 500, result.Code)
+	assert.Equal(t, "InternalError", result.Name)
+	assert.Equal(t, "", result.Payload)
+	assert.Equal(t, stdErr.Error(), result.Cause)
+	assert.NotEmpty(t, result.Stack)
 }
 
-func TestUnitBusinessFunction_BusinessStructuredError(t *testing.T) {
+func TestUnitBusinessDataFunction_BusinessStructuredError(t *testing.T) {
 	businessErr := errorz.Detail(400, "UserInputInvalid", "invalid ID", true, errors.New("invalid user ID"))
-	result := errorz.Business(businessErr)
+	result := errorz.BusinessData(businessErr)
 	assert.NotNil(t, result)
-	assert.True(t, result.Business())
-	assert.Equal(t, businessErr, result)
+	assert.True(t, result.Business)
+	assert.Equal(t, 400, result.Code)
+	assert.Equal(t, "UserInputInvalid", result.Name)
+	assert.Equal(t, "invalid ID", result.Payload)
+	assert.Equal(t, "invalid user ID", result.Cause)
+	assert.NotEmpty(t, result.Stack)
 }
 
-func TestUnitBusinessFunction_NonBusinessStructuredError(t *testing.T) {
+func TestUnitBusinessDataFunction_NonBusinessStructuredError(t *testing.T) {
 	nonBusinessErr := errorz.Detail(500, "DBConnection", "conn string", false, errors.New("db connection failed"))
-	result := errorz.Business(nonBusinessErr)
+	result := errorz.BusinessData(nonBusinessErr)
 	assert.NotNil(t, result)
-	assert.False(t, result.Business())
-	assert.Equal(t, 500, result.Code())
-	assert.Equal(t, "DBConnection", result.Name())
-	assert.Equal(t, "", result.Payload())
-	assert.Equal(t, errors.New("InternalError").Error(), errors.Unwrap(result).Error())
-	assert.NotEqual(t, nonBusinessErr, result)
+	assert.False(t, result.Business)
+	assert.Equal(t, 500, result.Code)
+	assert.Equal(t, "DBConnection", result.Name)
+	assert.Equal(t, "", result.Payload)
+	assert.Equal(t, errors.New("InternalError").Error(), result.Cause)
+	assert.NotEmpty(t, result.Stack)
 }
 
-func TestUnitBusinessFunction_WrappedStandardError(t *testing.T) {
+func TestUnitBusinessDataFunction_WrappedStandardError(t *testing.T) {
 	wrappedStdErr := fmt.Errorf("outer layer: %w", errors.New("inner problem"))
-	result := errorz.Business(wrappedStdErr)
+	result := errorz.BusinessData(wrappedStdErr)
 	assert.NotNil(t, result)
-	assert.False(t, result.Business())
-	assert.Equal(t, 500, result.Code())
-	assert.Equal(t, "InternalError", result.Name())
-	assert.Equal(t, "", result.Payload())
-	assert.Equal(t, errors.New("inner problem"), errors.Unwrap(errors.Unwrap(result)))
+	assert.False(t, result.Business)
+	assert.Equal(t, 500, result.Code)
+	assert.Equal(t, "InternalError", result.Name)
+	assert.Equal(t, "", result.Payload)
+	assert.Equal(t, wrappedStdErr.Error(), result.Cause)
+	assert.NotEmpty(t, result.Stack)
 }
 
-func TestUnitBusinessFunction_WrappedBusinessStructuredError(t *testing.T) {
+func TestUnitBusinessDataFunction_WrappedBusinessStructuredError(t *testing.T) {
 	businessErr := errorz.Detail(400, "UserInputInvalid", "invalid ID", true, errors.New("invalid user ID"))
 	wrappedBusinessErr := fmt.Errorf("validation layer: %w", businessErr)
-	result := errorz.Business(wrappedBusinessErr)
+	result := errorz.BusinessData(wrappedBusinessErr)
 	assert.NotNil(t, result)
-	assert.True(t, result.Business())
-	assert.Equal(t, businessErr, result)
+	assert.True(t, result.Business)
+	assert.Equal(t, 400, result.Code)
+	assert.Equal(t, "UserInputInvalid", result.Name)
+	assert.Equal(t, "invalid ID", result.Payload)
+	assert.Equal(t, "invalid user ID", result.Cause)
+	assert.NotEmpty(t, result.Stack)
 }
 
-func TestUnitBusinessFunction_WrappedNonBusinessStructuredError(t *testing.T) {
+func TestUnitBusinessDataFunction_WrappedNonBusinessStructuredError(t *testing.T) {
 	nonBusinessErr := errorz.Detail(500, "DBConnection", "conn string", false, errors.New("db connection failed"))
 	wrappedNonBusinessErr := fmt.Errorf("service layer: %w", nonBusinessErr)
-	result := errorz.Business(wrappedNonBusinessErr)
+	result := errorz.BusinessData(wrappedNonBusinessErr)
 	assert.NotNil(t, result)
-	assert.False(t, result.Business())
-	assert.Equal(t, 500, result.Code())
-	assert.Equal(t, "DBConnection", result.Name())
-	assert.Equal(t, "", result.Payload())
-	assert.Equal(t, errors.New("InternalError").Error(), errors.Unwrap(result).Error())
-	assert.NotEqual(t, nonBusinessErr, result)
+	assert.False(t, result.Business)
+	assert.Equal(t, 500, result.Code)
+	assert.Equal(t, "DBConnection", result.Name)
+	assert.Equal(t, "", result.Payload)
+	assert.Equal(t, errors.New("InternalError").Error(), result.Cause)
+	assert.NotEmpty(t, result.Stack)
 }

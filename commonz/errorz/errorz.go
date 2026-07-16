@@ -159,30 +159,33 @@ func StackTrace(err error) string {
 	return ""
 }
 
-// Business sanitizes an error for business-level display.
-// If the error is not a StructuredError, it wraps it as a generic internal error.
-// If it's a StructuredError marked as business-facing, it returns it as is.
+// BusinessData sanitizes an error for business-level display and returns its Data struct.
+// If the error is not a StructuredError, it wraps it as a generic internal error
+// and returns its Data.
+// If it's a StructuredError marked as business-facing, it returns its Data as is.
 // If it's a StructuredError but NOT business-facing, it hides internal details
 // by creating a new StructuredError with a generic "InternalError" message,
-// retaining the original code and name if present.
-func Business(err error) StructuredError {
+// retaining the original code and name if present, and then returns its Data.
+func BusinessData(err error) *Data {
 	if err == nil {
 		return nil
 	}
 
 	var se StructuredError
 	if !errors.As(err, &se) {
-		// Not a StructuredError, wrap as generic internal error.
-		return Detail(500, "InternalError", "", false, err)
+		// Not a StructuredError, wrap as generic internal error, then get its data.
+		sanitizedErr := Detail(500, "InternalError", "", false, err)
+		return sanitizedErr.Data()
 	}
 
 	if se.Business() {
-		// Already a business-facing error, return as is.
-		return se
+		// Already a business-facing error, return its data.
+		return se.Data()
 	}
 
-	// StructuredError but not business-facing, hide internal details.
+	// StructuredError but not business-facing, hide internal details, then get its data.
 	// We retain Code and Name if available from the original StructuredError,
 	// but replace the cause with a generic message and mark as non-business.
-	return Detail(se.Code(), se.Name(), "", false, errors.New("InternalError"))
+	sanitizedErr := Detail(se.Code(), se.Name(), "", false, errors.New("InternalError"))
+	return sanitizedErr.Data()
 }
