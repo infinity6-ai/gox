@@ -3,74 +3,88 @@ package errorz_test
 import (
 	"errors"
 	"fmt"
-	"strings" // Added for string manipulation
+	"strings"
 	"testing"
 
 	"github.com/infinity6-ai/gox/commonz/errorz"
 	"github.com/stretchr/testify/assert"
 )
 
-func TestUnitNew(t *testing.T) {
-	err := errors.New("test error")
-	detailedErr := errorz.New(err)
+func TestUnitDetail(t *testing.T) {
+	originalErr := errors.New("database connection failed")
+	structuredErr := errorz.Detail(500, "DBError", `{"host":"localhost"}`, originalErr)
 
-	assert.NotNil(t, detailedErr)
-	assert.Equal(t, "test error", detailedErr.Error())
-	assert.NotEmpty(t, detailedErr.StackTrace())
+	assert.NotNil(t, structuredErr)
+	assert.Equal(t, "database connection failed", structuredErr.Error())
+	assert.NotEmpty(t, structuredErr.StackTrace())
+	assert.Equal(t, 500, structuredErr.Code())
+	assert.Equal(t, "DBError", structuredErr.Name())
+	assert.Equal(t, `{"host":"localhost"}`, structuredErr.Payload())
 }
 
-func TestUnitNewWithNil(t *testing.T) {
-	wrappedErr := errorz.New(nil)
-	assert.Nil(t, wrappedErr)
+func TestUnitDetailWithNil(t *testing.T) {
+	structuredErr := errorz.Detail(500, "DBError", "", nil)
+	assert.Nil(t, structuredErr)
 }
 
-func TestUnitUnwrap(t *testing.T) {
+func TestUnitDetailUnwrap(t *testing.T) {
 	originalErr := errors.New("original error")
-	wrappedErr := errorz.New(originalErr)
+	structuredErr := errorz.Detail(500, "TestError", "", originalErr)
 
-	unwrapped := errors.Unwrap(wrappedErr)
+	unwrapped := errors.Unwrap(structuredErr)
 	assert.Equal(t, originalErr, unwrapped)
 }
 
-// getWrappedErrorFromHelper is a helper function to create a deeper call stack
-func getWrappedErrorFromHelper(err error) errorz.DetailedError {
-	return errorz.New(err)
+func TestUnitDetailf(t *testing.T) {
+	structuredErr := errorz.Detailf(404, "NotFound", `{"id":123}`, "user %d not found", 123)
+
+	assert.NotNil(t, structuredErr)
+	assert.Equal(t, "user 123 not found", structuredErr.Error())
+	assert.NotEmpty(t, structuredErr.StackTrace())
+	assert.Equal(t, 404, structuredErr.Code())
+	assert.Equal(t, "NotFound", structuredErr.Name())
+	assert.Equal(t, `{"id":123}`, structuredErr.Payload())
+
+	// Unwrap the structured error to get the cause from fmt.Errorf
+	cause := errors.Unwrap(structuredErr)
+	assert.NotNil(t, cause)
+	assert.Equal(t, "user 123 not found", cause.Error())
+
+	// The cause from fmt.Errorf does not wrap another error, so unwrapping it should be nil
+	assert.Nil(t, errors.Unwrap(cause), "The root cause created by Detailf should not be wrappable")
+}
+
+// helper function to create a deeper call stack for stack trace testing
+func getDetailedErrorFromHelper(err error) errorz.StructuredError {
+	return errorz.Detail(500, "HelperError", "", err)
 }
 
 func TestUnitStackTraceContentAndSkip(t *testing.T) {
 	originalErr := errors.New("error from helper")
-	detailedErr := getWrappedErrorFromHelper(originalErr)
+	detailedErr := getDetailedErrorFromHelper(originalErr)
 
-	assert.NotNil(t, detailedErr)
 	stackTrace := detailedErr.StackTrace()
 	assert.NotEmpty(t, stackTrace)
 
 	// Assert that the stack trace contains the names of the calling functions
-	assert.True(t, strings.Contains(stackTrace, "errorz_test.getWrappedErrorFromHelper"), "Stack trace should contain getWrappedErrorFromHelper")
+	assert.True(t, strings.Contains(stackTrace, "errorz_test.getDetailedErrorFromHelper"), "Stack trace should contain getDetailedErrorFromHelper")
 	assert.True(t, strings.Contains(stackTrace, "errorz_test.TestUnitStackTraceContentAndSkip"), "Stack trace should contain TestUnitStackTraceContentAndSkip")
 
-	// Assert that the stack trace does NOT contain internal errorz.New or runtimez.StackTraceString due to skipping
-	assert.False(t, strings.Contains(stackTrace, "errorz.New"), "Stack trace should not contain errorz.New (skipped frame)")
-	assert.False(t, strings.Contains(stackTrace, "runtimez.StackTraceString"), "Stack trace should not contain runtimez.StackTraceString (skipped frame)")
-	// The detailedError.StackTrace() method itself might appear if not correctly skipped, but New() should skip its own internals.
-	// We are checking that New() correctly skips frames that are part of its own creation process.
-	assert.False(t, strings.Contains(stackTrace, "errorz.(*detailedError).StackTrace"), "Stack trace should not contain errorz.(*detailedError).StackTrace when capturing the stack for New()")
-
-	// Verify the original error is still unwrappable
-	unwrapped := errors.Unwrap(detailedErr)
-	assert.Equal(t, originalErr, unwrapped)
+	// Assert that the stack trace does NOT contain internal functions due to skipping
+	assert.False(t, strings.Contains(stackTrace, "errorz.Detail"), "Stack trace should not contain errorz.Detail")
+	assert.False(t, strings.Contains(stackTrace, "runtimez.StackTraceString"), "Stack trace should not contain runtimez.StackTraceString")
 }
 
-func TestUnitStackTraceFunction_WithDetailedError(t *testing.T) {
-	detailedErr := errorz.New(errors.New("i'm a detailed error"))
+func TestUnitStackTraceFunction_WithStructuredError(t *testing.T) {
+	detailedErr := errorz.Detail(500, "Test", "", errors.New("i'm a structured error"))
 	stack := errorz.StackTrace(detailedErr)
 	assert.NotEmpty(t, stack)
 	assert.Equal(t, detailedErr.StackTrace(), stack)
 }
 
-func TestUnitStackTraceFunction_WithWrappedDetailedError(t *testing.T) {
-	detailedErr := errorz.New(errors.New("i'm a detailed error"))
-	wrappedErr := fmt.Errorf("i'm wrapping a detailed error: %w", detailedErr)
+func TestUnitStackTraceFunction_WithWrappedStructuredError(t *testing.T) {
+	detailedErr := errorz.Detail(500, "Test", "", errors.New("i'm a structured error"))
+	wrappedErr := fmt.Errorf("i'm wrapping a structured error: %w", detailedErr)
 
 	stack := errorz.StackTrace(wrappedErr)
 	assert.NotEmpty(t, stack)
@@ -87,4 +101,3 @@ func TestUnitStackTraceFunction_WithNilError(t *testing.T) {
 	stack := errorz.StackTrace(nil)
 	assert.Empty(t, stack)
 }
-
