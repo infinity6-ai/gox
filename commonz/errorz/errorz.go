@@ -159,42 +159,37 @@ func StackTrace(err error) string {
 	return ""
 }
 
-// BusinessData sanitizes an error for business-level display and returns its Data struct.
-// If the error is not a StructuredError, it wraps it as a generic internal error
-// and returns its Data.
-// If it's a StructuredError marked as business-facing, it returns its Data as is.
-// If it's a StructuredError but NOT business-facing, it hides internal details
-// by creating a new StructuredError with a generic "InternalError" message,
-// retaining the original code and name if present, and then returns its Data.
+// BusinessData sanitizes an error for business-level display. It strips sensitive
+// information like stack traces and payloads, returning a machine-readable *Data struct.
+//
+//   - If the error is not a StructuredError, it's wrapped as a generic internal error.
+//   - If it's a business-facing StructuredError, its data is returned but with the payload removed.
+//   - If it's a non-business StructuredError, internal details are replaced with a
+//     generic "InternalError" message, while retaining the original code and name.
 func BusinessData(err error) *Data {
 	if err == nil {
 		return nil
 	}
 
 	var se StructuredError
-	var initialData *Data // This will hold the initial Data before stripping
+	var data *Data
 
 	if !errors.As(err, &se) {
-		// Not a StructuredError, wrap as generic internal error, then get its data.
-		sanitizedErr := Detail(500, "InternalError", "", false, err)
-		initialData = sanitizedErr.Data()
+		// Not a structured error. Wrap it as a generic internal error.
+		data = Detail(500, "InternalError", "", false, err).Data()
 	} else if se.Business() {
-		// Already a business-facing error, return its data.
-		initialData = se.Data()
+		// It's a business-facing error. Use its data directly...
+		data = se.Data()
+		// ...but strip the payload as it may contain sensitive details.
+		data.Payload = ""
 	} else {
-		// StructuredError but not business-facing, hide internal details, then get its data.
-		// We retain Code and Name if available from the original StructuredError,
-		// but replace the cause with a generic message and mark as non-business.
-		sanitizedErr := Detail(se.Code(), se.Name(), "", false, errors.New("InternalError"))
-		initialData = sanitizedErr.Data()
+		// It's a non-business structured error. Sanitize it completely by replacing
+		// the cause with a generic message, ensuring no internal details leak.
+		data = Detail(se.Code(), se.Name(), "", false, errors.New("InternalError")).Data()
 	}
 
-	// Apply the stripping logic
-	initialData.Stack = "" // Always remove stack
+	// Always strip the stack trace before returning to the caller.
+	data.Stack = ""
 
-	if initialData.Business { // If it's a business error after sanitization
-		initialData.Payload = "" // Strip payload for business errors
-	}
-
-	return initialData
+	return data
 }
