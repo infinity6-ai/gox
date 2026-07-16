@@ -12,7 +12,7 @@ func acceptsNumber[T constraintz.Numbers](_ T) bool {
 	return true
 }
 
-func TestCompileTimeConstraints(t *testing.T) {
+func TestUnitCompileTimeConstraints(t *testing.T) {
 	// This test simply calls the generic function with different types
 	// to ensure the constraints work as expected at compile time.
 	// If the code compiles, the test passes.
