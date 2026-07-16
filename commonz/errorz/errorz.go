@@ -1,12 +1,21 @@
 package errorz
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"strings"
 
 	"github.com/infinity6-ai/gox/commonz/runtimez"
 )
+
+// Data is the structured, machine-readable data of a StructuredError.
+type Data struct {
+	Code    int    `json:"code,omitempty"`
+	Name    string `json:"name,omitempty"`
+	Payload string `json:"payload,omitempty"`
+	Cause   string `json:"cause"`
+}
 
 // structuredError holds the original error and the structured data.
 type structuredError struct {
@@ -17,9 +26,9 @@ type structuredError struct {
 	payload string
 }
 
-// Error implements the error interface.
-// It returns a detailed string with all structured fields.
-func (e *structuredError) Error() string {
+// toCoolString returns a detailed string with all structured fields.
+// This is used as a fallback for Error() if JSON marshaling fails.
+func (e *structuredError) toCoolString() string {
 	var sb strings.Builder
 	if e.cause != nil {
 		sb.WriteString(e.cause.Error())
@@ -45,6 +54,17 @@ func (e *structuredError) Error() string {
 	return sb.String()
 }
 
+// Error implements the error interface.
+// It returns a JSON string representation of the error's Data.
+func (e *structuredError) Error() string {
+	jsonData, err := json.Marshal(e.Data())
+	if err != nil {
+		// Fallback to a detailed string format if JSON marshaling fails.
+		return e.toCoolString()
+	}
+	return string(jsonData)
+}
+
 
 // Unwrap allows errors.Is and errors.As to work perfectly.
 func (e *structuredError) Unwrap() error {
@@ -56,6 +76,19 @@ func (e *structuredError) StackTrace() string {
 	return e.stack
 }
 
+// Data returns the structured, machine-readable data of the error.
+func (e *structuredError) Data() *Data {
+	if e == nil {
+		return nil
+	}
+	return &Data{
+		Code:    e.code,
+		Name:    e.name,
+		Payload: e.payload,
+		Cause:   e.cause.Error(),
+	}
+}
+
 // StructuredError is an error with a stack trace and structured data.
 type StructuredError interface {
 	error
@@ -64,6 +97,7 @@ type StructuredError interface {
 	Code() int
 	Name() string
 	Payload() string
+	Data() *Data
 }
 
 func (e *structuredError) Code() int {

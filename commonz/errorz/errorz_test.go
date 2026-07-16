@@ -1,6 +1,7 @@
 package errorz_test
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"strings"
@@ -10,12 +11,40 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+// assertErrorJSON is a helper to verify the JSON output of the Error() method.
+func assertErrorJSON(t *testing.T, err error, expectedData errorz.Data) {
+	t.Helper()
+	var resultData errorz.Data
+	e := json.Unmarshal([]byte(err.Error()), &resultData)
+	assert.NoError(t, e, "Error() output should be valid JSON")
+	assert.Equal(t, expectedData, resultData)
+}
+
+func TestUnitDataMethod(t *testing.T) {
+	originalErr := errors.New("original cause")
+	structuredErr := errorz.Detail(500, "DBError", "payload", originalErr)
+
+	data := structuredErr.Data()
+	expectedData := &errorz.Data{
+		Code:    500,
+		Name:    "DBError",
+		Payload: "payload",
+		Cause:   "original cause",
+	}
+	assert.Equal(t, expectedData, data)
+}
+
 func TestUnitDetail(t *testing.T) {
 	originalErr := errors.New("database connection failed")
 	structuredErr := errorz.Detail(500, "DBError", `{"host":"localhost"}`, originalErr)
 
 	assert.NotNil(t, structuredErr)
-	assert.Equal(t, `database connection failed: (DBError, code=500, payload={"host":"localhost"})`, structuredErr.Error())
+	assertErrorJSON(t, structuredErr, errorz.Data{
+		Code:    500,
+		Name:    "DBError",
+		Payload: `{"host":"localhost"}`,
+		Cause:   "database connection failed",
+	})
 	assert.NotEmpty(t, structuredErr.StackTrace())
 	assert.Equal(t, 500, structuredErr.Code())
 	assert.Equal(t, "DBError", structuredErr.Name())
@@ -39,7 +68,12 @@ func TestUnitDetailf(t *testing.T) {
 	structuredErr := errorz.Detailf(404, "NotFound", `{"id":123}`, "user %d not found", 123)
 
 	assert.NotNil(t, structuredErr)
-	assert.Equal(t, `user 123 not found: (NotFound, code=404, payload={"id":123})`, structuredErr.Error())
+	assertErrorJSON(t, structuredErr, errorz.Data{
+		Code:    404,
+		Name:    "NotFound",
+		Payload: `{"id":123}`,
+		Cause:   "user 123 not found",
+	})
 	assert.NotEmpty(t, structuredErr.StackTrace())
 	assert.Equal(t, 404, structuredErr.Code())
 	assert.Equal(t, "NotFound", structuredErr.Name())
@@ -51,36 +85,39 @@ func TestUnitDetailf(t *testing.T) {
 	assert.Nil(t, errors.Unwrap(cause), "The root cause created by Detailf should not be wrappable")
 }
 
-func TestUnitErrorFormatting_AllFields(t *testing.T) {
-	err := errorz.Detail(500, "TestName", "payload", errors.New("base error"))
-	expected := "base error: (TestName, code=500, payload=payload)"
-	assert.Equal(t, expected, err.Error())
-}
+func TestUnitErrorJSONFormatting(t *testing.T) {
+	baseErr := errors.New("base error")
 
-func TestUnitErrorFormatting_OnlyCode(t *testing.T) {
-	err := errorz.Detail(500, "", "", errors.New("base error"))
-	expected := "base error: (code=500)"
-	assert.Equal(t, expected, err.Error())
-}
+	t.Run("all fields", func(t *testing.T) {
+		err := errorz.Detail(500, "TestName", "payload", baseErr)
+		assertErrorJSON(t, err, errorz.Data{Code: 500, Name: "TestName", Payload: "payload", Cause: "base error"})
+	})
 
-func TestUnitErrorFormatting_OnlyName(t *testing.T) {
-	err := errorz.Detail(0, "TestName", "", errors.New("base error"))
-	expected := "base error: (TestName)"
-	assert.Equal(t, expected, err.Error())
-}
+	t.Run("no optional fields", func(t *testing.T) {
+		err := errorz.Detail(0, "", "", baseErr)
+		// Check the raw JSON string to ensure omitempty works
+		expectedJSON := `{"cause":"base error"}`
+		assert.JSONEq(t, expectedJSON, err.Error())
+	})
 
-func TestUnitErrorFormatting_OnlyPayload(t *testing.T) {
-	err := errorz.Detail(0, "", "payload", errors.New("base error"))
-	expected := "base error: (payload=payload)"
-	assert.Equal(t, expected, err.Error())
-}
+	t.Run("only code", func(t *testing.T) {
+		err := errorz.Detail(500, "", "", baseErr)
+		expectedJSON := `{"code":500,"cause":"base error"}`
+		assert.JSONEq(t, expectedJSON, err.Error())
+	})
 
-func TestUnitErrorFormatting_NoFields(t *testing.T) {
-	err := errorz.Detail(0, "", "", errors.New("base error"))
-	expected := "base error"
-	assert.Equal(t, expected, err.Error())
-}
+	t.Run("only name", func(t *testing.T) {
+		err := errorz.Detail(0, "TestName", "", baseErr)
+		expectedJSON := `{"name":"TestName","cause":"base error"}`
+		assert.JSONEq(t, expectedJSON, err.Error())
+	})
 
+	t.Run("only payload", func(t *testing.T) {
+		err := errorz.Detail(0, "", "payload", baseErr)
+		expectedJSON := `{"payload":"payload","cause":"base error"}`
+		assert.JSONEq(t, expectedJSON, err.Error())
+	})
+}
 
 // helper function to create a deeper call stack for stack trace testing
 func getDetailedErrorFromHelper(err error) errorz.StructuredError {
