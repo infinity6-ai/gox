@@ -60,18 +60,15 @@ func (e *structuredError) toCoolString() string {
 // excluding the stack trace.
 func (e *structuredError) Error() string {
 	data := e.Data()
-	// Create a copy of Data and clear the stack for JSON marshaling in Error()
-	dataWithoutStack := *data
-	dataWithoutStack.Stack = ""
+	data.Stack = ""
 
-	jsonData, err := json.Marshal(dataWithoutStack)
+	jsonData, err := json.Marshal(data)
 	if err != nil {
 		// Fallback to a detailed string format if JSON marshaling fails.
 		return e.toCoolString()
 	}
 	return string(jsonData)
 }
-
 
 // Unwrap allows errors.Is and errors.As to work perfectly.
 func (e *structuredError) Unwrap() error {
@@ -107,7 +104,6 @@ type StructuredError interface {
 	Payload() string
 	Data() *Data
 }
-
 
 func (e *structuredError) Code() int {
 	return e.code
@@ -149,7 +145,6 @@ func Detailf(code int, name string, payload string, format string, a ...interfac
 		payload: payload,
 	}
 }
-
 
 // StackTrace searches for a StructuredError in the error chain and returns its
 // stack trace. If no StructuredError is found, it returns an empty string.
