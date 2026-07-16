@@ -2,9 +2,13 @@
 
 eval "$(i6dev meta debug i6gox-build I6DEV_DEBUG)"
 
+function cmd_comp_list() {
+  find . -maxdepth 2 -name go.mod | cut -d'/' -f2
+}
+
 function cmd_comps_run() {
   local _k=""
-  ./list.sh | while read _k; do
+  cmd_comp_list | while read _k; do
     ./comp.sh "$_k" "$@"
   done
 }
