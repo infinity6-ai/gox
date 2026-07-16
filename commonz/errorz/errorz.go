@@ -11,20 +11,22 @@ import (
 
 // Data is the structured, machine-readable data of a StructuredError.
 type Data struct {
-	Code    int    `json:"code,omitempty"`
-	Name    string `json:"name,omitempty"`
-	Payload string `json:"payload,omitempty"`
-	Cause   string `json:"cause"`
-	Stack   string `json:"stack,omitempty"`
+	Code     int    `json:"code,omitempty"`
+	Name     string `json:"name,omitempty"`
+	Payload  string `json:"payload,omitempty"`
+	Business bool   `json:"business,omitempty"`
+	Cause    string `json:"cause"`
+	Stack    string `json:"stack,omitempty"`
 }
 
 // structuredError holds the original error and the structured data.
 type structuredError struct {
-	cause   error
-	stack   string
-	code    int
-	name    string
-	payload string
+	cause    error
+	stack    string
+	code     int
+	name     string
+	payload  string
+	business bool
 }
 
 // toCoolString returns a detailed string with all structured fields.
@@ -45,6 +47,9 @@ func (e *structuredError) toCoolString() string {
 	if e.payload != "" {
 		details = append(details, fmt.Sprintf("payload=%s", e.payload))
 	}
+	if e.business {
+		details = append(details, "business=true")
+	}
 
 	if len(details) > 0 {
 		sb.WriteString(": (")
@@ -64,7 +69,6 @@ func (e *structuredError) Error() string {
 
 	jsonData, err := json.Marshal(data)
 	if err != nil {
-		// Fallback to a detailed string format if JSON marshaling fails.
 		return e.toCoolString()
 	}
 	return string(jsonData)
@@ -86,12 +90,18 @@ func (e *structuredError) Data() *Data {
 		return nil
 	}
 	return &Data{
-		Code:    e.code,
-		Name:    e.name,
-		Payload: e.payload,
-		Cause:   e.cause.Error(),
-		Stack:   e.stack, // Populate the stack field
+		Code:     e.code,
+		Name:     e.name,
+		Payload:  e.payload,
+		Business: e.business,
+		Cause:    e.cause.Error(),
+		Stack:    e.stack,
 	}
+}
+
+// Business returns true if the error is intended for the end-user.
+func (e *structuredError) Business() bool {
+	return e.business
 }
 
 // StructuredError is an error with a stack trace and structured data.
@@ -102,6 +112,7 @@ type StructuredError interface {
 	Code() int
 	Name() string
 	Payload() string
+	Business() bool
 	Data() *Data
 }
 
@@ -119,30 +130,32 @@ func (e *structuredError) Payload() string {
 
 // Detail wraps the error, captures the stack, and adds structured data.
 // If the cause is nil, Detail returns nil.
-func Detail(code int, name string, payload string, cause error) StructuredError {
+func Detail(code int, name string, payload string, business bool, cause error) StructuredError {
 	if cause == nil {
 		return nil
 	}
 
 	return &structuredError{
-		cause:   cause,
-		stack:   runtimez.StackTraceString(3),
-		code:    code,
-		name:    name,
-		payload: payload,
+		cause:    cause,
+		stack:    runtimez.StackTraceString(3),
+		code:     code,
+		name:     name,
+		payload:  payload,
+		business: business,
 	}
 }
 
 // Detailf creates a new error from a format string and arguments, then wraps it
 // with a stack trace and structured data.
-func Detailf(code int, name string, payload string, format string, a ...interface{}) StructuredError {
+func Detailf(code int, name string, payload string, business bool, format string, a ...interface{}) StructuredError {
 	cause := fmt.Errorf(format, a...)
 	return &structuredError{
-		cause:   cause,
-		stack:   runtimez.StackTraceString(3),
-		code:    code,
-		name:    name,
-		payload: payload,
+		cause:    cause,
+		stack:    runtimez.StackTraceString(3),
+		code:     code,
+		name:     name,
+		payload:  payload,
+		business: business,
 	}
 }
 

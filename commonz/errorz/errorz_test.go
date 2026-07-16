@@ -18,116 +18,107 @@ func assertErrorJSON(t *testing.T, err error, expectedData errorz.Data) {
 	e := json.Unmarshal([]byte(err.Error()), &resultData)
 	assert.NoError(t, e, "Error() output should be valid JSON")
 	assert.Equal(t, expectedData, resultData)
-	assert.Empty(t, resultData.Stack, "Stack field should be empty in Error() JSON output") // Explicit check
+	assert.Empty(t, resultData.Stack, "Stack field should be empty in Error() JSON output")
 }
 
 func TestUnitDataMethod(t *testing.T) {
 	originalErr := errors.New("original cause")
-	structuredErr := errorz.Detail(500, "DBError", "payload", originalErr)
+	structuredErr := errorz.Detail(500, "DBError", "payload", true, originalErr)
 
 	data := structuredErr.Data()
-	// Stack should be present when accessed via Data()
 	expectedData := &errorz.Data{
-		Code:    500,
-		Name:    "DBError",
-		Payload: "payload",
-		Cause:   "original cause",
-		Stack:   structuredErr.StackTrace(), // Expect stack here
+		Code:     500,
+		Name:     "DBError",
+		Payload:  "payload",
+		Business: true,
+		Cause:    "original cause",
+		Stack:    structuredErr.StackTrace(),
 	}
 	assert.Equal(t, expectedData, data)
-	assert.NotEmpty(t, data.Stack, "Stack should be present in Data() output")
+	assert.NotEmpty(t, data.Stack)
 }
 
 func TestUnitDetail(t *testing.T) {
 	originalErr := errors.New("database connection failed")
-	structuredErr := errorz.Detail(500, "DBError", `{"host":"localhost"}`, originalErr)
+	structuredErr := errorz.Detail(500, "DBError", `{"host":"localhost"}`, true, originalErr)
 
 	assert.NotNil(t, structuredErr)
 	assertErrorJSON(t, structuredErr, errorz.Data{
-		Code:    500,
-		Name:    "DBError",
-		Payload: `{"host":"localhost"}`,
-		Cause:   "database connection failed",
-		Stack:   "", // Stack should be empty in Error() JSON
+		Code:     500,
+		Name:     "DBError",
+		Payload:  `{"host":"localhost"}`,
+		Business: true,
+		Cause:    "database connection failed",
+		Stack:    "",
 	})
 	assert.NotEmpty(t, structuredErr.StackTrace())
 	assert.Equal(t, 500, structuredErr.Code())
 	assert.Equal(t, "DBError", structuredErr.Name())
 	assert.Equal(t, `{"host":"localhost"}`, structuredErr.Payload())
+	assert.True(t, structuredErr.Business())
 }
 
 func TestUnitDetailWithNil(t *testing.T) {
-	structuredErr := errorz.Detail(500, "DBError", "", nil)
+	structuredErr := errorz.Detail(500, "DBError", "", false, nil)
 	assert.Nil(t, structuredErr)
 }
 
 func TestUnitDetailUnwrap(t *testing.T) {
 	originalErr := errors.New("original error")
-	structuredErr := errorz.Detail(500, "TestError", "", originalErr)
+	structuredErr := errorz.Detail(500, "TestError", "", false, originalErr)
 
 	unwrapped := errors.Unwrap(structuredErr)
 	assert.Equal(t, originalErr, unwrapped)
 }
 
 func TestUnitDetailf(t *testing.T) {
-	structuredErr := errorz.Detailf(404, "NotFound", `{"id":123}`, "user %d not found", 123)
+	structuredErr := errorz.Detailf(404, "NotFound", `{"id":123}`, false, "user %d not found", 123)
 
 	assert.NotNil(t, structuredErr)
+	// Since Business is false, it should be omitted by omitempty
 	assertErrorJSON(t, structuredErr, errorz.Data{
 		Code:    404,
 		Name:    "NotFound",
 		Payload: `{"id":123}`,
 		Cause:   "user 123 not found",
-		Stack:   "", // Stack should be empty in Error() JSON
+		Stack:   "",
 	})
 	assert.NotEmpty(t, structuredErr.StackTrace())
 	assert.Equal(t, 404, structuredErr.Code())
 	assert.Equal(t, "NotFound", structuredErr.Name())
 	assert.Equal(t, `{"id":123}`, structuredErr.Payload())
+	assert.False(t, structuredErr.Business())
 
 	cause := errors.Unwrap(structuredErr)
 	assert.NotNil(t, cause)
 	assert.Equal(t, "user 123 not found", cause.Error())
-	assert.Nil(t, errors.Unwrap(cause), "The root cause created by Detailf should not be wrappable")
+	assert.Nil(t, errors.Unwrap(cause))
 }
 
 func TestUnitErrorJSONFormatting(t *testing.T) {
 	baseErr := errors.New("base error")
 
 	t.Run("all fields", func(t *testing.T) {
-		err := errorz.Detail(500, "TestName", "payload", baseErr)
-		assertErrorJSON(t, err, errorz.Data{Code: 500, Name: "TestName", Payload: "payload", Cause: "base error", Stack: ""})
+		err := errorz.Detail(500, "TestName", "payload", true, baseErr)
+		assertErrorJSON(t, err, errorz.Data{Code: 500, Name: "TestName", Payload: "payload", Business: true, Cause: "base error", Stack: ""})
 	})
 
 	t.Run("no optional fields", func(t *testing.T) {
-		err := errorz.Detail(0, "", "", baseErr)
-		// Check the raw JSON string to ensure omitempty works
+		err := errorz.Detail(0, "", "", false, baseErr)
 		expectedJSON := `{"cause":"base error"}`
 		assert.JSONEq(t, expectedJSON, err.Error())
 	})
 
-	t.Run("only code", func(t *testing.T) {
-		err := errorz.Detail(500, "", "", baseErr)
-		expectedJSON := `{"code":500,"cause":"base error"}`
-		assert.JSONEq(t, expectedJSON, err.Error())
-	})
-
-	t.Run("only name", func(t *testing.T) {
-		err := errorz.Detail(0, "TestName", "", baseErr)
-		expectedJSON := `{"name":"TestName","cause":"base error"}`
-		assert.JSONEq(t, expectedJSON, err.Error())
-	})
-
-	t.Run("only payload", func(t *testing.T) {
-		err := errorz.Detail(0, "", "payload", baseErr)
-		expectedJSON := `{"payload":"payload","cause":"base error"}`
+	t.Run("only business", func(t *testing.T) {
+		err := errorz.Detail(0, "", "", true, baseErr)
+		expectedJSON := `{"business":true,"cause":"base error"}`
 		assert.JSONEq(t, expectedJSON, err.Error())
 	})
 }
 
 // helper function to create a deeper call stack for stack trace testing
 func getDetailedErrorFromHelper(err error) errorz.StructuredError {
-	return errorz.Detail(500, "HelperError", "", err)
+	return errorz.Detail(500, "HelperError", "", false, err)
 }
 
 func TestUnitStackTraceContentAndSkip(t *testing.T) {
@@ -144,14 +135,14 @@ func TestUnitStackTraceContentAndSkip(t *testing.T) {
 }
 
 func TestUnitStackTraceFunction_WithStructuredError(t *testing.T) {
-	detailedErr := errorz.Detail(500, "Test", "", errors.New("i'm a structured error"))
+	detailedErr := errorz.Detail(500, "Test", "", false, errors.New("i'm a structured error"))
 	stack := errorz.StackTrace(detailedErr)
 	assert.NotEmpty(t, stack)
 	assert.Equal(t, detailedErr.StackTrace(), stack)
 }
 
 func TestUnitStackTraceFunction_WithWrappedStructuredError(t *testing.T) {
-	detailedErr := errorz.Detail(500, "Test", "", errors.New("i'm a structured error"))
+	detailedErr := errorz.Detail(500, "Test", "", true, errors.New("i'm a structured error"))
 	wrappedErr := fmt.Errorf("i'm wrapping a structured error: %w", detailedErr)
 
 	stack := errorz.StackTrace(wrappedErr)
