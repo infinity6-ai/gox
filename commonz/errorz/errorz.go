@@ -1,20 +1,20 @@
 package errorz
 
-type WrapperError struct {
-	Cause   error
-	Payload any
-}
+// type WrapperError struct {
+// 	Cause   error
+// 	Payload any
+// }
 
-func (e *WrapperError) Error() string {
-	return e.Cause.Error()
-}
+// func (e *WrapperError) Error() string {
+// 	return e.Cause.Error()
+// }
 
-func New(code int, payload any, err error) *WrapperError {
-	return &WrapperError{
-		Cause:   err,
-		Payload: payload,
-	}
-}
+// func New(code int, payload any, err error) *WrapperError {
+// 	return &WrapperError{
+// 		Cause:   err,
+// 		Payload: payload,
+// 	}
+// }
 
 // func Newf(format string, a ...any) *Errorz {
 // 	return &Errorz{
