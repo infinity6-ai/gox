@@ -31,23 +31,23 @@ type structuredError struct {
 
 // toCoolString returns a detailed string with all structured fields.
 // This is used as a fallback for Error() if JSON marshaling fails.
-func (e *structuredError) toCoolString() string {
+func toCoolString(data *Data) string { // Changed from method to function
 	var sb strings.Builder
-	if e.cause != nil {
-		sb.WriteString(e.cause.Error())
+	if data.Cause != "" {
+		sb.WriteString(data.Cause)
 	}
 
 	var details []string
-	if e.name != "" {
-		details = append(details, e.name)
+	if data.Name != "" {
+		details = append(details, data.Name)
 	}
-	if e.code != 0 {
-		details = append(details, fmt.Sprintf("code=%d", e.code))
+	if data.Code != 0 {
+		details = append(details, fmt.Sprintf("code=%d", data.Code))
 	}
-	if e.payload != "" {
-		details = append(details, fmt.Sprintf("payload=%s", e.payload))
+	if data.Payload != "" {
+		details = append(details, fmt.Sprintf("payload=%s", data.Payload))
 	}
-	if e.business {
+	if data.Business {
 		details = append(details, "business=true")
 	}
 
@@ -69,7 +69,7 @@ func (e *structuredError) Error() string {
 
 	jsonData, err := json.Marshal(data)
 	if err != nil {
-		return e.toCoolString()
+		return toCoolString(data) // Call the new function
 	}
 	return string(jsonData)
 }
