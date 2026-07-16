@@ -6,6 +6,13 @@ function cmd_comp_list() {
   find . -maxdepth 2 -name go.mod | cut -d'/' -f2
 }
 
+function cmd_comp_create() {
+  local _name="${1?'_comp_name'}"
+  mkdir -p "$_name"
+  [ -f "$_name/go.mod" ] || (cd "$_name" && go mod init "github.com/infinity6-ai/gox/noopz")
+  go mod edit -go="$(i6dev util env I6_GO_VERSION)" "$_name/go.mod"
+}
+
 function cmd_comps_run() {
   local _k=""
   cmd_comp_list | while read _k; do
