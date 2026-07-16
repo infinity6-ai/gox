@@ -3,6 +3,7 @@ package errorz
 import (
 	"errors"
 	"fmt"
+	"strings"
 
 	"github.com/infinity6-ai/gox/commonz/runtimez"
 )
@@ -17,10 +18,33 @@ type structuredError struct {
 }
 
 // Error implements the error interface.
-// It ONLY returns the original error message, keeping logs clean.
+// It returns a detailed string with all structured fields.
 func (e *structuredError) Error() string {
-	return e.cause.Error()
+	var sb strings.Builder
+	if e.cause != nil {
+		sb.WriteString(e.cause.Error())
+	}
+
+	var details []string
+	if e.name != "" {
+		details = append(details, e.name)
+	}
+	if e.code != 0 {
+		details = append(details, fmt.Sprintf("code=%d", e.code))
+	}
+	if e.payload != "" {
+		details = append(details, fmt.Sprintf("payload=%s", e.payload))
+	}
+
+	if len(details) > 0 {
+		sb.WriteString(": (")
+		sb.WriteString(strings.Join(details, ", "))
+		sb.WriteString(")")
+	}
+
+	return sb.String()
 }
+
 
 // Unwrap allows errors.Is and errors.As to work perfectly.
 func (e *structuredError) Unwrap() error {
