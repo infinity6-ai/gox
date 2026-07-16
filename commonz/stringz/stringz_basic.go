@@ -11,7 +11,7 @@ import (
 
 // RemoveAccents removes diacritical marks (accents) from a string.
 // It uses Unicode normalization (NFD) to decompose characters and then
-// removes the non-spacing marks. For example, "résumé" becomes "resume".
+// removes the non-spacing marks. For example, "r\u00e9sum\u00e9" becomes "resume".
 func RemoveAccents(s string) string {
 	t := norm.NFD.String(s)
 	b := strings.Builder{}
