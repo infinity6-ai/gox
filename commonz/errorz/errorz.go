@@ -29,6 +29,7 @@ func (e *customError) StackTrace() string {
 // DetailedError is an error with a stack trace.
 type DetailedError interface {
 	error
+	Unwrap() error
 	StackTrace() string
 }
 
