@@ -15,6 +15,7 @@ type Data struct {
 	Name    string `json:"name,omitempty"`
 	Payload string `json:"payload,omitempty"`
 	Cause   string `json:"cause"`
+	Stack   string `json:"stack,omitempty"`
 }
 
 // structuredError holds the original error and the structured data.
@@ -55,9 +56,15 @@ func (e *structuredError) toCoolString() string {
 }
 
 // Error implements the error interface.
-// It returns a JSON string representation of the error's Data.
+// It returns a JSON string representation of the error's Data,
+// excluding the stack trace.
 func (e *structuredError) Error() string {
-	jsonData, err := json.Marshal(e.Data())
+	data := e.Data()
+	// Create a copy of Data and clear the stack for JSON marshaling in Error()
+	dataWithoutStack := *data
+	dataWithoutStack.Stack = ""
+
+	jsonData, err := json.Marshal(dataWithoutStack)
 	if err != nil {
 		// Fallback to a detailed string format if JSON marshaling fails.
 		return e.toCoolString()
@@ -86,6 +93,7 @@ func (e *structuredError) Data() *Data {
 		Name:    e.name,
 		Payload: e.payload,
 		Cause:   e.cause.Error(),
+		Stack:   e.stack, // Populate the stack field
 	}
 }
 
@@ -99,6 +107,7 @@ type StructuredError interface {
 	Payload() string
 	Data() *Data
 }
+
 
 func (e *structuredError) Code() int {
 	return e.code

@@ -18,6 +18,7 @@ func assertErrorJSON(t *testing.T, err error, expectedData errorz.Data) {
 	e := json.Unmarshal([]byte(err.Error()), &resultData)
 	assert.NoError(t, e, "Error() output should be valid JSON")
 	assert.Equal(t, expectedData, resultData)
+	assert.Empty(t, resultData.Stack, "Stack field should be empty in Error() JSON output") // Explicit check
 }
 
 func TestUnitDataMethod(t *testing.T) {
@@ -25,13 +26,16 @@ func TestUnitDataMethod(t *testing.T) {
 	structuredErr := errorz.Detail(500, "DBError", "payload", originalErr)
 
 	data := structuredErr.Data()
+	// Stack should be present when accessed via Data()
 	expectedData := &errorz.Data{
 		Code:    500,
 		Name:    "DBError",
 		Payload: "payload",
 		Cause:   "original cause",
+		Stack:   structuredErr.StackTrace(), // Expect stack here
 	}
 	assert.Equal(t, expectedData, data)
+	assert.NotEmpty(t, data.Stack, "Stack should be present in Data() output")
 }
 
 func TestUnitDetail(t *testing.T) {
@@ -44,6 +48,7 @@ func TestUnitDetail(t *testing.T) {
 		Name:    "DBError",
 		Payload: `{"host":"localhost"}`,
 		Cause:   "database connection failed",
+		Stack:   "", // Stack should be empty in Error() JSON
 	})
 	assert.NotEmpty(t, structuredErr.StackTrace())
 	assert.Equal(t, 500, structuredErr.Code())
@@ -73,6 +78,7 @@ func TestUnitDetailf(t *testing.T) {
 		Name:    "NotFound",
 		Payload: `{"id":123}`,
 		Cause:   "user 123 not found",
+		Stack:   "", // Stack should be empty in Error() JSON
 	})
 	assert.NotEmpty(t, structuredErr.StackTrace())
 	assert.Equal(t, 404, structuredErr.Code())
@@ -90,7 +96,7 @@ func TestUnitErrorJSONFormatting(t *testing.T) {
 
 	t.Run("all fields", func(t *testing.T) {
 		err := errorz.Detail(500, "TestName", "payload", baseErr)
-		assertErrorJSON(t, err, errorz.Data{Code: 500, Name: "TestName", Payload: "payload", Cause: "base error"})
+		assertErrorJSON(t, err, errorz.Data{Code: 500, Name: "TestName", Payload: "payload", Cause: "base error", Stack: ""})
 	})
 
 	t.Run("no optional fields", func(t *testing.T) {
