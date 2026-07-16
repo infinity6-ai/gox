@@ -173,3 +173,32 @@ func StackTrace(err error) string {
 
 	return ""
 }
+
+// Business sanitizes an error for business-level display.
+// If the error is not a StructuredError, it wraps it as a generic internal error.
+// If it's a StructuredError marked as business-facing, it returns it as is.
+// If it's a StructuredError but NOT business-facing, it hides internal details
+// by creating a new StructuredError with a generic "InternalError" message,
+// retaining the original code and name if present.
+func Business(err error) StructuredError {
+	if err == nil {
+		return nil
+	}
+
+	var se StructuredError
+	if !errors.As(err, &se) {
+		// Not a StructuredError, wrap as generic internal error.
+		return Detail(500, "InternalError", "", false, err)
+	}
+
+	if se.Business() {
+		// Already a business-facing error, return as is.
+		return se
+	}
+
+	// StructuredError but not business-facing, hide internal details.
+	// We retain Code and Name if available from the original StructuredError,
+	// but replace the cause with a generic message and mark as non-business.
+	return Detail(se.Code(), se.Name(), "", false, errors.New("InternalError"))
+}
+
