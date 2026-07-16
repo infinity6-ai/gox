@@ -1,7 +1,6 @@
 package errorz_test
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
 	"strings"
@@ -10,16 +9,6 @@ import (
 	"github.com/infinity6-ai/gox/commonz/errorz"
 	"github.com/stretchr/testify/assert"
 )
-
-// assertErrorJSON is a helper to verify the JSON output of the Error() method.
-func assertErrorJSON(t *testing.T, err error, expectedData errorz.Data) {
-	t.Helper()
-	var resultData errorz.Data
-	e := json.Unmarshal([]byte(err.Error()), &resultData)
-	assert.NoError(t, e, "Error() output should be valid JSON")
-	assert.Equal(t, expectedData, resultData)
-	assert.Empty(t, resultData.Stack, "Stack field should be empty in Error() JSON output")
-}
 
 func TestUnitDataMethod(t *testing.T) {
 	originalErr := errors.New("original cause")
@@ -43,14 +32,7 @@ func TestUnitDetail(t *testing.T) {
 	structuredErr := errorz.Detail(500, "DBError", `{"host":"localhost"}`, true, originalErr)
 
 	assert.NotNil(t, structuredErr)
-	assertErrorJSON(t, structuredErr, errorz.Data{
-		Code:     500,
-		Name:     "DBError",
-		Payload:  `{"host":"localhost"}`,
-		Business: true,
-		Cause:    "database connection failed",
-		Stack:    "",
-	})
+	assert.Equal(t, `database connection failed: (DBError, code=500, payload={"host":"localhost"}, business=true)`, structuredErr.Error())
 	assert.NotEmpty(t, structuredErr.StackTrace())
 	assert.Equal(t, 500, structuredErr.Code())
 	assert.Equal(t, "DBError", structuredErr.Name())
@@ -75,14 +57,7 @@ func TestUnitDetailf(t *testing.T) {
 	structuredErr := errorz.Detailf(404, "NotFound", `{"id":123}`, false, "user %d not found", 123)
 
 	assert.NotNil(t, structuredErr)
-	// Since Business is false, it should be omitted by omitempty
-	assertErrorJSON(t, structuredErr, errorz.Data{
-		Code:    404,
-		Name:    "NotFound",
-		Payload: `{"id":123}`,
-		Cause:   "user 123 not found",
-		Stack:   "",
-	})
+	assert.Equal(t, `user 123 not found: (NotFound, code=404, payload={"id":123})`, structuredErr.Error())
 	assert.NotEmpty(t, structuredErr.StackTrace())
 	assert.Equal(t, 404, structuredErr.Code())
 	assert.Equal(t, "NotFound", structuredErr.Name())
@@ -95,24 +70,25 @@ func TestUnitDetailf(t *testing.T) {
 	assert.Nil(t, errors.Unwrap(cause))
 }
 
-func TestUnitErrorJSONFormatting(t *testing.T) {
+func TestUnitErrorFormatting(t *testing.T) {
 	baseErr := errors.New("base error")
 
 	t.Run("all fields", func(t *testing.T) {
 		err := errorz.Detail(500, "TestName", "payload", true, baseErr)
-		assertErrorJSON(t, err, errorz.Data{Code: 500, Name: "TestName", Payload: "payload", Business: true, Cause: "base error", Stack: ""})
+		expected := "base error: (TestName, code=500, payload=payload, business=true)"
+		assert.Equal(t, expected, err.Error())
 	})
 
 	t.Run("no optional fields", func(t *testing.T) {
 		err := errorz.Detail(0, "", "", false, baseErr)
-		expectedJSON := `{"cause":"base error"}`
-		assert.JSONEq(t, expectedJSON, err.Error())
+		expected := "base error"
+		assert.Equal(t, expected, err.Error())
 	})
 
 	t.Run("only business", func(t *testing.T) {
 		err := errorz.Detail(0, "", "", true, baseErr)
-		expectedJSON := `{"business":true,"cause":"base error"}`
-		assert.JSONEq(t, expectedJSON, err.Error())
+		expected := "base error: (business=true)"
+		assert.Equal(t, expected, err.Error())
 	})
 }
 

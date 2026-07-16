@@ -1,7 +1,6 @@
 package errorz
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
 	"strings"
@@ -29,25 +28,25 @@ type structuredError struct {
 	business bool
 }
 
-// toCoolString returns a detailed string with all structured fields.
-// This is used as a fallback for Error() if JSON marshaling fails.
-func toCoolString(data *Data) string { // Changed from method to function
+// Error implements the error interface.
+// It returns a detailed, human-readable string with all structured fields.
+func (e *structuredError) Error() string {
 	var sb strings.Builder
-	if data.Cause != "" {
-		sb.WriteString(data.Cause)
+	if e.cause != nil {
+		sb.WriteString(e.cause.Error())
 	}
 
 	var details []string
-	if data.Name != "" {
-		details = append(details, data.Name)
+	if e.name != "" {
+		details = append(details, e.name)
 	}
-	if data.Code != 0 {
-		details = append(details, fmt.Sprintf("code=%d", data.Code))
+	if e.code != 0 {
+		details = append(details, fmt.Sprintf("code=%d", e.code))
 	}
-	if data.Payload != "" {
-		details = append(details, fmt.Sprintf("payload=%s", data.Payload))
+	if e.payload != "" {
+		details = append(details, fmt.Sprintf("payload=%s", e.payload))
 	}
-	if data.Business {
+	if e.business {
 		details = append(details, "business=true")
 	}
 
@@ -58,20 +57,6 @@ func toCoolString(data *Data) string { // Changed from method to function
 	}
 
 	return sb.String()
-}
-
-// Error implements the error interface.
-// It returns a JSON string representation of the error's Data,
-// excluding the stack trace.
-func (e *structuredError) Error() string {
-	data := e.Data()
-	data.Stack = ""
-
-	jsonData, err := json.Marshal(data)
-	if err != nil {
-		return toCoolString(data) // Call the new function
-	}
-	return string(jsonData)
 }
 
 // Unwrap allows errors.Is and errors.As to work perfectly.
@@ -201,4 +186,3 @@ func Business(err error) StructuredError {
 	// but replace the cause with a generic message and mark as non-business.
 	return Detail(se.Code(), se.Name(), "", false, errors.New("InternalError"))
 }
-
