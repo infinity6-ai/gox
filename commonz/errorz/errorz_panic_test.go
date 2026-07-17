@@ -86,3 +86,56 @@ func TestUnitCheckWithStructuredError(t *testing.T) {
 		errorz.Check(structuredErr)
 	})
 }
+
+func TestUnitUnpanicNoPanic(t *testing.T) {
+	err := errorz.Unpanic(func() {})
+	assert.Nil(t, err)
+}
+
+func TestUnitUnpanicWithStandardError(t *testing.T) {
+	stdErr := errors.New("standard error")
+	err := errorz.Unpanic(func() {
+		panic(stdErr)
+	})
+	assert.NotNil(t, err)
+	assert.Equal(t, "PanicRecoveredError", err.Name())
+	unwrappedErr := errors.Unwrap(err)
+	assert.Equal(t, stdErr, unwrappedErr)
+}
+
+func TestUnitUnpanicWithStructuredError(t *testing.T) {
+	structuredErr := errorz.Detail(500, "TestError", "", false, errors.New("test"))
+	err := errorz.Unpanic(func() {
+		panic(structuredErr)
+	})
+	assert.NotNil(t, err)
+	assert.Equal(t, "PanicRecoveredError", err.Name())
+	unwrappedErr := errors.Unwrap(err)
+	assert.Equal(t, structuredErr, unwrappedErr)
+}
+
+func TestUnitUnpanicWithString(t *testing.T) {
+	err := errorz.Unpanic(func() {
+		panic("panic string")
+	})
+	assert.NotNil(t, err)
+	assert.Equal(t, "PanicRecoveredError", err.Name())
+	unwrappedErr := errors.Unwrap(err)
+
+	pe, ok := unwrappedErr.(*errorz.PanicVal)
+	assert.True(t, ok)
+	assert.Equal(t, "panic string", pe.Value())
+}
+
+func TestUnitUnpanicWithNil(t *testing.T) {
+	err := errorz.Unpanic(func() {
+		panic(nil)
+	})
+	assert.NotNil(t, err)
+	assert.Equal(t, "PanicRecoveredError", err.Name())
+	unwrappedErr := errors.Unwrap(err)
+
+	pe, ok := unwrappedErr.(*errorz.PanicVal)
+	assert.True(t, ok)
+	assert.Nil(t, pe.Value())
+}
