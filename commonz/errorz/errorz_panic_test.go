@@ -56,9 +56,19 @@ func TestUnitCheckWithNilError(t *testing.T) {
 
 func TestUnitCheckWithStandardError(t *testing.T) {
 	stdErr := errors.New("standard error")
-	assert.PanicsWithValue(t, stdErr, func() {
+
+	var recovered any
+	func() {
+		defer func() {
+			recovered = recover()
+		}()
 		errorz.Check(stdErr)
-	})
+	}()
+
+	assert.NotNil(t, recovered)
+	se, ok := recovered.(errorz.StructuredError)
+	assert.True(t, ok)
+	assert.Equal(t, stdErr, errors.Unwrap(se))
 }
 
 func TestUnitCheckWithStructuredError(t *testing.T) {
