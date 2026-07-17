@@ -70,26 +70,25 @@ func TestUnitDetailf(t *testing.T) {
 	assert.Nil(t, errors.Unwrap(cause))
 }
 
-func TestUnitErrorFormatting(t *testing.T) {
+func TestUnitErrorFormattingAllFields(t *testing.T) {
 	baseErr := errors.New("base error")
+	err := errorz.Detail(500, "TestName", "payload", true, baseErr)
+	expected := "base error: (TestName, code=500, payload=payload, business=true)"
+	assert.Equal(t, expected, err.Error())
+}
 
-	t.Run("all fields", func(t *testing.T) {
-		err := errorz.Detail(500, "TestName", "payload", true, baseErr)
-		expected := "base error: (TestName, code=500, payload=payload, business=true)"
-		assert.Equal(t, expected, err.Error())
-	})
+func TestUnitErrorFormattingNoOptionalFields(t *testing.T) {
+	baseErr := errors.New("base error")
+	err := errorz.Detail(0, "", "", false, baseErr)
+	expected := "base error"
+	assert.Equal(t, expected, err.Error())
+}
 
-	t.Run("no optional fields", func(t *testing.T) {
-		err := errorz.Detail(0, "", "", false, baseErr)
-		expected := "base error"
-		assert.Equal(t, expected, err.Error())
-	})
-
-	t.Run("only business", func(t *testing.T) {
-		err := errorz.Detail(0, "", "", true, baseErr)
-		expected := "base error: (business=true)"
-		assert.Equal(t, expected, err.Error())
-	})
+func TestUnitErrorFormattingOnlyBusiness(t *testing.T) {
+	baseErr := errors.New("base error")
+	err := errorz.Detail(0, "", "", true, baseErr)
+	expected := "base error: (business=true)"
+	assert.Equal(t, expected, err.Error())
 }
 
 // helper function to create a deeper call stack for stack trace testing
