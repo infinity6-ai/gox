@@ -101,6 +101,7 @@ func TestUnitUnpanicWithStandardError(t *testing.T) {
 	assert.NotNil(t, err)
 	assert.Equal(t, "PanicRecoveredError", err.Name())
 	assert.NotEmpty(t, err.StackTrace())
+	assert.Contains(t, err.StackTrace(), "TestUnitUnpanicWithStandardError")
 	unwrappedErr := errors.Unwrap(err)
 	assert.Equal(t, stdErr, unwrappedErr)
 }
@@ -113,6 +114,7 @@ func TestUnitUnpanicWithStructuredError(t *testing.T) {
 	assert.NotNil(t, err)
 	assert.Equal(t, "PanicRecoveredError", err.Name())
 	assert.NotEmpty(t, err.StackTrace())
+	assert.Contains(t, err.StackTrace(), "TestUnitUnpanicWithStructuredError")
 	unwrappedErr := errors.Unwrap(err)
 	assert.Equal(t, structuredErr, unwrappedErr)
 }
@@ -124,6 +126,7 @@ func TestUnitUnpanicWithString(t *testing.T) {
 	assert.NotNil(t, err)
 	assert.Equal(t, "PanicRecoveredError", err.Name())
 	assert.NotEmpty(t, err.StackTrace())
+	assert.Contains(t, err.StackTrace(), "TestUnitUnpanicWithString")
 	unwrappedErr := errors.Unwrap(err)
 
 	pe, ok := unwrappedErr.(*errorz.PanicVal)
@@ -138,6 +141,7 @@ func TestUnitUnpanicWithNil(t *testing.T) {
 	assert.NotNil(t, err)
 	assert.Equal(t, "PanicRecoveredError", err.Name())
 	assert.NotEmpty(t, err.StackTrace())
+	assert.Contains(t, err.StackTrace(), "TestUnitUnpanicWithNil")
 	unwrappedErr := errors.Unwrap(err)
 
 	_, ok := unwrappedErr.(*runtime.PanicNilError)
