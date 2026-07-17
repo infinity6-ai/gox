@@ -136,3 +136,56 @@ func TestUnitStackTraceFunction_WithNilError(t *testing.T) {
 	stack := errorz.StackTrace(nil)
 	assert.Empty(t, stack)
 }
+
+func TestUnitErrorsAsDirectStructuredError(t *testing.T) {
+	se := errorz.Detail(100, "DirectError", "", false, errors.New("base"))
+	var target errorz.StructuredError
+	assert.True(t, errors.As(se, &target))
+	assert.Equal(t, se, target)
+}
+
+func TestUnitErrorsAsStructuredErrorWrappedOnce(t *testing.T) {
+	se := errorz.Detail(101, "WrappedOnce", "", false, errors.New("base"))
+	wrappedErr := fmt.Errorf("layer 1: %w", se)
+	var target errorz.StructuredError
+	assert.True(t, errors.As(wrappedErr, &target))
+	assert.Equal(t, se, target)
+}
+
+func TestUnitErrorsAsStructuredErrorWrappedMultipleTimes(t *testing.T) {
+	se := errorz.Detail(102, "WrappedMultiple", "", false, errors.New("base"))
+	wrappedErr := fmt.Errorf("layer 1: %w", se)
+	doubleWrappedErr := fmt.Errorf("layer 2: %w", wrappedErr)
+	tripleWrappedErr := fmt.Errorf("layer 3: %w", doubleWrappedErr)
+
+	var target errorz.StructuredError
+	assert.True(t, errors.As(tripleWrappedErr, &target))
+	assert.Equal(t, se, target)
+}
+
+func TestUnitErrorsAsErrorChainWithoutStructuredError(t *testing.T) {
+	err := fmt.Errorf("layer 1: %w", errors.New("standard error"))
+	var target errorz.StructuredError
+	assert.False(t, errors.As(err, &target))
+	assert.Nil(t, target)
+}
+
+func TestUnitErrorsAsCheckingForDifferentConcreteErrorTypeWithStructuredErrorInChain(t *testing.T) {
+	type customError struct{ error }
+	baseErr := customError{errors.New("custom base")}
+	se := errorz.Detail(103, "WithCustom", "", false, baseErr)
+
+	var targetCustom customError
+	assert.True(t, errors.As(se, &targetCustom))
+	assert.Equal(t, baseErr, targetCustom)
+
+	var targetStructured errorz.StructuredError
+	assert.True(t, errors.As(se, &targetStructured))
+	assert.Equal(t, se, targetStructured)
+}
+
+func TestUnitErrorsAsWithNilError(t *testing.T) {
+	var target errorz.StructuredError
+	assert.False(t, errors.As(nil, &target))
+	assert.Nil(t, target)
+}
