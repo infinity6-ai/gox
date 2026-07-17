@@ -9,9 +9,18 @@ import (
 )
 
 func TestUnitPanicWithNilError(t *testing.T) {
-	assert.NotPanics(t, func() {
+	var recovered any
+	func() {
+		defer func() {
+			recovered = recover()
+		}()
 		errorz.Panic(nil)
-	})
+	}()
+
+	assert.NotNil(t, recovered)
+	se, ok := recovered.(errorz.StructuredError)
+	assert.True(t, ok)
+	assert.Equal(t, "NulPanic", se.Name())
 }
 
 func TestUnitPanicWithStandardError(t *testing.T) {

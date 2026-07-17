@@ -1,6 +1,6 @@
 package errorz
 
-
+import "errors"
 
 // Panic panics with a StructuredError.
 // If err is already a StructuredError, it's panicked directly.
@@ -8,7 +8,7 @@ package errorz
 // If err is nil, Panic does nothing.
 func Panic(err error) {
 	if err == nil {
-		return
+		err = Detail(500, "NulPanic", "", false, errors.New("panic with nil not allowed"))
 	}
 	err = As(err)
 	panic(err)
