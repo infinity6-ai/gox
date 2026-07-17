@@ -184,7 +184,24 @@ func TestUnitErrorsAsCheckingForDifferentConcreteErrorTypeWithStructuredErrorInC
 }
 
 func TestUnitErrorsAsWithNilError(t *testing.T) {
-	var target errorz.StructuredError
-	assert.False(t, errors.As(nil, &target))
-	assert.Nil(t, target)
+	ret := errorz.As(nil)
+	assert.Nil(t, ret)
+}
+
+func TestUnitAsWithStandardError(t *testing.T) {
+	stdErr := errors.New("standard error")
+	ret := errorz.As(stdErr)
+	assert.NotNil(t, ret)
+	assert.Equal(t, "InternalError", ret.Name())
+	assert.Equal(t, 500, ret.Code())
+	assert.Equal(t, stdErr, errors.Unwrap(ret))
+}
+
+func TestUnitAsWithStructuredError(t *testing.T) {
+	structuredErr := errorz.Detail(200, "SomeStructuredError", "payload", true, errors.New("base"))
+	ret := errorz.As(structuredErr)
+	assert.NotNil(t, ret)
+	assert.Equal(t, structuredErr, ret)
+	assert.Equal(t, 200, ret.Code())
+	assert.Equal(t, "SomeStructuredError", ret.Name())
 }

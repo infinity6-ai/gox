@@ -150,10 +150,14 @@ func StackTrace(err error) string {
 }
 
 func As(err error) StructuredError {
-	var ret StructuredError
-	ok := errors.As(err, &ret)
-	if !ok {
-		ret = Detail(500, "InternalError", "", false, err)
+	if err == nil {
+		return nil
 	}
-	return ret
+	var ret StructuredError
+	if errors.As(err, &ret) {
+		return ret
+	}
+	// If it's not a StructuredError, wrap it into a generic InternalError.
+	// This ensures that 'As' always returns a StructuredError if the input 'err' is not nil.
+	return Detail(500, "InternalError", "", false, err)
 }
