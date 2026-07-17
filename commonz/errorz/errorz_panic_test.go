@@ -141,7 +141,8 @@ func TestUnitUnpanicWithString(t *testing.T) {
 
 func TestUnitUnpanicWithNil(t *testing.T) {
 	err := errorz.Unpanic(func() {
-		panic(nil)
+		// panic(nil) causes a warning in newer Go versions
+		panic(func() any { return nil }())
 	})
 	assert.NotNil(t, err)
 	assert.Equal(t, "PanicRecoveredError", err.Name())
