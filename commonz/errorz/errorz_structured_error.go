@@ -148,3 +148,12 @@ func StackTrace(err error) string {
 
 	return ""
 }
+
+func As(err error) StructuredError {
+	var ret StructuredError
+	ok := errors.As(err, &ret)
+	if !ok {
+		ret = Detail(500, "InternalError", "", false, err)
+	}
+	return ret
+}
