@@ -130,7 +130,8 @@ func TestUnitUnpanicWithString(t *testing.T) {
 
 func TestUnitUnpanicWithNil(t *testing.T) {
 	err := errorz.Unpanic(func() {
-		panic(nil)
+		x := func() any { return nil }()
+		panic(x)
 	})
 	assert.NotNil(t, err)
 	assert.Equal(t, "PanicRecoveredError", err.Name())
