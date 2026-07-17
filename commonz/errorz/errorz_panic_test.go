@@ -93,15 +93,20 @@ func TestUnitUnpanicNoPanic(t *testing.T) {
 	assert.Nil(t, err)
 }
 
+func myCustomPanicWithFunc(v any) {
+	panic(v)
+}
+
 func TestUnitUnpanicWithStandardError(t *testing.T) {
 	stdErr := errors.New("standard error")
 	err := errorz.Unpanic(func() {
-		panic(stdErr)
+		myCustomPanicWithFunc(stdErr)
 	})
 	assert.NotNil(t, err)
 	assert.Equal(t, "PanicRecoveredError", err.Name())
 	assert.NotEmpty(t, err.StackTrace())
 	assert.Contains(t, err.StackTrace(), "TestUnitUnpanicWithStandardError")
+	assert.Contains(t, err.StackTrace(), "myCustomPanicWithFunc")
 	unwrappedErr := errors.Unwrap(err)
 	assert.Equal(t, stdErr, unwrappedErr)
 }
