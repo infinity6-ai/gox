@@ -2,7 +2,6 @@ package errorz
 
 import (
 	"errors"
-	"runtime"
 )
 
 // Panic panics with a StructuredError.
@@ -50,16 +49,12 @@ type PanicError interface {
 }
 
 func Unpanic(fn func()) (ret StructuredError) {
+	didPanic := true
 	defer func() {
-		recovered := recover()
-		if recovered == nil {
+		if !didPanic {
 			return
 		}
-		// In Go 1.21+, panic(nil) is recovered as a *runtime.PanicNilError.
-		// We normalize this to a nil value to maintain consistent behavior.
-		if _, ok := recovered.(*runtime.PanicNilError); ok {
-			recovered = nil
-		}
+		recovered := recover()
 		err, ok := recovered.(error)
 		if !ok {
 			err = &PanicVal{value: recovered}
@@ -68,5 +63,6 @@ func Unpanic(fn func()) (ret StructuredError) {
 	}()
 
 	fn()
+	didPanic = false
 	return
 }

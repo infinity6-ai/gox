@@ -2,6 +2,7 @@ package errorz_test
 
 import (
 	"errors"
+	"runtime"
 	"testing"
 
 	"github.com/infinity6-ai/gox/commonz/errorz"
@@ -135,7 +136,6 @@ func TestUnitUnpanicWithNil(t *testing.T) {
 	assert.Equal(t, "PanicRecoveredError", err.Name())
 	unwrappedErr := errors.Unwrap(err)
 
-	pe, ok := unwrappedErr.(*errorz.PanicVal)
-	assert.True(t, ok)
-	assert.Nil(t, pe.Value())
+	_, ok := unwrappedErr.(*runtime.PanicNilError)
+	assert.True(t, ok, "Expected unwrapped error to be *runtime.PanicNilError")
 }
