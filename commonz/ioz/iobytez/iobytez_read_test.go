@@ -19,6 +19,14 @@ func assertRead(t *testing.T, ctx context.Context, r io.Reader, opts *iobytez.Op
 	assert.Equal(t, expectedBuf, string(opts.Out))
 }
 
+func assertCleanedOpts(t *testing.T, opts *iobytez.Options, expectedLen, expectedCap int) {
+	t.Helper()
+
+	opts.Clean()
+	assert.Equal(t, expectedLen, len(opts.Out))
+	assert.Equal(t, expectedCap, cap(opts.Out))
+}
+
 func TestUnitRead_Exact(t *testing.T) {
 	t.Parallel()
 
@@ -27,12 +35,11 @@ func TestUnitRead_Exact(t *testing.T) {
 	opts := &iobytez.Options{Min: 5, Max: 5}
 	assertRead(t, ctx, r, opts, "12345", nil)
 
-	opts.Clean()
-	assert.Equal(t, "", string(opts.Out))
-	assert.Equal(t, 100, cap(opts.Out))
+	assertCleanedOpts(t, opts, 0, 100)
+
 	assertRead(t, ctx, r, opts, "67890", nil)
 
-	opts.Clean()
+	assertCleanedOpts(t, opts, 0, 100)
 	assertRead(t, ctx, r, opts, "", io.EOF)
 }
 
@@ -44,9 +51,7 @@ func TestUnitRead_MinMax(t *testing.T) {
 		Min: 5,
 		Max: 8,
 	}
-	err := iobytez.Read(t.Context(), r, opts)
-	require.NoError(t, err)
-	assert.Len(t, opts.Out, 8)
+	assertRead(t, t.Context(), r, opts, "12345678", nil)
 }
 
 func TestUnitRead_UnexpectedEOF(t *testing.T) {
@@ -57,9 +62,7 @@ func TestUnitRead_UnexpectedEOF(t *testing.T) {
 		Min: 5,
 		Max: 10,
 	}
-	err := iobytez.Read(t.Context(), r, opts)
-	require.ErrorIs(t, err, io.ErrUnexpectedEOF)
-	assert.Equal(t, "123", string(opts.Out))
+	assertRead(t, t.Context(), r, opts, "123", io.ErrUnexpectedEOF)
 }
 
 func TestUnitRead_EOFSuccess(t *testing.T) {
@@ -70,9 +73,7 @@ func TestUnitRead_EOFSuccess(t *testing.T) {
 		Min: 5,
 		Max: 10,
 	}
-	err := iobytez.Read(t.Context(), r, opts)
-	require.NoError(t, err)
-	assert.Equal(t, "123456", string(opts.Out))
+	assertRead(t, t.Context(), r, opts, "123456", nil)
 }
 
 func TestUnitRead_EOFAtBeginning(t *testing.T) {
@@ -83,9 +84,7 @@ func TestUnitRead_EOFAtBeginning(t *testing.T) {
 		Min: 1,
 		Max: 10,
 	}
-	err := iobytez.Read(t.Context(), r, opts)
-	require.ErrorIs(t, err, io.EOF)
-	assert.Empty(t, opts.Out)
+	assertRead(t, t.Context(), r, opts, "", io.EOF)
 }
 
 func TestUnitRead_NilOut(t *testing.T) {
@@ -97,7 +96,5 @@ func TestUnitRead_NilOut(t *testing.T) {
 		Max: 5,
 		Out: nil,
 	}
-	err := iobytez.Read(t.Context(), r, opts)
-	require.NoError(t, err)
-	assert.Equal(t, "12345", string(opts.Out))
+	assertRead(t, t.Context(), r, opts, "12345", nil)
 }
