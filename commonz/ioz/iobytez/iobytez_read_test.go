@@ -1,21 +1,26 @@
-package iobytez
+package iobytez_test
 
 import (
 	"context"
 	"io"
 	"strings"
 	"testing"
+
+	i "github.com/infinity6-ai/gox/commonz/ioz/iobytez"
 )
 
 func TestUnitRead_ReadAll(t *testing.T) {
 	ctx := context.Background()
 
-	opts := &Options{}
+	opts := &i.Options{}
 	data := "hello world"
 	r := strings.NewReader(data)
-	err := Read(ctx, r, opts)
+	n, err := i.Read(ctx, r, opts)
 	if err != nil {
 		t.Fatal(err)
+	}
+	if n != len(data) {
+		t.Errorf("expected to read %d bytes, got %d", len(data), n)
 	}
 	if string(opts.Out) != data {
 		t.Errorf("expected %q, got %q", data, string(opts.Out))
@@ -26,14 +31,17 @@ func TestUnitRead_WithInitialData(t *testing.T) {
 	ctx := context.Background()
 
 	initial := "preexisting "
-	opts := &Options{
+	opts := &i.Options{
 		Out: []byte(initial),
 	}
 	data := "hello world"
 	r := strings.NewReader(data)
-	err := Read(ctx, r, opts)
+	n, err := i.Read(ctx, r, opts)
 	if err != nil {
 		t.Fatal(err)
+	}
+	if n != len(data) {
+		t.Errorf("expected to read %d bytes, got %d", len(data), n)
 	}
 	expected := initial + data
 	if string(opts.Out) != expected {
@@ -44,12 +52,15 @@ func TestUnitRead_WithInitialData(t *testing.T) {
 func TestUnitRead_WithMin(t *testing.T) {
 	ctx := context.Background()
 
-	opts := &Options{Min: 5}
+	opts := &i.Options{Min: 5}
 	data := "hello"
 	r := strings.NewReader(data)
-	err := Read(ctx, r, opts)
+	n, err := i.Read(ctx, r, opts)
 	if err != nil {
 		t.Fatal(err)
+	}
+	if n != len(data) {
+		t.Errorf("expected to read %d bytes, got %d", len(data), n)
 	}
 	if string(opts.Out) != data {
 		t.Errorf("expected %q, got %q", data, string(opts.Out))
@@ -59,10 +70,10 @@ func TestUnitRead_WithMin(t *testing.T) {
 func TestUnitRead_MinNotMet(t *testing.T) {
 	ctx := context.Background()
 
-	opts := &Options{Min: 10}
+	opts := &i.Options{Min: 10}
 	data := "hello"
 	r := strings.NewReader(data)
-	err := Read(ctx, r, opts)
+	_, err := i.Read(ctx, r, opts)
 	if err != io.ErrUnexpectedEOF {
 		t.Errorf("expected io.ErrUnexpectedEOF, got %v", err)
 	}
@@ -71,12 +82,15 @@ func TestUnitRead_MinNotMet(t *testing.T) {
 func TestUnitRead_WithMax(t *testing.T) {
 	ctx := context.Background()
 
-	opts := &Options{Max: 5}
+	opts := &i.Options{Max: 5}
 	data := "hello world"
 	r := strings.NewReader(data)
-	err := Read(ctx, r, opts)
+	n, err := i.Read(ctx, r, opts)
 	if err != nil {
 		t.Fatal(err)
+	}
+	if n != 5 {
+		t.Errorf("expected to read 5 bytes, got %d", n)
 	}
 	if string(opts.Out) != "hello" {
 		t.Errorf("expected %q, got %q", "hello", string(opts.Out))
@@ -86,12 +100,15 @@ func TestUnitRead_WithMax(t *testing.T) {
 func TestUnitRead_WithMinAndMax(t *testing.T) {
 	ctx := context.Background()
 
-	opts := &Options{Min: 5, Max: 10}
+	opts := &i.Options{Min: 5, Max: 10}
 	data := "hello world this is too long"
 	r := strings.NewReader(data)
-	err := Read(ctx, r, opts)
+	n, err := i.Read(ctx, r, opts)
 	if err != nil {
 		t.Fatal(err)
+	}
+	if n != 10 {
+		t.Errorf("expected to read 10 bytes, got %d", n)
 	}
 	if string(opts.Out) != "hello worl" {
 		t.Errorf("expected %q, got %q", "hello worl", string(opts.Out))
@@ -101,12 +118,15 @@ func TestUnitRead_WithMinAndMax(t *testing.T) {
 func TestUnitRead_EmptyReaderReturnsEOF(t *testing.T) {
 	ctx := context.Background()
 
-	opts := &Options{}
+	opts := &i.Options{}
 	data := ""
 	r := strings.NewReader(data)
-	err := Read(ctx, r, opts)
+	n, err := i.Read(ctx, r, opts)
 	if err != io.EOF {
 		t.Errorf("expected io.EOF, got %v", err)
+	}
+	if n != 0 {
+		t.Errorf("expected to read 0 bytes, got %d", n)
 	}
 	if len(opts.Out) != 0 {
 		t.Errorf("expected empty buffer, got %q", string(opts.Out))
@@ -121,10 +141,13 @@ func TestUnitRead_ReadInChunksUntilEOF(t *testing.T) {
 	var totalReadBytes []byte
 
 	// First chunk
-	opts1 := &Options{Max: 10}
-	err := Read(ctx, r, opts1)
+	opts1 := &i.Options{Max: 10}
+	n1, err := i.Read(ctx, r, opts1)
 	if err != nil {
 		t.Fatalf("unexpected error on first read: %v", err)
+	}
+	if n1 != 10 {
+		t.Errorf("expected to read 10 bytes on first chunk, got %d", n1)
 	}
 	expected1 := "abcdefghij"
 	if string(opts1.Out) != expected1 {
@@ -133,10 +156,13 @@ func TestUnitRead_ReadInChunksUntilEOF(t *testing.T) {
 	totalReadBytes = append(totalReadBytes, opts1.Out...)
 
 	// Second chunk
-	opts2 := &Options{Max: 10}
-	err = Read(ctx, r, opts2)
+	opts2 := &i.Options{Max: 10}
+	n2, err := i.Read(ctx, r, opts2)
 	if err != nil {
 		t.Fatalf("unexpected error on second read: %v", err)
+	}
+	if n2 != 10 {
+		t.Errorf("expected to read 10 bytes on second chunk, got %d", n2)
 	}
 	expected2 := "klmnopqrst"
 	if string(opts2.Out) != expected2 {
@@ -145,10 +171,13 @@ func TestUnitRead_ReadInChunksUntilEOF(t *testing.T) {
 	totalReadBytes = append(totalReadBytes, opts2.Out...)
 
 	// Third chunk (remaining data)
-	opts3 := &Options{Max: 10}
-	err = Read(ctx, r, opts3)
+	opts3 := &i.Options{Max: 10}
+	n3, err := i.Read(ctx, r, opts3)
 	if err != nil {
 		t.Fatalf("unexpected error on third read: %v", err)
+	}
+	if n3 != 6 {
+		t.Errorf("expected to read 6 bytes on third chunk, got %d", n3)
 	}
 	expected3 := "uvwxyz"
 	if string(opts3.Out) != expected3 {
@@ -157,10 +186,13 @@ func TestUnitRead_ReadInChunksUntilEOF(t *testing.T) {
 	totalReadBytes = append(totalReadBytes, opts3.Out...)
 
 	// Fourth read (should be EOF)
-	opts4 := &Options{Max: 10}
-	err = Read(ctx, r, opts4)
+	opts4 := &i.Options{Max: 10}
+	n4, err := i.Read(ctx, r, opts4)
 	if err != io.EOF {
 		t.Errorf("expected io.EOF on fourth read, got %v", err)
+	}
+	if n4 != 0 {
+		t.Errorf("expected to read 0 bytes on fourth read, got %d", n4)
 	}
 	if len(opts4.Out) != 0 {
 		t.Errorf("expected empty buffer on fourth read, got %q", string(opts4.Out))
@@ -175,10 +207,10 @@ func TestUnitRead_ReadInChunksUntilEOF(t *testing.T) {
 func TestUnitRead_EmptyReaderWithMin(t *testing.T) {
 	ctx := context.Background()
 
-	opts := &Options{Min: 1}
+	opts := &i.Options{Min: 1}
 	data := ""
 	r := strings.NewReader(data)
-	err := Read(ctx, r, opts)
+	_, err := i.Read(ctx, r, opts)
 	if err != io.ErrUnexpectedEOF {
 		t.Errorf("expected io.ErrUnexpectedEOF, got %v", err)
 	}

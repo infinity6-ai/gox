@@ -24,10 +24,10 @@ func (o *Options) grow(size int) []byte {
 	return o.Out[oldLen:]
 }
 
-func Read(ctx context.Context, r io.Reader, opts *Options) error {
+func Read(ctx context.Context, r io.Reader, opts *Options) (int, error) {
 	select {
 	case <-ctx.Done():
-		return ctx.Err()
+		return 0, ctx.Err()
 	default:
 	}
 
@@ -47,7 +47,7 @@ func Read(ctx context.Context, r io.Reader, opts *Options) error {
 		// check context in loop
 		select {
 		case <-ctx.Done():
-			return ctx.Err()
+			return totalRead, ctx.Err()
 		default:
 		}
 
@@ -74,17 +74,17 @@ func Read(ctx context.Context, r io.Reader, opts *Options) error {
 			break
 		}
 		if err != nil {
-			return err
+			return totalRead, err
 		}
 	}
 
 	if totalRead < opts.Min {
-		return io.ErrUnexpectedEOF
+		return totalRead, io.ErrUnexpectedEOF
 	}
 
 	if eofEncountered && totalRead == 0 {
-		return io.EOF
+		return 0, io.EOF
 	}
 
-	return nil
+	return totalRead, nil
 }
