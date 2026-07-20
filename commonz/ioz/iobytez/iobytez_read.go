@@ -52,7 +52,17 @@ func Read(ctx context.Context, r io.Reader, opts *Options) error {
 		}
 
 		lenBeforeGrow := len(opts.Out)
-		buf := opts.grow(growSize) // Use growSize here
+
+		// Calculate remaining capacity if Max is set
+		sizeToGrow := growSize
+		if opts.Max > 0 {
+			remaining := opts.Max - len(opts.Out)
+			if remaining < sizeToGrow {
+				sizeToGrow = remaining
+			}
+		}
+
+		buf := opts.grow(sizeToGrow) // Use calculated sizeToGrow
 		n, err := limitedReader.Read(buf)
 
 		// Reslice to the actual number of bytes read in this iteration.
