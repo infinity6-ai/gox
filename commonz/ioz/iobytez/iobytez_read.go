@@ -6,13 +6,25 @@ import (
 	"time"
 )
 
+// Options sets the parameters for the Read function.
 type Options struct {
-	Out     []byte
-	Min     int
-	Max     int
+	// Out is the buffer to which the data will be read.
+	// If nil, a new buffer will be allocated.
+	Out []byte
+	// Min is the minimum number of bytes to read.
+	// If the reader returns an EOF before Min bytes are read, io.ErrUnexpectedEOF is returned.
+	Min int
+	// Max is the maximum number of bytes to read.
+	// The read will stop once Max bytes are read.
+	Max int
+	// Timeout is the maximum time to wait for the read to complete.
+	// If the timeout is reached before Min bytes are read, a context error is returned.
+	// If the timeout is reached after Min bytes are read, the function returns successfully with the bytes read so far.
 	Timeout time.Duration
 }
 
+// Read reads from r into opts.Out until at least opts.Min bytes have been read or opts.Max bytes have been read.
+// It uses a timeout if specified in opts.Timeout.
 func Read(ctx context.Context, r io.Reader, opts *Options) error {
 	if opts.Out == nil {
 		opts.Out = make([]byte, 0, 4096)
