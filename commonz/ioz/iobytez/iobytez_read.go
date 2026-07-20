@@ -35,6 +35,7 @@ func (o *Options) Clean() *Options {
 }
 
 // Read reads from r into o.Out until at least o.Min bytes have been read or o.Max bytes have been read.
+// Min and Max are relative to the number of bytes read in this call, not the total size of Out.
 func Read(ctx context.Context, r io.Reader, opts *Options) error {
 	select {
 	case <-ctx.Done():
@@ -42,6 +43,7 @@ func Read(ctx context.Context, r io.Reader, opts *Options) error {
 	default:
 	}
 
+	startLen := len(opts.Out)
 	if opts.Out == nil {
 		capacity := opts.Max
 		if capacity < defaultBufferCap {
@@ -50,14 +52,23 @@ func Read(ctx context.Context, r io.Reader, opts *Options) error {
 		opts.Out = make([]byte, 0, capacity)
 	}
 
-	if len(opts.Out) >= opts.Max && opts.Max > 0 {
+	if opts.Max <= 0 {
+		if opts.Min > 0 {
+			return io.ErrUnexpectedEOF
+		}
 		return nil
 	}
 
-	for len(opts.Out) < opts.Max {
-		// Ensure there's capacity to read into.
-		if cap(opts.Out) < opts.Max {
-			newCap := opts.Max
+	var lastErr error
+	for {
+		bytesRead := len(opts.Out) - startLen
+		if bytesRead >= opts.Max {
+			break
+		}
+
+		neededCap := startLen + opts.Max
+		if cap(opts.Out) < neededCap {
+			newCap := neededCap
 			if newCap < cap(opts.Out)+defaultBufferCap {
 				newCap = cap(opts.Out) + defaultBufferCap
 			}
@@ -67,8 +78,8 @@ func Read(ctx context.Context, r io.Reader, opts *Options) error {
 		}
 
 		readSlice := opts.Out[len(opts.Out):cap(opts.Out)]
-		if len(readSlice) > opts.Max-len(opts.Out) {
-			readSlice = readSlice[:opts.Max-len(opts.Out)]
+		if len(readSlice) > (opts.Max - bytesRead) {
+			readSlice = readSlice[:(opts.Max - bytesRead)]
 		}
 
 		n, err := r.Read(readSlice)
@@ -77,17 +88,30 @@ func Read(ctx context.Context, r io.Reader, opts *Options) error {
 		}
 
 		if err != nil {
-			if err == io.EOF {
-				if len(opts.Out) < opts.Min {
-					if len(opts.Out) == 0 && opts.Min > 0 {
-						return io.EOF
-					}
-					return io.ErrUnexpectedEOF
-				}
-				return nil
-			}
-			return err
+			lastErr = err
+			break
 		}
+		if n == 0 {
+			break
+		}
+	}
+
+	bytesRead := len(opts.Out) - startLen
+	if lastErr == io.EOF {
+		if bytesRead < opts.Min {
+			if startLen == 0 && bytesRead == 0 && opts.Min > 0 {
+				return io.EOF
+			}
+			return io.ErrUnexpectedEOF
+		}
+		if bytesRead == 0 {
+			return io.EOF
+		}
+		return nil
+	}
+
+	if bytesRead < opts.Min {
+		return io.ErrUnexpectedEOF
 	}
 
 	return nil

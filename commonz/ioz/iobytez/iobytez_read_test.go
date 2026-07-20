@@ -98,3 +98,39 @@ func TestUnitRead_NilOut(t *testing.T) {
 	}
 	assertRead(t, t.Context(), r, opts, "12345", nil)
 }
+
+func TestUnitRead_Incremental(t *testing.T) {
+	t.Parallel()
+
+	ctx := t.Context()
+	r := bytes.NewReader([]byte("1234567890"))
+	// Start with non-empty buffer, it should be appended to.
+	opts := &iobytez.Options{
+		Out: []byte("initial"),
+	}
+
+	// Read 1: Min 2, Max 4. Should read "1234".
+	opts.Min = 2
+	opts.Max = 4
+	assertRead(t, ctx, r, opts, "initial1234", nil)
+
+	// Read 2: Min 2, Max 4. Should read "5678".
+	opts.Min = 2
+	opts.Max = 4
+	assertRead(t, ctx, r, opts, "initial12345678", nil)
+
+	// Read 3: Min 1, Max 4. Should read "90" and hit EOF. Read >= Min, so no error.
+	opts.Min = 1
+	opts.Max = 4
+	assertRead(t, ctx, r, opts, "initial1234567890", nil)
+
+	// Read 4: At EOF. Min 1, Max 4. Should get ErrUnexpectedEOF because we can't read Min.
+	opts.Min = 1
+	opts.Max = 4
+	assertRead(t, ctx, r, opts, "initial1234567890", io.ErrUnexpectedEOF)
+
+	// Read 5: At EOF. Min 0, Max 4. Should get EOF because we read 0 bytes.
+	opts.Min = 0
+	opts.Max = 4
+	assertRead(t, ctx, r, opts, "initial1234567890", io.EOF)
+}
