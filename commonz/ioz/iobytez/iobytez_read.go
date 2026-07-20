@@ -18,6 +18,11 @@ type Options struct {
 	Max int
 }
 
+func (o *Options) Clean() *Options {
+	o.Out = o.Out[:0]
+	return o
+}
+
 // Read reads from r into opts.Out until at least opts.Min bytes have been read or opts.Max bytes have been read.
 // It uses a timeout if specified in opts.Timeout.
 func Read(ctx context.Context, r io.Reader, opts *Options) error {
