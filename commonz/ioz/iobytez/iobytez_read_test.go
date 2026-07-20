@@ -12,7 +12,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestRead_Exact(t *testing.T) {
+func TestUnitRead_Exact(t *testing.T) {
 	r := bytes.NewReader([]byte("1234567890"))
 	opts := &iobytez.Options{
 		Min: 5,
@@ -24,7 +24,7 @@ func TestRead_Exact(t *testing.T) {
 	assert.Equal(t, []byte("12345"), opts.Out)
 }
 
-func TestRead_MinMax(t *testing.T) {
+func TestUnitRead_MinMax(t *testing.T) {
 	r := bytes.NewReader([]byte("1234567890"))
 	opts := &iobytez.Options{
 		Min: 5,
@@ -36,7 +36,7 @@ func TestRead_MinMax(t *testing.T) {
 	assert.LessOrEqual(t, len(opts.Out), 8)
 }
 
-func TestRead_TimeoutSuccess(t *testing.T) {
+func TestUnitRead_TimeoutSuccess(t *testing.T) {
 	r := bytes.NewReader([]byte("1234567890"))
 	opts := &iobytez.Options{
 		Min:     5,
@@ -56,7 +56,7 @@ func (r *blockingReader) Read(p []byte) (n int, err error) {
 	return 0, nil
 }
 
-func TestRead_TimeoutExceeded(t *testing.T) {
+func TestUnitRead_TimeoutExceeded(t *testing.T) {
 	r := &blockingReader{}
 	opts := &iobytez.Options{
 		Min:     1,
@@ -68,7 +68,7 @@ func TestRead_TimeoutExceeded(t *testing.T) {
 	assert.ErrorIs(t, err, context.DeadlineExceeded)
 }
 
-func TestRead_UnexpectedEOF(t *testing.T) {
+func TestUnitRead_UnexpectedEOF(t *testing.T) {
 	r := bytes.NewReader([]byte("123"))
 	opts := &iobytez.Options{
 		Min: 5,
@@ -81,7 +81,7 @@ func TestRead_UnexpectedEOF(t *testing.T) {
 	assert.Equal(t, []byte("123"), opts.Out)
 }
 
-func TestRead_EOFSuccess(t *testing.T) {
+func TestUnitRead_EOFSuccess(t *testing.T) {
 	r := bytes.NewReader([]byte("123456"))
 	opts := &iobytez.Options{
 		Min: 5,
@@ -93,7 +93,7 @@ func TestRead_EOFSuccess(t *testing.T) {
 	assert.Equal(t, []byte("123456"), opts.Out)
 }
 
-func TestRead_EOFAtBeginning(t *testing.T) {
+func TestUnitRead_EOFAtBeginning(t *testing.T) {
 	r := bytes.NewReader([]byte{})
 	opts := &iobytez.Options{
 		Min: 1,
@@ -105,7 +105,7 @@ func TestRead_EOFAtBeginning(t *testing.T) {
 	assert.Equal(t, 0, len(opts.Out))
 }
 
-func TestRead_NilOut(t *testing.T) {
+func TestUnitRead_NilOut(t *testing.T) {
 	r := bytes.NewReader([]byte("12345"))
 	opts := &iobytez.Options{
 		Min: 5,
