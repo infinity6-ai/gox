@@ -3,6 +3,7 @@ package iobytez
 import (
 	"context"
 	"io"
+	"slices"
 )
 
 const (
@@ -16,8 +17,10 @@ type Options struct {
 }
 
 func (o *Options) grow(size int) []byte {
-	o.Out = append(o.Out, make([]byte, size)...)
-	return o.Out[len(o.Out)-size : len(o.Out)]
+	oldLen := len(o.Out)
+	o.Out = slices.Grow(o.Out, size)
+	o.Out = o.Out[:oldLen+size]
+	return o.Out[oldLen:]
 }
 
 func Read(ctx context.Context, r io.Reader, opts *Options) error {
