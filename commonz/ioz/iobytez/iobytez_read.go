@@ -10,11 +10,21 @@ const (
 	defaultGrowSize = 4096 // Renamed from defaultBufferCap
 )
 
+// Options defines the parameters for the Read function, allowing for fine-grained
+// control over the read operation.
 type Options struct {
+	// Min is the minimum number of bytes to read. If the reader returns an EOF
+	// before Min bytes are read, Read returns io.ErrUnexpectedEOF.
 	Min int
+	// Max is the maximum number of bytes to read. Read will not read more than
+	// Max bytes from the reader.
 	Max int
+	// Out is the buffer where the read data is stored. If Out has a non-zero
+	// capacity, Read will append to it.
 	Out []byte
-	GrowSize int // New field
+	// GrowSize specifies the size by which the output buffer should grow when
+	// more capacity is needed. If zero, a default size is used.
+	GrowSize int
 }
 
 func (o *Options) grow(size int) []byte {
@@ -24,6 +34,16 @@ func (o *Options) grow(size int) []byte {
 	return o.Out[oldLen:]
 }
 
+// Read reads from r into opts.Out until the reader returns io.EOF or an error.
+// It provides advanced control over the read operation through the Options struct.
+//
+// The function reads from r and appends the data to opts.Out. It respects the
+// Min and Max fields of the opts parameter to control the amount of data read.
+// The read operation can be cancelled via the context.
+//
+// Read returns the total number of bytes read and an error if one occurred.
+// If the number of bytes read is less than opts.Min, it returns io.ErrUnexpectedEOF.
+// If the reader is empty and no bytes are read, it returns io.EOF.
 func Read(ctx context.Context, r io.Reader, opts *Options) (int, error) {
 	select {
 	case <-ctx.Done():
