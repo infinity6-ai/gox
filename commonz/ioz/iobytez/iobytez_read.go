@@ -1,7 +1,6 @@
 package iobytez
 
 import (
-	"bytes"
 	"context"
 	"io"
 )
@@ -13,20 +12,12 @@ const (
 type Options struct {
 	Min int
 	Max int
-	Out *bytes.Buffer
+	Out []byte
 }
 
-func (o *Options) fix() {
-	if o.Out == nil {
-		c := defaultBufferCap
-		if c < o.Min {
-			c = o.Min
-		}
-		if o.Max > 0 && c > o.Max {
-			c = o.Max
-		}
-		o.Out = bytes.NewBuffer(make([]byte, c))
-	}
+func (o *Options) grow(size int) []byte {
+	o.Out = append(o.Out, make([]byte, size)...)
+	return o.Out[len(o.Out)-size : len(o.Out)]
 }
 
 func Read(ctx context.Context, r io.Reader, opts *Options) error {
@@ -36,5 +27,13 @@ func Read(ctx context.Context, r io.Reader, opts *Options) error {
 	default:
 	}
 
-	opts.fix()
+	c := defaultBufferCap
+	if c < opts.Min {
+		c = opts.Min
+	}
+	if opts.Max > 0 && c > opts.Max {
+		c = opts.Max
+	}
+	opts.grow(c)
+
 }
