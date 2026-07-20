@@ -12,16 +12,17 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+func assertRead(t *testing.T, ctx context.Context, r io.Reader, opts *iobytez.Options, expectedBuf string, expectedErr error) {
+	err := iobytez.Read(ctx, r, opts)
+	require.ErrorIs(t, err, expectedErr)
+	assert.Equal(t, expectedBuf, string(opts.Out))
+}
+
 func TestUnitRead_Exact(t *testing.T) {
+	ctx := t.Context()
 	r := bytes.NewReader([]byte("1234567890"))
-	opts := &iobytez.Options{
-		Min: 5,
-		Max: 5,
-	}
-	err := iobytez.Read(context.Background(), r, opts)
-	require.NoError(t, err)
-	assert.Equal(t, 5, len(opts.Out))
-	assert.Equal(t, []byte("12345"), opts.Out)
+	opts := &iobytez.Options{Min: 5, Max: 5}
+	assertRead(t, ctx, r, opts, "12345", nil)
 }
 
 func TestUnitRead_MinMax(t *testing.T) {
