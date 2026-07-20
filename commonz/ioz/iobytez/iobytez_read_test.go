@@ -20,7 +20,7 @@ func TestRead_Exact(t *testing.T) {
 	}
 	err := iobytez.Read(context.Background(), r, opts)
 	require.NoError(t, err)
-	assert.Equal(t, 5, opts.Len)
+	assert.Equal(t, 5, len(opts.Out))
 	assert.Equal(t, []byte("12345"), opts.Out)
 }
 
@@ -32,8 +32,8 @@ func TestRead_MinMax(t *testing.T) {
 	}
 	err := iobytez.Read(context.Background(), r, opts)
 	require.NoError(t, err)
-	assert.GreaterOrEqual(t, opts.Len, 5)
-	assert.LessOrEqual(t, opts.Len, 8)
+	assert.GreaterOrEqual(t, len(opts.Out), 5)
+	assert.LessOrEqual(t, len(opts.Out), 8)
 }
 
 func TestRead_TimeoutSuccess(t *testing.T) {
@@ -45,7 +45,7 @@ func TestRead_TimeoutSuccess(t *testing.T) {
 	}
 	err := iobytez.Read(context.Background(), r, opts)
 	require.NoError(t, err)
-	assert.Equal(t, 5, opts.Len)
+	assert.Equal(t, 5, len(opts.Out))
 	assert.Equal(t, []byte("12345"), opts.Out)
 }
 
@@ -77,7 +77,7 @@ func TestRead_UnexpectedEOF(t *testing.T) {
 	err := iobytez.Read(context.Background(), r, opts)
 	require.Error(t, err)
 	assert.ErrorIs(t, err, io.ErrUnexpectedEOF)
-	assert.Equal(t, 3, opts.Len)
+	assert.Equal(t, 3, len(opts.Out))
 	assert.Equal(t, []byte("123"), opts.Out)
 }
 
@@ -89,7 +89,7 @@ func TestRead_EOFSuccess(t *testing.T) {
 	}
 	err := iobytez.Read(context.Background(), r, opts)
 	require.NoError(t, err)
-	assert.Equal(t, 6, opts.Len)
+	assert.Equal(t, 6, len(opts.Out))
 	assert.Equal(t, []byte("123456"), opts.Out)
 }
 
@@ -102,7 +102,7 @@ func TestRead_EOFAtBeginning(t *testing.T) {
 	err := iobytez.Read(context.Background(), r, opts)
 	require.Error(t, err)
 	assert.ErrorIs(t, err, io.EOF)
-	assert.Equal(t, 0, opts.Len)
+	assert.Equal(t, 0, len(opts.Out))
 }
 
 func TestRead_NilOut(t *testing.T) {
@@ -114,6 +114,6 @@ func TestRead_NilOut(t *testing.T) {
 	}
 	err := iobytez.Read(context.Background(), r, opts)
 	require.NoError(t, err)
-	assert.Equal(t, 5, opts.Len)
+	assert.Equal(t, 5, len(opts.Out))
 	assert.Equal(t, []byte("12345"), opts.Out)
 }

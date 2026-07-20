@@ -11,8 +11,6 @@ type Options struct {
 	Min     int
 	Max     int
 	Timeout time.Duration
-
-	Len int
 }
 
 func Read(ctx context.Context, r io.Reader, opts *Options) error {
@@ -33,8 +31,9 @@ func Read(ctx context.Context, r io.Reader, opts *Options) error {
 	}
 
 	buf := make([]byte, 4096)
+	bytesRead := 0
 
-	for opts.Len < opts.Max {
+	for bytesRead < opts.Max {
 		type readResult struct {
 			n   int
 			err error
@@ -44,7 +43,7 @@ func Read(ctx context.Context, r io.Reader, opts *Options) error {
 		go func() {
 			// Adjust buffer size for the read.
 			readSize := len(buf)
-			if needed := opts.Max - opts.Len; needed < readSize {
+			if needed := opts.Max - bytesRead; needed < readSize {
 				readSize = needed
 			}
 			n, err := r.Read(buf[:readSize])
@@ -53,21 +52,21 @@ func Read(ctx context.Context, r io.Reader, opts *Options) error {
 
 		select {
 		case <-ctx.Done():
-			if opts.Len >= opts.Min {
+			if bytesRead >= opts.Min {
 				return nil
 			}
 			return ctx.Err()
 		case res := <-readCh:
 			if res.n > 0 {
 				opts.Out = append(opts.Out, buf[:res.n]...)
-				opts.Len += res.n
+				bytesRead += res.n
 			}
 			if res.err != nil {
 				if res.err == io.EOF {
-					if opts.Len >= opts.Min {
+					if bytesRead >= opts.Min {
 						return nil
 					}
-					if opts.Len > 0 {
+					if bytesRead > 0 {
 						return io.ErrUnexpectedEOF
 					}
 					return io.EOF
@@ -75,7 +74,7 @@ func Read(ctx context.Context, r io.Reader, opts *Options) error {
 				return res.err
 			}
 
-			if opts.Len >= opts.Min && opts.Timeout == 0 {
+			if bytesRead >= opts.Min && opts.Timeout == 0 {
 				return nil
 			}
 		}
