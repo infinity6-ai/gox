@@ -7,13 +7,14 @@ import (
 )
 
 const (
-	defaultBufferCap = 4096
+	defaultGrowSize = 4096 // Renamed from defaultBufferCap
 )
 
 type Options struct {
 	Min int
 	Max int
 	Out []byte
+	GrowSize int // New field
 }
 
 func (o *Options) grow(size int) []byte {
@@ -30,7 +31,10 @@ func Read(ctx context.Context, r io.Reader, opts *Options) error {
 	default:
 	}
 
-	oldLen := len(opts.Out)
+	var growSize = opts.GrowSize // Use opts.GrowSize
+	if growSize == 0 {           // If not set, use default
+		growSize = defaultGrowSize
+	}
 
 	var limitedReader io.Reader = r
 	if opts.Max > 0 {
@@ -38,22 +42,25 @@ func Read(ctx context.Context, r io.Reader, opts *Options) error {
 	}
 
 	totalRead := 0
+	var eofEncountered bool
 	for {
 		// check context in loop
 		select {
 		case <-ctx.Done():
-			opts.Out = opts.Out[:oldLen+totalRead] // reslice to what we have read
 			return ctx.Err()
 		default:
 		}
 
-		buf := opts.grow(defaultBufferCap)
+		lenBeforeGrow := len(opts.Out)
+		buf := opts.grow(growSize) // Use growSize here
 		n, err := limitedReader.Read(buf)
 
+		// Reslice to the actual number of bytes read in this iteration.
+		opts.Out = opts.Out[:lenBeforeGrow+n]
 		totalRead += n
-		opts.Out = opts.Out[:oldLen+totalRead] // Reslice to actual data read.
 
 		if err == io.EOF {
+			eofEncountered = true
 			break
 		}
 		if err != nil {
@@ -63,6 +70,10 @@ func Read(ctx context.Context, r io.Reader, opts *Options) error {
 
 	if totalRead < opts.Min {
 		return io.ErrUnexpectedEOF
+	}
+
+	if eofEncountered && totalRead == 0 {
+		return io.EOF
 	}
 
 	return nil
