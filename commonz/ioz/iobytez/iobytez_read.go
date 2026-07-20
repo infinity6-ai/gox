@@ -24,5 +24,5 @@ func Read(ctx context.Context, r io.Reader, opts *Options) error {
 	// return io.EOF should always return Len 0
 	// return less than min must return io.ErrUnexpectedEOF
 
-	panic("implement")
+	panic("implement it")
 }
