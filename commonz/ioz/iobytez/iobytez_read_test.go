@@ -1,19 +1,21 @@
-package iobytez
+package iobytez_test
 
 import (
 	"context"
 	"io"
 	"strings"
 	"testing"
+
+	i "github.com/infinity6-ai/gox/commonz/ioz/iobytez"
 )
 
 func TestUnitRead_ReadAll(t *testing.T) {
 	ctx := context.Background()
 
-	opts := &Options{}
+	opts := &i.Options{}
 	data := "hello world"
 	r := strings.NewReader(data)
-	err := Read(ctx, r, opts)
+	err := i.Read(ctx, r, opts)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -26,12 +28,12 @@ func TestUnitRead_WithInitialData(t *testing.T) {
 	ctx := context.Background()
 
 	initial := "preexisting "
-	opts := &Options{
+	opts := &i.Options{
 		Out: []byte(initial),
 	}
 	data := "hello world"
 	r := strings.NewReader(data)
-	err := Read(ctx, r, opts)
+	err := i.Read(ctx, r, opts)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -44,10 +46,10 @@ func TestUnitRead_WithInitialData(t *testing.T) {
 func TestUnitRead_WithMin(t *testing.T) {
 	ctx := context.Background()
 
-	opts := &Options{Min: 5}
+	opts := &i.Options{Min: 5}
 	data := "hello"
 	r := strings.NewReader(data)
-	err := Read(ctx, r, opts)
+	err := i.Read(ctx, r, opts)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -59,10 +61,10 @@ func TestUnitRead_WithMin(t *testing.T) {
 func TestUnitRead_MinNotMet(t *testing.T) {
 	ctx := context.Background()
 
-	opts := &Options{Min: 10}
+	opts := &i.Options{Min: 10}
 	data := "hello"
 	r := strings.NewReader(data)
-	err := Read(ctx, r, opts)
+	err := i.Read(ctx, r, opts)
 	if err != io.ErrUnexpectedEOF {
 		t.Errorf("expected io.ErrUnexpectedEOF, got %v", err)
 	}
@@ -71,10 +73,10 @@ func TestUnitRead_MinNotMet(t *testing.T) {
 func TestUnitRead_WithMax(t *testing.T) {
 	ctx := context.Background()
 
-	opts := &Options{Max: 5}
+	opts := &i.Options{Max: 5}
 	data := "hello world"
 	r := strings.NewReader(data)
-	err := Read(ctx, r, opts)
+	err := i.Read(ctx, r, opts)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -86,10 +88,10 @@ func TestUnitRead_WithMax(t *testing.T) {
 func TestUnitRead_WithMinAndMax(t *testing.T) {
 	ctx := context.Background()
 
-	opts := &Options{Min: 5, Max: 10}
+	opts := &i.Options{Min: 5, Max: 10}
 	data := "hello world this is too long"
 	r := strings.NewReader(data)
-	err := Read(ctx, r, opts)
+	err := i.Read(ctx, r, opts)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -101,10 +103,10 @@ func TestUnitRead_WithMinAndMax(t *testing.T) {
 func TestUnitRead_EmptyReaderReturnsEOF(t *testing.T) {
 	ctx := context.Background()
 
-	opts := &Options{}
+	opts := &i.Options{}
 	data := ""
 	r := strings.NewReader(data)
-	err := Read(ctx, r, opts)
+	err := i.Read(ctx, r, opts)
 	if err != io.EOF {
 		t.Errorf("expected io.EOF, got %v", err)
 	}
@@ -121,8 +123,8 @@ func TestUnitRead_ReadInChunksUntilEOF(t *testing.T) {
 	var totalReadBytes []byte
 
 	// First chunk
-	opts1 := &Options{Max: 10}
-	err := Read(ctx, r, opts1)
+	opts1 := &i.Options{Max: 10}
+	err := i.Read(ctx, r, opts1)
 	if err != nil {
 		t.Fatalf("unexpected error on first read: %v", err)
 	}
@@ -133,8 +135,8 @@ func TestUnitRead_ReadInChunksUntilEOF(t *testing.T) {
 	totalReadBytes = append(totalReadBytes, opts1.Out...)
 
 	// Second chunk
-	opts2 := &Options{Max: 10}
-	err = Read(ctx, r, opts2)
+	opts2 := &i.Options{Max: 10}
+	err = i.Read(ctx, r, opts2)
 	if err != nil {
 		t.Fatalf("unexpected error on second read: %v", err)
 	}
@@ -145,8 +147,8 @@ func TestUnitRead_ReadInChunksUntilEOF(t *testing.T) {
 	totalReadBytes = append(totalReadBytes, opts2.Out...)
 
 	// Third chunk (remaining data)
-	opts3 := &Options{Max: 10}
-	err = Read(ctx, r, opts3)
+	opts3 := &i.Options{Max: 10}
+	err = i.Read(ctx, r, opts3)
 	if err != nil {
 		t.Fatalf("unexpected error on third read: %v", err)
 	}
@@ -157,8 +159,8 @@ func TestUnitRead_ReadInChunksUntilEOF(t *testing.T) {
 	totalReadBytes = append(totalReadBytes, opts3.Out...)
 
 	// Fourth read (should be EOF)
-	opts4 := &Options{Max: 10}
-	err = Read(ctx, r, opts4)
+	opts4 := &i.Options{Max: 10}
+	err = i.Read(ctx, r, opts4)
 	if err != io.EOF {
 		t.Errorf("expected io.EOF on fourth read, got %v", err)
 	}
@@ -175,10 +177,10 @@ func TestUnitRead_ReadInChunksUntilEOF(t *testing.T) {
 func TestUnitRead_EmptyReaderWithMin(t *testing.T) {
 	ctx := context.Background()
 
-	opts := &Options{Min: 1}
+	opts := &i.Options{Min: 1}
 	data := ""
 	r := strings.NewReader(data)
-	err := Read(ctx, r, opts)
+	err := i.Read(ctx, r, opts)
 	if err != io.ErrUnexpectedEOF {
 		t.Errorf("expected io.ErrUnexpectedEOF, got %v", err)
 	}
