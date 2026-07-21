@@ -14,14 +14,16 @@ import (
 
 func checkRead(t *testing.T, readerData string, opts *iobytez.Options, dataFirst string, errFirst error, dataSecond string, errSecond error, dataRemaning string) {
 	ctx := t.Context()
+	oldData := string(opts.Out)
 	r := strings.NewReader(readerData)
 	n, err := iobytez.Read(ctx, r, opts)
 	require.ErrorIs(t, err, errFirst)
-	assert.Equal(t, dataFirst, string(opts.Out))
+	assert.Equal(t, oldData+dataFirst, string(opts.Out))
 	assert.Equal(t, len(dataFirst), n)
+	oldSize := len(opts.Out)
 	n, err = iobytez.Read(ctx, r, opts)
 	require.ErrorIs(t, err, errSecond)
-	assert.Equal(t, dataSecond, string(opts.Out[len(dataFirst):]))
+	assert.Equal(t, dataSecond, string(opts.Out[oldSize:]))
 	assert.Equal(t, len(dataSecond), n)
 
 	remaning, err := io.ReadAll(r)
@@ -33,33 +35,11 @@ func checkRead(t *testing.T, readerData string, opts *iobytez.Options, dataFirst
 }
 
 func TestUnitRead_ReadAll(t *testing.T) {
-	// ctx := context.Background()
-
-	// opts := &iobytez.Options{}
-	// data := "hello world"
-	// r := strings.NewReader(data)
-	// n, err := iobytez.Read(ctx, r, opts)
-	// require.NoError(t, err)
-	// assert.Equal(t, len(data), n)
-	// assert.Equal(t, data, string(opts.Out))
-
 	checkRead(t, "hello world", &iobytez.Options{}, "hello world", nil, "", io.EOF, "")
 }
 
 func TestUnitRead_WithInitialData(t *testing.T) {
-	ctx := context.Background()
-
-	initial := "preexisting "
-	opts := &iobytez.Options{
-		Out: []byte(initial),
-	}
-	data := "hello world"
-	r := strings.NewReader(data)
-	n, err := iobytez.Read(ctx, r, opts)
-	require.NoError(t, err)
-	assert.Equal(t, len(data), n)
-	expected := initial + data
-	assert.Equal(t, expected, string(opts.Out))
+	checkRead(t, "hello world", &iobytez.Options{Out: []byte("preexisting ")}, "hello world", nil, "", io.EOF, "")
 }
 
 func TestUnitRead_WithMin(t *testing.T) {
