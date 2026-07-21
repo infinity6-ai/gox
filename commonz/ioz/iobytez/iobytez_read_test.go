@@ -152,3 +152,100 @@ func TestUnitRead_EmptyReaderWithMin(t *testing.T) {
 	_, err := i.Read(ctx, r, opts)
 	assert.Equal(t, io.ErrUnexpectedEOF, err)
 }
+
+// mockReader is a test helper that wraps an io.Reader and counts the total bytes read.
+type mockReader struct {
+	io.Reader
+	readCount int
+}
+
+func (m *mockReader) Read(p []byte) (n int, err error) {
+	n, err = m.Reader.Read(p)
+	m.readCount += n
+	return
+}
+
+func TestUnitRead_OriginalReaderNotOverRead(t *testing.T) {
+	ctx := context.Background()
+
+	testCases := []struct {
+		name        string
+		inputData   string
+		options     *i.Options
+		expectedN   int
+		expectedOut string
+		expectedErr error
+		expectedReadCount int // How many bytes the mockReader should have read
+	}{
+		{
+			name:        "Read all with no specific options",
+			inputData:   "hello world",
+			options:     &i.Options{},
+			expectedN:   11,
+			expectedOut: "hello world",
+			expectedErr: nil,
+			expectedReadCount: 11,
+		},
+		{
+			name:        "Read with Max limit",
+			inputData:   "hello world",
+			options:     &i.Options{Max: 5},
+			expectedN:   5,
+			expectedOut: "hello",
+			expectedErr: nil,
+			expectedReadCount: 5, // Should only read up to Max
+		},
+		{
+			name:        "Read with Min and Max (exact)",
+			inputData:   "1234567890",
+			options:     &i.Options{Min: 5, Max: 10},
+			expectedN:   10,
+			expectedOut: "1234567890",
+			expectedErr: nil,
+			expectedReadCount: 10,
+		},
+		{
+			name:        "Read with Min and Max (over Max, truncate)",
+			inputData:   "1234567890abcdef",
+			options:     &i.Options{Min: 5, Max: 10},
+			expectedN:   10,
+			expectedOut: "1234567890",
+			expectedErr: nil,
+			expectedReadCount: 10, // Should read only up to Max
+		},
+		{
+			name:        "Min not met",
+			inputData:   "short",
+			options:     &i.Options{Min: 10},
+			expectedN:   5,
+			expectedOut: "short",
+			expectedErr: io.ErrUnexpectedEOF,
+			expectedReadCount: 5, // Reads all available, but min not met
+		},
+		{
+			name:        "Empty reader returns EOF",
+			inputData:   "",
+			options:     &i.Options{},
+			expectedN:   0,
+			expectedOut: "",
+			expectedErr: io.EOF,
+			expectedReadCount: 0,
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			mock := &mockReader{Reader: strings.NewReader(tc.inputData)}
+			n, err := i.Read(ctx, mock, tc.options)
+
+			assert.Equal(t, tc.expectedN, n, "mismatched bytes read by i.Read")
+			if tc.expectedErr != nil {
+				assert.Equal(t, tc.expectedErr, err, "mismatched error from i.Read")
+			} else {
+				assert.NoError(t, err, "unexpected error from i.Read")
+			}
+			assert.Equal(t, tc.expectedOut, string(tc.options.Out), "mismatched output data")
+			assert.Equal(t, tc.expectedReadCount, mock.readCount, "original reader over-read")
+		})
+	}
+}
