@@ -7,7 +7,7 @@ import (
 )
 
 const (
-	defaultGrowSize = 4096 // Renamed from defaultBufferCap
+	DefaultGrowSize = 4096
 )
 
 // Options defines the parameters for the Read function, allowing for fine-grained
@@ -53,7 +53,7 @@ func Read(ctx context.Context, r io.Reader, opts *Options) (int, error) {
 
 	var growSize = opts.GrowSize // Use opts.GrowSize
 	if growSize == 0 {           // If not set, use default
-		growSize = defaultGrowSize
+		growSize = DefaultGrowSize
 	}
 
 	var limitedReader io.Reader = r
