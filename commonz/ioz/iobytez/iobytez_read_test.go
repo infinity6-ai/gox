@@ -6,6 +6,9 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+
 	i "github.com/infinity6-ai/gox/commonz/ioz/iobytez"
 )
 
@@ -16,15 +19,9 @@ func TestUnitRead_ReadAll(t *testing.T) {
 	data := "hello world"
 	r := strings.NewReader(data)
 	n, err := i.Read(ctx, r, opts)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if n != len(data) {
-		t.Errorf("expected to read %d bytes, got %d", len(data), n)
-	}
-	if string(opts.Out) != data {
-		t.Errorf("expected %q, got %q", data, string(opts.Out))
-	}
+	require.NoError(t, err)
+	assert.Equal(t, len(data), n)
+	assert.Equal(t, data, string(opts.Out))
 }
 
 func TestUnitRead_WithInitialData(t *testing.T) {
@@ -37,16 +34,10 @@ func TestUnitRead_WithInitialData(t *testing.T) {
 	data := "hello world"
 	r := strings.NewReader(data)
 	n, err := i.Read(ctx, r, opts)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if n != len(data) {
-		t.Errorf("expected to read %d bytes, got %d", len(data), n)
-	}
+	require.NoError(t, err)
+	assert.Equal(t, len(data), n)
 	expected := initial + data
-	if string(opts.Out) != expected {
-		t.Errorf("expected %q, got %q", expected, string(opts.Out))
-	}
+	assert.Equal(t, expected, string(opts.Out))
 }
 
 func TestUnitRead_WithMin(t *testing.T) {
@@ -56,15 +47,9 @@ func TestUnitRead_WithMin(t *testing.T) {
 	data := "hello"
 	r := strings.NewReader(data)
 	n, err := i.Read(ctx, r, opts)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if n != len(data) {
-		t.Errorf("expected to read %d bytes, got %d", len(data), n)
-	}
-	if string(opts.Out) != data {
-		t.Errorf("expected %q, got %q", data, string(opts.Out))
-	}
+	require.NoError(t, err)
+	assert.Equal(t, len(data), n)
+	assert.Equal(t, data, string(opts.Out))
 }
 
 func TestUnitRead_MinNotMet(t *testing.T) {
@@ -74,9 +59,7 @@ func TestUnitRead_MinNotMet(t *testing.T) {
 	data := "hello"
 	r := strings.NewReader(data)
 	_, err := i.Read(ctx, r, opts)
-	if err != io.ErrUnexpectedEOF {
-		t.Errorf("expected io.ErrUnexpectedEOF, got %v", err)
-	}
+	assert.Equal(t, io.ErrUnexpectedEOF, err)
 }
 
 func TestUnitRead_WithMax(t *testing.T) {
@@ -86,15 +69,9 @@ func TestUnitRead_WithMax(t *testing.T) {
 	data := "hello world"
 	r := strings.NewReader(data)
 	n, err := i.Read(ctx, r, opts)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if n != 5 {
-		t.Errorf("expected to read 5 bytes, got %d", n)
-	}
-	if string(opts.Out) != "hello" {
-		t.Errorf("expected %q, got %q", "hello", string(opts.Out))
-	}
+	require.NoError(t, err)
+	assert.Equal(t, 5, n)
+	assert.Equal(t, "hello", string(opts.Out))
 }
 
 func TestUnitRead_WithMinAndMax(t *testing.T) {
@@ -104,15 +81,9 @@ func TestUnitRead_WithMinAndMax(t *testing.T) {
 	data := "hello world this is too long"
 	r := strings.NewReader(data)
 	n, err := i.Read(ctx, r, opts)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if n != 10 {
-		t.Errorf("expected to read 10 bytes, got %d", n)
-	}
-	if string(opts.Out) != "hello worl" {
-		t.Errorf("expected %q, got %q", "hello worl", string(opts.Out))
-	}
+	require.NoError(t, err)
+	assert.Equal(t, 10, n)
+	assert.Equal(t, "hello worl", string(opts.Out))
 }
 
 func TestUnitRead_EmptyReaderReturnsEOF(t *testing.T) {
@@ -122,15 +93,9 @@ func TestUnitRead_EmptyReaderReturnsEOF(t *testing.T) {
 	data := ""
 	r := strings.NewReader(data)
 	n, err := i.Read(ctx, r, opts)
-	if err != io.EOF {
-		t.Errorf("expected io.EOF, got %v", err)
-	}
-	if n != 0 {
-		t.Errorf("expected to read 0 bytes, got %d", n)
-	}
-	if len(opts.Out) != 0 {
-		t.Errorf("expected empty buffer, got %q", string(opts.Out))
-	}
+	assert.Equal(t, io.EOF, err)
+	assert.Equal(t, 0, n)
+	assert.Empty(t, opts.Out)
 }
 
 func TestUnitRead_ReadInChunksUntilEOF(t *testing.T) {
@@ -143,65 +108,39 @@ func TestUnitRead_ReadInChunksUntilEOF(t *testing.T) {
 	// First chunk
 	opts1 := &i.Options{Max: 10}
 	n1, err := i.Read(ctx, r, opts1)
-	if err != nil {
-		t.Fatalf("unexpected error on first read: %v", err)
-	}
-	if n1 != 10 {
-		t.Errorf("expected to read 10 bytes on first chunk, got %d", n1)
-	}
+	require.NoError(t, err, "unexpected error on first read")
+	assert.Equal(t, 10, n1, "expected to read 10 bytes on first chunk")
 	expected1 := "abcdefghij"
-	if string(opts1.Out) != expected1 {
-		t.Errorf("expected first chunk %q, got %q", expected1, string(opts1.Out))
-	}
+	assert.Equal(t, expected1, string(opts1.Out), "expected first chunk")
 	totalReadBytes = append(totalReadBytes, opts1.Out...)
 
 	// Second chunk
 	opts2 := &i.Options{Max: 10}
 	n2, err := i.Read(ctx, r, opts2)
-	if err != nil {
-		t.Fatalf("unexpected error on second read: %v", err)
-	}
-	if n2 != 10 {
-		t.Errorf("expected to read 10 bytes on second chunk, got %d", n2)
-	}
+	require.NoError(t, err, "unexpected error on second read")
+	assert.Equal(t, 10, n2, "expected to read 10 bytes on second chunk")
 	expected2 := "klmnopqrst"
-	if string(opts2.Out) != expected2 {
-		t.Errorf("expected second chunk %q, got %q", expected2, string(opts2.Out))
-	}
+	assert.Equal(t, expected2, string(opts2.Out), "expected second chunk")
 	totalReadBytes = append(totalReadBytes, opts2.Out...)
 
 	// Third chunk (remaining data)
 	opts3 := &i.Options{Max: 10}
 	n3, err := i.Read(ctx, r, opts3)
-	if err != nil {
-		t.Fatalf("unexpected error on third read: %v", err)
-	}
-	if n3 != 6 {
-		t.Errorf("expected to read 6 bytes on third chunk, got %d", n3)
-	}
+	require.NoError(t, err, "unexpected error on third read")
+	assert.Equal(t, 6, n3, "expected to read 6 bytes on third chunk")
 	expected3 := "uvwxyz"
-	if string(opts3.Out) != expected3 {
-		t.Errorf("expected third chunk %q, got %q", expected3, string(opts3.Out))
-	}
+	assert.Equal(t, expected3, string(opts3.Out), "expected third chunk")
 	totalReadBytes = append(totalReadBytes, opts3.Out...)
 
 	// Fourth read (should be EOF)
 	opts4 := &i.Options{Max: 10}
 	n4, err := i.Read(ctx, r, opts4)
-	if err != io.EOF {
-		t.Errorf("expected io.EOF on fourth read, got %v", err)
-	}
-	if n4 != 0 {
-		t.Errorf("expected to read 0 bytes on fourth read, got %d", n4)
-	}
-	if len(opts4.Out) != 0 {
-		t.Errorf("expected empty buffer on fourth read, got %q", string(opts4.Out))
-	}
+	assert.Equal(t, io.EOF, err, "expected io.EOF on fourth read")
+	assert.Equal(t, 0, n4, "expected to read 0 bytes on fourth read")
+	assert.Empty(t, opts4.Out, "expected empty buffer on fourth read")
 
 	// Verify total data read
-	if string(totalReadBytes) != fullData {
-		t.Errorf("expected total data %q, got %q", fullData, string(totalReadBytes))
-	}
+	assert.Equal(t, fullData, string(totalReadBytes), "expected total data")
 }
 
 func TestUnitRead_EmptyReaderWithMin(t *testing.T) {
@@ -211,7 +150,5 @@ func TestUnitRead_EmptyReaderWithMin(t *testing.T) {
 	data := ""
 	r := strings.NewReader(data)
 	_, err := i.Read(ctx, r, opts)
-	if err != io.ErrUnexpectedEOF {
-		t.Errorf("expected io.ErrUnexpectedEOF, got %v", err)
-	}
+	assert.Equal(t, io.ErrUnexpectedEOF, err)
 }
