@@ -88,16 +88,8 @@ func TestUnitRead_WithMinAndMax(t *testing.T) {
 	assert.Equal(t, "hello worl", string(opts.Out))
 }
 
-func TestUnitRead_EmptyReaderReturnsEOF(t *testing.T) {
-	ctx := context.Background()
-
-	opts := &iobytez.Options{}
-	data := ""
-	r := strings.NewReader(data)
-	n, err := iobytez.Read(ctx, r, opts)
-	assert.Equal(t, io.EOF, err)
-	assert.Equal(t, 0, n)
-	assert.Empty(t, opts.Out)
+func TestUnitRead_Empty(t *testing.T) {
+	checkRead(t, "", &iobytez.Options{}, "", io.EOF, "", io.EOF, "")
 }
 
 func TestUnitRead_ReadInChunksUntilEOF(t *testing.T) {
@@ -145,7 +137,7 @@ func TestUnitRead_ReadInChunksUntilEOF(t *testing.T) {
 	assert.Equal(t, fullData, string(totalReadBytes), "expected total data")
 }
 
-func TestUnitRead_EmptyReaderWithMin(t *testing.T) {
+func TestUnitRead_Empty_WithMin(t *testing.T) {
 	ctx := context.Background()
 
 	opts := &iobytez.Options{Min: 1}
