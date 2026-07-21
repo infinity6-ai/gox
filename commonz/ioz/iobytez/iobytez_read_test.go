@@ -12,16 +12,38 @@ import (
 	"github.com/infinity6-ai/gox/commonz/ioz/iobytez"
 )
 
-func TestUnitRead_ReadAll(t *testing.T) {
-	ctx := context.Background()
-
-	opts := &iobytez.Options{}
-	data := "hello world"
-	r := strings.NewReader(data)
+func checkRead(t *testing.T, readerData string, opts *iobytez.Options, dataFirst string, errFirst error, dataSecond string, errSecond error, dataRemaning string) {
+	ctx := t.Context()
+	r := strings.NewReader(readerData)
 	n, err := iobytez.Read(ctx, r, opts)
+	require.ErrorIs(t, err, errFirst)
+	assert.Equal(t, dataFirst, string(opts.Out))
+	assert.Equal(t, len(dataFirst), n)
+	n, err = iobytez.Read(ctx, r, opts)
+	require.ErrorIs(t, err, errSecond)
+	assert.Equal(t, dataSecond, string(opts.Out[len(dataFirst):]))
+	assert.Equal(t, len(dataSecond), n)
+
+	remaning, err := io.ReadAll(r)
 	require.NoError(t, err)
-	assert.Equal(t, len(data), n)
-	assert.Equal(t, data, string(opts.Out))
+	assert.Equal(t, dataRemaning, string(remaning))
+	n, err = r.Read([]byte{0})
+	require.ErrorIs(t, err, io.EOF)
+	assert.Equal(t, 0, n)
+}
+
+func TestUnitRead_ReadAll(t *testing.T) {
+	// ctx := context.Background()
+
+	// opts := &iobytez.Options{}
+	// data := "hello world"
+	// r := strings.NewReader(data)
+	// n, err := iobytez.Read(ctx, r, opts)
+	// require.NoError(t, err)
+	// assert.Equal(t, len(data), n)
+	// assert.Equal(t, data, string(opts.Out))
+
+	checkRead(t, "hello world", &iobytez.Options{}, "hello world", nil, "", io.EOF, "")
 }
 
 func TestUnitRead_WithInitialData(t *testing.T) {
