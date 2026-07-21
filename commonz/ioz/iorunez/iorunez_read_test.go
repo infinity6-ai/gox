@@ -173,11 +173,11 @@ func TestUnitRead_Empty_WithMin(t *testing.T) {
 
 func TestUnitRead_MultibyteCharacters(t *testing.T) {
 	ctx := context.Background()
-	data := "你好, world" // "Hello, world" in Chinese and English
+	data := "\xe4\xbd\xa0\xe5\xa5\xbd, world" // "你好, world" in Chinese and English
 	r := strings.NewReader(data)
 	opts := &iorunez.Options{Max: 10}
 	n, err := iorunez.Read(ctx, r, opts)
 	require.NoError(t, err)
 	assert.Equal(t, 9, n)
-	assert.Equal(t, "你好, world", string(opts.Out))
+	assert.Equal(t, "\xe4\xbd\xa0\xe5\xa5\xbd, world", string(opts.Out))
 }
