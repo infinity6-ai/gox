@@ -16,9 +16,9 @@ All test functions should follow the pattern `Test[Type][Scenario]`. The `[Type]
 
 We do not mix different test types within the same test file. Test file names should reflect the type of tests they contain, using the pattern `[testfilename]_[type]_test.go`.
 
-### Table-Driven Test Clarity
+### Table-Driven Test Avoidance
 
-When writing table-driven tests, always use `t.Run()` for each test case. This ensures that failures are reported with the specific scenario name, greatly improving debuggability. While `t.Run()` identifies the failing scenario, it's crucial to keep individual test case definitions concise and clear. For complex scenarios, consider breaking down the test table or adding explicit assertions for the test case setup to make debugging the test definition itself easier.
+Do not use table-driven tests because the current table is not in the stacktrace in case of error.
 
 ## Error Handling Conventions
 
