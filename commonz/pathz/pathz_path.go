@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"path"
 	"strings"
-	// "unicode" // No longer needed as IsValidChar handles this
 )
 
 type Path struct {
