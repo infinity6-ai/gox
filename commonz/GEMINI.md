@@ -18,7 +18,7 @@ We do not mix different test types within the same test file. Test file names sh
 
 ### Explicit Scenario Sub-Tests
 
-To achieve clear test isolation, direct IDE navigation to failing test data, and maintain code reusability, we employ an "Explicit Scenario Sub-Test" pattern instead of traditional table-driven tests. This approach ensures that when a test fails, the IDE can directly link to the specific data for that scenario.
+To achieve clear test isolation, direct IDE navigation to failing test data, and maintain code reusability, we employ an "Explicit Scenario Sub-Test" pattern instead of traditional table-driven tests. This approach ensures that when a test fails, the IDE can directly link to the specific data for that scenario. This pattern is specifically recommended when a test needs to cover multiple, similar scenarios that would traditionally be handled by a table-driven test. For simple, single-scenario tests, a straightforward `Test[Type][ScenarioName]` function without explicit `t.Run` calls or a `check` helper remains appropriate.
 
 This pattern involves:
 1.  A main `Test[Type][Scenario]` function.
