@@ -2,6 +2,7 @@ package iobytez
 
 import (
 	"context"
+	"fmt"
 	"io"
 	"slices"
 )
@@ -47,7 +48,7 @@ func (o *Options) grow(size int) []byte {
 func Read(ctx context.Context, r io.Reader, opts *Options) (int, error) {
 	select {
 	case <-ctx.Done():
-		return 0, ctx.Err()
+		return 0, fmt.Errorf("read canceled: %w", ctx.Err())
 	default:
 	}
 
@@ -67,7 +68,7 @@ func Read(ctx context.Context, r io.Reader, opts *Options) (int, error) {
 		// check context in loop
 		select {
 		case <-ctx.Done():
-			return totalRead, ctx.Err()
+			return totalRead, fmt.Errorf("read canceled: %w", ctx.Err())
 		default:
 		}
 
@@ -94,7 +95,7 @@ func Read(ctx context.Context, r io.Reader, opts *Options) (int, error) {
 			break
 		}
 		if err != nil {
-			return totalRead, err
+			return totalRead, fmt.Errorf("failed to read: %w", err)
 		}
 	}
 

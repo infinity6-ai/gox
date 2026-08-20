@@ -49,7 +49,7 @@ func Parse(path string) (*Path, error) {
 
 	segments, err := splitPath(path)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to split path: %w", err)
 	}
 	for _, segment := range segments {
 		if segment == "" {
