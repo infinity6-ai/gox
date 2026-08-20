@@ -1,15 +1,23 @@
 package pathz
 
 type Part struct {
-	name        string
-	placeholder bool
+	Name        string
+	Placeholder bool
 }
 
 type Patttern struct {
-	parts []*Part
+	Parts []*Part
 }
 
 type Path struct {
-	pattern *Patttern
-	values  map[string]string
+	Pattern *Patttern
+	Values  map[string]string
+}
+
+func (p *Path) String() string {
+	panic("implement it")
+}
+
+func Parse(path string) *Path {
+	panic("implement it")
 }
