@@ -2,6 +2,7 @@ package pathz
 
 import (
 	"fmt"
+	"path"
 	"strings"
 	"unicode"
 )
@@ -10,13 +11,13 @@ type Path struct {
 	Parts []string
 }
 
-func Parse(path string) (*Path, error) {
-	if path == "" {
+func Parse(input string) (*Path, error) {
+	if input == "" {
 		return &Path{Parts: []string{}}, nil
 	}
 
 	// Validate for illegal characters
-	for _, r := range path {
+	for _, r := range input {
 		if r == '\x00' {
 			return nil, fmt.Errorf("path contains illegal null character")
 		}
@@ -25,27 +26,22 @@ func Parse(path string) (*Path, error) {
 		}
 	}
 
-	// Split the path into segments and clean up
-	segments := strings.Split(path, "/")
-	cleanedSegments := make([]string, 0) // Initialize as an empty slice
+	// Clean the path using the standard library
+	cleanedPath := path.Clean(input)
 
-	isAbsolutePath := strings.HasPrefix(path, "/")
+	// path.Clean("/a/../b") -> "/b"
+	// path.Clean("././.") -> "."
+	// path.Clean("/") -> "/"
+	// path.Clean("") -> "."
 
-	for _, segment := range segments {
-		if segment == "" || segment == "." {
-			continue
-		}
-		if segment == ".." {
-			if len(cleanedSegments) > 0 && cleanedSegments[len(cleanedSegments)-1] != ".." {
-				// Pop the last segment if it's not ".."
-				cleanedSegments = cleanedSegments[:len(cleanedSegments)-1]
-			} else if !isAbsolutePath { // Only add ".." for relative paths that go above the initial path
-				cleanedSegments = append(cleanedSegments, "..")
-			}
-			continue
-		}
-		cleanedSegments = append(cleanedSegments, segment)
+	// If the cleaned path is "." or "/", it should result in an empty set of parts
+	if cleanedPath == "." || cleanedPath == "/" {
+		return &Path{Parts: []string{}}, nil
 	}
 
-	return &Path{Parts: cleanedSegments}, nil
+	// Remove leading and trailing slashes for splitting
+	cleanedPath = strings.Trim(cleanedPath, "/")
+
+	parts := strings.Split(cleanedPath, "/")
+	return &Path{Parts: parts}, nil
 }
