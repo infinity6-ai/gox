@@ -14,6 +14,25 @@ type Path struct {
 	HasEndingSlash bool
 }
 
+func (p *Path) String() string {
+	if p == nil {
+		return ""
+	}
+	var sb strings.Builder
+	if p.Parents == -1 {
+		sb.WriteString("/")
+	} else {
+		for i := 0; i < p.Parents; i++ {
+			sb.WriteString("../")
+		}
+	}
+	sb.WriteString(strings.Join(p.Parts, "/"))
+	if p.HasEndingSlash && len(p.Parts) > 0 {
+		sb.WriteString("/")
+	}
+	return sb.String()
+}
+
 func Parse(input string) (*Path, error) {
 	if input == "" {
 		return &Path{Parts: []string{}}, nil
