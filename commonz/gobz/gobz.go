@@ -4,7 +4,9 @@ import (
 	"bytes"
 	"encoding/gob"
 	"fmt"
+	"io"
 
+	"github.com/infinity6-ai/gox/commonz/constraintz/parserz"
 	"github.com/infinity6-ai/gox/commonz/errorz"
 )
 
@@ -36,4 +38,28 @@ func MustFormat[T any](data *T) []byte {
 	res, err := Format(data)
 	errorz.Check(err)
 	return res
+}
+
+type gobReader[T any] struct {
+	decoder *gob.Decoder
+}
+
+// NewReader creates a new ItemReader for gob-encoded data, compliant with the parserz.ItemReader interface.
+func NewReader[T any](r io.Reader) parserz.ItemReader[T] {
+	return &gobReader[T]{
+		decoder: gob.NewDecoder(r),
+	}
+}
+
+// ReadItem decodes one gob-encoded item from the reader.
+// It returns the item and any decoding error. If io.EOF is encountered, it returns nil, nil.
+func (r *gobReader[T]) ReadItem() (*T, error) {
+	var item T
+	if err := r.decoder.Decode(&item); err != nil {
+		if err == io.EOF {
+			return nil, nil // Return nil, nil for EOF as requested
+		}
+		return nil, err // For other errors, return nil and the error
+	}
+	return &item, nil
 }

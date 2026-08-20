@@ -1,6 +1,9 @@
 package gobz
 
 import (
+	"bytes"
+	"encoding/gob"
+	"io"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -77,5 +80,76 @@ func TestUnitMustFormat(t *testing.T) {
 			require.NoError(t, err)
 			require.Equal(t, data, result)
 		})
+	})
+}
+
+func TestUnitNewReader(t *testing.T) {
+	type testScenario struct {
+		name  string
+		items []testStruct
+	}
+
+	check := func(t *testing.T, s testScenario) {
+		var buf bytes.Buffer
+		encoder := gob.NewEncoder(&buf)
+
+		for _, item := range s.items {
+			err := encoder.Encode(item)
+			require.NoError(t, err)
+		}
+
+		reader := NewReader[testStruct](&buf)
+
+		for i := 0; i < len(s.items); i++ {
+			item, err := reader.ReadItem()
+			require.NoError(t, err)
+			require.NotNil(t, item)
+			require.Equal(t, s.items[i].Foo, item.Foo)
+			require.Equal(t, s.items[i].Bar, item.Bar)
+		}
+
+		// After reading all items, next call should return nil, nil
+		item, err := reader.ReadItem()
+		require.NoError(t, err) // Expect no error for EOF
+		require.Nil(t, item)    // Expect nil item for EOF
+	}
+
+	t.Run("read multiple items", func(t *testing.T) {
+		check(t, testScenario{
+			name: "read multiple items",
+			items: []testStruct{
+				{Foo: "one", Bar: 1},
+				{Foo: "two", Bar: 2},
+				{Foo: "three", Bar: 3},
+			},
+		})
+	})
+
+	t.Run("read single item", func(t *testing.T) {
+		check(t, testScenario{
+			name: "read single item",
+			items: []testStruct{
+				{Foo: "single", Bar: 100},
+			},
+		})
+	})
+
+	t.Run("read empty stream", func(t *testing.T) {
+		var buf bytes.Buffer
+		reader := NewReader[testStruct](&buf)
+		item, err := reader.ReadItem() // Expect nil, nil for EOF
+		require.NoError(t, err)
+		require.Nil(t, item)
+	})
+
+	t.Run("invalid gob in stream", func(t *testing.T) {
+		var buf bytes.Buffer
+		buf.Write([]byte("this is not a gob"))
+
+		reader := NewReader[testStruct](&buf)
+		_, err := reader.ReadItem()
+		require.Error(t, err)
+		// The error should not be io.EOF here, as it's an invalid gob, not just end of stream.
+		require.NotEqual(t, io.EOF, err)
 	})
 }
