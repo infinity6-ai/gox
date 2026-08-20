@@ -108,9 +108,9 @@ func TestUnitNewReader(t *testing.T) {
 			require.Equal(t, s.items[i].Bar, item.Bar)
 		}
 
-		// After reading all items, next call should return nil, nil
+		// After reading all items, next call should return nil, io.EOF
 		item, err := reader.ReadItem()
-		require.NoError(t, err) // Expect no error for EOF
+		require.Equal(t, io.EOF, err) // Expect io.EOF for EOF
 		require.Nil(t, item)    // Expect nil item for EOF
 	}
 
@@ -137,8 +137,8 @@ func TestUnitNewReader(t *testing.T) {
 	t.Run("read empty stream", func(t *testing.T) {
 		var buf bytes.Buffer
 		reader := NewReader[testStruct](&buf)
-		item, err := reader.ReadItem() // Expect nil, nil for EOF
-		require.NoError(t, err)
+		item, err := reader.ReadItem()
+		require.Equal(t, io.EOF, err)
 		require.Nil(t, item)
 	})
 
@@ -180,7 +180,7 @@ func TestUnitNewWriter(t *testing.T) {
 
 		// Check for EOF
 		item, err := reader.ReadItem()
-		require.NoError(t, err)
+		require.Equal(t, io.EOF, err)
 		require.Nil(t, item)
 	}
 
@@ -237,7 +237,7 @@ func TestUnitNewReaderWriter(t *testing.T) {
 
 		// Check for EOF
 		item, err := rw.ReadItem()
-		require.NoError(t, err)
+		require.Equal(t, io.EOF, err)
 		require.Nil(t, item)
 	}
 

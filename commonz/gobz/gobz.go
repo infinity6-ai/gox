@@ -48,7 +48,7 @@ func NewReader[T any](r io.Reader) parserz.ItemReader[T] {
 			var item T
 			if err := decoder.Decode(&item); err != nil {
 				if err == io.EOF {
-					return nil, nil // Return nil, nil for EOF as requested
+					return nil, io.EOF // Return nil, io.EOF for EOF
 				}
 				return nil, err // For other errors, return nil and the error
 			}
@@ -79,7 +79,7 @@ func NewReaderWriter[T any](rw io.ReadWriter) parserz.ItemReaderWriter[T] {
 			var item T
 			if err := decoder.Decode(&item); err != nil {
 				if err == io.EOF {
-					return nil, nil // Return nil, nil for EOF as requested
+					return nil, io.EOF // Return nil, io.EOF for EOF
 				}
 				return nil, err // For other errors, return nil and the error
 			}
