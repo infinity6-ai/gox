@@ -10,7 +10,7 @@ func IsValidChar(r rune) bool {
 	if r >= '0' && r <= '9' {
 		return true
 	}
-	if r == '-' || r == '_' || r == '.' || r == '/' {
+	if r == '-' || r == '_' || r == '.' || r == '/' || r == '=' {
 		return true
 	}
 	return false
