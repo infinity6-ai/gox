@@ -79,3 +79,25 @@ func NewWriter[T any](w io.Writer) parserz.ItemWriter[T] {
 func (w *gobWriter[T]) WriteItem(item *T) error {
 	return w.encoder.Encode(item)
 }
+
+// NewReaderWriter creates a new ItemReaderWriter for gob-encoded data, compliant with the parserz.ItemReaderWriter interface.
+func NewReaderWriter[T any](rw io.ReadWriter) parserz.ItemReaderWriter[T] {
+	decoder := gob.NewDecoder(rw)
+	encoder := gob.NewEncoder(rw)
+
+	return parserz.NewItemReaderWriter(
+		func() (*T, error) {
+			var item T
+			if err := decoder.Decode(&item); err != nil {
+				if err == io.EOF {
+					return nil, nil // Return nil, nil for EOF as requested
+				}
+				return nil, err // For other errors, return nil and the error
+			}
+			return &item, nil
+		},
+		func(item *T) error {
+			return encoder.Encode(item)
+		},
+	)
+}
