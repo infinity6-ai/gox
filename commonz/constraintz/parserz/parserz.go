@@ -1,4 +1,4 @@
-package itemioz
+package parserz
 
 type ItemReader[T any] interface {
 	ReadItem() (*T, error)
