@@ -3,7 +3,6 @@ package blobz
 import (
 	"bytes"
 	"io"
-	"reflect"
 	"strings"
 )
 
@@ -24,7 +23,6 @@ type Blob interface {
 	String() string
 	Bytes() []byte
 	IsString() bool
-	IsBytes() bool
 }
 
 // wrapper is a non-generic struct holding either a string or []byte
@@ -53,20 +51,19 @@ func (b *wrapper) Bytes() []byte {
 	return []byte(b.data.(string))
 }
 
-func (b *wrapper) IsBytes() bool {
-	_, ok := b.data.([]byte)
-	return ok
-}
-
 func (b *wrapper) IsString() bool {
 	_, ok := b.data.(string)
 	return ok
 }
 
 func New[T Data](val T) Blob {
-	v := reflect.ValueOf(val)
-	if v.Kind() == reflect.String {
-		return &wrapper{data: v.String()}
+	switch v := any(val).(type) {
+	case string:
+		return &wrapper{data: v}
+	case []byte:
+		return &wrapper{data: v}
+	default:
+		// This should not happen with the generic constraint, but as a fallback
+		return &wrapper{data: ToString(val)}
 	}
-	return &wrapper{data: v.Bytes()}
 }

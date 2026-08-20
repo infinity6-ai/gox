@@ -3,58 +3,54 @@ package blobz_test
 import (
 	"testing"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"go.code.infinity6.ai/platform/util/blobz"
 )
 
 func TestUnitWrapperStr(t *testing.T) {
-	assert.Equal(t, "hello", blobz.New("hello").String())
-	assert.Equal(t, []byte("hello"), blobz.New("hello").Bytes())
+	require.Equal(t, "hello", blobz.New("hello").String())
+	require.Equal(t, []byte("hello"), blobz.New("hello").Bytes())
 
-	assert.True(t, blobz.New("hello").IsString())
-	assert.False(t, blobz.New("hello").IsBytes())
+	require.True(t, blobz.New("hello").IsString())
 
 	type My string
-	assert.Equal(t, "hello", blobz.New(My("hello")).String())
-	assert.Equal(t, []byte("hello"), blobz.New(My("hello")).Bytes())
+	require.Equal(t, "hello", blobz.New(My("hello")).String())
+	require.Equal(t, []byte("hello"), blobz.New(My("hello")).Bytes())
 
-	assert.True(t, blobz.New(My("hello")).IsString())
-	assert.False(t, blobz.New(My("hello")).IsBytes())
+	require.True(t, blobz.New(My("hello")).IsString())
 }
 
 func TestUnitWrapperBytes(t *testing.T) {
-	assert.Equal(t, "hello", blobz.New([]byte("hello")).String())
-	assert.Equal(t, []byte("hello"), blobz.New([]byte("hello")).Bytes())
+	require.Equal(t, "hello", blobz.New([]byte("hello")).String())
+	require.Equal(t, []byte("hello"), blobz.New([]byte("hello")).Bytes())
 
-	assert.False(t, blobz.New([]byte("hello")).IsString())
-	assert.True(t, blobz.New([]byte("hello")).IsBytes())
+	require.False(t, blobz.New([]byte("hello")).IsString())
 
 	type My []byte
-	assert.Equal(t, "hello", blobz.New(My("hello")).String())
-	assert.Equal(t, []byte("hello"), blobz.New(My("hello")).Bytes())
+	require.Equal(t, "hello", blobz.New(My("hello")).String())
+	require.Equal(t, []byte("hello"), blobz.New(My("hello")).Bytes())
 
-	assert.False(t, blobz.New(My("hello")).IsString())
-	assert.True(t, blobz.New(My("hello")).IsBytes())
+	require.False(t, blobz.New(My("hello")).IsString())
 }
 
 func TestUnitToString(t *testing.T) {
-	assert.Equal(t, "hello", blobz.ToString("hello"))
-	assert.Equal(t, "hello", blobz.ToString([]byte("hello")))
+	require.Equal(t, "hello", blobz.ToString("hello"))
+	require.Equal(t, "hello", blobz.ToString([]byte("hello")))
 
 	type MyString string
-	assert.Equal(t, "hello", blobz.ToString(MyString("hello")))
+	require.Equal(t, "hello", blobz.ToString(MyString("hello")))
 
 	type MyBytes []byte
-	assert.Equal(t, "hello", blobz.ToString(MyBytes("hello")))
+	require.Equal(t, "hello", blobz.ToString(MyBytes("hello")))
 }
 
 func TestUnitToBytes(t *testing.T) {
-	assert.Equal(t, []byte("hello"), blobz.ToBytes("hello"))
-	assert.Equal(t, []byte("hello"), blobz.ToBytes([]byte("hello")))
+	require.Equal(t, []byte("hello"), blobz.ToBytes("hello"))
+	require.Equal(t, []byte("hello"), blobz.ToBytes([]byte("hello")))
 
 	type MyString string
-	assert.Equal(t, []byte("hello"), blobz.ToBytes(MyString("hello")))
+	require.Equal(t, []byte("hello"), blobz.ToBytes(MyString("hello")))
 
 	type MyBytes []byte
-	assert.Equal(t, []byte("hello"), blobz.ToBytes(MyBytes("hello")))
+	require.Equal(t, []byte("hello"), blobz.ToBytes(MyBytes("hello")))
 }
