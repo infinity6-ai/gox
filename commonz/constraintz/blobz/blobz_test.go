@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
-	"go.code.infinity6.ai/platform/util/blobz"
+	"github.com/infinity6-ai/gox/commonz/constraintz/blobz"
 )
 
 func TestUnitWrapperStr(t *testing.T) {

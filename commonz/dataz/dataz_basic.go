@@ -2,7 +2,7 @@
 // like strings and byte slices.
 package dataz
 
-import "go.code.infinity6.ai/platform/util/blobz"
+import "github.com/infinity6-ai/gox/commonz/constraintz/blobz"
 
 // Limited truncates a string or byte slice to a specified maximum length.
 // If the length of the input `s` is already less than or equal to `max`,

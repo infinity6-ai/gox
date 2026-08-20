@@ -3,6 +3,7 @@ package blobz
 import (
 	"bytes"
 	"io"
+	"reflect"
 	"strings"
 )
 
@@ -34,36 +35,59 @@ func (b *wrapper) NewReader() io.Reader {
 	if s, ok := b.data.(string); ok {
 		return strings.NewReader(s)
 	}
-	return bytes.NewReader(b.data.([]byte))
+	if bs, ok := b.data.([]byte); ok {
+		return bytes.NewReader(bs)
+	}
+
+	// Fallback for aliased types
+	rv := reflect.ValueOf(b.data)
+	if rv.Kind() == reflect.String {
+		return strings.NewReader(rv.String())
+	}
+	return bytes.NewReader(rv.Bytes())
 }
 
 func (b *wrapper) String() string {
 	if s, ok := b.data.(string); ok {
 		return s
 	}
-	return string(b.data.([]byte))
+	if bs, ok := b.data.([]byte); ok {
+		return string(bs)
+	}
+	// Fallback for aliased types
+	rv := reflect.ValueOf(b.data)
+	if rv.Kind() == reflect.String {
+		return rv.String()
+	}
+	return string(rv.Bytes())
 }
 
 func (b *wrapper) Bytes() []byte {
 	if bs, ok := b.data.([]byte); ok {
 		return bs
 	}
-	return []byte(b.data.(string))
+	if s, ok := b.data.(string); ok {
+		return []byte(s)
+	}
+	// Fallback for aliased types
+	rv := reflect.ValueOf(b.data)
+	if rv.Kind() == reflect.String {
+		return []byte(rv.String())
+	}
+	return rv.Bytes()
 }
 
 func (b *wrapper) IsString() bool {
-	_, ok := b.data.(string)
-	return ok
+	if _, ok := b.data.(string); ok {
+		return true
+	}
+	if _, ok := b.data.([]byte); ok {
+		return false
+	}
+	// Fallback for aliased types
+	return reflect.ValueOf(b.data).Kind() == reflect.String
 }
 
 func New[T Data](val T) Blob {
-	switch v := any(val).(type) {
-	case string:
-		return &wrapper{data: v}
-	case []byte:
-		return &wrapper{data: v}
-	default:
-		// This should not happen with the generic constraint, but as a fallback
-		return &wrapper{data: ToString(val)}
-	}
+	return &wrapper{data: val}
 }
