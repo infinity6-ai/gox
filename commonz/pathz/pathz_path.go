@@ -64,6 +64,24 @@ func Parse(input string) (*Path, error) {
 		}
 	}
 
+	if len(parts) > 0 {
+		for _, part := range parts {
+			if part == "" {
+				continue // Should not happen with path.Clean, but as a safeguard.
+			}
+			allDots := true
+			for _, r := range part {
+				if r != '.' {
+					allDots = false
+					break
+				}
+			}
+			if allDots {
+				return nil, fmt.Errorf("path contains illegal component: \"%s\"", part)
+			}
+		}
+	}
+
 	return &Path{
 		Parts:          parts,
 		Parents:        parents,

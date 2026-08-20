@@ -126,6 +126,26 @@ func TestUnitParseBasic(t *testing.T) {
 			expectedParts:   []string{"d", "e"},
 			expectedParents: -1,
 		},
+		{
+			name:          "path with illegal component dots",
+			input:         "a/.../b",
+			expectedError: "path contains illegal component: \"...\"",
+		},
+		{
+			name:          "path with illegal component more dots",
+			input:         "a/..../b",
+			expectedError: "path contains illegal component: \"....\"",
+		},
+		{
+			name:          "path with leading illegal component dots",
+			input:         ".../b",
+			expectedError: "path contains illegal component: \"...\"",
+		},
+		{
+			name:          "path with trailing illegal component dots",
+			input:         "a/...",
+			expectedError: "path contains illegal component: \"...\"",
+		},
 	}
 
 	for _, tt := range tests {
