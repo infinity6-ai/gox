@@ -1,8 +1,6 @@
 package jsonz
 
-import (
-	"github.com/infinity6-ai/gox/commonz/blobz"
-)
+import "go.code.infinity6.ai/platform/util/blobz"
 
 func Parse[T any, I blobz.Data](data I) (*T, error) {
 	panic("implement it")
