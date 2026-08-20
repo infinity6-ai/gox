@@ -119,6 +119,16 @@ func TestUnitParseBasic(t *testing.T) {
 			expectedParts:    []string{"d", "e"},
 			expectedAbsolute: true,
 		},
+		{
+			name:          "path with triple dots",
+			input:         "a/.../b",
+			expectedError: "path contains illegal component: \"...\"",
+		},
+		{
+			name:          "path with more than three dots",
+			input:         "a/..../b",
+			expectedError: "path contains illegal component: \"....\"",
+		},
 	}
 
 	for _, tt := range tests {

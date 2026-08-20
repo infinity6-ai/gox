@@ -44,6 +44,13 @@ func Parse(input string) (*Path, error) {
 		parts = strings.Split(cleanedPath, "/")
 	}
 
+	// Validate for parts with "..." or more dots
+	for _, part := range parts {
+		if len(part) >= 3 && strings.Trim(part, ".") == "" {
+			return nil, fmt.Errorf("path contains illegal component: %q", part)
+		}
+	}
+
 	return &Path{
 		Parts:          parts,
 		Absolute:       isAbsolute,
