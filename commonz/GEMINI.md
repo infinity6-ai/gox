@@ -34,6 +34,20 @@ if err != nil {
 }
 ```
 
+For situations where a non-nil error should immediately halt execution, `errorz.Check` provides a concise and consistent way to panic. It ensures that if `err` is not `nil`, the program panics, and critically, it wraps the error in a `StructuredError` (if it isn't already) to provide consistent error reporting, and prevents panicking with a `nil` error.
+
+Instead of:
+```go
+if err != nil {
+    panic(err)
+}
+```
+
+Use:
+```go
+errorz.Check(err)
+```
+
 ### Running Tests
 
 To run Unit and Remote tests, use the following command:
