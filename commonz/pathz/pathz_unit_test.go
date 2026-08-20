@@ -13,6 +13,7 @@ func TestUnitParse(t *testing.T) {
 		name          string
 		inputPath     string
 		expectedParts []*pathz.Part
+		expectErr     bool
 	}{
 		{
 			name:      "simple path",
@@ -42,13 +43,13 @@ func TestUnitParse(t *testing.T) {
 			},
 		},
 		{
-			name:      "empty path",
-			inputPath: "",
+			name:          "empty path",
+			inputPath:     "",
 			expectedParts: []*pathz.Part{},
 		},
 		{
-			name:      "root path",
-			inputPath: "/",
+			name:          "root path",
+			inputPath:     "/",
 			expectedParts: []*pathz.Part{},
 		},
 		{
@@ -66,16 +67,47 @@ func TestUnitParse(t *testing.T) {
 				{Name: "profile", Placeholder: false},
 			},
 		},
+		{
+			name:      "path with ..",
+			inputPath: "/users/../profile",
+			expectedParts: []*pathz.Part{
+				{Name: "profile", Placeholder: false},
+			},
+		},
+		{
+			name:      "path with .",
+			inputPath: "/users/./profile",
+			expectedParts: []*pathz.Part{
+				{Name: "users", Placeholder: false},
+				{Name: "profile", Placeholder: false},
+			},
+		},
+		{
+			name:      "path with illegal characters",
+			inputPath: "/users/a+b/profile",
+			expectErr: true,
+		},
+		{
+			name:      "another path with illegal characters",
+			inputPath: "/users/a b/profile",
+			expectErr: true,
+		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			result := pathz.Parse(tt.inputPath)
-			require.NotNil(t, result)
-			require.NotNil(t, result.Pattern)
-			require.Equal(t, tt.expectedParts, result.Pattern.Parts)
-			require.NotNil(t, result.Values)
-			require.Empty(t, result.Values)
+			result, err := pathz.Parse(tt.inputPath)
+			if tt.expectErr {
+				require.Error(t, err)
+				require.Nil(t, result)
+			} else {
+				require.NoError(t, err)
+				require.NotNil(t, result)
+				require.NotNil(t, result.Pattern)
+				require.Equal(t, tt.expectedParts, result.Pattern.Parts)
+				require.NotNil(t, result.Values)
+				require.Empty(t, result.Values)
+			}
 		})
 	}
 }

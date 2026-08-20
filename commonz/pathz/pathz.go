@@ -1,6 +1,10 @@
 package pathz
 
-import "strings"
+import (
+	"fmt"
+	"strings"
+	"unicode"
+)
 
 type Part struct {
 	Name        string
@@ -35,7 +39,7 @@ func (p *Path) String() string {
 	return sb.String()
 }
 
-func Parse(path string) *Path {
+func Parse(path string) (*Path, error) {
 	p := &Path{
 		Pattern: &Pattern{
 			Parts: make([]*Part, 0),
@@ -43,7 +47,10 @@ func Parse(path string) *Path {
 		Values: make(map[string]string),
 	}
 
-	segments := splitPath(path)
+	segments, err := splitPath(path)
+	if err != nil {
+		return nil, err
+	}
 	for _, segment := range segments {
 		if segment == "" {
 			continue
@@ -61,19 +68,24 @@ func Parse(path string) *Path {
 		}
 	}
 
-	return p
+	return p, nil
 }
 
-func splitPath(path string) []string {
-	if path == "/" {
-		return []string{}
+func splitPath(path string) ([]string, error) {
+	path = Clean(path)
+	if path == "." {
+		return []string{}, nil
 	}
-	// Trim leading and trailing slashes to handle cases like "/a/b/"
-	path = trimSlash(path)
-	if path == "" {
-		return []string{}
+	segments := strings.Split(path, "/")
+	for _, segment := range segments {
+		if len(segment) > 2 && segment[0] == '{' && segment[len(segment)-1] == '}' {
+			continue
+		}
+		if !isSafe(segment) {
+			return nil, fmt.Errorf("illegal character in path segment: %s", segment)
+		}
 	}
-	return strings.Split(path, "/")
+	return segments, nil
 }
 
 func trimSlash(s string) string {
@@ -84,4 +96,13 @@ func trimSlash(s string) string {
 		s = s[:len(s)-1]
 	}
 	return s
+}
+
+func isSafe(s string) bool {
+	for _, r := range s {
+		if !unicode.IsLetter(r) && !unicode.IsNumber(r) && r != '-' && r != '_' && r != '.' {
+			return false
+		}
+	}
+	return true
 }
