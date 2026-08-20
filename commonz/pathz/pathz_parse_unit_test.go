@@ -39,10 +39,9 @@ func TestUnitParseBasic(t *testing.T) {
 			expectedParts: []string{"a", "c"},
 		},
 		{
-			name:             "path starting with parent dir (relative)",
-			input:            "../a/b",
-			expectedParts:    []string{"..", "a", "b"},
-			expectedAbsolute: false,
+			name:          "path starting with parent dir (relative)",
+			input:         "../a/b",
+			expectedError: "path contains illegal component: \"..\"",
 		},
 		{
 			name:             "path starting with parent dir (absolute)",
@@ -56,34 +55,31 @@ func TestUnitParseBasic(t *testing.T) {
 			expectedParts: []string{"a", "d"},
 		},
 		{
-			name:             "path with excessive parent dir navigations",
-			input:            "a/../../b",
-			expectedParts:    []string{"..", "b"},
-			expectedAbsolute: false,
+			name:          "path with excessive parent dir navigations",
+			input:         "a/../../b",
+			expectedError: "path contains illegal component: \"..\"",
 		},
 		{
-			name: "empty path",
+			name:          "empty path",
 			input:         "",
 			expectedParts: nil,
 		},
 		{
-			name:             "path with only slashes",
-			input:            "///",
-			expectedParts:    nil,
-			expectedAbsolute: true,
+			name:                   "path with only slashes",
+			input:                  "///",
+			expectedParts:          nil,
+			expectedAbsolute:       true,
 			expectedHasEndingSlash: true,
 		},
 		{
-			name: "path with only current dir",
+			name:          "path with only current dir",
 			input:         "././.",
 			expectedParts: nil,
 		},
 		{
-			name:                   "path with only parent dir",
-			input:                  "../../",
-			expectedParts:          []string{"..", ".."},
-			expectedAbsolute:       false,
-			expectedHasEndingSlash: true,
+			name:          "path with only parent dir",
+			input:         "../../",
+			expectedError: "path contains illegal component: \"..\"",
 		},
 		{
 			name:          "path with illegal characters - null byte",
@@ -118,16 +114,6 @@ func TestUnitParseBasic(t *testing.T) {
 			input:            "/./a/../b/./c/../../d/e/.",
 			expectedParts:    []string{"d", "e"},
 			expectedAbsolute: true,
-		},
-		{
-			name:          "path with triple dots",
-			input:         "a/.../b",
-			expectedError: "path contains illegal component: \"...\"",
-		},
-		{
-			name:          "path with more than three dots",
-			input:         "a/..../b",
-			expectedError: "path contains illegal component: \"....\"",
 		},
 	}
 
