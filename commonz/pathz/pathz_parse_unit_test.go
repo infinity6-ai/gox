@@ -13,73 +13,83 @@ func TestUnitParseBasic(t *testing.T) {
 		name                   string
 		input                  string
 		expectedParts          []string
-		expectedAbsolute       bool
+		expectedParents        int
 		expectedHasEndingSlash bool
 		expectedError          string
 	}{
 		{
-			name:             "absolute path",
-			input:            "/a/b/c",
-			expectedParts:    []string{"a", "b", "c"},
-			expectedAbsolute: true,
+			name:            "absolute path",
+			input:           "/a/b/c",
+			expectedParts:   []string{"a", "b", "c"},
+			expectedParents: -1,
 		},
 		{
-			name:          "relative path",
-			input:         "a/b/c",
-			expectedParts: []string{"a", "b", "c"},
+			name:            "relative path",
+			input:           "a/b/c",
+			expectedParts:   []string{"a", "b", "c"},
+			expectedParents: 0,
 		},
 		{
-			name:          "path with current dir",
-			input:         "a/./b/c",
-			expectedParts: []string{"a", "b", "c"},
+			name:            "path with current dir",
+			input:           "a/./b/c",
+			expectedParts:   []string{"a", "b", "c"},
+			expectedParents: 0,
 		},
 		{
-			name:          "path with parent dir",
-			input:         "a/b/../c",
-			expectedParts: []string{"a", "c"},
+			name:            "path with parent dir",
+			input:           "a/b/../c",
+			expectedParts:   []string{"a", "c"},
+			expectedParents: 0,
 		},
 		{
-			name:          "path starting with parent dir (relative)",
-			input:         "../a/b",
-			expectedError: "path contains illegal component: \"..\"",
+			name:            "path starting with parent dir (relative)",
+			input:           "../a/b",
+			expectedParts:   []string{"a", "b"},
+			expectedParents: 1,
 		},
 		{
-			name:             "path starting with parent dir (absolute)",
-			input:            "/../a/b",
-			expectedParts:    []string{"a", "b"},
-			expectedAbsolute: true,
+			name:            "path starting with parent dir (absolute)",
+			input:           "/../a/b",
+			expectedParts:   []string{"a", "b"},
+			expectedParents: -1,
 		},
 		{
-			name:          "path with multiple parent dir navigations",
-			input:         "a/b/c/../../d",
-			expectedParts: []string{"a", "d"},
+			name:            "path with multiple parent dir navigations",
+			input:           "a/b/c/../../d",
+			expectedParts:   []string{"a", "d"},
+			expectedParents: 0,
 		},
 		{
-			name:          "path with excessive parent dir navigations",
-			input:         "a/../../b",
-			expectedError: "path contains illegal component: \"..\"",
+			name:            "path with excessive parent dir navigations",
+			input:           "a/../../b",
+			expectedParts:   []string{"b"},
+			expectedParents: 1,
 		},
 		{
-			name:          "empty path",
-			input:         "",
-			expectedParts: nil,
+			name:            "empty path",
+			input:           "",
+			expectedParts:   []string{},
+			expectedParents: 0,
 		},
 		{
 			name:                   "path with only slashes",
 			input:                  "///",
-			expectedParts:          nil,
-			expectedAbsolute:       true,
+			expectedParts:          []string{},
+			expectedParents:        -1,
 			expectedHasEndingSlash: true,
 		},
 		{
-			name:          "path with only current dir",
-			input:         "././.",
-			expectedParts: nil,
+			name:            "path with only current dir",
+			input:           "././.",
+			expectedParts:   []string{},
+			expectedParents: 0,
 		},
 		{
-			name:          "path with only parent dir",
-			input:         "../../",
-			expectedError: "path contains illegal component: \"..\"",
+			name:                   "path with only parent dir",
+			input:                  "../../",
+			expectedParts:          []string{},
+			expectedParents:        2,
+			expectedHasEndingSlash: true,
 		},
 		{
 			name:          "path with illegal characters - null byte",
@@ -95,25 +105,26 @@ func TestUnitParseBasic(t *testing.T) {
 			name:                   "path with trailing slash",
 			input:                  "a/b/c/",
 			expectedParts:          []string{"a", "b", "c"},
+			expectedParents:        0,
 			expectedHasEndingSlash: true,
 		},
 		{
-			name:             "path with leading slash",
-			input:            "/a/b/c",
-			expectedParts:    []string{"a", "b", "c"},
-			expectedAbsolute: true,
+			name:            "path with leading slash",
+			input:           "/a/b/c",
+			expectedParts:   []string{"a", "b", "c"},
+			expectedParents: -1,
 		},
 		{
-			name:             "path with mixed slashes",
-			input:            "//a/b///c",
-			expectedParts:    []string{"a", "b", "c"},
-			expectedAbsolute: true,
+			name:            "path with mixed slashes",
+			input:           "//a/b///c",
+			expectedParts:   []string{"a", "b", "c"},
+			expectedParents: -1,
 		},
 		{
-			name:             "complex path",
-			input:            "/./a/../b/./c/../../d/e/.",
-			expectedParts:    []string{"d", "e"},
-			expectedAbsolute: true,
+			name:            "complex path",
+			input:           "/./a/../b/./c/../../d/e/.",
+			expectedParts:   []string{"d", "e"},
+			expectedParents: -1,
 		},
 	}
 
@@ -129,7 +140,7 @@ func TestUnitParseBasic(t *testing.T) {
 				require.NoError(t, err)
 				require.NotNil(t, p)
 				require.Equal(t, tt.expectedParts, p.Parts)
-				require.Equal(t, tt.expectedAbsolute, p.Absolute)
+				require.Equal(t, tt.expectedParents, p.Parents)
 				require.Equal(t, tt.expectedHasEndingSlash, p.HasEndingSlash)
 			}
 		})
