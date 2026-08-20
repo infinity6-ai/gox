@@ -78,12 +78,12 @@ func TestUnitParseBasic(t *testing.T) {
 		{
 			name:          "path with illegal characters - null byte",
 			input:         "a\x00b/c",
-			expectedError: "path contains illegal null character",
+			expectedError: "path contains illegal character: '\x00'",
 		},
 		{
 			name:          "path with illegal characters - control character",
 			input:         "a\tb/c",
-			expectedError: "path contains illegal control character",
+			expectedError: "path contains illegal character: '\t'",
 		},
 		{
 			name:          "path with trailing slash",

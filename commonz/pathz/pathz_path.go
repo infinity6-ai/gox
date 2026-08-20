@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"path"
 	"strings"
-	"unicode"
+	// "unicode" // No longer needed as IsValidChar handles this
 )
 
 type Path struct {
@@ -16,13 +16,10 @@ func Parse(input string) (*Path, error) {
 		return &Path{Parts: []string{}}, nil
 	}
 
-	// Validate for illegal characters
+	// Validate for illegal characters using IsValidChar
 	for _, r := range input {
-		if r == '\x00' {
-			return nil, fmt.Errorf("path contains illegal null character")
-		}
-		if unicode.IsControl(r) {
-			return nil, fmt.Errorf("path contains illegal control character")
+		if !IsValidChar(r) {
+			return nil, fmt.Errorf("path contains illegal character: '%c'", r)
 		}
 	}
 
