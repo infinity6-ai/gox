@@ -7,7 +7,9 @@ import (
 
 func Parse[T any, I blobz.Data](data I) (*T, error) {
 	var result T
-	if err := json.Unmarshal(blobz.ToBytes(data), &result); err != nil {
+	decoder := json.NewDecoder(blobz.New(data).NewReader())
+	decoder.UseNumber()
+	if err := decoder.Decode(&result); err != nil {
 		return nil, err
 	}
 	return &result, nil
