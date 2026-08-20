@@ -24,7 +24,9 @@ func (p *Path) String() string {
 			if val, ok := p.Values[part.Name]; ok {
 				sb.WriteString(val)
 			} else {
-				sb.WriteString("{" + part.Name + "}")
+				sb.WriteString("{")
+				sb.WriteString(part.Name)
+				sb.WriteString("}")
 			}
 		} else {
 			sb.WriteString(part.Name)
@@ -38,7 +40,7 @@ func Parse(path string) *Path {
 		Pattern: &Pattern{
 			Parts: make([]*Part, 0),
 		},
-		Values:  make(map[string]string),
+		Values: make(map[string]string),
 	}
 
 	segments := splitPath(path)
@@ -83,4 +85,3 @@ func trimSlash(s string) string {
 	}
 	return s
 }
-
