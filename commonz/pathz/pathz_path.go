@@ -8,12 +8,14 @@ import (
 )
 
 type Path struct {
-	Parts []string
+	Parts          []string
+	Absolute       bool
+	HasEndingSlash bool
 }
 
 func Parse(input string) (*Path, error) {
 	if input == "" {
-		return &Path{Parts: []string{}}, nil
+		return &Path{}, nil
 	}
 
 	// Validate for illegal characters using IsValidChar
@@ -23,6 +25,9 @@ func Parse(input string) (*Path, error) {
 		}
 	}
 
+	isAbsolute := strings.HasPrefix(input, "/")
+	hasEndingSlash := strings.HasSuffix(input, "/") && len(input) > 1
+
 	// Clean the path using the standard library
 	cleanedPath := path.Clean(input)
 
@@ -31,14 +36,17 @@ func Parse(input string) (*Path, error) {
 	// path.Clean("/") -> "/"
 	// path.Clean("") -> "."
 
+	var parts []string
 	// If the cleaned path is "." or "/", it should result in an empty set of parts
-	if cleanedPath == "." || cleanedPath == "/" {
-		return &Path{Parts: []string{}}, nil
+	if cleanedPath != "." && cleanedPath != "/" {
+		// Remove leading and trailing slashes for splitting
+		cleanedPath = strings.Trim(cleanedPath, "/")
+		parts = strings.Split(cleanedPath, "/")
 	}
 
-	// Remove leading and trailing slashes for splitting
-	cleanedPath = strings.Trim(cleanedPath, "/")
-
-	parts := strings.Split(cleanedPath, "/")
-	return &Path{Parts: parts}, nil
+	return &Path{
+		Parts:          parts,
+		Absolute:       isAbsolute,
+		HasEndingSlash: hasEndingSlash,
+	}, nil
 }
