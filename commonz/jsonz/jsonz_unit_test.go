@@ -1,6 +1,8 @@
 package jsonz
 
 import (
+	"bytes"
+	"io"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -102,3 +104,188 @@ func TestUnitMustFormat(t *testing.T) {
 		})
 	})
 }
+
+func TestUnitNewReader(t *testing.T) {
+	type testScenario struct {
+		name  string
+		items []testStruct
+	}
+
+	check := func(t *testing.T, s testScenario) {
+		var buf bytes.Buffer
+		encoder := json.NewEncoder(&buf)
+
+		for _, item := range s.items {
+			err := encoder.Encode(item)
+			require.NoError(t, err)
+		}
+
+		reader := NewReader[testStruct](&buf)
+
+		for i := 0; i < len(s.items); i++ {
+			item, err := reader.ReadItem()
+			require.NoError(t, err)
+			require.NotNil(t, item)
+			require.Equal(t, s.items[i].Foo, item.Foo)
+			require.Equal(t, s.items[i].Bar, item.Bar)
+		}
+
+		// After reading all items, next call should return nil, io.EOF
+		item, err := reader.ReadItem()
+		require.Equal(t, io.EOF, err)
+		require.Nil(t, item)
+	}
+
+	t.Run("read multiple items", func(t *testing.T) {
+		check(t, testScenario{
+			name: "read multiple items",
+			items: []testStruct{
+				{Foo: "one", Bar: 1},
+				{Foo: "two", Bar: 2},
+				{Foo: "three", Bar: 3},
+			},
+		})
+	})
+
+	t.Run("read single item", func(t *testing.T) {
+		check(t, testScenario{
+			name: "read single item",
+			items: []testStruct{
+				{Foo: "single", Bar: 100},
+			},
+		})
+	})
+
+	t.Run("read empty stream", func(t *testing.T) {
+		var buf bytes.Buffer
+		reader := NewReader[testStruct](&buf)
+		item, err := reader.ReadItem()
+		require.Equal(t, io.EOF, err)
+		require.Nil(t, item)
+	})
+
+	t.Run("invalid json in stream", func(t *testing.T) {
+		var buf bytes.Buffer
+		buf.WriteString(`invalid json string`) // Write invalid JSON
+		reader := NewReader[testStruct](&buf)
+		_, err := reader.ReadItem()
+		require.Error(t, err)
+		require.NotEqual(t, io.EOF, err) // It's an error, not EOF
+	})
+}
+
+func TestUnitNewWriter(t *testing.T) {
+	type testScenario struct {
+		name  string
+		items []*testStruct
+	}
+
+	check := func(t *testing.T, s testScenario) {
+		var buf bytes.Buffer
+		writer := NewWriter[testStruct](&buf)
+
+		for _, item := range s.items {
+			err := writer.WriteItem(item)
+			require.NoError(t, err)
+		}
+
+		// Now read them back to verify
+		reader := NewReader[testStruct](&buf)
+		for i := 0; i < len(s.items); i++ {
+			item, err := reader.ReadItem()
+			require.NoError(t, err)
+			require.NotNil(t, item)
+			require.Equal(t, *s.items[i], *item)
+		}
+
+		// Check for EOF
+		item, err := reader.ReadItem()
+		require.Equal(t, io.EOF, err)
+		require.Nil(t, item)
+	}
+
+	t.Run("write multiple items", func(t *testing.T) {
+		check(t, testScenario{
+			name: "write multiple items",
+			items: []*testStruct{
+				{Foo: "one", Bar: 1},
+				{Foo: "two", Bar: 2},
+				{Foo: "three", Bar: 3},
+			},
+		})
+	})
+
+	t.Run("write single item", func(t *testing.T) {
+		check(t, testScenario{
+			name: "write single item",
+			items: []*testStruct{
+				{Foo: "single", Bar: 100},
+			},
+		})
+	})
+
+	t.Run("write no items", func(t *testing.T) {
+		check(t, testScenario{
+			name:  "write no items",
+			items: []*testStruct{},
+		})
+	})
+}
+
+func TestUnitNewReaderWriter(t *testing.T) {
+	type testScenario struct {
+		name  string
+		items []*testStruct
+	}
+
+	check := func(t *testing.T, s testScenario) {
+		var buf bytes.Buffer
+		rw := NewReaderWriter[testStruct](&buf)
+
+		for _, item := range s.items {
+			err := rw.WriteItem(item)
+			require.NoError(t, err)
+		}
+
+		// Now read them back to verify
+		for i := 0; i < len(s.items); i++ {
+			item, err := rw.ReadItem()
+			require.NoError(t, err)
+			require.NotNil(t, item)
+			require.Equal(t, *s.items[i], *item)
+		}
+
+		// Check for EOF
+		item, err := rw.ReadItem()
+		require.Equal(t, io.EOF, err)
+		require.Nil(t, item)
+	}
+
+	t.Run("read/write multiple items", func(t *testing.T) {
+		check(t, testScenario{
+			name: "read/write multiple items",
+			items: []*testStruct{
+				{Foo: "one", Bar: 1},
+				{Foo: "two", Bar: 2},
+				{Foo: "three", Bar: 3},
+			},
+		})
+	})
+
+	t.Run("read/write single item", func(t *testing.T) {
+		check(t, testScenario{
+			name: "read/write single item",
+			items: []*testStruct{
+				{Foo: "single", Bar: 100},
+			},
+		})
+	})
+
+	t.Run("read/write no items", func(t *testing.T) {
+		check(t, testScenario{
+			name:  "read/write no items",
+			items: []*testStruct{},
+		})
+	})
+}
+
