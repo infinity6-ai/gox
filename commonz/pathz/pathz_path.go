@@ -1,6 +1,7 @@
 package pathz
 
 import (
+	"errors"
 	"fmt"
 	"path"
 	"strings"
@@ -67,7 +68,7 @@ func Parse(input string) (*Path, error) {
 	if len(parts) > 0 {
 		for _, part := range parts {
 			if part == "" {
-				continue // Should not happen with path.Clean, but as a safeguard.
+				panic(errors.New("Should not happen with path.Clean, but as a safeguard."))
 			}
 			allDots := true
 			for _, r := range part {
