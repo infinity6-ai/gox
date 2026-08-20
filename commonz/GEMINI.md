@@ -16,6 +16,24 @@ All test functions should follow the pattern `Test[Type][Scenario]`. The `[Type]
 
 We do not mix different test types within the same test file. Test file names should reflect the type of tests they contain, using the pattern `[testfilename]_[type]_test.go`.
 
+## Error Handling Conventions
+
+When handling errors, every `err := ... if (err != nil) return err` must be encapsulated using `fmt.Errorf`. This ensures that errors provide more context as they propagate up the call stack, making debugging easier.
+
+For example, instead of:
+```go
+if err != nil {
+    return err
+}
+```
+
+Use:
+```go
+if err != nil {
+    return fmt.Errorf("failed to process data: %w", err)
+}
+```
+
 ### Running Tests
 
 To run Unit and Remote tests, use the following command:
