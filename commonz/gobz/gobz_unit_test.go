@@ -153,3 +153,61 @@ func TestUnitNewReader(t *testing.T) {
 		require.NotEqual(t, io.EOF, err)
 	})
 }
+
+func TestUnitNewWriter(t *testing.T) {
+	type testScenario struct {
+		name  string
+		items []*testStruct
+	}
+
+	check := func(t *testing.T, s testScenario) {
+		var buf bytes.Buffer
+		writer := NewWriter[testStruct](&buf)
+
+		for _, item := range s.items {
+			err := writer.WriteItem(item)
+			require.NoError(t, err)
+		}
+
+		// Now read them back to verify
+		reader := NewReader[testStruct](&buf)
+		for i := 0; i < len(s.items); i++ {
+			item, err := reader.ReadItem()
+			require.NoError(t, err)
+			require.NotNil(t, item)
+			require.Equal(t, *s.items[i], *item)
+		}
+
+		// Check for EOF
+		item, err := reader.ReadItem()
+		require.NoError(t, err)
+		require.Nil(t, item)
+	}
+
+	t.Run("write multiple items", func(t *testing.T) {
+		check(t, testScenario{
+			name: "write multiple items",
+			items: []*testStruct{
+				{Foo: "one", Bar: 1},
+				{Foo: "two", Bar: 2},
+				{Foo: "three", Bar: 3},
+			},
+		})
+	})
+
+	t.Run("write single item", func(t *testing.T) {
+		check(t, testScenario{
+			name: "write single item",
+			items: []*testStruct{
+				{Foo: "single", Bar: 100},
+			},
+		})
+	})
+
+	t.Run("write no items", func(t *testing.T) {
+		check(t, testScenario{
+			name:  "write no items",
+			items: []*testStruct{},
+		})
+	})
+}

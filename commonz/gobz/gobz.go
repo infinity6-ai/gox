@@ -63,3 +63,19 @@ func (r *gobReader[T]) ReadItem() (*T, error) {
 	}
 	return &item, nil
 }
+
+type gobWriter[T any] struct {
+	encoder *gob.Encoder
+}
+
+// NewWriter creates a new ItemWriter for gob-encoded data, compliant with the parserz.ItemWriter interface.
+func NewWriter[T any](w io.Writer) parserz.ItemWriter[T] {
+	return &gobWriter[T]{
+		encoder: gob.NewEncoder(w),
+	}
+}
+
+// WriteItem encodes one item to the writer as gob-encoded data.
+func (w *gobWriter[T]) WriteItem(item *T) error {
+	return w.encoder.Encode(item)
+}
