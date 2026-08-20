@@ -19,10 +19,16 @@ type itemReaderWriter[T any] struct {
 }
 
 func (r *itemReaderWriter[T]) ReadItem() (*T, error) {
+	if r.read == nil {
+		panic("ReadItem called on a write-only stream")
+	}
 	return r.read()
 }
 
 func (r *itemReaderWriter[T]) WriteItem(item *T) error {
+	if r.write == nil {
+		panic("WriteItem called on a read-only stream")
+	}
 	return r.write(item)
 }
 
