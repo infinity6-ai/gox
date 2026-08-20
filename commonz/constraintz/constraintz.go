@@ -28,11 +28,6 @@ type Numbers interface {
 	Ints | Floats
 }
 
-// Data is a constraint that permits strings or byte slices.
-type Data interface {
-	string | []byte
-}
-
 // Basic is a constraint that permits any string or numeric type.
 type Basic interface {
 	string | Numbers
