@@ -138,7 +138,7 @@ func TestUnitPathGobEncoding(t *testing.T) {
 		check(t, testScenario{
 			name:           "Path with Unicode characters",
 			pathString:     "/\u4f60\u597d/\u4e16\u754c/\u30d1\u30b9",
-			expectParseErr: "path contains illegal character: '你'", // The first illegal character will be reported
+			expectParseErr: "path contains illegal character: '\u4f60'", // The first illegal character will be reported
 		})
 	})
 }
