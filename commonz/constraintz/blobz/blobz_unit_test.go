@@ -3,8 +3,8 @@ package blobz_test
 import (
 	"testing"
 
-	"github.com/stretchr/testify/require"
 	"github.com/infinity6-ai/gox/commonz/constraintz/blobz"
+	"github.com/stretchr/testify/require"
 )
 
 func TestUnitWrapperStr(t *testing.T) {

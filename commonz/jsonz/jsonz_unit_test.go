@@ -5,8 +5,8 @@ import (
 	"io"
 	"testing"
 
-	"github.com/stretchr/testify/require"
 	"encoding/json"
+	"github.com/stretchr/testify/require"
 )
 
 type testStruct struct {
@@ -288,4 +288,3 @@ func TestUnitNewReaderWriter(t *testing.T) {
 		})
 	})
 }
-

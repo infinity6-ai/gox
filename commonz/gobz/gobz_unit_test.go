@@ -111,7 +111,7 @@ func TestUnitNewReader(t *testing.T) {
 		// After reading all items, next call should return nil, io.EOF
 		item, err := reader.ReadItem()
 		require.Equal(t, io.EOF, err) // Expect io.EOF for EOF
-		require.Nil(t, item)    // Expect nil item for EOF
+		require.Nil(t, item)          // Expect nil item for EOF
 	}
 
 	t.Run("read multiple items", func(t *testing.T) {
