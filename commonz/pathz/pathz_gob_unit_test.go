@@ -109,7 +109,7 @@ func TestUnitPathGobEncoding(t *testing.T) {
 		check(t, testScenario{
 			name:           "Path with tilde",
 			pathString:     "~/a/b",
-			expectParseErr: "path contains illegal character: '~'",
+			expectParseErr: "path contains illegal character 0: '~'",
 		})
 	})
 

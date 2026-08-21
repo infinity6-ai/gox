@@ -1,7 +1,6 @@
 package pathz
 
 import (
-	"errors"
 	"fmt"
 	"path"
 	"strings"
@@ -11,6 +10,20 @@ type Path struct {
 	Parts          string
 	Parents        int
 	HasEndingSlash bool
+}
+
+func (p *Path) SetParts(parts []string) error {
+	n := make([]string, len(parts))
+	for i, part := range parts {
+		for _, r := range part {
+			if !IsValidChar(r) {
+				return fmt.Errorf("path contains illegal character: '%c'", r)
+			}
+		}
+		n[i] = part
+	}
+	p.Parts = strings.Join(n, "/")
+	return nil
 }
 
 func (p *Path) String() string {
@@ -38,14 +51,17 @@ func Parse(input string) (*Path, error) {
 	}
 
 	// Validate for illegal characters using IsValidChar
-	for _, r := range input {
+	for idx, r := range input {
 		if !IsValidChar(r) {
-			return nil, fmt.Errorf("path contains illegal character: '%c'", r)
+			return nil, fmt.Errorf("path contains illegal character %d '%c' in '%s'", idx, r, input)
 		}
 	}
 
+	var ret Path
+
 	isAbsolute := strings.HasPrefix(input, "/")
 	hasEndingSlash := strings.HasSuffix(input, "/") && len(input) > 1
+	ret.HasEndingSlash = hasEndingSlash
 
 	// Clean the path using the standard library
 	cleanedPath := path.Clean(input)
@@ -56,63 +72,97 @@ func Parse(input string) (*Path, error) {
 	// path.Clean("") -> "."
 	// path.Clean("../../a") -> "../../a"
 
-	if cleanedPath == "." {
-		return &Path{Parts: ""}, nil
-	}
-	if cleanedPath == "/" {
-		return &Path{Parts: cleanedPath[1:], Parents: -1}, nil
-	}
-
-	parents := 0
-	var parts []string
-
+	// if cleanedPath == "." {
+	// return &ret, nil
+	// }
+	parts := strings.Split(cleanedPath, "/")
 	if isAbsolute {
-		parents = -1
-		if cleanedPath == "/" {
-			parts = []string{}
-		} else {
-			parts = strings.Split(strings.TrimPrefix(cleanedPath, "/"), "/")
+		if parts[0] != "" {
+			panic(fmt.Errorf("it was not supposed to happen: %s", cleanedPath))
 		}
-	} else { // relative
-		pathSegments := strings.Split(cleanedPath, "/")
+		ret.Parents = -1
+		parts = parts[1:]
+	} else {
+		ret.Parents, parts = countParents(parts)
+	}
+	err := ret.SetParts(parts)
+	if err != nil {
+		return nil, err
+	}
+	return &ret, nil
 
-		i := 0
-		for i < len(pathSegments) && pathSegments[i] == ".." {
+	// if cleanedPath == "/" {
+	// 	return &Path{Parts: cleanedPath[1:], Parents: -1, HasEndingSlash: hasEndingSlash}, nil
+	// }
+
+	// parents := 0
+	// var parts []string
+
+	// if isAbsolute {
+	// 	parents = -1
+	// 	if cleanedPath == "/" {
+	// 		parts = []string{}
+	// 	} else {
+	// 		parts = strings.Split(strings.TrimPrefix(cleanedPath, "/"), "/")
+	// 	}
+	// } else { // relative
+	// 	pathSegments := strings.Split(cleanedPath, "/")
+
+	// 	i := 0
+	// 	for i < len(pathSegments) && pathSegments[i] == ".." {
+	// 		parents++
+	// 		i++
+	// 	}
+
+	// 	remainingSegments := pathSegments[i:]
+	// 	if len(remainingSegments) == 1 && remainingSegments[0] == "." {
+	// 		parts = []string{}
+	// 	} else {
+	// 		parts = remainingSegments
+	// 	}
+	// }
+
+	// if len(parts) > 0 {
+	// 	for _, part := range parts {
+	// 		if part == "" {
+	// 			panic(errors.New("Should not happen with path.Clean, but as a safeguard."))
+	// 		}
+	// 		allDots := true
+	// 		for _, r := range part {
+	// 			if r != '.' {
+	// 				allDots = false
+	// 				break
+	// 			}
+	// 		}
+	// 		if allDots {
+	// 			return nil, fmt.Errorf("path contains illegal component: \"%s\"", part)
+	// 		}
+	// 	}
+	// }
+
+	// return &Path{
+	// 	Parts:          strings.Join(parts, "/"),
+	// 	Parents:        parents,
+	// 	HasEndingSlash: hasEndingSlash,
+	// }, nil
+}
+
+func countParents(parts []string) (int, []string) {
+	parents := 0
+	count := 0
+	for _, part := range parts {
+		if part == "." {
+			count++
+			continue
+		}
+		if part == ".." {
+			count++
 			parents++
-			i++
+			continue
 		}
-
-		remainingSegments := pathSegments[i:]
-		if len(remainingSegments) == 1 && remainingSegments[0] == "." {
-			parts = []string{}
-		} else {
-			parts = remainingSegments
-		}
+		break
 	}
-
-	if len(parts) > 0 {
-		for _, part := range parts {
-			if part == "" {
-				panic(errors.New("Should not happen with path.Clean, but as a safeguard."))
-			}
-			allDots := true
-			for _, r := range part {
-				if r != '.' {
-					allDots = false
-					break
-				}
-			}
-			if allDots {
-				return nil, fmt.Errorf("path contains illegal component: \"%s\"", part)
-			}
-		}
-	}
-
-	return &Path{
-		Parts:          strings.Join(parts, "/"),
-		Parents:        parents,
-		HasEndingSlash: hasEndingSlash,
-	}, nil
+	return parents, parts[count:]
 }
 
 func IsValidChar(r rune) bool {
