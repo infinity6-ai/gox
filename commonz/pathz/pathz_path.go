@@ -15,6 +15,9 @@ type Path struct {
 func (p *Path) SetParts(parts []string) error {
 	n := make([]string, len(parts))
 	for i, part := range parts {
+		if len(part) > 2 && strings.Trim(part, ".") == "" {
+			return fmt.Errorf("path contains illegal component: \"%s\"", part)
+		}
 		for _, r := range part {
 			if !IsValidChar(r) {
 				return fmt.Errorf("path contains illegal character: '%c'", r)

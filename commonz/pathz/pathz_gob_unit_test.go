@@ -109,7 +109,7 @@ func TestUnitPathGobEncoding(t *testing.T) {
 		check(t, testScenario{
 			name:           "Path with tilde",
 			pathString:     "~/a/b",
-			expectParseErr: "path contains illegal character 0: '~'",
+			expectParseErr: "path contains illegal character 0 '~' in '~/a/b'",
 		})
 	})
 
@@ -117,7 +117,7 @@ func TestUnitPathGobEncoding(t *testing.T) {
 		check(t, testScenario{
 			name:           "Path with spaces",
 			pathString:     "/my path/with spaces",
-			expectParseErr: "path contains illegal character: ' '",
+			expectParseErr: "path contains illegal character 3 ' ' in '/my path/with spaces'",
 		})
 	})
 	// Add a test case for a path that, when stringified, contains characters that might
@@ -127,7 +127,7 @@ func TestUnitPathGobEncoding(t *testing.T) {
 		check(t, testScenario{
 			name:           "Path with complex segment",
 			pathString:     "/path/with/segment-containing-gob-special!@#$",
-			expectParseErr: "path contains illegal character: '!'", // The first illegal character will be reported
+			expectParseErr: "path contains illegal character 41 '!' in '/path/with/segment-containing-gob-special!@#$'", // The first illegal character will be reported
 		})
 	})
 
@@ -136,7 +136,7 @@ func TestUnitPathGobEncoding(t *testing.T) {
 		check(t, testScenario{
 			name:           "Path with Unicode characters",
 			pathString:     "/\u4f60\u597d/\u4e16\u754c/\u30d1\u30b9",
-			expectParseErr: "path contains illegal character: '\u4f60'", // The first illegal character will be reported
+			expectParseErr: "path contains illegal character 1 '你' in '/你好/世界/パス'", // The first illegal character will be reported
 		})
 	})
 }

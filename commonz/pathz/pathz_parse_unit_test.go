@@ -135,14 +135,14 @@ func TestUnitParse(t *testing.T) {
 	t.Run("path with illegal characters - null byte", func(t *testing.T) {
 		check(t, testScenario{
 			input:         "a\x00b/c",
-			expectedError: "path contains illegal character: '\x00'",
+			expectedError: "path contains illegal character 1 '\x00' in 'a\x00b/c'",
 		})
 	})
 
 	t.Run("path with illegal characters - control character", func(t *testing.T) {
 		check(t, testScenario{
 			input:         "a\tb/c",
-			expectedError: "path contains illegal character: '\t'",
+			expectedError: "path contains illegal character 1 '\t' in 'a\tb/c'",
 		})
 	})
 
