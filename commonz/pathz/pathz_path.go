@@ -56,6 +56,13 @@ func Parse(input string) (*Path, error) {
 	// path.Clean("") -> "."
 	// path.Clean("../../a") -> "../../a"
 
+	if cleanedPath == "." {
+		return &Path{Parts: ""}, nil
+	}
+	if cleanedPath == "/" {
+		return &Path{Parts: cleanedPath[1:], Parents: -1}, nil
+	}
+
 	parents := 0
 	var parts []string
 
