@@ -1,8 +1,6 @@
 package pathz
 
 import (
-
-
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -45,7 +43,7 @@ func TestUnitPathGobEncoding(t *testing.T) {
 		// GobDecode into a new Path object
 		var decodedP Path
 		err = decodedP.GobDecode(encoded)
-		if s.expectGobErr != "" && decodedP.Parts == nil { // Expect GobDecode to fail
+		if s.expectGobErr != "" && decodedP.Parts == "" { // Expect GobDecode to fail
 			require.Error(t, err, "GobDecode should return an error for %s", s.name)
 			require.Contains(t, err.Error(), s.expectGobErr, "GobDecode error message mismatch for %s", s.name)
 			return
@@ -96,32 +94,32 @@ func TestUnitPathGobEncoding(t *testing.T) {
 
 	t.Run("Empty path string", func(t *testing.T) {
 		check(t, testScenario{
-			name:           "Empty path string",
-			pathString:     "",
+			name:       "Empty path string",
+			pathString: "",
 		})
 	})
-    t.Run("Path with multiple dots", func(t *testing.T) {
-        check(t, testScenario{
-            name:       "Path with multiple dots",
-            pathString: "a/../b/./c",
-        })
-    })
+	t.Run("Path with multiple dots", func(t *testing.T) {
+		check(t, testScenario{
+			name:       "Path with multiple dots",
+			pathString: "a/../b/./c",
+		})
+	})
 
-    t.Run("Path with tilde", func(t *testing.T) {
-    	check(t, testScenario{
-    		name:           "Path with tilde",
-    		pathString:     "~/a/b",
-    		expectParseErr: "path contains illegal character: '~'",
-    	})
-    })
+	t.Run("Path with tilde", func(t *testing.T) {
+		check(t, testScenario{
+			name:           "Path with tilde",
+			pathString:     "~/a/b",
+			expectParseErr: "path contains illegal character: '~'",
+		})
+	})
 
-    t.Run("Path with spaces", func(t *testing.T) {
-    	check(t, testScenario{
-    		name:           "Path with spaces",
-    		pathString:     "/my path/with spaces",
-    		expectParseErr: "path contains illegal character: ' '",
-    	})
-    })
+	t.Run("Path with spaces", func(t *testing.T) {
+		check(t, testScenario{
+			name:           "Path with spaces",
+			pathString:     "/my path/with spaces",
+			expectParseErr: "path contains illegal character: ' '",
+		})
+	})
 	// Add a test case for a path that, when stringified, contains characters that might
 	// cause issues with gob encoding/decoding if not handled correctly.
 	// For example, a path segment that looks like a control character or a specific gob type.

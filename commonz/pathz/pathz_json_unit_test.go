@@ -42,7 +42,7 @@ func TestUnitPathJson(t *testing.T) {
 		check(t, testScenario{
 			name: "absolute path",
 			path: &pathz.Path{
-				Parts:   []string{"a", "b"},
+				Parts:   "a/b",
 				Parents: -1,
 			},
 			json: `"/a/b"`,
@@ -53,7 +53,7 @@ func TestUnitPathJson(t *testing.T) {
 		check(t, testScenario{
 			name: "relative path",
 			path: &pathz.Path{
-				Parts:   []string{"a", "b"},
+				Parts:   "a/b",
 				Parents: 2,
 			},
 			json: `"../../a/b"`,
@@ -64,7 +64,7 @@ func TestUnitPathJson(t *testing.T) {
 		check(t, testScenario{
 			name: "path with ending slash",
 			path: &pathz.Path{
-				Parts:          []string{"a", "b"},
+				Parts:          "a/b",
 				Parents:        -1,
 				HasEndingSlash: true,
 			},

@@ -8,7 +8,7 @@ import (
 )
 
 type Path struct {
-	Parts          []string
+	Parts          string
 	Parents        int
 	HasEndingSlash bool
 }
@@ -25,7 +25,7 @@ func (p *Path) String() string {
 			sb.WriteString("../")
 		}
 	}
-	sb.WriteString(strings.Join(p.Parts, "/"))
+	sb.WriteString(p.Parts)
 	if p.HasEndingSlash && len(p.Parts) > 0 {
 		sb.WriteString("/")
 	}
@@ -34,7 +34,7 @@ func (p *Path) String() string {
 
 func Parse(input string) (*Path, error) {
 	if input == "" {
-		return &Path{Parts: []string{}}, nil
+		return &Path{Parts: ""}, nil
 	}
 
 	// Validate for illegal characters using IsValidChar
@@ -102,7 +102,7 @@ func Parse(input string) (*Path, error) {
 	}
 
 	return &Path{
-		Parts:          parts,
+		Parts:          strings.Join(parts, "/"),
 		Parents:        parents,
 		HasEndingSlash: hasEndingSlash,
 	}, nil
