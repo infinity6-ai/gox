@@ -45,7 +45,7 @@ func NewReader[T any](r io.Reader) parserz.ItemReader[T] {
 	decoder := json.NewDecoder(r)
 	decoder.UseNumber() // Maintain consistent decoding behavior with Parse
 
-	return parserz.NewItemReaderWriter[T](
+	return parserz.NewItemReaderWriter(
 		func() (*T, error) {
 			var item T
 			if err := decoder.Decode(&item); err != nil {
