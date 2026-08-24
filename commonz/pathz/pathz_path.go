@@ -93,61 +93,6 @@ func Parse(input string) (*Path, error) {
 		return nil, err
 	}
 	return &ret, nil
-
-	// if cleanedPath == "/" {
-	// 	return &Path{Parts: cleanedPath[1:], Parents: -1, HasEndingSlash: hasEndingSlash}, nil
-	// }
-
-	// parents := 0
-	// var parts []string
-
-	// if isAbsolute {
-	// 	parents = -1
-	// 	if cleanedPath == "/" {
-	// 		parts = []string{}
-	// 	} else {
-	// 		parts = strings.Split(strings.TrimPrefix(cleanedPath, "/"), "/")
-	// 	}
-	// } else { // relative
-	// 	pathSegments := strings.Split(cleanedPath, "/")
-
-	// 	i := 0
-	// 	for i < len(pathSegments) && pathSegments[i] == ".." {
-	// 		parents++
-	// 		i++
-	// 	}
-
-	// 	remainingSegments := pathSegments[i:]
-	// 	if len(remainingSegments) == 1 && remainingSegments[0] == "." {
-	// 		parts = []string{}
-	// 	} else {
-	// 		parts = remainingSegments
-	// 	}
-	// }
-
-	// if len(parts) > 0 {
-	// 	for _, part := range parts {
-	// 		if part == "" {
-	// 			panic(errors.New("Should not happen with path.Clean, but as a safeguard."))
-	// 		}
-	// 		allDots := true
-	// 		for _, r := range part {
-	// 			if r != '.' {
-	// 				allDots = false
-	// 				break
-	// 			}
-	// 		}
-	// 		if allDots {
-	// 			return nil, fmt.Errorf("path contains illegal component: \"%s\"", part)
-	// 		}
-	// 	}
-	// }
-
-	// return &Path{
-	// 	Parts:          strings.Join(parts, "/"),
-	// 	Parents:        parents,
-	// 	HasEndingSlash: hasEndingSlash,
-	// }, nil
 }
 
 func countParents(parts []string) (int, []string) {
