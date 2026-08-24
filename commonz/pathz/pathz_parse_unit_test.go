@@ -5,6 +5,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
+	"github.com/infinity6-ai/gox/commonz/errorz"
 	"github.com/infinity6-ai/gox/commonz/pathz"
 )
 
@@ -15,11 +16,24 @@ func TestUnitParse(t *testing.T) {
 		expectedParents        int
 		expectedHasEndingSlash bool
 		expectedError          string
+		expectedPanic          string
 	}
 
 	check := func(t *testing.T, s testScenario) {
 		t.Helper()
-		p, err := pathz.Parse(s.input)
+		var p *pathz.Path
+		var err error
+		pErr := errorz.Unpanic(func() {
+			p, err = pathz.Parse(s.input)
+		})
+		if s.expectedPanic == "" {
+			require.Nil(t, pErr)
+		} else {
+			require.Contains(t, pErr.Error(), s.expectedPanic)
+			require.Nil(t, p)
+			require.Nil(t, err)
+			return
+		}
 
 		if s.expectedError != "" {
 			require.Error(t, err)
@@ -103,6 +117,7 @@ func TestUnitParse(t *testing.T) {
 			input:           "",
 			expectedParts:   "",
 			expectedParents: 0,
+			expectedPanic:   "path must not empty",
 		})
 	})
 
