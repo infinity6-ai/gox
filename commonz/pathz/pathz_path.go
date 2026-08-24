@@ -12,13 +12,15 @@ type Path struct {
 	HasEndingSlash bool
 }
 
-func (p *Path) setParts(parts []string) error {
+func (p *Path) set(parts []string, parents int, hasEndingSlash bool) error {
 	for i, part := range parts {
-		if len(part) > 2 && strings.Trim(part, ".") == "" {
+		if part == "" || strings.Trim(part, ".") == "" {
 			return fmt.Errorf("path contains illegal component %d: \"%s\"", i, part)
 		}
 	}
 	p.Parts = strings.Join(parts, "/")
+	p.Parents = parents
+	p.HasEndingSlash = hasEndingSlash
 	return nil
 }
 
@@ -55,7 +57,6 @@ func (p *Path) Parse(input string) error {
 
 	isAbsolute := strings.HasPrefix(input, "/")
 	hasEndingSlash := strings.HasSuffix(input, "/") && len(input) > 1
-	p.HasEndingSlash = hasEndingSlash
 
 	// Clean the path using the standard library
 	cleanedPath := path.Clean(input)
@@ -68,18 +69,25 @@ func (p *Path) Parse(input string) error {
 
 	// if cleanedPath == "." {
 	// return &ret, nil
-	// }
-	parts := strings.Split(cleanedPath, "/")
-	if isAbsolute {
-		if parts[0] != "" {
-			panic(fmt.Errorf("it was not supposed to happen: %s", cleanedPath))
-		}
-		p.Parents = -1
-		parts = parts[1:]
+	// }]
+	var parts []string
+	parents := 0
+	if cleanedPath == "/" {
+		parents = -1
 	} else {
-		p.Parents, parts = countParents(parts)
+		parts = strings.Split(cleanedPath, "/")
+		if isAbsolute {
+			if parts[0] != "" {
+				panic(fmt.Errorf("it was not supposed to happen: %s", cleanedPath))
+			}
+			parents = -1
+			parts = parts[1:]
+		} else {
+			parents, parts = countParents(parts)
+		}
 	}
-	err := p.setParts(parts)
+
+	err := p.set(parts, parents, hasEndingSlash)
 	if err != nil {
 		return err
 	}
