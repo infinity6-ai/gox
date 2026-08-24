@@ -1,7 +1,6 @@
 package pathz
 
 import (
-	"errors"
 	"fmt"
 	"path"
 	"strings"
@@ -46,7 +45,7 @@ func (p *Path) String() string {
 
 func (p *Path) Parse(input string) error {
 	if input == "" {
-		panic(errors.New("path must not empty"))
+		panic("path must not empty")
 	}
 
 	// Validate for illegal characters using IsValidChar

@@ -23,17 +23,18 @@ func TestUnitParse(t *testing.T) {
 		t.Helper()
 		var p *pathz.Path
 		var err error
-		pErr := errorz.Unpanic(func() {
-			p, err = pathz.Parse(s.input)
-		})
-		if s.expectedPanic == "" {
-			require.Nil(t, pErr)
-		} else {
-			require.Contains(t, pErr.Error(), s.expectedPanic)
+		if s.expectedPanic != "" {
+			require.PanicsWithValue(t, s.expectedPanic, func() {
+				p, err = pathz.Parse(s.input)
+			})
 			require.Nil(t, p)
 			require.Nil(t, err)
 			return
 		}
+		pErr := errorz.Unpanic(func() {
+			p, err = pathz.Parse(s.input)
+		})
+		require.Nil(t, pErr)
 
 		if s.expectedError != "" {
 			require.Error(t, err)
