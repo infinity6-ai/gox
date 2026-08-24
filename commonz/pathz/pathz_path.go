@@ -12,20 +12,18 @@ type Path struct {
 	HasEndingSlash bool
 }
 
-func (p *Path) SetParts(parts []string) error {
-	n := make([]string, len(parts))
+func (p *Path) setParts(parts []string) error {
 	for i, part := range parts {
 		if len(part) > 2 && strings.Trim(part, ".") == "" {
-			return fmt.Errorf("path contains illegal component: \"%s\"", part)
+			return fmt.Errorf("path contains illegal component %d: \"%s\"", i, part)
 		}
 		for _, r := range part {
 			if !IsValidChar(r) {
-				return fmt.Errorf("path contains illegal character: '%c'", r)
+				return fmt.Errorf("path contains illegal character %d: '%c'", i, r)
 			}
 		}
-		n[i] = part
 	}
-	p.Parts = strings.Join(n, "/")
+	p.Parts = strings.Join(parts, "/")
 	return nil
 }
 
@@ -88,7 +86,7 @@ func Parse(input string) (*Path, error) {
 	} else {
 		ret.Parents, parts = countParents(parts)
 	}
-	err := ret.SetParts(parts)
+	err := ret.setParts(parts)
 	if err != nil {
 		return nil, err
 	}

@@ -182,28 +182,28 @@ func TestUnitParse(t *testing.T) {
 	t.Run("path with illegal component dots", func(t *testing.T) {
 		check(t, testScenario{
 			input:         "a/.../b",
-			expectedError: "path contains illegal component: \"...\"",
+			expectedError: "path contains illegal component 1: \"...\"",
 		})
 	})
 
 	t.Run("path with illegal component more dots", func(t *testing.T) {
 		check(t, testScenario{
 			input:         "a/..../b",
-			expectedError: "path contains illegal component: \"....\"",
+			expectedError: "path contains illegal component 1: \"....\"",
 		})
 	})
 
 	t.Run("path with leading illegal component dots", func(t *testing.T) {
 		check(t, testScenario{
 			input:         ".../b",
-			expectedError: "path contains illegal component: \"...\"",
+			expectedError: "path contains illegal component 0: \"...\"",
 		})
 	})
 
 	t.Run("path with trailing illegal component dots", func(t *testing.T) {
 		check(t, testScenario{
 			input:         "a/...",
-			expectedError: "path contains illegal component: \"...\"",
+			expectedError: "path contains illegal component 1: \"...\"",
 		})
 	})
 }
