@@ -46,23 +46,21 @@ func (p *Path) String() string {
 	return sb.String()
 }
 
-func Parse(input string) (*Path, error) {
+func (p *Path) Parse(input string) error {
 	if input == "" {
-		return &Path{Parts: ""}, nil
+		return nil
 	}
 
 	// Validate for illegal characters using IsValidChar
 	for idx, r := range input {
 		if !IsValidChar(r) {
-			return nil, fmt.Errorf("path contains illegal character %d '%c' in '%s'", idx, r, input)
+			return fmt.Errorf("path contains illegal character %d '%c' in '%s'", idx, r, input)
 		}
 	}
 
-	var ret Path
-
 	isAbsolute := strings.HasPrefix(input, "/")
 	hasEndingSlash := strings.HasSuffix(input, "/") && len(input) > 1
-	ret.HasEndingSlash = hasEndingSlash
+	p.HasEndingSlash = hasEndingSlash
 
 	// Clean the path using the standard library
 	cleanedPath := path.Clean(input)
@@ -81,12 +79,21 @@ func Parse(input string) (*Path, error) {
 		if parts[0] != "" {
 			panic(fmt.Errorf("it was not supposed to happen: %s", cleanedPath))
 		}
-		ret.Parents = -1
+		p.Parents = -1
 		parts = parts[1:]
 	} else {
-		ret.Parents, parts = countParents(parts)
+		p.Parents, parts = countParents(parts)
 	}
-	err := ret.setParts(parts)
+	err := p.setParts(parts)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func Parse(input string) (*Path, error) {
+	var ret Path
+	err := ret.Parse(input)
 	if err != nil {
 		return nil, err
 	}
