@@ -17,11 +17,6 @@ func (p *Path) setParts(parts []string) error {
 		if len(part) > 2 && strings.Trim(part, ".") == "" {
 			return fmt.Errorf("path contains illegal component %d: \"%s\"", i, part)
 		}
-		for _, r := range part {
-			if !IsValidChar(r) {
-				return fmt.Errorf("path contains illegal character %d: '%c'", i, r)
-			}
-		}
 	}
 	p.Parts = strings.Join(parts, "/")
 	return nil
