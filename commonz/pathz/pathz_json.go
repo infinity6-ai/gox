@@ -14,14 +14,12 @@ func (p *Path) UnmarshalJSON(data []byte) error {
 	if err := json.Unmarshal(data, &s); err != nil {
 		return fmt.Errorf("cannot unmarshal path from json: %w", err)
 	}
-
-	parsed, err := Parse(s)
+	if len(s) == 0 {
+		return nil
+	}
+	err := p.Parse(s)
 	if err != nil {
 		return fmt.Errorf("cannot parse path from json: %w", err)
 	}
-
-	p.Parts = parsed.Parts
-	p.Parents = parsed.Parents
-	p.HasEndingSlash = parsed.HasEndingSlash
 	return nil
 }

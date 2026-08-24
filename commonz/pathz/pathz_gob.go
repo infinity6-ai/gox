@@ -21,13 +21,9 @@ func (p *Path) GobDecode(data []byte) error {
 		return fmt.Errorf("cannot unmarshal path from gob: %w", err)
 	}
 
-	parsed, err := Parse(s)
+	err := p.Parse(s)
 	if err != nil {
 		return fmt.Errorf("cannot parse path from gob: %w", err)
 	}
-
-	p.Parts = parsed.Parts
-	p.Parents = parsed.Parents
-	p.HasEndingSlash = parsed.HasEndingSlash
 	return nil
 }

@@ -7,9 +7,21 @@ import (
 )
 
 type Path struct {
-	Parts          string
-	Parents        int
-	HasEndingSlash bool
+	parts          string
+	parents        int
+	hasEndingSlash bool
+}
+
+func (p *Path) Parts() string {
+	return p.parts
+}
+
+func (p *Path) Parents() int {
+	return p.parents
+}
+
+func (p *Path) HasEndingSlash() bool {
+	return p.hasEndingSlash
 }
 
 func (p *Path) set(parts []string, parents int, hasEndingSlash bool) error {
@@ -18,26 +30,23 @@ func (p *Path) set(parts []string, parents int, hasEndingSlash bool) error {
 			return fmt.Errorf("path contains illegal component %d: \"%s\"", i, part)
 		}
 	}
-	p.Parts = strings.Join(parts, "/")
-	p.Parents = parents
-	p.HasEndingSlash = hasEndingSlash
+	p.parts = strings.Join(parts, "/")
+	p.parents = parents
+	p.hasEndingSlash = hasEndingSlash
 	return nil
 }
 
-func (p *Path) String() string {
-	if p == nil {
-		return ""
-	}
+func (p Path) String() string {
 	var sb strings.Builder
-	if p.Parents == -1 {
+	if p.parents == -1 {
 		sb.WriteString("/")
 	} else {
-		for i := 0; i < p.Parents; i++ {
+		for i := 0; i < p.parents; i++ {
 			sb.WriteString("../")
 		}
 	}
-	sb.WriteString(p.Parts)
-	if p.HasEndingSlash && len(p.Parts) > 0 {
+	sb.WriteString(p.parts)
+	if p.hasEndingSlash && len(p.parts) > 0 {
 		sb.WriteString("/")
 	}
 	return sb.String()
@@ -45,7 +54,8 @@ func (p *Path) String() string {
 
 func (p *Path) Parse(input string) error {
 	if input == "" {
-		panic("path must not empty")
+		p.set(nil, 0, false)
+		return nil
 	}
 
 	// Validate for illegal characters using IsValidChar

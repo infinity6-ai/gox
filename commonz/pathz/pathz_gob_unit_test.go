@@ -43,7 +43,7 @@ func TestUnitPathGobEncoding(t *testing.T) {
 		// GobDecode into a new Path object
 		var decodedP Path
 		err = decodedP.GobDecode(encoded)
-		if s.expectGobErr != "" && decodedP.Parts == "" { // Expect GobDecode to fail
+		if s.expectGobErr != "" && decodedP.Parts() == "" { // Expect GobDecode to fail
 			require.Error(t, err, "GobDecode should return an error for %s", s.name)
 			require.Contains(t, err.Error(), s.expectGobErr, "GobDecode error message mismatch for %s", s.name)
 			return
@@ -52,9 +52,9 @@ func TestUnitPathGobEncoding(t *testing.T) {
 
 		// Verify the decoded Path is equal to the original
 		require.Equal(t, p.String(), decodedP.String(), "String representation mismatch for %s", s.name)
-		require.Equal(t, p.Parts, decodedP.Parts, "Path parts mismatch for %s", s.name)
-		require.Equal(t, p.Parents, decodedP.Parents, "Path parents mismatch for %s", s.name)
-		require.Equal(t, p.HasEndingSlash, decodedP.HasEndingSlash, "HasEndingSlash mismatch for %s", s.name)
+		require.Equal(t, p.Parts(), decodedP.Parts(), "Path parts mismatch for %s", s.name)
+		require.Equal(t, p.Parents(), decodedP.Parents(), "Path parents mismatch for %s", s.name)
+		require.Equal(t, p.HasEndingSlash(), decodedP.HasEndingSlash(), "HasEndingSlash mismatch for %s", s.name)
 	}
 
 	t.Run("Valid absolute path", func(t *testing.T) {

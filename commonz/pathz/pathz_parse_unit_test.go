@@ -43,9 +43,9 @@ func TestUnitParse(t *testing.T) {
 		} else {
 			require.NoError(t, err)
 			require.NotNil(t, p)
-			require.Equal(t, s.expectedParts, p.Parts)
-			require.Equal(t, s.expectedParents, p.Parents)
-			require.Equal(t, s.expectedHasEndingSlash, p.HasEndingSlash)
+			require.Equal(t, s.expectedParts, p.Parts())
+			require.Equal(t, s.expectedParents, p.Parents())
+			require.Equal(t, s.expectedHasEndingSlash, p.HasEndingSlash())
 		}
 	}
 
@@ -118,7 +118,6 @@ func TestUnitParse(t *testing.T) {
 			input:           "",
 			expectedParts:   "",
 			expectedParents: 0,
-			expectedPanic:   "path must not empty",
 		})
 	})
 

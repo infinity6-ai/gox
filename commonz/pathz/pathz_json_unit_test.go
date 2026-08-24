@@ -1,18 +1,16 @@
-package pathz_test
+package pathz
 
 import (
 	"encoding/json"
 	"testing"
 
 	"github.com/stretchr/testify/require"
-
-	"github.com/infinity6-ai/gox/commonz/pathz"
 )
 
 func TestUnitPathJson(t *testing.T) {
 	type testScenario struct {
 		name      string
-		path      *pathz.Path
+		path      *Path
 		json      string
 		expectErr bool
 	}
@@ -28,22 +26,22 @@ func TestUnitPathJson(t *testing.T) {
 		require.JSONEq(t, s.json, string(b))
 
 		// Test Unmarshal
-		var p pathz.Path
+		var p *Path
 		err = json.Unmarshal([]byte(s.json), &p)
 		if s.expectErr {
 			require.Error(t, err)
 			return
 		}
 		require.NoError(t, err)
-		require.Equal(t, s.path.String(), p.String())
+		require.Equal(t, s.path, p)
 	}
 
 	t.Run("absolute path", func(t *testing.T) {
 		check(t, testScenario{
 			name: "absolute path",
-			path: &pathz.Path{
-				Parts:   "a/b",
-				Parents: -1,
+			path: &Path{
+				parts:   "a/b",
+				parents: -1,
 			},
 			json: `"/a/b"`,
 		})
@@ -52,9 +50,9 @@ func TestUnitPathJson(t *testing.T) {
 	t.Run("relative path", func(t *testing.T) {
 		check(t, testScenario{
 			name: "relative path",
-			path: &pathz.Path{
-				Parts:   "a/b",
-				Parents: 2,
+			path: &Path{
+				parts:   "a/b",
+				parents: 2,
 			},
 			json: `"../../a/b"`,
 		})
@@ -63,10 +61,10 @@ func TestUnitPathJson(t *testing.T) {
 	t.Run("path with ending slash", func(t *testing.T) {
 		check(t, testScenario{
 			name: "path with ending slash",
-			path: &pathz.Path{
-				Parts:          "a/b",
-				Parents:        -1,
-				HasEndingSlash: true,
+			path: &Path{
+				parts:          "a/b",
+				parents:        -1,
+				hasEndingSlash: true,
 			},
 			json: `"/a/b/"`,
 		})
@@ -75,7 +73,7 @@ func TestUnitPathJson(t *testing.T) {
 	t.Run("empty path", func(t *testing.T) {
 		check(t, testScenario{
 			name: "empty path",
-			path: &pathz.Path{},
+			path: &Path{},
 			json: `""`,
 		})
 	})
@@ -89,7 +87,7 @@ func TestUnitPathJson(t *testing.T) {
 	})
 
 	t.Run("invalid json", func(t *testing.T) {
-		var p pathz.Path
+		var p Path
 		err := json.Unmarshal([]byte(`"/a/b/invalid`), &p)
 		require.Error(t, err)
 	})
