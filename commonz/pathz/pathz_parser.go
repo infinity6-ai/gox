@@ -1,10 +1,13 @@
 package pathz
 
 import (
+	"errors"
 	"fmt"
 	"path"
 	"strings"
 )
+
+var ErrNavigationError = errors.New("navigation error")
 
 type Path struct {
 	parts          []string
