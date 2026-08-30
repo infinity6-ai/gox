@@ -21,11 +21,6 @@ func (p *Path) Split() []string {
 	return strings.Split(p.parts, "/")
 }
 
-func (p *Path) Base() string {
-	_, ret := p.Parent()
-	return ret
-}
-
 // Parent returns the parent Path and the last element of the path.
 // For example, if the path is "a/b/c", it returns ("a/b", "c").
 // If the path is "a", it returns ("", "a").
@@ -58,4 +53,9 @@ func (p *Path) Dir() *Path {
 		return &Path{parts: "", parents: p.parents}
 	}
 	return parent
+}
+
+func (p *Path) Base() string {
+	_, ret := p.Parent()
+	return ret
 }
