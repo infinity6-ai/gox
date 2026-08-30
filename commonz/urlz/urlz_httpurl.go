@@ -16,7 +16,23 @@ type HttpUrl struct {
 	userInfo *url.Userinfo
 }
 
-func NewHttpUrl(schema string, urlPart string) (*HttpUrl, error) {
+func NewHttpUrl(schema, host, port, path, query, fragment string, userInfo *url.Userinfo) (*HttpUrl, error) {
+	ret := &HttpUrl{
+		schema:   schema,
+		host:     host,
+		port:     port,
+		path:     path,
+		query:    query,
+		fragment: fragment,
+		userInfo: userInfo,
+	}
+	if err := ret.validate(); err != nil {
+		return nil, err
+	}
+	return ret, nil
+}
+
+func newHttpUrlFromParts(schema string, urlPart string) (*HttpUrl, error) {
 	// Prepend // to the urlPart if it's missing, so url.Parse can handle it correctly.
 	// e.g. for "google.com/search", it becomes "//google.com/search"
 	if !strings.HasPrefix(urlPart, "//") {
@@ -24,9 +40,25 @@ func NewHttpUrl(schema string, urlPart string) (*HttpUrl, error) {
 	}
 
 	fullURL := schema + ":" + urlPart
-	parsed, err := url.Parse(fullURL)
+	return ParseHttpUrl(fullURL)
+}
+
+func ParseHttpUrl(urlStr string) (*HttpUrl, error) {
+	parsed, err := url.Parse(urlStr)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse http url: %w", err)
+	}
+
+	if parsed.Scheme != "" && parsed.Scheme != "http" && parsed.Scheme != "https" {
+		return nil, fmt.Errorf("invalid schema for HttpUrl: %s", parsed.Scheme)
+	}
+
+	if parsed.Scheme == "" {
+		// try parsing with a default schema
+		parsed, err = url.Parse("https://" + urlStr)
+		if err != nil {
+			return nil, fmt.Errorf("failed to parse http url: %w", err)
+		}
 	}
 
 	ret := &HttpUrl{

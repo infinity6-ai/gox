@@ -1,16 +1,16 @@
 package urlz
 
 import (
+	"net/url"
 	"testing"
 
 	"github.com/stretchr/testify/require"
 )
 
-func TestUnitHttpUrl(t *testing.T) {
+func TestUnitParseHttpUrl(t *testing.T) {
 	type testScenario struct {
 		name      string
-		schema    string
-		urlPart   string
+		url       string
 		expectErr string
 		expectURL string
 		check     func(t *testing.T, u *HttpUrl)
@@ -19,8 +19,7 @@ func TestUnitHttpUrl(t *testing.T) {
 	scenarios := []testScenario{
 		{
 			name:    "valid https",
-			schema:  "https",
-			urlPart: "//google.com/search?q=test",
+			url:     "https://google.com/search?q=test",
 			expectURL: "https://google.com/search?q=test",
 			check: func(t *testing.T, u *HttpUrl) {
 				require.Equal(t, "https", u.Schema())
@@ -33,8 +32,7 @@ func TestUnitHttpUrl(t *testing.T) {
 		},
 		{
 			name:    "valid http with port",
-			schema:  "http",
-			urlPart: "localhost:8080/path",
+			url:     "http://localhost:8080/path",
 			expectURL: "http://localhost:8080/path",
 			check: func(t *testing.T, u *HttpUrl) {
 				require.Equal(t, "http", u.Schema())
@@ -45,8 +43,7 @@ func TestUnitHttpUrl(t *testing.T) {
 		},
 		{
 			name:    "url without slashes",
-			schema:  "https",
-			urlPart: "example.com",
+			url:     "example.com",
 			expectURL: "https://example.com",
 			check: func(t *testing.T, u *HttpUrl) {
 				require.Equal(t, "https", u.Schema())
@@ -56,20 +53,17 @@ func TestUnitHttpUrl(t *testing.T) {
 		},
 		{
 			name:      "invalid schema",
-			schema:    "ftp",
-			urlPart:   "//example.com",
+			url:       "ftp://example.com",
 			expectErr: "invalid schema for HttpUrl: ftp",
 		},
 		{
 			name:      "no host",
-			schema:    "http",
-			urlPart:   "/path/only",
+			url:       "http:/path/only",
 			expectErr: "host cannot be empty for HttpUrl",
 		},
 		{
 			name:    "with user info",
-			schema:  "https",
-			urlPart: "//user:pass@example.com",
+			url:     "https://user:pass@example.com",
 			expectURL: "https://user:pass@example.com",
 			check: func(t *testing.T, u *HttpUrl) {
 				require.NotNil(t, u.userInfo)
@@ -81,8 +75,7 @@ func TestUnitHttpUrl(t *testing.T) {
 		},
 		{
 			name:    "full url",
-			schema:  "https",
-			urlPart: "//user:password@example.com:8080/path/to/resource?query=value#fragment",
+			url:     "https://user:password@example.com:8080/path/to/resource?query=value#fragment",
 			expectURL: "https://user:password@example.com:8080/path/to/resource?query=value#fragment",
 			check: func(t *testing.T, u *HttpUrl) {
 				require.Equal(t, "https", u.schema)
@@ -102,7 +95,7 @@ func TestUnitHttpUrl(t *testing.T) {
 
 	for _, s := range scenarios {
 		t.Run(s.name, func(t *testing.T) {
-			u, err := NewHttpUrl(s.schema, s.urlPart)
+			u, err := ParseHttpUrl(s.url)
 
 			if s.expectErr != "" {
 				require.Error(t, err)
@@ -118,4 +111,19 @@ func TestUnitHttpUrl(t *testing.T) {
 			require.Equal(t, s.expectURL, u.String())
 		})
 	}
+}
+
+func TestUnitNewHttpUrl(t *testing.T) {
+	userInfo := url.UserPassword("user", "password")
+	u, err := NewHttpUrl("https", "example.com", "8080", "/path", "q=1", "frag", userInfo)
+	require.NoError(t, err)
+	require.NotNil(t, u)
+	require.Equal(t, "https", u.schema)
+	require.Equal(t, "example.com", u.host)
+	require.Equal(t, "8080", u.port)
+	require.Equal(t, "/path", u.path)
+	require.Equal(t, "q=1", u.query)
+	require.Equal(t, "frag", u.fragment)
+	require.Equal(t, userInfo, u.userInfo)
+	require.Equal(t, "https://user:password@example.com:8080/path?q=1#frag", u.String())
 }

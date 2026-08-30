@@ -23,15 +23,16 @@ func Schema(url string) (string, string, error) {
 }
 
 func Parse(urlStr string) (URI, error) {
-	schema, p, err := Schema(urlStr)
+	schema, _, err := Schema(urlStr)
 	if err != nil {
-		return nil, err
+		// might be a url without schema, try to parse as http
+		return ParseHttpUrl(urlStr)
 	}
 	switch schema {
 	case "file", "gs", "unix":
-		return NewSimpleUrl(schema, p)
+		return ParseSimpleUrl(urlStr)
 	case "http", "https":
-		return NewHttpUrl(schema, p)
+		return ParseHttpUrl(urlStr)
 	default:
 		return nil, fmt.Errorf("%w: %s", ErrUnknownSchema, urlStr)
 	}
