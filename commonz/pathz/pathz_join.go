@@ -12,6 +12,17 @@ import (
 // The `contained` Path is identical to `result` if `result` is a contained path (i.e., not absolute and not escaped).
 // Otherwise, `contained` is nil.
 func (p *Path) Join(others ...*Path) (contained *Path, result *Path) {
+	// c := p.String()
+	// for _, o := range others {
+	// 	c = path.Join(c, o.String())
+	// }
+	// ret, err := Parse(c)
+	// errorz.Check(err)
+	// if !p.IsBaseOf(ret) {
+	// 	return nil, ret
+	// }
+	// return ret, ret
+
 	// Start with the receiver path's string representation and ending slash status.
 	// We will manually build the joined string to account for the unexpected behavior of path.Join
 	// regarding absolute path overriding in this environment.
