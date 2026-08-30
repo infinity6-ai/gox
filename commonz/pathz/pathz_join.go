@@ -16,7 +16,8 @@ var ErrEscaped = errors.New("path escaped error")
 //
 // A critical feature of this method is its safety check: it ensures that the final, resolved path
 // does not "escape" or navigate outside the hierarchy of the original base path `p`. If the resulting
-// path is not a descendant of or equal to `p`, the function will return an `ErrEscaped` error.
+// path is not a descendant of or equal to `p`, the function will return the escaped `*Path` and
+// an `ErrEscaped` error.
 //
 // For example:
 //   - `p("a/b").Join(p("c"))` results in `p("a/b/c")`.
@@ -41,7 +42,7 @@ func (p *Path) Join(others ...*Path) (*Path, error) {
 	}
 
 	if !p.IsBaseOf(resultPath) {
-		return nil, fmt.Errorf("%w: joining '%s' to '%s' results in '%s' which is outside the base", ErrEscaped, strings.Join(otherStrs, "/"), p, resultPath)
+		return resultPath, fmt.Errorf("%w: joining '%s' to '%s' results in '%s' which is outside the base", ErrEscaped, strings.Join(otherStrs, "/"), p, resultPath)
 	}
 
 	return resultPath, nil
