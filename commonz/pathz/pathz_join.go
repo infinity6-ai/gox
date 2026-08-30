@@ -35,20 +35,14 @@ func (p *Path) Join(others ...*Path) (*Path, error) {
 			ret = other
 			continue
 		}
-		// ../a + ../../b => ./b
-		step := len(p.parts) - other.parents
-		if step < 0 {
-			// 2 - 1 = 1
-			other.parents = other.parents - len(p.parts)
-			// 1
-			step = len(p.parts)
+		c := len(ret.parts) - other.parents
+		if c < 0 {
+			ret.parts = ret.parts[:0]
+			ret.parents = ret.parents + other.parents
+		} else {
+			ret.parts = ret.parts[:c]
 		}
-		if step > 0 {
-			// ["a"] 0 -> 1 - 1 = 0 = []
-			ret.parts = other.parts[:len(other.parts)-step]
-		}
-		// 1 + 1 = 2
-		ret.parents = ret.parents + other.parents
+		ret.parts = append(ret.parts, other.parts...)
 		ret.hasEndingSlash = other.hasEndingSlash
 	}
 

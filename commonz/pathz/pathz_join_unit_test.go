@@ -70,6 +70,8 @@ func TestUnitJoin(t *testing.T) {
 			basePathStr:   "a/b/c",
 			otherPathStrs: []string{"../d"},
 			expectedPath:  New(0, []string{"a", "b", "d"}, false),
+			expectErr:     true,
+			errContains:   "path escaped error: joining 'a/b/c' to '[../d]' results in 'a/b/d' which is outside the base",
 		})
 	})
 
@@ -79,6 +81,8 @@ func TestUnitJoin(t *testing.T) {
 			basePathStr:   "a/b/c/d",
 			otherPathStrs: []string{"../../e"},
 			expectedPath:  New(0, []string{"a", "b", "e"}, false),
+			expectErr:     true,
+			errContains:   "path escaped error: joining 'a/b/c/d' to '[../../e]' results in 'a/b/e' which is outside the base",
 		})
 	})
 
@@ -88,8 +92,8 @@ func TestUnitJoin(t *testing.T) {
 			basePathStr:   "a/b",
 			otherPathStrs: []string{"../../c"},
 			expectErr:     true,
-			errContains:   "path escaped error: joining 'c' to 'a/b' results in '../c' which is outside the base",
-			expectedPath:  New(1, []string{"c"}, false), // The resulting path after cleaning
+			errContains:   "path escaped error: joining 'a/b' to '[../../c]' results in 'c' which is outside the base",
+			expectedPath:  New(0, []string{"c"}, false), // The resulting path after cleaning
 		})
 	})
 
