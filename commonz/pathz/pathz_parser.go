@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"path"
+	"slices"
 	"strings"
 )
 
@@ -19,6 +20,14 @@ func New(parents int, parts []string, hasEndingSlash bool) *Path {
 	var p Path
 	p.set(parts, parents, hasEndingSlash)
 	return &p
+}
+
+func (p *Path) Clone() *Path {
+	return &Path{
+		parts:          slices.Clone(p.parts),
+		parents:        p.parents,
+		hasEndingSlash: p.hasEndingSlash,
+	}
 }
 
 func (p *Path) Parts() []string {

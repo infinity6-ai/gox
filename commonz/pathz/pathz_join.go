@@ -3,8 +3,6 @@ package pathz
 import (
 	"errors"
 	"fmt"
-	"path"
-	"strings"
 )
 
 var ErrEscaped = errors.New("path escaped error")
@@ -25,25 +23,55 @@ var ErrEscaped = errors.New("path escaped error")
 //   - `p("a/b").Join(p("../../c"))` returns `ErrEscaped` because it navigates outside `a/b`.
 //   - `p("a/b").Join(p("/c"))` returns `ErrEscaped` because `/c` is not relative to `a/b`.
 func (p *Path) Join(others ...*Path) (*Path, error) {
-	if len(others) == 0 {
-		return p, nil
+	// if len(others) == 0 {
+	// 	return p, nil
+	// }
+
+	ret := p.Clone()
+
+	for _, other := range others {
+		other = other.Clone()
+		if other.IsAbsolute() {
+			ret = other
+			continue
+		}
+		// ../a + ../../b => ./b
+		step := len(p.parts) - other.parents
+		if step < 0 {
+			// 2 - 1 = 1
+			other.parents = other.parents - len(p.parts)
+			// 1
+			step = len(p.parts)
+		}
+		if step > 0 {
+			// ["a"] 0 -> 1 - 1 = 0 = []
+			ret.parts = other.parts[:len(other.parts)-step]
+		}
+		// 1 + 1 = 2
+		ret.parents = ret.parents + other.parents
+		ret.hasEndingSlash = other.hasEndingSlash
 	}
 
-	otherStrs := make([]string, len(others))
-	for i, o := range others {
-		otherStrs[i] = o.String()
+	if !p.IsBaseOf(ret) {
+		return ret, fmt.Errorf("%w: joining '%s' to '%s' results in '%s' which is outside the base", ErrEscaped, p, others, ret)
 	}
+	return ret, nil
 
-	resultPathStr := path.Join(append([]string{p.String()}, otherStrs...)...)
+	// otherStrs := make([]string, len(others))
+	// for i, o := range others {
+	// 	otherStrs[i] = o.String()
+	// }
 
-	resultPath, err := Parse(resultPathStr)
-	if err != nil {
-		return nil, fmt.Errorf("cannot parse joined path: %w", err)
-	}
+	// resultPathStr := path.Join(append([]string{p.String()}, otherStrs...)...)
 
-	if !p.IsBaseOf(resultPath) {
-		return resultPath, fmt.Errorf("%w: joining '%s' to '%s' results in '%s' which is outside the base", ErrEscaped, strings.Join(otherStrs, "/"), p, resultPath)
-	}
+	// resultPath, err := Parse(resultPathStr)
+	// if err != nil {
+	// 	return nil, fmt.Errorf("cannot parse joined path: %w", err)
+	// }
 
-	return resultPath, nil
+	// if !p.IsBaseOf(resultPath) {
+	// 	return resultPath, fmt.Errorf("%w: joining '%s' to '%s' results in '%s' which is outside the base", ErrEscaped, strings.Join(otherStrs, "/"), p, resultPath)
+	// }
+
+	// return resultPath, nil
 }
