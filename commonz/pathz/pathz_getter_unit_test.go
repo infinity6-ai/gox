@@ -8,12 +8,12 @@ import (
 
 func TestUnitPathGetters(t *testing.T) {
 	type testScenario struct {
-		pathStr      string
-		isAbsolute   bool
-		isContained  bool
-		isEscaped    bool
-		partSlice    []string
-		base         string
+		pathStr       string
+		isAbsolute    bool
+		isContained   bool
+		isEscaped     bool
+		partSlice     []string
+		base          string
 		parentPathStr string
 		parentBase    string
 		dirPathStr    string
@@ -28,7 +28,7 @@ func TestUnitPathGetters(t *testing.T) {
 		require.Equal(t, s.isAbsolute, p.IsAbsolute(), "IsAbsolute mismatch for %q", s.pathStr)
 		require.Equal(t, s.isContained, p.IsContained(), "IsContained mismatch for %q", s.pathStr)
 		require.Equal(t, s.isEscaped, p.IsEscaped(), "IsEscaped mismatch for %q", s.pathStr)
-		require.Equal(t, s.partSlice, p.PartSlice(), "PartSlice mismatch for %q", s.pathStr)
+		require.Equal(t, s.partSlice, p.Split(), "PartSlice mismatch for %q", s.pathStr)
 		require.Equal(t, s.base, p.Base(), "Base mismatch for %q", s.pathStr)
 
 		// Test Parent()
@@ -51,171 +51,171 @@ func TestUnitPathGetters(t *testing.T) {
 
 	t.Run("absolute path", func(t *testing.T) {
 		check(t, testScenario{
-			pathStr:      "/a/b/c",
-			isAbsolute:   true,
-			isContained:  false,
-			isEscaped:    false,
-			partSlice:    []string{"a", "b", "c"},
-			base:         "c",
+			pathStr:       "/a/b/c",
+			isAbsolute:    true,
+			isContained:   false,
+			isEscaped:     false,
+			partSlice:     []string{"a", "b", "c"},
+			base:          "c",
 			parentPathStr: "/a/b",
-			parentBase:   "c",
-			dirPathStr:   "/a/b",
+			parentBase:    "c",
+			dirPathStr:    "/a/b",
 		})
 	})
 
 	t.Run("contained path", func(t *testing.T) {
 		check(t, testScenario{
-			pathStr:      "a/b/c",
-			isAbsolute:   false,
-			isContained:  true,
-			isEscaped:    false,
-			partSlice:    []string{"a", "b", "c"},
-			base:         "c",
+			pathStr:       "a/b/c",
+			isAbsolute:    false,
+			isContained:   true,
+			isEscaped:     false,
+			partSlice:     []string{"a", "b", "c"},
+			base:          "c",
 			parentPathStr: "a/b",
-			parentBase:   "c",
-			dirPathStr:   "a/b",
+			parentBase:    "c",
+			dirPathStr:    "a/b",
 		})
 	})
 
 	t.Run("escaped path", func(t *testing.T) {
 		check(t, testScenario{
-			pathStr:      "../a/b",
-			isAbsolute:   false,
-			isContained:  false,
-			isEscaped:    true,
-			partSlice:    []string{"a", "b"},
-			base:         "b",
+			pathStr:       "../a/b",
+			isAbsolute:    false,
+			isContained:   false,
+			isEscaped:     true,
+			partSlice:     []string{"a", "b"},
+			base:          "b",
 			parentPathStr: "../a",
-			parentBase:   "b",
-			dirPathStr:   "../a",
+			parentBase:    "b",
+			dirPathStr:    "../a",
 		})
 	})
-    
-    t.Run("doubled escaped path", func(t *testing.T) {
+
+	t.Run("doubled escaped path", func(t *testing.T) {
 		check(t, testScenario{
-			pathStr:      "../../a/b",
-			isAbsolute:   false,
-			isContained:  false,
-			isEscaped:    true,
-			partSlice:    []string{"a", "b"},
-			base:         "b",
+			pathStr:       "../../a/b",
+			isAbsolute:    false,
+			isContained:   false,
+			isEscaped:     true,
+			partSlice:     []string{"a", "b"},
+			base:          "b",
 			parentPathStr: "../../a",
-			parentBase:   "b",
-			dirPathStr:   "../../a",
+			parentBase:    "b",
+			dirPathStr:    "../../a",
 		})
 	})
 
 	t.Run("empty path", func(t *testing.T) {
 		check(t, testScenario{
-			pathStr:      "",
-			isAbsolute:   false,
-			isContained:  true,
-			isEscaped:    false,
-			partSlice:    []string{},
-			base:         "",
+			pathStr:       "",
+			isAbsolute:    false,
+			isContained:   true,
+			isEscaped:     false,
+			partSlice:     []string{},
+			base:          "",
 			parentPathStr: "",
-			parentBase:   "",
-			dirPathStr:   "",
+			parentBase:    "",
+			dirPathStr:    "",
 		})
 	})
 
 	t.Run("root path", func(t *testing.T) {
 		check(t, testScenario{
-			pathStr:      "/",
-			isAbsolute:   true,
-			isContained:  false,
-			isEscaped:    false,
-			partSlice:    []string{},
-			base:         "",
+			pathStr:       "/",
+			isAbsolute:    true,
+			isContained:   false,
+			isEscaped:     false,
+			partSlice:     []string{},
+			base:          "",
 			parentPathStr: "/",
-			parentBase:   "",
-			dirPathStr:   "/",
+			parentBase:    "",
+			dirPathStr:    "/",
 		})
 	})
 
 	t.Run("single element path", func(t *testing.T) {
 		check(t, testScenario{
-			pathStr:      "a",
-			isAbsolute:   false,
-			isContained:  true,
-			isEscaped:    false,
-			partSlice:    []string{"a"},
-			base:         "a",
+			pathStr:       "a",
+			isAbsolute:    false,
+			isContained:   true,
+			isEscaped:     false,
+			partSlice:     []string{"a"},
+			base:          "a",
 			parentPathStr: "",
-			parentBase:   "a",
-			dirPathStr:   "",
-			parentIsNull: true,
+			parentBase:    "a",
+			dirPathStr:    "",
+			parentIsNull:  true,
 		})
 	})
 
 	t.Run("dot path", func(t *testing.T) {
 		check(t, testScenario{
-			pathStr:      ".",
-			isAbsolute:   false,
-			isContained:  true,
-			isEscaped:    false,
-			partSlice:    []string{}, 
-			base:         "",
+			pathStr:       ".",
+			isAbsolute:    false,
+			isContained:   true,
+			isEscaped:     false,
+			partSlice:     []string{},
+			base:          "",
 			parentPathStr: "",
-			parentBase:   "",
-			dirPathStr:   "",
+			parentBase:    "",
+			dirPathStr:    "",
 		})
 	})
-    
-    t.Run("dot slash path", func(t *testing.T) {
+
+	t.Run("dot slash path", func(t *testing.T) {
 		check(t, testScenario{
-			pathStr:      "./",
-			isAbsolute:   false,
-			isContained:  true,
-			isEscaped:    false,
-			partSlice:    []string{},
-			base:         "",
+			pathStr:       "./",
+			isAbsolute:    false,
+			isContained:   true,
+			isEscaped:     false,
+			partSlice:     []string{},
+			base:          "",
 			parentPathStr: "",
-			parentBase:   "",
-			dirPathStr:   "",
+			parentBase:    "",
+			dirPathStr:    "",
 		})
 	})
 
 	t.Run("path ending with slash", func(t *testing.T) {
 		check(t, testScenario{
-			pathStr:      "a/b/",
-			isAbsolute:   false,
-			isContained:  true,
-			isEscaped:    false,
-			partSlice:    []string{"a", "b"},
-			base:         "b",
+			pathStr:       "a/b/",
+			isAbsolute:    false,
+			isContained:   true,
+			isEscaped:     false,
+			partSlice:     []string{"a", "b"},
+			base:          "b",
 			parentPathStr: "a",
-			parentBase:   "b",
-			dirPathStr:   "a",
+			parentBase:    "b",
+			dirPathStr:    "a",
 		})
 	})
 
 	t.Run("single element path 'bla'", func(t *testing.T) {
 		check(t, testScenario{
-			pathStr:      "bla",
-			isAbsolute:   false,
-			isContained:  true,
-			isEscaped:    false,
-			partSlice:    []string{"bla"},
-			base:         "bla",
+			pathStr:       "bla",
+			isAbsolute:    false,
+			isContained:   true,
+			isEscaped:     false,
+			partSlice:     []string{"bla"},
+			base:          "bla",
 			parentPathStr: "",
-			parentBase:   "bla",
-			dirPathStr:   "",
-			parentIsNull: true,
+			parentBase:    "bla",
+			dirPathStr:    "",
+			parentIsNull:  true,
 		})
 	})
-    
-    t.Run("complex path", func(t *testing.T) {
+
+	t.Run("complex path", func(t *testing.T) {
 		check(t, testScenario{
-			pathStr:      "/a/b/../c/",
-			isAbsolute:   true,
-			isContained:  false,
-			isEscaped:    false,
-			partSlice:    []string{"a", "c"},
-			base:         "c",
+			pathStr:       "/a/b/../c/",
+			isAbsolute:    true,
+			isContained:   false,
+			isEscaped:     false,
+			partSlice:     []string{"a", "c"},
+			base:          "c",
 			parentPathStr: "/a",
-			parentBase:   "c",
-			dirPathStr:   "/a",
+			parentBase:    "c",
+			dirPathStr:    "/a",
 		})
 	})
 }

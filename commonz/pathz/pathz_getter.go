@@ -14,7 +14,7 @@ func (p *Path) IsContained() bool {
 	return p.parents == 0
 }
 
-func (p *Path) PartSlice() []string {
+func (p *Path) Split() []string {
 	if p.parts == "" {
 		return []string{}
 	}
@@ -36,7 +36,7 @@ func (p *Path) Base() string {
 // For example, if the path is "a/b/c", it returns ("a/b", "c").
 // If the path is "a", it returns ("", "a").
 func (p *Path) Parent() (*Path, string) {
-	parts := p.PartSlice()
+	parts := p.Split()
 	if len(parts) == 0 {
 		return &Path{parts: "", parents: p.parents}, ""
 	}
