@@ -8,13 +8,14 @@ import (
 
 func TestUnitPathGetters(t *testing.T) {
 	type testScenario struct {
-		pathStr    string
-		isAbsolute bool
-		isContained bool
-		isEscaped  bool
-		partSlice  []string
-		base       string
-		parent     *Path // Expected parent path, nil if no parent
+		pathStr        string
+		isAbsolute     bool
+		isContained    bool
+		isEscaped      bool
+		partSlice      []string
+		base           string
+		parent         *Path // Expected parent path, nil if no parent
+		hasEndingSlash bool
 	}
 
 	check := func(t *testing.T, s testScenario) {
@@ -36,7 +37,8 @@ func TestUnitPathGetters(t *testing.T) {
 		}
 
 		// Test Parent()
-		parent, base := p.Parent()
+		parent, base, hasEndingSlash := p.Parent()
+		require.Equal(t, s.hasEndingSlash, hasEndingSlash, "hasEndingSlash mismatch for %q", s.pathStr)
 		require.Equal(t, s.base, base, "Parent() base mismatch for %q", s.pathStr)
 		if s.parent == nil {
 			require.Nil(t, parent, "Parent() should be nil for %q", s.pathStr)
@@ -47,181 +49,196 @@ func TestUnitPathGetters(t *testing.T) {
 
 	t.Run("absolute path", func(t *testing.T) {
 		check(t, testScenario{
-			pathStr:     "/a/b/c",
-			isAbsolute:  true,
-			isContained: false,
-			isEscaped:   false,
-			partSlice:   []string{"a", "b", "c"},
-			base:        "c",
-			parent:      New(-1, []string{"a", "b"}, false),
+			pathStr:        "/a/b/c",
+			isAbsolute:     true,
+			isContained:    false,
+			isEscaped:      false,
+			partSlice:      []string{"a", "b", "c"},
+			base:           "c",
+			parent:         New(-1, []string{"a", "b"}, false),
+			hasEndingSlash: false,
 		})
 	})
 
 	t.Run("contained path", func(t *testing.T) {
 		check(t, testScenario{
-			pathStr:     "a/b/c",
-			isAbsolute:  false,
-			isContained: true,
-			isEscaped:   false,
-			partSlice:   []string{"a", "b", "c"},
-			base:        "c",
-			parent:      New(0, []string{"a", "b"}, false),
+			pathStr:        "a/b/c",
+			isAbsolute:     false,
+			isContained:    true,
+			isEscaped:      false,
+			partSlice:      []string{"a", "b", "c"},
+			base:           "c",
+			parent:         New(0, []string{"a", "b"}, false),
+			hasEndingSlash: false,
 		})
 	})
 
 	t.Run("escaped path", func(t *testing.T) {
 		check(t, testScenario{
-			pathStr:     "../a/b",
-			isAbsolute:  false,
-			isContained: false,
-			isEscaped:   true,
-			partSlice:   []string{"a", "b"},
-			base:        "b",
-			parent:      New(1, []string{"a"}, false),
+			pathStr:        "../a/b",
+			isAbsolute:     false,
+			isContained:    false,
+			isEscaped:      true,
+			partSlice:      []string{"a", "b"},
+			base:           "b",
+			parent:         New(1, []string{"a"}, false),
+			hasEndingSlash: false,
 		})
 	})
 
 	t.Run("doubled escaped path", func(t *testing.T) {
 		check(t, testScenario{
-			pathStr:     "../../a/b",
-			isAbsolute:  false,
-			isContained: false,
-			isEscaped:   true,
-			partSlice:   []string{"a", "b"},
-			base:        "b",
-			parent:      New(2, []string{"a"}, false),
+			pathStr:        "../../a/b",
+			isAbsolute:     false,
+			isContained:    false,
+			isEscaped:      true,
+			partSlice:      []string{"a", "b"},
+			base:           "b",
+			parent:         New(2, []string{"a"}, false),
+			hasEndingSlash: false,
 		})
 	})
 
 	t.Run("escaped path with single part", func(t *testing.T) {
 		check(t, testScenario{
-			pathStr:     "../../a",
-			isAbsolute:  false,
-			isContained: false,
-			isEscaped:   true,
-			partSlice:   []string{"a"},
-			base:        "a",
-			parent:      New(2, []string{}, false), // Path for "../.."
+			pathStr:        "../../a",
+			isAbsolute:     false,
+			isContained:    false,
+			isEscaped:      true,
+			partSlice:      []string{"a"},
+			base:           "a",
+			parent:         New(2, []string{}, false), // Path for "../.."
+			hasEndingSlash: false,
 		})
 	})
 
 	t.Run("doubly escaped path only", func(t *testing.T) {
 		check(t, testScenario{
-			pathStr:     "../..",
-			isAbsolute:  false,
-			isContained: false,
-			isEscaped:   true,
-			partSlice:   []string{},
-			base:        "",
-			parent:      New(1, []string{}, false), // Path for ".."
+			pathStr:        "../..",
+			isAbsolute:     false,
+			isContained:    false,
+			isEscaped:      true,
+			partSlice:      []string{},
+			base:           "",
+			parent:         New(1, []string{}, false), // Path for ".."
+			hasEndingSlash: false,
 		})
 	})
 
 	t.Run("single escaped path only", func(t *testing.T) {
 		check(t, testScenario{
-			pathStr:     "..",
-			isAbsolute:  false,
-			isContained: false,
-			isEscaped:   true,
-			partSlice:   []string{},
-			base:        "",
-			parent:      nil,
+			pathStr:        "..",
+			isAbsolute:     false,
+			isContained:    false,
+			isEscaped:      true,
+			partSlice:      []string{},
+			base:           "",
+			parent:         nil,
+			hasEndingSlash: false,
 		})
 	})
 
 	t.Run("empty path", func(t *testing.T) {
 		check(t, testScenario{
-			pathStr:     "",
-			isAbsolute:  false,
-			isContained: true,
-			isEscaped:   false,
-			partSlice:   []string{},
-			base:        "",
-			parent:      nil, // Dir() is nil, Parent() is (nil, "")
+			pathStr:        "",
+			isAbsolute:     false,
+			isContained:    true,
+			isEscaped:      false,
+			partSlice:      []string{},
+			base:           "",
+			parent:         nil, // Dir() is nil, Parent() is (nil, "")
+			hasEndingSlash: false,
 		})
 	})
 
 	t.Run("root path", func(t *testing.T) {
 		check(t, testScenario{
-			pathStr:     "/",
-			isAbsolute:  true,
-			isContained: false,
-			isEscaped:   false,
-			partSlice:   []string{},
-			base:        "",
-			parent:      nil,
+			pathStr:        "/",
+			isAbsolute:     true,
+			isContained:    false,
+			isEscaped:      false,
+			partSlice:      []string{},
+			base:           "",
+			parent:         nil,
+			hasEndingSlash: false,
 		})
 	})
 
 	t.Run("single element path", func(t *testing.T) {
 		check(t, testScenario{
-			pathStr:     "a",
-			isAbsolute:  false,
-			isContained: true,
-			isEscaped:   false,
-			partSlice:   []string{"a"},
-			base:        "a",
-			parent:      nil,
+			pathStr:        "a",
+			isAbsolute:     false,
+			isContained:    true,
+			isEscaped:      false,
+			partSlice:      []string{"a"},
+			base:           "a",
+			parent:         nil,
+			hasEndingSlash: false,
 		})
 	})
 
 	t.Run("dot path", func(t *testing.T) {
 		check(t, testScenario{
-			pathStr:     ".",
-			isAbsolute:  false,
-			isContained: true,
-			isEscaped:   false,
-			partSlice:   []string{},
-			base:        "",
-			parent:      nil,
+			pathStr:        ".",
+			isAbsolute:     false,
+			isContained:    true,
+			isEscaped:      false,
+			partSlice:      []string{},
+			base:           "",
+			parent:         nil,
+			hasEndingSlash: false,
 		})
 	})
 
 	t.Run("dot slash path", func(t *testing.T) {
 		check(t, testScenario{
-			pathStr:     "./",
-			isAbsolute:  false,
-			isContained: true,
-			isEscaped:   false,
-			partSlice:   []string{},
-			base:        "",
-			parent:      nil,
+			pathStr:        "./",
+			isAbsolute:     false,
+			isContained:    true,
+			isEscaped:      false,
+			partSlice:      []string{},
+			base:           "",
+			parent:         nil,
+			hasEndingSlash: true,
 		})
 	})
 
 	t.Run("path ending with slash", func(t *testing.T) {
 		check(t, testScenario{
-			pathStr:     "a/b/",
-			isAbsolute:  false,
-			isContained: true,
-			isEscaped:   false,
-			partSlice:   []string{"a", "b"},
-			base:        "b",
-			parent:      New(0, []string{"a"}, false),
+			pathStr:        "a/b/",
+			isAbsolute:     false,
+			isContained:    true,
+			isEscaped:      false,
+			partSlice:      []string{"a", "b"},
+			base:           "b",
+			parent:         New(0, []string{"a"}, false),
+			hasEndingSlash: true,
 		})
 	})
 
 	t.Run("single element path 'bla'", func(t *testing.T) {
 		check(t, testScenario{
-			pathStr:     "bla",
-			isAbsolute:  false,
-			isContained: true,
-			isEscaped:   false,
-			partSlice:   []string{"bla"},
-			base:        "bla",
-			parent:      nil,
+			pathStr:        "bla",
+			isAbsolute:     false,
+			isContained:    true,
+			isEscaped:      false,
+			partSlice:      []string{"bla"},
+			base:           "bla",
+			parent:         nil,
+			hasEndingSlash: false,
 		})
 	})
 
 	t.Run("complex path", func(t *testing.T) {
 		check(t, testScenario{
-			pathStr:     "/a/b/../c/",
-			isAbsolute:  true,
-			isContained: false,
-			isEscaped:   false,
-			partSlice:   []string{"a", "c"},
-			base:        "c",
-			parent:      New(-1, []string{"a"}, false),
+			pathStr:        "/a/b/../c/",
+			isAbsolute:     true,
+			isContained:    false,
+			isEscaped:      false,
+			partSlice:      []string{"a", "c"},
+			base:           "c",
+			parent:         New(-1, []string{"a"}, false),
+			hasEndingSlash: true,
 		})
 	})
 }
@@ -231,6 +248,7 @@ func TestUnitParentMethod(t *testing.T) {
 		pathStr        string
 		expectedParent *Path
 		parentBase     string
+		hasEndingSlash bool
 	}
 
 	check := func(t *testing.T, s testScenario) {
@@ -238,7 +256,8 @@ func TestUnitParentMethod(t *testing.T) {
 		p, err := Parse(s.pathStr)
 		require.NoError(t, err)
 
-		parent, base := p.Parent()
+		parent, base, hasEndingSlash := p.Parent()
+		require.Equal(t, s.hasEndingSlash, hasEndingSlash, "hasEndingSlash mismatch for %q", s.pathStr)
 		require.Equal(t, s.parentBase, base, "Parent() base mismatch for %q", s.pathStr)
 
 		if s.expectedParent == nil {
@@ -253,6 +272,7 @@ func TestUnitParentMethod(t *testing.T) {
 			pathStr:        "a/b/c",
 			expectedParent: New(0, []string{"a", "b"}, false),
 			parentBase:     "c",
+			hasEndingSlash: false,
 		})
 	})
 
@@ -261,6 +281,7 @@ func TestUnitParentMethod(t *testing.T) {
 			pathStr:        "a/b",
 			expectedParent: New(0, []string{"a"}, false),
 			parentBase:     "b",
+			hasEndingSlash: false,
 		})
 	})
 
@@ -269,6 +290,7 @@ func TestUnitParentMethod(t *testing.T) {
 			pathStr:        "a",
 			expectedParent: nil,
 			parentBase:     "a",
+			hasEndingSlash: false,
 		})
 	})
 
@@ -277,6 +299,7 @@ func TestUnitParentMethod(t *testing.T) {
 			pathStr:        "",
 			expectedParent: nil,
 			parentBase:     "",
+			hasEndingSlash: false,
 		})
 	})
 
@@ -285,6 +308,7 @@ func TestUnitParentMethod(t *testing.T) {
 			pathStr:        "/",
 			expectedParent: nil,
 			parentBase:     "",
+			hasEndingSlash: false,
 		})
 	})
 
@@ -293,6 +317,7 @@ func TestUnitParentMethod(t *testing.T) {
 			pathStr:        "/a",
 			expectedParent: nil,
 			parentBase:     "a",
+			hasEndingSlash: false,
 		})
 	})
 
@@ -301,6 +326,7 @@ func TestUnitParentMethod(t *testing.T) {
 			pathStr:        "../../a",
 			expectedParent: New(2, []string{}, false), // Path for "../.."
 			parentBase:     "a",
+			hasEndingSlash: false,
 		})
 	})
 
@@ -309,6 +335,7 @@ func TestUnitParentMethod(t *testing.T) {
 			pathStr:        "../..",
 			expectedParent: New(1, []string{}, false), // Path for ".."
 			parentBase:     "",
+			hasEndingSlash: false,
 		})
 	})
 
@@ -317,6 +344,7 @@ func TestUnitParentMethod(t *testing.T) {
 			pathStr:        "..",
 			expectedParent: nil,
 			parentBase:     "",
+			hasEndingSlash: false,
 		})
 	})
 
@@ -325,6 +353,7 @@ func TestUnitParentMethod(t *testing.T) {
 			pathStr:        "../a/b",
 			expectedParent: New(1, []string{"a"}, false),
 			parentBase:     "b",
+			hasEndingSlash: false,
 		})
 	})
 }
