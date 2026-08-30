@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"path"
 	"strings"
+
+	"github.com/infinity6-ai/gox/commonz/errorz"
 )
 
 // Join concatenates a Path with one or more other Paths.
@@ -69,7 +71,7 @@ func (p *Path) Join(others ...*Path) (contained *Path, result *Path) {
 	newPath, err := Parse(currentString)
 	if err != nil {
 		// This indicates an internal error if a valid string cannot be parsed.
-		panic(fmt.Errorf("pathz.Join: internal error parsing manually joined path '%s': %w", currentString, err))
+		errorz.Check(fmt.Errorf("pathz.Join: internal error parsing manually joined path '%s': %w", currentString, err))
 	}
 	result = newPath
 

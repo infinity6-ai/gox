@@ -80,10 +80,10 @@ func TestUnitExtractRelative(t *testing.T) {
 
 	t.Run("other path is not relative to base path when base has trailing slash", func(t *testing.T) {
 		check(t, testScenario{
-			baseStr:        "a/b/",
-			otherStr:       "a/b",
-			expectErr:      true,
-			errContains:    "navigation error: 'a/b' is not relative to 'a/b/'",
+			baseStr:     "a/b/",
+			otherStr:    "a/b",
+			expectErr:   true,
+			errContains: "navigation error: 'a/b' is not relative to 'a/b/'",
 		})
 	})
 
