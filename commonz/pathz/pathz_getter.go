@@ -74,3 +74,8 @@ func (p *Path) Base() string {
 	_, ret, _ := p.Parent()
 	return ret
 }
+
+func (p *Path) BaseSlash() (base string, hasEndingSlash bool) {
+	_, base, hasEndingSlash = p.Parent()
+	return
+}
