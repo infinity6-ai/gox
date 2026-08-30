@@ -8,7 +8,6 @@ import (
 
 func TestUnitJoin(t *testing.T) {
 	type testScenario struct {
-		name          string
 		basePathStr   string
 		otherPathStrs []string
 		expectedPath  *Path
@@ -32,23 +31,22 @@ func TestUnitJoin(t *testing.T) {
 		joinedPath, err := basePath.Join(others...)
 
 		if s.expectErr {
-			require.Error(t, err, "expected an error for scenario %q", s.name)
-			require.ErrorIs(t, err, ErrEscaped, "expected ErrEscaped for scenario %q", s.name)
-			require.Contains(t, err.Error(), s.errContains, "error message mismatch for scenario %q", s.name)
+			require.Error(t, err, "expected an error for scenario %q")
+			require.ErrorIs(t, err, ErrEscaped, "expected ErrEscaped for scenario %q")
+			require.Contains(t, err.Error(), s.errContains, "error message mismatch for scenario %q")
 			if s.expectedPath != nil {
-				require.Equal(t, s.expectedPath, joinedPath, "escaped path mismatch for scenario %q", s.name)
+				require.Equal(t, s.expectedPath, joinedPath, "escaped path mismatch for scenario %q")
 			}
 			return
 		}
 
-		require.NoError(t, err, "did not expect an error for scenario %q", s.name)
-		require.NotNil(t, joinedPath, "joined path should not be nil for scenario %q", s.name)
-		require.Equal(t, s.expectedPath, joinedPath, "joined path mismatch for scenario %q", s.name)
+		require.NoError(t, err, "did not expect an error for scenario %q")
+		require.NotNil(t, joinedPath, "joined path should not be nil for scenario %q")
+		require.Equal(t, s.expectedPath, joinedPath, "joined path mismatch for scenario %q")
 	}
 
 	t.Run("simple join", func(t *testing.T) {
 		check(t, testScenario{
-			name:          "a/b + c = a/b/c",
 			basePathStr:   "a/b",
 			otherPathStrs: []string{"c"},
 			expectedPath:  New(0, []string{"a", "b", "c"}, false),
@@ -57,7 +55,6 @@ func TestUnitJoin(t *testing.T) {
 
 	t.Run("multiple simple joins", func(t *testing.T) {
 		check(t, testScenario{
-			name:          "a/b + c + d = a/b/c/d",
 			basePathStr:   "a/b",
 			otherPathStrs: []string{"c", "d"},
 			expectedPath:  New(0, []string{"a", "b", "c", "d"}, false),
@@ -66,7 +63,6 @@ func TestUnitJoin(t *testing.T) {
 
 	t.Run("join with parent directory navigation staying within base", func(t *testing.T) {
 		check(t, testScenario{
-			name:          "a/b/c + ../d = a/b/d",
 			basePathStr:   "a/b/c",
 			otherPathStrs: []string{"../d"},
 			expectedPath:  New(0, []string{"a", "b", "d"}, false),
@@ -77,7 +73,6 @@ func TestUnitJoin(t *testing.T) {
 
 	t.Run("join with multiple parent directory navigation staying within base", func(t *testing.T) {
 		check(t, testScenario{
-			name:          "a/b/c/d + ../../e = a/b/e",
 			basePathStr:   "a/b/c/d",
 			otherPathStrs: []string{"../../e"},
 			expectedPath:  New(0, []string{"a", "b", "e"}, false),
@@ -88,7 +83,6 @@ func TestUnitJoin(t *testing.T) {
 
 	t.Run("join with parent directory navigation escaping base", func(t *testing.T) {
 		check(t, testScenario{
-			name:          "a/b + ../../c = escaped",
 			basePathStr:   "a/b",
 			otherPathStrs: []string{"../../c"},
 			expectErr:     true,
@@ -99,7 +93,6 @@ func TestUnitJoin(t *testing.T) {
 
 	t.Run("join with absolute path as other (relative base)", func(t *testing.T) {
 		check(t, testScenario{
-			name:          "a/b + /c/d = escaped (absolute in relative)",
 			basePathStr:   "a/b",
 			otherPathStrs: []string{"/c/d"},
 			expectErr:     true,
@@ -110,7 +103,6 @@ func TestUnitJoin(t *testing.T) {
 
 	t.Run("join with absolute path as other (absolute base but different root)", func(t *testing.T) {
 		check(t, testScenario{
-			name:          "/a/b + /c/d = escaped (absolute in absolute, different root)",
 			basePathStr:   "/a/b",
 			otherPathStrs: []string{"/c/d"},
 			expectErr:     true,
@@ -121,7 +113,6 @@ func TestUnitJoin(t *testing.T) {
 
 	t.Run("join with absolute path as other (absolute base and valid descendant)", func(t *testing.T) {
 		check(t, testScenario{
-			name:          "/a/b + /a/b/c/d = valid",
 			basePathStr:   "/a/b",
 			otherPathStrs: []string{"/a/b/c/d"},
 			expectErr:     false,
@@ -131,7 +122,6 @@ func TestUnitJoin(t *testing.T) {
 
 	t.Run("join with empty other path", func(t *testing.T) {
 		check(t, testScenario{
-			name:          "a/b + '' = a/b",
 			basePathStr:   "a/b",
 			otherPathStrs: []string{""},
 			expectedPath:  New(0, []string{"a", "b"}, false),
@@ -140,7 +130,6 @@ func TestUnitJoin(t *testing.T) {
 
 	t.Run("join with current directory .", func(t *testing.T) {
 		check(t, testScenario{
-			name:          "a/b + . = a/b",
 			basePathStr:   "a/b",
 			otherPathStrs: []string{"."},
 			expectedPath:  New(0, []string{"a", "b"}, false),
@@ -149,7 +138,6 @@ func TestUnitJoin(t *testing.T) {
 
 	t.Run("join with current directory ./ and trailing slash", func(t *testing.T) {
 		check(t, testScenario{
-			name:          "a/b + ./ = a/b/",
 			basePathStr:   "a/b",
 			otherPathStrs: []string{"./"},
 			expectedPath:  New(0, []string{"a", "b"}, true),
@@ -158,7 +146,6 @@ func TestUnitJoin(t *testing.T) {
 
 	t.Run("base path with trailing slash, simple join", func(t *testing.T) {
 		check(t, testScenario{
-			name:          "a/b/ + c = a/b/c",
 			basePathStr:   "a/b/",
 			otherPathStrs: []string{"c"},
 			expectedPath:  New(0, []string{"a", "b", "c"}, false),
@@ -167,7 +154,6 @@ func TestUnitJoin(t *testing.T) {
 
 	t.Run("base path with trailing slash, other path with trailing slash", func(t *testing.T) {
 		check(t, testScenario{
-			name:          "a/b/ + c/ = a/b/c/",
 			basePathStr:   "a/b/",
 			otherPathStrs: []string{"c/"},
 			expectedPath:  New(0, []string{"a", "b", "c"}, true),
@@ -176,7 +162,6 @@ func TestUnitJoin(t *testing.T) {
 
 	t.Run("join with leading ../ (base is relative)", func(t *testing.T) {
 		check(t, testScenario{
-			name:          "b/c + ../../a = escaped",
 			basePathStr:   "b/c",
 			otherPathStrs: []string{"../../a"},
 			expectErr:     true,
@@ -187,7 +172,6 @@ func TestUnitJoin(t *testing.T) {
 
 	t.Run("join with leading ../ (base is absolute)", func(t *testing.T) {
 		check(t, testScenario{
-			name:          "/b/c + ../../a = escaped",
 			basePathStr:   "/b/c",
 			otherPathStrs: []string{"../../a"},
 			expectErr:     true,
@@ -198,7 +182,6 @@ func TestUnitJoin(t *testing.T) {
 
 	t.Run("join root with a relative path", func(t *testing.T) {
 		check(t, testScenario{
-			name:          "/ + a/b = /a/b",
 			basePathStr:   "/",
 			otherPathStrs: []string{"a/b"},
 			expectedPath:  New(-1, []string{"a", "b"}, false),
@@ -207,7 +190,6 @@ func TestUnitJoin(t *testing.T) {
 
 	t.Run("join root with an absolute path", func(t *testing.T) {
 		check(t, testScenario{
-			name:          "/ + /a/b = /a/b",
 			basePathStr:   "/",
 			otherPathStrs: []string{"/a/b"},
 			expectedPath:  New(-1, []string{"a", "b"}, false),
@@ -216,7 +198,6 @@ func TestUnitJoin(t *testing.T) {
 
 	t.Run("join with no other paths", func(t *testing.T) {
 		check(t, testScenario{
-			name:          "a/b + (no others) = a/b",
 			basePathStr:   "a/b",
 			otherPathStrs: []string{},
 			expectedPath:  New(0, []string{"a", "b"}, false),
@@ -225,7 +206,6 @@ func TestUnitJoin(t *testing.T) {
 
 	t.Run("path a/b/../c", func(t *testing.T) {
 		check(t, testScenario{
-			name:          "path a/b/../c",
 			basePathStr:   "a",
 			otherPathStrs: []string{"b/../c"},
 			expectedPath:  New(0, []string{"a", "c"}, false),
@@ -233,7 +213,6 @@ func TestUnitJoin(t *testing.T) {
 	})
 	t.Run("absolute path join with .. and ending slash", func(t *testing.T) {
 		check(t, testScenario{
-			name:          "absolute path join with .. and ending slash",
 			basePathStr:   "/a/b",
 			otherPathStrs: []string{"../c/"},
 			expectErr:     true,
@@ -244,7 +223,6 @@ func TestUnitJoin(t *testing.T) {
 
 	t.Run("path ../a/b join with ../../c escaping", func(t *testing.T) {
 		check(t, testScenario{
-			name:          "path ../a/b join with ../../c escaping",
 			basePathStr:   "../a/b",
 			otherPathStrs: []string{"../../c"},
 			expectErr:     true,
@@ -255,7 +233,6 @@ func TestUnitJoin(t *testing.T) {
 
 	t.Run("join with parent directory navigation escaping base more levels than parts", func(t *testing.T) {
 		check(t, testScenario{
-			name:          "a + ../../b = escaped",
 			basePathStr:   "a",
 			otherPathStrs: []string{"../../b"},
 			expectErr:     true,
@@ -263,4 +240,5 @@ func TestUnitJoin(t *testing.T) {
 			expectedPath:  New(1, []string{"b"}, false), // The resulting path after cleaning: ../b
 		})
 	})
+
 }
