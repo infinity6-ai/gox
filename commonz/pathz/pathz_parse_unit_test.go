@@ -12,7 +12,7 @@ import (
 func TestUnitParse(t *testing.T) {
 	type testScenario struct {
 		input                  string
-		expectedParts          string
+		expectedParts          []string
 		expectedParents        int
 		expectedHasEndingSlash bool
 		expectedError          string
@@ -52,7 +52,7 @@ func TestUnitParse(t *testing.T) {
 	t.Run("absolute path", func(t *testing.T) {
 		check(t, testScenario{
 			input:           "/a/b/c",
-			expectedParts:   "a/b/c",
+			expectedParts:   []string{"a", "b", "c"},
 			expectedParents: -1,
 		})
 	})
@@ -60,7 +60,7 @@ func TestUnitParse(t *testing.T) {
 	t.Run("relative path", func(t *testing.T) {
 		check(t, testScenario{
 			input:           "a/b/c",
-			expectedParts:   "a/b/c",
+			expectedParts:   []string{"a", "b", "c"},
 			expectedParents: 0,
 		})
 	})
@@ -68,7 +68,7 @@ func TestUnitParse(t *testing.T) {
 	t.Run("path with current dir", func(t *testing.T) {
 		check(t, testScenario{
 			input:           "a/./b/c",
-			expectedParts:   "a/b/c",
+			expectedParts:   []string{"a", "b", "c"},
 			expectedParents: 0,
 		})
 	})
@@ -76,7 +76,7 @@ func TestUnitParse(t *testing.T) {
 	t.Run("path with parent dir", func(t *testing.T) {
 		check(t, testScenario{
 			input:           "a/b/../c",
-			expectedParts:   "a/c",
+			expectedParts:   []string{"a", "c"},
 			expectedParents: 0,
 		})
 	})
@@ -84,7 +84,7 @@ func TestUnitParse(t *testing.T) {
 	t.Run("path starting with parent dir (relative)", func(t *testing.T) {
 		check(t, testScenario{
 			input:           "../a/b",
-			expectedParts:   "a/b",
+			expectedParts:   []string{"a", "b"},
 			expectedParents: 1,
 		})
 	})
@@ -92,7 +92,7 @@ func TestUnitParse(t *testing.T) {
 	t.Run("path starting with parent dir (absolute)", func(t *testing.T) {
 		check(t, testScenario{
 			input:           "/../a/b",
-			expectedParts:   "a/b",
+			expectedParts:   []string{"a", "b"},
 			expectedParents: -1,
 		})
 	})
@@ -100,7 +100,7 @@ func TestUnitParse(t *testing.T) {
 	t.Run("path with multiple parent dir navigations", func(t *testing.T) {
 		check(t, testScenario{
 			input:           "a/b/c/../../d",
-			expectedParts:   "a/d",
+			expectedParts:   []string{"a", "d"},
 			expectedParents: 0,
 		})
 	})
@@ -108,7 +108,7 @@ func TestUnitParse(t *testing.T) {
 	t.Run("path with excessive parent dir navigations", func(t *testing.T) {
 		check(t, testScenario{
 			input:           "a/../../b",
-			expectedParts:   "b",
+			expectedParts:   []string{"b"},
 			expectedParents: 1,
 		})
 	})
@@ -116,7 +116,7 @@ func TestUnitParse(t *testing.T) {
 	t.Run("empty path", func(t *testing.T) {
 		check(t, testScenario{
 			input:           "",
-			expectedParts:   "",
+			expectedParts:   nil,
 			expectedParents: 0,
 		})
 	})
@@ -124,7 +124,7 @@ func TestUnitParse(t *testing.T) {
 	t.Run("path with only slashes", func(t *testing.T) {
 		check(t, testScenario{
 			input:                  "///",
-			expectedParts:          "",
+			expectedParts:          nil,
 			expectedParents:        -1,
 			expectedHasEndingSlash: true,
 		})
@@ -133,7 +133,7 @@ func TestUnitParse(t *testing.T) {
 	t.Run("path with only current dir", func(t *testing.T) {
 		check(t, testScenario{
 			input:           "././.",
-			expectedParts:   "",
+			expectedParts:   nil,
 			expectedParents: 0,
 		})
 	})
@@ -141,7 +141,7 @@ func TestUnitParse(t *testing.T) {
 	t.Run("path with only parent dir", func(t *testing.T) {
 		check(t, testScenario{
 			input:                  "../../",
-			expectedParts:          "",
+			expectedParts:          []string{},
 			expectedParents:        2,
 			expectedHasEndingSlash: true,
 		})
@@ -164,7 +164,7 @@ func TestUnitParse(t *testing.T) {
 	t.Run("path with trailing slash", func(t *testing.T) {
 		check(t, testScenario{
 			input:                  "a/b/c/",
-			expectedParts:          "a/b/c",
+			expectedParts:          []string{"a", "b", "c"},
 			expectedParents:        0,
 			expectedHasEndingSlash: true,
 		})
@@ -173,7 +173,7 @@ func TestUnitParse(t *testing.T) {
 	t.Run("path with leading slash", func(t *testing.T) {
 		check(t, testScenario{
 			input:           "/a/b/c",
-			expectedParts:   "a/b/c",
+			expectedParts:   []string{"a", "b", "c"},
 			expectedParents: -1,
 		})
 	})
@@ -181,7 +181,7 @@ func TestUnitParse(t *testing.T) {
 	t.Run("path with mixed slashes", func(t *testing.T) {
 		check(t, testScenario{
 			input:           "//a/b///c",
-			expectedParts:   "a/b/c",
+			expectedParts:   []string{"a", "b", "c"},
 			expectedParents: -1,
 		})
 	})
@@ -189,7 +189,7 @@ func TestUnitParse(t *testing.T) {
 	t.Run("complex path", func(t *testing.T) {
 		check(t, testScenario{
 			input:           "/./a/../b/./c/../../d/e/.",
-			expectedParts:   "d/e",
+			expectedParts:   []string{"d", "e"},
 			expectedParents: -1,
 		})
 	})

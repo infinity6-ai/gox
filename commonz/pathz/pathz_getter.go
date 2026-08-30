@@ -1,7 +1,5 @@
 package pathz
 
-import "strings"
-
 func (p *Path) IsEscaped() bool {
 	return p.parents > 0
 }
@@ -15,10 +13,10 @@ func (p *Path) IsContained() bool {
 }
 
 func (p *Path) Split() []string {
-	if p.parts == "" {
+	if p.parts == nil {
 		return []string{}
 	}
-	return strings.Split(p.parts, "/")
+	return p.parts
 }
 
 // Parent returns the parent Path and the last element of the path.
@@ -26,7 +24,7 @@ func (p *Path) Split() []string {
 // If the path is "a", it returns ("", "a").
 func (p *Path) Parent() (parent *Path, base string, hasEndingSlash bool) {
 	hasEndingSlash = p.hasEndingSlash
-	if p.parts == "" {
+	if len(p.parts) == 0 {
 		// Handles paths like "", ".", "/", "..", "../.."
 		if p.parents > 0 {
 			// This is an escaped path like "..", "../.."
@@ -41,24 +39,19 @@ func (p *Path) Parent() (parent *Path, base string, hasEndingSlash bool) {
 		return nil, "", hasEndingSlash
 	}
 
-	lastSlashIndex := strings.LastIndex(p.parts, "/")
-	if lastSlashIndex == -1 {
-		// Path has no slashes in its parts (e.g., "a", or "a" in "../a")
+	base = p.parts[len(p.parts)-1]
+	if len(p.parts) == 1 {
+		// Path has only one part (e.g., "a", or "a" in "../a")
 		// The parent is either just the '..' components, or nil for contained/absolute single part.
 		if p.parents > 0 {
 			// For "../a", parent is ".." represented as New(p.parents, []string{}, false)
-			return New(p.parents, []string{}, false), p.parts, hasEndingSlash
+			return New(p.parents, []string{}, false), base, hasEndingSlash
 		}
 		// For "a" or "/a"
-		return nil, p.parts, hasEndingSlash
+		return nil, base, hasEndingSlash
 	}
 
-	parentPartsStr := p.parts[:lastSlashIndex]
-	base = p.parts[lastSlashIndex+1:]
-
-	// Reconstruct the parent Path using New to handle internal structure correctly
-	// Split parentPartsStr to pass to New constructor
-	parentPartsSlice := strings.Split(parentPartsStr, "/")
+	parentPartsSlice := p.parts[:len(p.parts)-1]
 	return New(p.parents, parentPartsSlice, false), base, hasEndingSlash
 }
 

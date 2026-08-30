@@ -7,7 +7,7 @@ import (
 )
 
 type Path struct {
-	parts          string
+	parts          []string
 	parents        int
 	hasEndingSlash bool
 }
@@ -18,7 +18,7 @@ func New(parents int, parts []string, hasEndingSlash bool) *Path {
 	return &p
 }
 
-func (p *Path) Parts() string {
+func (p *Path) Parts() []string {
 	return p.parts
 }
 
@@ -41,7 +41,7 @@ func (p *Path) set(parts []string, parents int, hasEndingSlash bool) error {
 			}
 		}
 	}
-	p.parts = strings.Join(parts, "/")
+	p.parts = parts
 	p.parents = parents
 	p.hasEndingSlash = hasEndingSlash
 	return nil
@@ -56,8 +56,8 @@ func (p Path) String() string {
 			sb.WriteString("../")
 		}
 	}
-	sb.WriteString(p.parts)
-	if p.hasEndingSlash && len(p.parts) > 0 {
+	sb.WriteString(strings.Join(p.parts, "/"))
+	if p.hasEndingSlash && (len(p.parts) > 0 || p.parents > 0) {
 		sb.WriteString("/")
 	}
 	return sb.String()
@@ -82,11 +82,14 @@ func (p *Path) Parse(input string) error {
 	// Clean the path using the standard library
 	cleanedPath := path.Clean(input)
 
+	if cleanedPath == "." {
+		p.set(nil, 0, hasEndingSlash)
+		return nil
+	}
+
 	// path.Clean("/a/../b") -> "/b"
 	// path.Clean("././.") -> "."
 	// path.Clean("/") -> "/"
-	// path.Clean("") -> "."
-	// path.Clean("../../a") -> "../../a"
 
 	// if cleanedPath == "." {
 	// return &ret, nil
