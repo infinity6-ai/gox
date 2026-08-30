@@ -3,7 +3,6 @@ package urlz
 import (
 	"fmt"
 	"net/url"
-	"strings"
 )
 
 type HttpUrl struct {
@@ -30,17 +29,6 @@ func NewHttpUrl(schema, host, port, path, query, fragment string, userInfo *url.
 		return nil, err
 	}
 	return ret, nil
-}
-
-func newHttpUrlFromParts(schema string, urlPart string) (*HttpUrl, error) {
-	// Prepend // to the urlPart if it's missing, so url.Parse can handle it correctly.
-	// e.g. for "google.com/search", it becomes "//google.com/search"
-	if !strings.HasPrefix(urlPart, "//") {
-		urlPart = "//" + urlPart
-	}
-
-	fullURL := schema + ":" + urlPart
-	return ParseHttpUrl(fullURL)
 }
 
 func ParseHttpUrl(urlStr string) (*HttpUrl, error) {
