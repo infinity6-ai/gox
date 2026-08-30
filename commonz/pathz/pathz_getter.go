@@ -49,9 +49,6 @@ func (p *Path) Parent() (*Path, string) {
 // If the path is "a", it returns "".
 func (p *Path) Dir() *Path {
 	parent, _ := p.Parent()
-	if parent == nil {
-		return &Path{parts: "", parents: p.parents}
-	}
 	return parent
 }
 

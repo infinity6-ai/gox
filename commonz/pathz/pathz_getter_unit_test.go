@@ -33,7 +33,11 @@ func TestUnitPathGetters(t *testing.T) {
 		expectedDirPath, err := Parse(s.dirPathStr)
 		require.NoError(t, err)
 		dir := p.Dir()
-		require.Equal(t, expectedDirPath, dir, "Dir() path mismatch for %q", s.pathStr)
+		if s.parentIsNull {
+			require.Nil(t, dir, "Dir() should be nil for %q", s.pathStr)
+		} else {
+			require.Equal(t, expectedDirPath, dir, "Dir() path mismatch for %q", s.pathStr)
+		}
 
 		// Test Parent()
 		parent, base := p.Parent()
