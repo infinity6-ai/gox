@@ -31,10 +31,10 @@ func (p *Path) Parent() (*Path, string) {
 			// This is an escaped path like "..", "../.."
 			if p.parents == 1 {
 				// For ".."
-				return nil, ".."
+				return nil, ""
 			}
 			// For "../.." etc.
-			return New(p.parents-1, []string{}, false), ".."
+			return New(p.parents-1, []string{}, false), ""
 		}
 		// For "", "." or "/"
 		return nil, ""

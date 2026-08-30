@@ -112,7 +112,7 @@ func TestUnitPathGetters(t *testing.T) {
 			isContained: false,
 			isEscaped:   true,
 			partSlice:   []string{},
-			base:        "..",
+			base:        "",
 			parent:      New(1, []string{}, false), // Path for ".."
 		})
 	})
@@ -124,7 +124,7 @@ func TestUnitPathGetters(t *testing.T) {
 			isContained: false,
 			isEscaped:   true,
 			partSlice:   []string{},
-			base:        "..",
+			base:        "",
 			parent:      nil,
 		})
 	})
@@ -308,7 +308,7 @@ func TestUnitParentMethod(t *testing.T) {
 		check(t, testScenario{
 			pathStr:        "../..",
 			expectedParent: New(1, []string{}, false), // Path for ".."
-			parentBase:     "..",
+			parentBase:     "",
 		})
 	})
 
@@ -316,7 +316,7 @@ func TestUnitParentMethod(t *testing.T) {
 		check(t, testScenario{
 			pathStr:        "..",
 			expectedParent: nil,
-			parentBase:     "..",
+			parentBase:     "",
 		})
 	})
 
