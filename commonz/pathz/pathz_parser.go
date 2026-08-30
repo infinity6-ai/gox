@@ -12,6 +12,12 @@ type Path struct {
 	hasEndingSlash bool
 }
 
+func New(parents int, parts []string, hasEndingSlash bool) *Path {
+	var p Path
+	p.set(parts, parents, hasEndingSlash)
+	return &p
+}
+
 func (p *Path) Parts() string {
 	return p.parts
 }
