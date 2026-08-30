@@ -1,7 +1,5 @@
 package urlz
 
-import "net/url"
-
 type Url struct {
 	scheme   string
 	host     string
@@ -9,9 +7,6 @@ type Url struct {
 	path     string
 	query    string
 	fragment string
-
-	parsedQuery    url.Values
-	parsedFragment url.Values
 }
 
 func (u *Url) Parse(urlStr string) {
