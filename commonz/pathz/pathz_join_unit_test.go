@@ -114,7 +114,7 @@ func TestUnitJoin(t *testing.T) {
 			basePathStr:   "/a/b",
 			otherPathStrs: []string{"/c/d"},
 			expectErr:     true,
-			errContains:   "path escaped error: joining '/c/d' to '/a/b' results in '/c/d' which is outside the base",
+			errContains:   "path escaped error: joining '/a/b' to '[/c/d]' results in '/c/d' which is outside the base",
 			expectedPath:  New(-1, []string{"c", "d"}, false),
 		})
 	})
