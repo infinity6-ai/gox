@@ -29,7 +29,7 @@ func Parse(urlStr string) (URI, error) {
 	}
 	switch schema {
 	case "file", "gs", "unix":
-		panic("implement it: " + p)
+		return NewSimpleUrl(schema, p)
 	case "http", "https":
 		return NewHttpUrl(schema, p)
 	default:
