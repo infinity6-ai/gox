@@ -38,89 +38,103 @@ func TestUnitExtractRelative(t *testing.T) {
 		require.Equal(t, expectedRel, rel, "Expected relative path '%s', but got '%s'", expectedRel.String(), rel.String())
 	}
 
-	scenarios := []testScenario{
-		{
-			name:           "simple extraction",
+	t.Run("simple extraction", func(t *testing.T) {
+		check(t, testScenario{
 			baseStr:        "a/b",
 			otherStr:       "a/b/c/d",
 			expectedRelStr: "c/d",
-		},
-		{
-			name:           "simple extraction with trailing slash on other",
+		})
+	})
+
+	t.Run("simple extraction with trailing slash on other", func(t *testing.T) {
+		check(t, testScenario{
 			baseStr:        "a/b",
 			otherStr:       "a/b/c/d/",
 			expectedRelStr: "c/d/",
-		},
-		{
-			name:           "simple extraction with trailing slash on other",
+		})
+	})
+
+	t.Run("simple extraction with trailing slash on other (base has trailing slash)", func(t *testing.T) {
+		check(t, testScenario{
 			baseStr:        "a/b/",
 			otherStr:       "a/b/c/d/",
 			expectedRelStr: "c/d/",
-		},
-		{
-			name:           "identical paths",
+		})
+	})
+
+	t.Run("identical paths", func(t *testing.T) {
+		check(t, testScenario{
 			baseStr:        "a/b",
 			otherStr:       "a/b",
 			expectedRelStr: ".", // Represents an empty path
-		},
-		{
-			name:           "identical paths with trailing slashes",
+		})
+	})
+
+	t.Run("identical paths with trailing slashes", func(t *testing.T) {
+		check(t, testScenario{
 			baseStr:        "a/b/",
 			otherStr:       "a/b/",
 			expectedRelStr: ".",
-		},
-		{
-			name:           "identical paths with trailing slashes",
+		})
+	})
+
+	t.Run("other path is not relative to base path when base has trailing slash", func(t *testing.T) {
+		check(t, testScenario{
 			baseStr:        "a/b/",
 			otherStr:       "a/b",
-			expectedRelStr: ".",
 			expectErr:      true,
 			errContains:    "navigation error: 'a/b' is not relative to 'a/b/'",
-		},
-		{
-			name:           "absolute paths",
+		})
+	})
+
+	t.Run("absolute paths", func(t *testing.T) {
+		check(t, testScenario{
 			baseStr:        "/a/b",
 			otherStr:       "/a/b/c",
 			expectedRelStr: "c",
-		},
-		{
-			name:           "root path as base",
+		})
+	})
+
+	t.Run("root path as base", func(t *testing.T) {
+		check(t, testScenario{
 			baseStr:        "/",
 			otherStr:       "/a/b",
 			expectedRelStr: "a/b",
-		},
-		{
-			name:           "relative paths with parents",
+		})
+	})
+
+	t.Run("relative paths with parents", func(t *testing.T) {
+		check(t, testScenario{
 			baseStr:        "../a",
 			otherStr:       "../a/b/c",
 			expectedRelStr: "b/c",
-		},
-		{
-			name:        "error when not a base",
+		})
+	})
+
+	t.Run("error when other path is not a descendant of base", func(t *testing.T) {
+		check(t, testScenario{
 			baseStr:     "a/c",
 			otherStr:    "a/b/d",
 			expectErr:   true,
 			errContains: "'a/b/d' is not relative to 'a/c'",
-		},
-		{
-			name:        "error when base is longer",
+		})
+	})
+
+	t.Run("error when base path is longer than other path", func(t *testing.T) {
+		check(t, testScenario{
 			baseStr:     "a/b/c",
 			otherStr:    "a/b",
 			expectErr:   true,
 			errContains: "'a/b' is not relative to 'a/b/c'",
-		},
-		{
-			name:        "error for absolute vs relative",
+		})
+	})
+
+	t.Run("error for absolute vs relative paths", func(t *testing.T) {
+		check(t, testScenario{
 			baseStr:     "/a/b",
 			otherStr:    "a/b/c",
 			expectErr:   true,
 			errContains: "'a/b/c' is not relative to '/a/b'",
-		},
-	}
-
-	for _, s := range scenarios {
-		t.Run(s.name, func(t *testing.T) {
-			check(t, s)
 		})
-	}
+	})
 }
