@@ -35,6 +35,11 @@ func (p *Path) set(parts []string, parents int, hasEndingSlash bool) error {
 		if part == "" || strings.Trim(part, ".") == "" {
 			return fmt.Errorf("path contains illegal component %d: \"%s\"", i, part)
 		}
+		for idx, r := range part {
+			if !IsValidChar(r) {
+				return fmt.Errorf("path contains illegal character %d '%c' in '%s'", idx, r, part)
+			}
+		}
 	}
 	p.parts = strings.Join(parts, "/")
 	p.parents = parents
