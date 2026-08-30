@@ -38,7 +38,7 @@ func (p *Path) Join(others ...*Path) (*Path, error) {
 		c := len(ret.parts) - other.parents
 		if c < 0 {
 			ret.parts = ret.parts[:0]
-			ret.parents = ret.parents + other.parents
+			ret.parents += -c
 		} else {
 			ret.parts = ret.parts[:c]
 		}

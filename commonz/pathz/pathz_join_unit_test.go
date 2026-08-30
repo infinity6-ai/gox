@@ -252,4 +252,15 @@ func TestUnitJoin(t *testing.T) {
 			expectedPath:  New(1, []string{"c"}, false),
 		})
 	})
+
+	t.Run("join with parent directory navigation escaping base more levels than parts", func(t *testing.T) {
+		check(t, testScenario{
+			name:          "a + ../../b = escaped",
+			basePathStr:   "a",
+			otherPathStrs: []string{"../../b"},
+			expectErr:     true,
+			errContains:   "path escaped error: joining 'a' to '[../../b]' results in '../b' which is outside the base",
+			expectedPath:  New(1, []string{"b"}, false), // The resulting path after cleaning: ../b
+		})
+	})
 }
