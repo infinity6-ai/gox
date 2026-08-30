@@ -39,10 +39,7 @@ func TestUnitPathJson(t *testing.T) {
 	t.Run("absolute path", func(t *testing.T) {
 		check(t, testScenario{
 			name: "absolute path",
-			path: &Path{
-				parts:   "a/b",
-				parents: -1,
-			},
+			path: New(-1, []string{"a", "b"}, false),
 			json: `"/a/b"`,
 		})
 	})
@@ -50,10 +47,7 @@ func TestUnitPathJson(t *testing.T) {
 	t.Run("relative path", func(t *testing.T) {
 		check(t, testScenario{
 			name: "relative path",
-			path: &Path{
-				parts:   "a/b",
-				parents: 2,
-			},
+			path: New(2, []string{"a", "b"}, false),
 			json: `"../../a/b"`,
 		})
 	})
@@ -61,11 +55,7 @@ func TestUnitPathJson(t *testing.T) {
 	t.Run("path with ending slash", func(t *testing.T) {
 		check(t, testScenario{
 			name: "path with ending slash",
-			path: &Path{
-				parts:          "a/b",
-				parents:        -1,
-				hasEndingSlash: true,
-			},
+			path: New(-1, []string{"a", "b"}, true),
 			json: `"/a/b/"`,
 		})
 	})
@@ -73,7 +63,7 @@ func TestUnitPathJson(t *testing.T) {
 	t.Run("empty path", func(t *testing.T) {
 		check(t, testScenario{
 			name: "empty path",
-			path: &Path{},
+			path: New(0, nil, false),
 			json: `""`,
 		})
 	})
