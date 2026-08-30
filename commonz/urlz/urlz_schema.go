@@ -7,7 +7,7 @@ import (
 
 var ErrUnknownSchema = errors.New("unknown schema")
 
-type GenericUrl interface {
+type URI interface {
 	Schema() string
 	String() string
 	validate() error
@@ -22,7 +22,7 @@ func Schema(url string) (string, string, error) {
 	return "", "", ErrUnknownSchema
 }
 
-func Parse(urlStr string) (GenericUrl, error) {
+func Parse(urlStr string) (URI, error) {
 	schema, p, err := Schema(urlStr)
 	if err != nil {
 		return nil, err
