@@ -13,23 +13,25 @@ type Url interface {
 	validate() error
 }
 
-func Schema(url string) (string, error) {
+func Schema(url string) (string, string, error) {
 	for i := 0; i < len(url); i++ {
 		if url[i] == ':' {
-			return url[:i], nil
+			return url[:i], url[i+1:], nil
 		}
 	}
-	return "", ErrUnknownSchema
+	return "", "", ErrUnknownSchema
 }
 
 func Parse(urlStr string) (Url, error) {
-	schema, err := Schema(urlStr)
+	schema, p, err := Schema(urlStr)
 	if err != nil {
 		return nil, err
 	}
 	switch schema {
 	case "file", "gs", "unix":
-		panic("implement it")
+		panic("implement it: " + p)
+	case "http", "https":
+		return NewHttpUrl(schema, p)
 	default:
 		return nil, fmt.Errorf("%w: %s", ErrUnknownSchema, urlStr)
 	}
