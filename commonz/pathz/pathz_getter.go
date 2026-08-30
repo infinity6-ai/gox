@@ -25,22 +25,40 @@ func (p *Path) Split() []string {
 // For example, if the path is "a/b/c", it returns ("a/b", "c").
 // If the path is "a", it returns ("", "a").
 func (p *Path) Parent() (*Path, string) {
-	// If the path has no parts (e.g., "", "."), or is the root ("/")
 	if p.parts == "" {
+		// Handles paths like "", ".", "/", "..", "../.."
+		if p.parents > 0 {
+			// This is an escaped path like "..", "../.."
+			if p.parents == 1 {
+				// For ".."
+				return nil, ".."
+			}
+			// For "../.." etc.
+			return New(p.parents-1, []string{}, false), ".."
+		}
+		// For "", "." or "/"
 		return nil, ""
 	}
 
 	lastSlashIndex := strings.LastIndex(p.parts, "/")
 	if lastSlashIndex == -1 {
-		// If there are no slashes, it's a single component path (e.g., "a", or "/a" where parts is "a").
-		// In this case, there is no parent Path object.
+		// Path has no slashes in its parts (e.g., "a", or "a" in "../a")
+		// The parent is either just the '..' components, or nil for contained/absolute single part.
+		if p.parents > 0 {
+			// For "../a", parent is ".." represented as New(p.parents, []string{}, false)
+			return New(p.parents, []string{}, false), p.parts
+		}
+		// For "a" or "/a"
 		return nil, p.parts
 	}
 
-	parentParts := p.parts[:lastSlashIndex]
+	parentPartsStr := p.parts[:lastSlashIndex]
 	base := p.parts[lastSlashIndex+1:]
 
-	return &Path{parts: parentParts, parents: p.parents}, base
+	// Reconstruct the parent Path using New to handle internal structure correctly
+	// Split parentPartsStr to pass to New constructor
+	parentPartsSlice := strings.Split(parentPartsStr, "/")
+	return New(p.parents, parentPartsSlice, false), base
 }
 
 // Dir returns the parent Path, without the last element.

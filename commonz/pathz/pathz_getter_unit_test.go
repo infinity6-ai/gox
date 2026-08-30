@@ -93,6 +93,42 @@ func TestUnitPathGetters(t *testing.T) {
 		})
 	})
 
+	t.Run("escaped path with single part", func(t *testing.T) {
+		check(t, testScenario{
+			pathStr:     "../../a",
+			isAbsolute:  false,
+			isContained: false,
+			isEscaped:   true,
+			partSlice:   []string{"a"},
+			base:        "a",
+			parent:      New(2, []string{}, false), // Path for "../.."
+		})
+	})
+
+	t.Run("doubly escaped path only", func(t *testing.T) {
+		check(t, testScenario{
+			pathStr:     "../..",
+			isAbsolute:  false,
+			isContained: false,
+			isEscaped:   true,
+			partSlice:   []string{},
+			base:        "..",
+			parent:      New(1, []string{}, false), // Path for ".."
+		})
+	})
+
+	t.Run("single escaped path only", func(t *testing.T) {
+		check(t, testScenario{
+			pathStr:     "..",
+			isAbsolute:  false,
+			isContained: false,
+			isEscaped:   true,
+			partSlice:   []string{},
+			base:        "..",
+			parent:      nil,
+		})
+	})
+
 	t.Run("empty path", func(t *testing.T) {
 		check(t, testScenario{
 			pathStr:     "",
@@ -101,7 +137,7 @@ func TestUnitPathGetters(t *testing.T) {
 			isEscaped:   false,
 			partSlice:   []string{},
 			base:        "",
-			parent:      nil, // Dir() is nil, Parent() is (non-nil, "")
+			parent:      nil, // Dir() is nil, Parent() is (nil, "")
 		})
 	})
 
@@ -257,6 +293,30 @@ func TestUnitParentMethod(t *testing.T) {
 			pathStr:        "/a",
 			expectedParent: nil,
 			parentBase:     "a",
+		})
+	})
+
+	t.Run("escaped path with single part", func(t *testing.T) {
+		check(t, testScenario{
+			pathStr:        "../../a",
+			expectedParent: New(2, []string{}, false), // Path for "../.."
+			parentBase:     "a",
+		})
+	})
+
+	t.Run("doubly escaped path only", func(t *testing.T) {
+		check(t, testScenario{
+			pathStr:        "../..",
+			expectedParent: New(1, []string{}, false), // Path for ".."
+			parentBase:     "..",
+		})
+	})
+
+	t.Run("single escaped path only", func(t *testing.T) {
+		check(t, testScenario{
+			pathStr:        "..",
+			expectedParent: nil,
+			parentBase:     "..",
 		})
 	})
 
