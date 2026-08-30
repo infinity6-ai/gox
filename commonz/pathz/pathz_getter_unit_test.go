@@ -38,13 +38,18 @@ func TestUnitPathGetters(t *testing.T) {
 
 		// Test Parent()
 		parent, base, hasEndingSlash := p.Parent()
-		require.Equal(t, s.hasEndingSlash, hasEndingSlash, "hasEndingSlash mismatch for %q", s.pathStr)
+		require.Equal(t, s.hasEndingSlash, hasEndingSlash, "Parent() hasEndingSlash mismatch for %q", s.pathStr)
 		require.Equal(t, s.base, base, "Parent() base mismatch for %q", s.pathStr)
 		if s.parent == nil {
 			require.Nil(t, parent, "Parent() should be nil for %q", s.pathStr)
 		} else {
 			require.Equal(t, s.parent, parent, "Parent() path mismatch for %q", s.pathStr)
 		}
+
+		// Test BaseSlash()
+		baseSlash, hasEndingSlash := p.BaseSlash()
+		require.Equal(t, s.hasEndingSlash, hasEndingSlash, "BaseSlash() hasEndingSlash mismatch for %q", s.pathStr)
+		require.Equal(t, s.base, baseSlash, "BaseSlash() base mismatch for %q", s.pathStr)
 	}
 
 	t.Run("absolute path", func(t *testing.T) {
