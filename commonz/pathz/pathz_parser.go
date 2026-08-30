@@ -7,7 +7,7 @@ import (
 	"strings"
 )
 
-var ErrNavigationError = errors.New("navigation error")
+var ErrNavigationError = errors.New("path navigation error")
 
 type Path struct {
 	parts          []string
