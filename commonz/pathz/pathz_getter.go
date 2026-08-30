@@ -22,14 +22,8 @@ func (p *Path) Split() []string {
 }
 
 func (p *Path) Base() string {
-	if p.parts == "" {
-		return ""
-	}
-	lastIndex := strings.LastIndex(p.parts, "/")
-	if lastIndex == -1 {
-		return p.parts
-	}
-	return p.parts[lastIndex+1:]
+	_, ret := p.Parent()
+	return ret
 }
 
 // Parent returns the parent Path and the last element of the path.
