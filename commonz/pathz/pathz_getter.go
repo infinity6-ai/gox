@@ -36,15 +36,22 @@ func (p *Path) Base() string {
 // For example, if the path is "a/b/c", it returns ("a/b", "c").
 // If the path is "a", it returns ("", "a").
 func (p *Path) Parent() (*Path, string) {
-	parts := p.Split()
-	if len(parts) == 0 {
+	if p.parts == "" {
 		return &Path{parts: "", parents: p.parents}, ""
 	}
-	base := parts[len(parts)-1]
-	if len(parts) == 1 { // If there's only one part, the parent is nil
-		return nil, base
+
+	lastSlashIndex := strings.LastIndex(p.parts, "/")
+	if lastSlashIndex == -1 { // No slash in parts
+		if p.IsAbsolute() {
+			// for path "/a", parent is "/"
+			return &Path{parts: "", parents: p.parents}, p.parts
+		}
+		// for path "a", parent is nil
+		return nil, p.parts
 	}
-	parentParts := strings.Join(parts[:len(parts)-1], "/")
+
+	parentParts := p.parts[:lastSlashIndex]
+	base := p.parts[lastSlashIndex+1:]
 	return &Path{parts: parentParts, parents: p.parents}, base
 }
 
