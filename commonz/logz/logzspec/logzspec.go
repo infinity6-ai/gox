@@ -12,10 +12,10 @@ import (
 	"go.code.infinity6.ai/platform/util/jsoner"
 )
 
-type Logger interface {
-	Error(ctx context.Context, op string, params map[string]any, errs ...error)
-	Info(ctx context.Context, op string, params map[string]any, errs ...error)
-	Debug(ctx context.Context, op string, params map[string]any, errs ...error)
+type ProviderLogger interface {
+	Error(ctx context.Context, entry *Entry)
+	Info(ctx context.Context, entry *Entry)
+	Debug(ctx context.Context, entry *Entry)
 	Appender() string
 }
 

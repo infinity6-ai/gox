@@ -5,8 +5,7 @@ import (
 	"fmt"
 	"reflect"
 
-	"github.com/infinity6-ai/gox/commonz/logz/logzlast"
-	"github.com/infinity6-ai/gox/commonz/logz/logzprovider"
+	"github.com/infinity6-ai/gox/commonz/logz/logzspec"
 )
 
 type Type bool
@@ -18,6 +17,27 @@ type Logger interface {
 	Appender() string
 }
 
+type loggerImpl struct {
+	appender string
+	spec     logzspec.ProviderLogger
+}
+
+func (l *loggerImpl) Appender() string {
+	return l.appender
+}
+
+func (l *loggerImpl) Debug(ctx context.Context, op string, params map[string]any, errs ...error) {
+	l.spec.Debug(ctx, logzspec.NewEntry(1, l.appender, logzspec.DEBUG, op, params, errs...))
+}
+
+func (l *loggerImpl) Error(ctx context.Context, op string, params map[string]any, errs ...error) {
+	l.spec.Error(ctx, logzspec.NewEntry(1, l.appender, logzspec.ERROR, op, params, errs...))
+}
+
+func (l *loggerImpl) Info(ctx context.Context, op string, params map[string]any, errs ...error) {
+	l.spec.Error(ctx, logzspec.NewEntry(1, l.appender, logzspec.ERROR, op, params, errs...))
+}
+
 func Create(logger any) Logger {
 	t := reflect.TypeOf(logger)
 	if t.Name() != "tlogger" {
@@ -26,8 +46,10 @@ func Create(logger any) Logger {
 	if fmt.Sprintf("%t", logger) != "true" {
 		panic("logger must be true")
 	}
-	prv := logzprovider.GetDefaultProvider()
-	ret := prv(t.PkgPath())
-	ret = logzlast.New(ret)
-	return ret
+	impl := &loggerImpl{}
+	return impl
+	// prv := logzprovider.GetDefaultProvider()
+	// ret := prv(t.PkgPath())
+	// ret = logzlast.New(ret)
+	// return ret
 }
