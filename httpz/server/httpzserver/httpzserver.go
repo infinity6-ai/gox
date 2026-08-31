@@ -3,66 +3,56 @@ package httpzserver
 import (
 	"context"
 	"fmt"
-	"net/http"
+	"net"
 	"os"
 
 	"github.com/infinity6-ai/gox/commonz/deferz"
+	"github.com/infinity6-ai/gox/commonz/errorz"
 )
 
-type Server struct {
-	Context      context.Context
+type Options struct {
 	LocalAddress string
-
-	server *http.Server
 }
 
-func (me *Server) Listen() {
-	dfz := deferz.New()
-	defer dfz.Close()
-	if me.LocalAddress == "" {
+func (o *Options) fix() {
+	if o.LocalAddress == "" {
 		port := os.Getenv("PORT")
 		if port != "" {
-			me.LocalAddress = fmt.Sprintf("0.0.0.0:%s", port)
+			o.LocalAddress = fmt.Sprintf("0.0.0.0:%s", port)
 		}
 	}
-	if me.LocalAddress == "" {
-		me.LocalAddress = "localhost:8080"
+	if o.LocalAddress == "" {
+		o.LocalAddress = "localhost:8080"
 	}
-	// me.server.Handler = me.handler
+}
 
-	// listener, err := net.Listen("tcp", me.LocalAddress)
-	// errorz.Check(err)
+type Server struct {
+	Context context.Context
+	Options Options
 
-	// util.Check(err)
-	// me.listeners = []net.Listener{listener}
+	dfz *deferz.Deferz
+}
 
-	// if me.customLocalAddresses != nil {
-	// 	for _, addr := range me.customLocalAddresses {
-	// 		listener, err := net.Listen("tcp", addr)
-	// 		util.Check(err)
-	// 		me.listeners = append(me.listeners, listener)
-	// 	}
-	// }
+func New(ctx context.Context, opts Options) *Server {
+	opts.fix()
+	return &Server{
+		Context: ctx,
+		Options: opts,
+		dfz:     deferz.New(ctx),
+	}
+}
 
-	// logzFilter := &logzFilter{
-	// 	ServName:    me.ServName,
-	// 	ServVersion: me.ServVersion,
-	// }
-	// me.AddFilter(logzFilter.Filter)
+func (s *Server) Listen() {
+	dfz := deferz.New(s.Context)
+	defer dfz.Close()
 
-	// me.AddFilter(deferzfilter.Filter)
+	listener, err := net.Listen("tcp", s.Options.LocalAddress)
+	errorz.Check(err)
+	dfz.AddCloserS(listener)
 
-	// if me.Audit {
-	// 	auditFilter := &auditfilter.AuditorFilter{ServName: me.ServName, ServVersion: me.ServVersion}
-	// 	me.AddFilter(auditFilter.Filter)
+	s.dfz.Add(dfz.Detach().Do)
+}
 
-	// }
-
-	// me.AddFilter(gzipfilter.Filter)
-
-	// me.corsFilter = &corzFilter{}
-	// me.AddFilter(me.corsFilter.Filter)
-
-	// me.AddFilter((&errorFilter{}).Filter)
-	// logger.Info(me.Context, "http server started", map[string]any{"name": me.ServName, "version": me.ServVersion, "address": me.Address(), "addresses": me.customLocalAddresses})
+func (s *Server) Close() error {
+	return s.dfz.Close()
 }
