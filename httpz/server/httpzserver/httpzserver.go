@@ -132,7 +132,9 @@ func (s *Server) Serve() {
 }
 
 // Start runs the server in a new goroutine, making it non-blocking.
-// It waits until the server is listening for connections before returning.
 func (s *Server) Start() {
+	if s.listener == nil {
+		panic("not configured")
+	}
 	go s.Serve()
 }
