@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"net/http/httptest"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -12,6 +12,77 @@ import (
 	"github.com/infinity6-ai/gox/httpz/server/httpzserver"
 	"github.com/stretchr/testify/require"
 )
+
+// suffixResponseWriter is a wrapper around http.ResponseWriter that allows appending a suffix to the response body.
+type suffixResponseWriter struct {
+	http.ResponseWriter
+	suffix      []byte
+	headers     http.Header
+	wroteHeader bool
+	t           *testing.T
+}
+
+// newSuffixResponseWriter creates a new suffixResponseWriter.
+func newSuffixResponseWriter(w http.ResponseWriter, suffix []byte, t *testing.T) *suffixResponseWriter {
+	return &suffixResponseWriter{
+		ResponseWriter: w,
+		suffix:         suffix,
+		headers:        make(http.Header),
+		t:              t,
+	}
+}
+
+// Header returns the header map that will be sent by WriteHeader.
+func (srw *suffixResponseWriter) Header() http.Header {
+	return srw.headers
+}
+
+// Write writes the data to the connection as part of an HTTP reply.
+func (srw *suffixResponseWriter) Write(data []byte) (int, error) {
+	if !srw.wroteHeader {
+		srw.WriteHeader(http.StatusOK)
+	}
+	return srw.ResponseWriter.Write(data)
+}
+
+// WriteHeader sends an HTTP response header with the provided status code.
+func (srw *suffixResponseWriter) WriteHeader(statusCode int) {
+	if srw.wroteHeader {
+		return
+	}
+
+	// Copy headers from the original response writer in case they were set before wrapping.
+	for k, v := range srw.ResponseWriter.Header() {
+		if _, ok := srw.headers[k]; !ok {
+			srw.headers[k] = v
+		}
+	}
+
+	// If handler set a content length, we need to adjust it.
+	if cl := srw.headers.Get("Content-Length"); cl != "" {
+		if clInt, err := strconv.Atoi(cl); err == nil {
+			clInt += len(srw.suffix)
+			srw.headers.Set("Content-Length", strconv.Itoa(clInt))
+		}
+	}
+
+	// Copy our headers to the underlying response writer.
+	for k, v := range srw.headers {
+		srw.ResponseWriter.Header()[k] = v
+	}
+
+	srw.ResponseWriter.WriteHeader(statusCode)
+	srw.wroteHeader = true
+}
+
+// flush writes the suffix to the response body.
+func (srw *suffixResponseWriter) flush() {
+	if !srw.wroteHeader {
+		srw.WriteHeader(http.StatusOK)
+	}
+	_, err := srw.ResponseWriter.Write(srw.suffix)
+	require.NoError(srw.t, err)
+}
 
 func TestUnitListen(t *testing.T) {
 	ctx := t.Context()
@@ -114,31 +185,19 @@ func TestUnitServer_FilterModifiesBody(t *testing.T) {
 	// Add filter to modify request and response bodies
 	s.AddFilter(func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			// Read request body
-			reqBody, err := io.ReadAll(r.Body)
-			require.NoError(t, err)
-
-			// Modify request body
-			modifiedReqBody := string(reqBody) + "-modified-req"
-			r.Body = io.NopCloser(strings.NewReader(modifiedReqBody))
-			r.ContentLength = int64(len(modifiedReqBody))
-
-			// Use recorder to capture response from next handler
-			recorder := httptest.NewRecorder()
-			next.ServeHTTP(recorder, r)
-
-			// Copy headers
-			for k, v := range recorder.Header() {
-				w.Header()[k] = v
+			// Modify request body without full read
+			reqSuffix := "-modified-req"
+			if r.ContentLength != -1 {
+				r.ContentLength += int64(len(reqSuffix))
 			}
+			r.Body = io.NopCloser(io.MultiReader(r.Body, strings.NewReader(reqSuffix)))
 
-			// Modify response body
-			modifiedRespBody := recorder.Body.String() + "-modified-resp"
+			// Wrap the response writer to append a suffix to the response body
+			respSuffix := "-modified-resp"
+			srw := newSuffixResponseWriter(w, []byte(respSuffix), t)
+			defer srw.flush()
 
-			w.Header().Set("Content-Length", fmt.Sprint(len(modifiedRespBody)))
-			w.WriteHeader(recorder.Code)
-			_, err = w.Write([]byte(modifiedRespBody))
-			require.NoError(t, err)
+			next.ServeHTTP(srw, r)
 		})
 	})
 
