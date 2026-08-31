@@ -89,6 +89,9 @@ func (s *Server) Addr() net.Addr {
 }
 
 func (s *Server) Listen() {
+	if s.listener != nil {
+		return
+	}
 	listener, err := net.Listen("tcp", s.Options.LocalAddress)
 	errorz.Check(err)
 	s.listener = listener
@@ -99,11 +102,7 @@ func (s *Server) Close() error {
 	return s.dfz.Close()
 }
 
-func (s *Server) Start() {
-	if s.listener == nil {
-		panic("must call Listen() before Start()")
-	}
-
+func (s *Server) serve() {
 	var handler http.Handler = s.mux
 	for i := len(s.filters) - 1; i >= 0; i-- {
 		handler = s.filters[i](handler)
@@ -122,3 +121,18 @@ func (s *Server) Start() {
 		errorz.Check(fmt.Errorf("http server failed: %w", err))
 	}
 }
+
+// Serve runs the server in the current goroutine, blocking until the server is
+// shut down.
+func (s *Server) Serve() {
+	s.Listen()
+	s.serve()
+}
+
+// Start runs the server in a new goroutine, making it non-blocking.
+// It waits until the server is listening for connections before returning.
+func (s *Server) Start() {
+	s.Listen()
+	go s.serve()
+}
+
