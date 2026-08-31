@@ -10,7 +10,6 @@ function cmd_clean() {
 }
 
 function cmd_update() {
-  # i6dev golang update
   go mod tidy
   cmd_codegen
 }
@@ -24,7 +23,6 @@ function cmd_codegen() {
 }
 
 function cmd_test_unit() {
-  # i6dev golang test_unit "$@"
   go test -run '^TestUnit.*$' ./... "$@" 
 }
 
