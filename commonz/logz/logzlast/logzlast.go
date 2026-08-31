@@ -4,16 +4,11 @@ import (
 	"context"
 	"slices"
 	"sync"
+
+	"github.com/infinity6-ai/gox/commonz/logz/logzspec"
 )
 
-type Logger interface {
-	Error(ctx context.Context, op string, params map[string]any, errs ...error)
-	Info(ctx context.Context, op string, params map[string]any, errs ...error)
-	Debug(ctx context.Context, op string, params map[string]any, errs ...error)
-	Appender() string
-}
-
-func New(l Logger) Logger {
+func New(l logzspec.Logger) logzspec.Logger {
 	return &LoggerEvent{
 		logger: l,
 	}
@@ -35,7 +30,7 @@ type Event struct {
 }
 
 type LoggerEvent struct {
-	logger Logger
+	logger logzspec.Logger
 }
 
 var events []*Event

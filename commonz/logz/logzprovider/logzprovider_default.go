@@ -1,20 +1,13 @@
 package logzprovider
 
-import "context"
+import "github.com/infinity6-ai/gox/commonz/logz/logzspec"
 
-type Logger interface {
-	Error(ctx context.Context, op string, params map[string]any, errs ...error)
-	Info(ctx context.Context, op string, params map[string]any, errs ...error)
-	Debug(ctx context.Context, op string, params map[string]any, errs ...error)
-	Appender() string
-}
-
-type Provider func(appender string) Logger
+type Provider func(appender string) logzspec.Logger
 
 var defaultProvider Provider
 
 func init() {
-	defaultProvider = func(appender string) Logger {
+	defaultProvider = func(appender string) logzspec.Logger {
 		if appender == "" {
 			panic("appender must not be empty")
 		}
