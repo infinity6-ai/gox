@@ -11,7 +11,6 @@ type Entry struct {
 }
 
 type Deferz struct {
-	// Wrapper func(et *Entry)
 	ctx     context.Context
 	entries []*Entry
 	lock    sync.Mutex
