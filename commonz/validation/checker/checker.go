@@ -70,3 +70,7 @@ func StringRegex(pattern, value, msg string, args ...any) {
 	errorz.Check(validation.StringRegex(pattern, value, msg, args...))
 }
 
+func NotNil(actual any, msg string, args ...any) {
+	errorz.Check(validation.NotNil(actual, msg, args...))
+}
+

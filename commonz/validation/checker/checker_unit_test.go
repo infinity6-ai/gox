@@ -295,3 +295,30 @@ func TestUnitCheckerRegex(t *testing.T) {
 		}
 	})
 }
+
+func TestUnitCheckerNil(t *testing.T) {
+	type testScenario struct {
+		name        string
+		testFn      func()
+		shouldPanic bool
+	}
+
+	check := func(t *testing.T, s testScenario) {
+		t.Helper()
+		if s.shouldPanic {
+			require.Panics(t, s.testFn)
+		} else {
+			require.NotPanics(t, s.testFn)
+		}
+	}
+
+	t.Run("NotNil", func(t *testing.T) {
+		scenarios := []testScenario{
+			{name: "NotNilPanics", testFn: func() { NotNil(nil, "should not be nil") }, shouldPanic: true},
+			{name: "NotNilNotPanics", testFn: func() { NotNil(1, "should not be nil") }, shouldPanic: false},
+		}
+		for _, s := range scenarios {
+			t.Run(s.name, func(t *testing.T) { check(t, s) })
+		}
+	})
+}

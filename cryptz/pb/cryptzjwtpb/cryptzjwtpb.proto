@@ -1,0 +1,33 @@
+syntax = "proto3";
+
+package i6.platform.cryptzjwt;
+
+// Option for Go code generation
+option go_package = "go.code.infinity6.ai/platform/internal/pb/cryptzjwtpb";
+
+// JWTHeader defines the structure of the JWT header.
+message JWTHeader {
+  string alg = 1;
+  string typ = 2;
+  string key = 3;
+}
+
+// JWTPayload defines the claims within the JWT.
+message JWTPayload {
+  string jti = 1;
+  string iss = 2;
+  string sub = 3;
+  int64 iat = 4;
+  int64 exp = 5;
+  string aud = 6;
+  string typ = 7;
+  string ext = 8;
+  bytes bxt = 9;
+  string idp = 10;
+}
+
+// JWTToken represents the full signed token structure.
+message JWTToken {
+  JWTHeader header = 1;
+  JWTPayload payload = 2;
+}

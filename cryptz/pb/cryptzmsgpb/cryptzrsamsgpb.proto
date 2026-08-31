@@ -1,0 +1,14 @@
+syntax = "proto3";
+
+package i6.platform.cryptzmsg;
+
+option go_package = "go.code.infinity6.ai/platform/internal/pb/cryptzmsgpb";
+
+message RSAMessageCiphered {
+    uint32 version = 1;
+    bytes signature = 2;          
+    string src_key = 3;
+    string dst_key = 4;
+    bytes ciphered_sym_key = 5;   
+    bytes ciphered_data = 6;      
+}
