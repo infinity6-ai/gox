@@ -52,5 +52,9 @@ function cmd_fmt() {
   cmd_comps_run fmt "$@"
 }
 
+function cmd_release() {
+  cmd_comps_run release
+}
+
 cd "$(dirname "$0")"; _cmd="${1?"cmd is required"}"; shift; "cmd_${_cmd}" "$@"
 
