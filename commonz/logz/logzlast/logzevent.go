@@ -1,4 +1,4 @@
-package logzevent
+package logzlast
 
 import (
 	"context"

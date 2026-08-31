@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"reflect"
 
-	"github.com/infinity6-ai/gox/commonz/logz/logzevent"
+	"github.com/infinity6-ai/gox/commonz/logz/logzlast"
 	"github.com/infinity6-ai/gox/commonz/logz/logzprovider"
 )
 
@@ -28,6 +28,6 @@ func Create(logger any) Logger {
 	}
 	prv := logzprovider.GetDefaultProvider()
 	ret := prv(t.PkgPath())
-	ret = logzevent.New(ret)
+	ret = logzlast.New(ret)
 	return ret
 }
