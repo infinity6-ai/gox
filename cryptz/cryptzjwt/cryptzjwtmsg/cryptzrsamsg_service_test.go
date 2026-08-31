@@ -1,4 +1,4 @@
-package cryptzrsamsg_test
+package cryptzjwtmsg_test
 
 import (
 	"crypto/rsa"
@@ -6,8 +6,8 @@ import (
 	"time"
 
 	"github.com/infinity6-ai/gox/cryptz/cryptzjwt"
+	"github.com/infinity6-ai/gox/cryptz/cryptzjwt/cryptzjwtmsg"
 	"github.com/infinity6-ai/gox/cryptz/cryptzrsa"
-	"github.com/infinity6-ai/gox/cryptz/cryptzrsa/cryptzrsamsg"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -30,7 +30,7 @@ func TestUnitSymEncryptDecrypt(t *testing.T) {
 
 	assert.NoError(t, err)
 
-	ciphertext := cryptzrsamsg.Send(payloadSent, &cryptzrsamsg.EncryptorKeysLoader{
+	ciphertext := cryptzjwtmsg.Send(payloadSent, &cryptzjwtmsg.EncryptorKeysLoader{
 		SrcKeyLoader: func(id string) *rsa.PrivateKey {
 			assert.Equal(t, "src", id)
 			return fromKey
@@ -43,7 +43,7 @@ func TestUnitSymEncryptDecrypt(t *testing.T) {
 	assert.NotNil(t, ciphertext)
 	assert.Len(t, ciphertext, 376)
 
-	payloadReceived := cryptzrsamsg.Receive(ciphertext, &cryptzrsamsg.DecryptorKeysLoader{
+	payloadReceived := cryptzjwtmsg.Receive(ciphertext, &cryptzjwtmsg.DecryptorKeysLoader{
 		SrcKeyLoader: func(id string) *rsa.PublicKey {
 			assert.Equal(t, "src", id)
 			return &fromKey.PublicKey

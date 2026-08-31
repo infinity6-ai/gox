@@ -1,6 +1,6 @@
 package cryptzjwt
 
-import "github.com/infinity6-ai/gox/cryptz/pb/cryptzjwtpb"
+import "github.com/infinity6-ai/gox/cryptz/internal/pb/cryptzjwtpb"
 
 type JWTHeader struct {
 	Alg string `json:"alg"`

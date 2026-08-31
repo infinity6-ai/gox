@@ -1,8 +1,8 @@
 syntax = "proto3";
 
-package i6.platform.cryptzmsg;
+package i6.cryptz.cryptzmsg;
 
-option go_package = "go.code.infinity6.ai/platform/internal/pb/cryptzmsgpb";
+option go_package = "github.com/infinity6-ai/gox/cryptz/internal/pb/cryptzmsgpb";
 
 message RSAMessageCiphered {
     uint32 version = 1;
