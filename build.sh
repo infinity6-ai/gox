@@ -1,4 +1,4 @@
-#!/bin/bash -ex
+#!/bin/bash -e
 
 [ "$I6DEV_DEBUG" != "true" ] || eval "$(i6dev meta debug i6gox-build I6DEV_DEBUG)"
 
