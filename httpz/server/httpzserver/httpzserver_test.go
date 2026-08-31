@@ -9,6 +9,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/infinity6-ai/gox/httpz/server/httpzresp"
 	"github.com/infinity6-ai/gox/httpz/server/httpzserver"
 	"github.com/stretchr/testify/require"
 )
@@ -185,19 +186,56 @@ func TestUnitServer_FilterModifiesBody(t *testing.T) {
 	// Add filter to modify request and response bodies
 	s.AddFilter(func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			// Modify request body without full read
+			// // Modify request body without full read
 			reqSuffix := "-modified-req"
 			if r.ContentLength != -1 {
 				r.ContentLength += int64(len(reqSuffix))
 			}
 			r.Body = io.NopCloser(io.MultiReader(r.Body, strings.NewReader(reqSuffix)))
 
-			// Wrap the response writer to append a suffix to the response body
-			respSuffix := "-modified-resp"
-			srw := newSuffixResponseWriter(w, []byte(respSuffix), t)
-			defer srw.flush()
+			// // Wrap the response writer to append a suffix to the response body
+			// respSuffix := "-modified-resp"
+			// srw := newSuffixResponseWriter(w, []byte(respSuffix), t)
+			// defer srw.flush()
 
-			next.ServeHTTP(srw, r)
+			// next.ServeHTTP(srw, r)
+
+			// sent := false
+			// w2 := httpzresp.New(w, httpzresp.Options{
+			// 	Header: func(w httpzresp.Resp) http.Header {
+			// 		return w.Original.Header()
+			// 	},
+			// 	Write: func(w httpzresp.Resp, data []byte) (int, error) {
+			// 		if !sent {
+			// 			sent = true
+			// 			w.Original.WriteHeader(http.StatusOK)
+			// 		}
+			// 		return w.Original.Write(data)
+			// 	},
+			// 	WriteHeader: func(w httpzresp.Resp, statusCode int) {
+			// 		sent = true
+			// 		w.Original.WriteHeader(statusCode)
+			// 	},
+			// })
+
+			w2 := &httpzresp.StreamInterceptor{
+				ResponseWriter: w,
+				Writer:         w,
+				BeforeHeader: func(i int) int {
+					x := w.Header().Get("Content-Length")
+					if x != "" {
+						if clInt, err := strconv.Atoi(x); err == nil {
+							clInt += len("-modified-resp")
+							w.Header().Set("Content-Length", strconv.Itoa(clInt))
+						}
+					}
+					return i
+				},
+			}
+
+			next.ServeHTTP(w2, r)
+			w2.Write([]byte("-modified-resp"))
+			// w.Write([]byte("-modified-resp"))
 		})
 	})
 
@@ -208,7 +246,11 @@ func TestUnitServer_FilterModifiesBody(t *testing.T) {
 			http.Error(w, "failed to read body", http.StatusInternalServerError)
 			return
 		}
-		fmt.Fprintf(w, "echo:%s", string(body))
+		b := fmt.Sprintf("echo:%s", string(body))
+		w.Header().Set("Content-Type", "text/plain")
+		w.Header().Set("Content-Length", strconv.Itoa(len(b)))
+		w.WriteHeader(200)
+		w.Write([]byte(b))
 	})
 
 	s.Listen()
