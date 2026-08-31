@@ -41,7 +41,7 @@ function cmd_release() {
   cmd_codegen
   i6dev golang bin-compile
   i6dev golang release
-  # i6dev golang bin-release latest
+  i6dev golang bin-release latest
 }
 
 _comp="${1?"comp is required"}"; shift; 
