@@ -11,7 +11,7 @@ import (
 func (p *providerSpec) providerUnix() (*providerSpec, error) {
 	p.Validation = func(u *Url) error {
 		validation.Equal("unix", u.Scheme, "scheme")
-		u.Path.Validate(pathz.ValidateOptions{Absolute: new(true)})
+		u.Path.Validate(pathz.ValidateOptions{Absolute: new(true), Empty: new(false)})
 		return nil
 	}
 	p.Parser = func(u *url.URL) (*Url, error) {

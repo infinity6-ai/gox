@@ -9,6 +9,7 @@ type ValidateOptions struct {
 	MaxParents  *int
 	Wildchar    bool
 	EndingSlash *bool
+	Empty       *bool
 }
 
 func (p *Path) Validate(opts ValidateOptions) error {
@@ -19,6 +20,12 @@ func (p *Path) Validate(opts ValidateOptions) error {
 		}
 	} else if opts.MaxParents != nil {
 		err := validation.GreaterOrEqual(p.Parents(), *opts.MaxParents, "max parents allowed: %s", p)
+		if err != nil {
+			return err
+		}
+	}
+	if opts.Empty != nil {
+		err := validation.Equal(*opts.Empty, len(p.Parts()) == 0, "path empty flag: %s", p)
 		if err != nil {
 			return err
 		}
