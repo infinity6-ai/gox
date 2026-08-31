@@ -28,8 +28,9 @@ function cmd_clean() {
 }
 
 function cmd_update() {
-  i6dev golang auth
-  I6DEV_GOLANG_AUTH_DISABLED="true" cmd_comps_run update "$@"
+  # i6dev golang auth
+  # I6DEV_GOLANG_AUTH_DISABLED="true" cmd_comps_run update "$@"
+  cmd_comps_run update "$@"
 }
 
 function cmd_codegen() {
@@ -38,14 +39,6 @@ function cmd_codegen() {
 
 function cmd_test() {
   cmd_comps_run test "$@"
-}
-
-function cmd_test_remote() {
-  cmd_comps_run test_remote "$@"
-}
-
-function cmd_test_all() {
-  cmd_comps_run test_all "$@"
 }
 
 function cmd_fmt() {
