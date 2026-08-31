@@ -1,0 +1,12 @@
+syntax = "proto3";
+
+package i6.platform.cryptzrsa;
+
+// The full import path for Go
+option go_package = "go.code.infinity6.ai/platform/internal/pb/protozpb";
+
+// A simple message for testing your protoz utility
+message Dummy {
+    uint32 id = 1;
+    string name = 2;
+}
