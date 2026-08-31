@@ -8,6 +8,9 @@ import (
 )
 
 func (p *providerSpec) providerFile() (*providerSpec, error) {
+	p.Validation = func(u *Url) error {
+		return nil
+	}
 	p.Parser = func(u *url.URL) (*Url, error) {
 		pathStr := u.Path
 		if u.Opaque != "" {
