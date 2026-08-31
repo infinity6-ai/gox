@@ -40,7 +40,7 @@ function cmd_fmt() {
 function cmd_release() {
   cmd_codegen
   i6dev golang bin-compile
-  # i6dev golang release
+  i6dev golang release
   # i6dev golang bin-release latest
 }
 
