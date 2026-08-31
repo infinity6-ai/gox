@@ -8,8 +8,7 @@ import (
 	"slices"
 
 	"github.com/infinity6-ai/gox/commonz/constraintz/blobz"
-	"github.com/infinity6-ai/gox/commonz/errorz"
-	"github.com/infinity6-ai/gox/commonz/validation"
+	"github.com/infinity6-ai/gox/commonz/validation/checker"
 	"github.com/infinity6-ai/gox/cryptz/cryptzhash"
 	"github.com/infinity6-ai/gox/cryptz/cryptzrand"
 )
@@ -27,8 +26,8 @@ func (s *Salted) BundleSize() int {
 }
 
 func (s *Salted) Format() []byte {
-	errorz.Check(validation.Equal(SaltSize, len(s.Salt), "s.Salt.length"))
-	errorz.Check(validation.LessOrEqual(len(s.Result), MaxSize, "s.Result.length"))
+	checker.Equal(SaltSize, len(s.Salt), "s.Salt.length")
+	checker.LessOrEqual(len(s.Result), MaxSize, "s.Result.length")
 
 	total := uint16(s.BundleSize() - 2)
 
