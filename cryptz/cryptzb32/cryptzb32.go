@@ -54,7 +54,7 @@ func EncodeCopy(out io.Writer, in io.Reader) (int64, error) {
 	defer w.Close()
 	ret, err := io.Copy(w, in)
 	if err != nil {
-		return 0, fmt.Errorf("failed to copy: %w", err)
+		return ret, fmt.Errorf("failed to copy: %w", err)
 	}
 	return ret, nil
 }
@@ -63,7 +63,7 @@ func DecodeCopy(out io.Writer, in io.Reader) (int64, error) {
 	r := NewDecoder(in)
 	ret, err := io.Copy(out, r)
 	if err != nil {
-		return 0, fmt.Errorf("failed to copy: %w", err)
+		return ret, fmt.Errorf("failed to copy: %w", err)
 	}
 	return ret, nil
 }
