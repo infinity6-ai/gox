@@ -2,6 +2,7 @@ package logzevent
 
 import (
 	"context"
+	"slices"
 	"sync"
 )
 
@@ -37,6 +38,12 @@ type LoggerEvent struct {
 	logger Logger
 	events []*Event
 	mu     sync.RWMutex
+}
+
+func (l *LoggerEvent) Events() []*Event {
+	l.mu.RLock()
+	defer l.mu.RUnlock()
+	return slices.Clone(l.events)
 }
 
 func (l *LoggerEvent) add(event Event) {
