@@ -1,21 +1,11 @@
 package logzprovider
 
-// type SimpleProvider struct {
-// 	appender string
-// }
+import (
+	"context"
 
-// func (s *SimpleProvider) Appender() string {
-// 	return s.appender
-// }
+	"github.com/infinity6-ai/gox/commonz/logz/logzspec"
+)
 
-// func (s *SimpleProvider) Debug(ctx context.Context, op string, params map[string]any, errs ...error) {
-// 	panic("unimplemented")
-// }
+func SimpleProvider(ctx context.Context, entry *logzspec.Entry) {
 
-// func (s *SimpleProvider) Error(ctx context.Context, op string, params map[string]any, errs ...error) {
-// 	panic("unimplemented")
-// }
-
-// func (s *SimpleProvider) Info(ctx context.Context, op string, params map[string]any, errs ...error) {
-// 	panic("unimplemented")
-// }
+}

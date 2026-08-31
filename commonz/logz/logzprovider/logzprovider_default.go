@@ -1,24 +1,13 @@
 package logzprovider
 
-// type Provider func(appender string) logzspec.Logger
+import "github.com/infinity6-ai/gox/commonz/logz/logzspec"
 
-// var defaultProvider Provider
+var defaultProvider logzspec.ProviderLogger = SimpleProvider
 
-// func init() {
-// 	defaultProvider = func(appender string) logzspec.Logger {
-// 		if appender == "" {
-// 			panic("appender must not be empty")
-// 		}
-// 		return &SimpleProvider{
-// 			appender: appender,
-// 		}
-// 	}
-// }
+func SetDefaultProvider(provider logzspec.ProviderLogger) {
+	defaultProvider = provider
+}
 
-// func SetDefaultProvider(provider Provider) {
-// 	defaultProvider = provider
-// }
-
-// func GetDefaultProvider() Provider {
-// 	return defaultProvider
-// }
+func GetDefaultProvider() logzspec.ProviderLogger {
+	return defaultProvider
+}

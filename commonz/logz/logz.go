@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"reflect"
 
+	"github.com/infinity6-ai/gox/commonz/logz/logzprovider"
 	"github.com/infinity6-ai/gox/commonz/logz/logzspec"
 )
 
@@ -47,6 +48,8 @@ func Create(logger any) Logger {
 		panic("logger must be true")
 	}
 	impl := &loggerImpl{}
+	impl.appender = t.PkgPath()
+	impl.provider = logzprovider.GetDefaultProvider()
 	return impl
 	// prv := logzprovider.GetDefaultProvider()
 	// ret := prv(t.PkgPath())
