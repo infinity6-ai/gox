@@ -56,3 +56,7 @@ func (s *Server) Listen() {
 func (s *Server) Close() error {
 	return s.dfz.Close()
 }
+
+func (s *Server) Start() {
+	panic("implement it")
+}
