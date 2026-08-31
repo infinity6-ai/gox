@@ -8,8 +8,8 @@ import (
 
 	"github.com/infinity6-ai/gox/commonz/errorz"
 	"github.com/infinity6-ai/gox/cryptz/cryptzrsa/cryptzrsaimpl"
-	"github.com/infinity6-ai/gox/cryptz/cryptzrsa/cryptzrsaopenssl/execz"
-	"github.com/infinity6-ai/gox/cryptz/cryptzrsa/cryptzrsaopenssl/filez"
+	"go.code.infinity6.ai/platform/util/execz"
+	"go.code.infinity6.ai/platform/util/filez"
 )
 
 type RSAServiceOpenssl struct {
