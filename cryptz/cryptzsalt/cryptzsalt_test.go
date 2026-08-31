@@ -4,8 +4,8 @@ import (
 	"slices"
 	"testing"
 
+	"github.com/infinity6-ai/gox/cryptz/cryptzsalt"
 	"github.com/stretchr/testify/assert"
-	"go.code.infinity6.ai/platform/cryptz/cryptzsalt"
 )
 
 func TestUnitSalt(t *testing.T) {
