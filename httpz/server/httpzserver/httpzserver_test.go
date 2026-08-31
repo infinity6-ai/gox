@@ -8,5 +8,7 @@ import (
 
 func TestUnitListen(t *testing.T) {
 	ctx := t.Context()
-	httpzserver.New(ctx, httpzserver.Options{LocalAddress: "localhost:0"})
+	s := httpzserver.New(ctx, httpzserver.Options{LocalAddress: "localhost:0"})
+	defer s.Close()
+	s.Listen()
 }
