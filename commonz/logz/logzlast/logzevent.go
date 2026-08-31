@@ -49,7 +49,7 @@ func (l *LoggerEvent) Events() []*Event {
 func (l *LoggerEvent) add(event Event) {
 	l.mu.Lock()
 	defer l.mu.Unlock()
-	if len(l.events) > 5 {
+	if len(l.events) >= 5 {
 		l.events = l.events[1:]
 	}
 	l.events = append(l.events, &event)
