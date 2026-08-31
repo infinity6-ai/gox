@@ -1,4 +1,4 @@
-package cryptzrsamsg
+package cryptzjwtmsg
 
 import (
 	"crypto/rsa"

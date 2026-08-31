@@ -1,4 +1,4 @@
-package cryptzrsamsg
+package cryptzjwtmsg
 
 import (
 	"github.com/infinity6-ai/gox/commonz/validation/checker"
