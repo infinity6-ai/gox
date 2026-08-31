@@ -12,12 +12,7 @@ import (
 	"go.code.infinity6.ai/platform/util/jsoner"
 )
 
-type ProviderLogger interface {
-	Error(ctx context.Context, entry *Entry)
-	Info(ctx context.Context, entry *Entry)
-	Debug(ctx context.Context, entry *Entry)
-	Appender() string
-}
+type ProviderLogger func(ctx context.Context, entry *Entry)
 
 type Level string
 

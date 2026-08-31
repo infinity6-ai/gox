@@ -19,7 +19,7 @@ type Logger interface {
 
 type loggerImpl struct {
 	appender string
-	spec     logzspec.ProviderLogger
+	provider logzspec.ProviderLogger
 }
 
 func (l *loggerImpl) Appender() string {
@@ -27,15 +27,15 @@ func (l *loggerImpl) Appender() string {
 }
 
 func (l *loggerImpl) Debug(ctx context.Context, op string, params map[string]any, errs ...error) {
-	l.spec.Debug(ctx, logzspec.NewEntry(1, l.appender, logzspec.DEBUG, op, params, errs...))
+	l.provider(ctx, logzspec.NewEntry(1, l.appender, logzspec.DEBUG, op, params, errs...))
 }
 
 func (l *loggerImpl) Error(ctx context.Context, op string, params map[string]any, errs ...error) {
-	l.spec.Error(ctx, logzspec.NewEntry(1, l.appender, logzspec.ERROR, op, params, errs...))
+	l.provider(ctx, logzspec.NewEntry(1, l.appender, logzspec.ERROR, op, params, errs...))
 }
 
 func (l *loggerImpl) Info(ctx context.Context, op string, params map[string]any, errs ...error) {
-	l.spec.Error(ctx, logzspec.NewEntry(1, l.appender, logzspec.ERROR, op, params, errs...))
+	l.provider(ctx, logzspec.NewEntry(1, l.appender, logzspec.ERROR, op, params, errs...))
 }
 
 func Create(logger any) Logger {
