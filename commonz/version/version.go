@@ -1,5 +1,11 @@
-package version
+package main
 
-func Version() string {
-	return "v0.0.1"
+import (
+	"fmt"
+
+	"github.com/infinity6-ai/gox/commonz/version"
+)
+
+func main() {
+	fmt.Println(version.Version())
 }
