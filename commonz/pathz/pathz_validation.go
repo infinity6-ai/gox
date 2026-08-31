@@ -5,20 +5,20 @@ import (
 )
 
 type ValidateOptions struct {
-	Absolute    bool
+	Absolute    *bool
 	MaxParents  *int
 	Wildchar    bool
 	EndingSlash *bool
 }
 
 func (p *Path) Validate(opts ValidateOptions) error {
-	if opts.Absolute {
-		err := validation.Equal(true, p.IsAbsolute(), "path is not absolute for path %s", p)
+	if opts.Absolute != nil {
+		err := validation.Equal(*opts.Absolute, p.IsAbsolute(), "path absolute flag: %s", p)
 		if err != nil {
 			return err
 		}
 	} else if opts.MaxParents != nil {
-		err := validation.GreaterOrEqual(p.Parents(), *opts.MaxParents, "max parents allowed")
+		err := validation.GreaterOrEqual(p.Parents(), *opts.MaxParents, "max parents allowed: %s", p)
 		if err != nil {
 			return err
 		}
