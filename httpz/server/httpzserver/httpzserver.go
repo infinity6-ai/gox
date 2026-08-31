@@ -4,11 +4,16 @@ import (
 	"context"
 	"fmt"
 	"net"
+	"net/http"
 	"os"
+	"strings"
 
 	"github.com/infinity6-ai/gox/commonz/deferz"
 	"github.com/infinity6-ai/gox/commonz/errorz"
 )
+
+// Filter is a function that wraps an http.Handler, commonly known as middleware.
+type Filter func(next http.Handler) http.Handler
 
 type Options struct {
 	LocalAddress string
@@ -27,10 +32,12 @@ func (o *Options) fix() {
 }
 
 type Server struct {
-	Context context.Context
-	Options Options
-
-	dfz *deferz.Deferz
+	Context  context.Context
+	Options  Options
+	listener net.Listener
+	mux      *http.ServeMux
+	filters  []Filter
+	dfz      *deferz.Deferz
 }
 
 func New(ctx context.Context, opts Options) *Server {
@@ -39,18 +46,53 @@ func New(ctx context.Context, opts Options) *Server {
 		Context: ctx,
 		Options: opts,
 		dfz:     deferz.New(ctx),
+		mux:     http.NewServeMux(),
 	}
 }
 
-func (s *Server) Listen() {
-	dfz := deferz.New(s.Context)
-	defer dfz.Close()
+// AddHandlerPrefix registers a handler for the given prefix.
+// The prefix is automatically adjusted to end with a "/" if it doesn't already.
+func (s *Server) AddHandlerPrefix(prefix string, handler http.Handler) {
+	if !strings.HasSuffix(prefix, "/") {
+		prefix += "/"
+	}
+	s.mux.Handle(prefix, handler)
+}
 
+// AddHandlerPrefixFunc registers a handler function for the given prefix.
+func (s *Server) AddHandlerPrefixFunc(prefix string, handlerFunc http.HandlerFunc) {
+	s.AddHandlerPrefix(prefix, handlerFunc)
+}
+
+// AddHandlerPattern registers a handler for the given pattern.
+// The pattern can include wildcards, like /users/{id}.
+func (s *Server) AddHandlerPattern(pattern string, handler http.Handler) {
+	s.mux.Handle(pattern, handler)
+}
+
+// AddHandlerPatternFunc registers a handler function for the given pattern.
+func (s *Server) AddHandlerPatternFunc(pattern string, handlerFunc http.HandlerFunc) {
+	s.AddHandlerPattern(pattern, handlerFunc)
+}
+
+// AddFilter adds a new filter to the server's filter chain.
+// Filters are applied in the reverse order they are added.
+func (s *Server) AddFilter(filter Filter) {
+	s.filters = append(s.filters, filter)
+}
+
+func (s *Server) Addr() net.Addr {
+	if s.listener == nil {
+		return nil
+	}
+	return s.listener.Addr()
+}
+
+func (s *Server) Listen() {
 	listener, err := net.Listen("tcp", s.Options.LocalAddress)
 	errorz.Check(err)
-	dfz.AddCloserS(listener)
-
-	s.dfz.Add(dfz.Detach().Do)
+	s.listener = listener
+	s.dfz.AddCloserS(listener)
 }
 
 func (s *Server) Close() error {
@@ -58,5 +100,25 @@ func (s *Server) Close() error {
 }
 
 func (s *Server) Start() {
-	panic("implement it")
+	if s.listener == nil {
+		panic("must call Listen() before Start()")
+	}
+
+	var handler http.Handler = s.mux
+	for i := len(s.filters) - 1; i >= 0; i-- {
+		handler = s.filters[i](handler)
+	}
+
+	httpServer := &http.Server{
+		Handler: handler,
+	}
+
+	s.dfz.Add(func() {
+		_ = httpServer.Shutdown(s.Context)
+	})
+
+	err := httpServer.Serve(s.listener)
+	if err != nil && err != http.ErrServerClosed {
+		errorz.Check(fmt.Errorf("http server failed: %w", err))
+	}
 }
