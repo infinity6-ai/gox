@@ -8,8 +8,9 @@ import (
 var ErrUnknownScheme = errors.New("unknown scheme")
 
 type providerSpec struct {
-	Parser   func(u *url.URL) (*Url, error)
-	ToString func(u *Url) string
+	Parser     func(u *url.URL) (*Url, error)
+	ToString   func(u *Url) string
+	Validation func(u *Url) error
 }
 
 func getProvider(scheme string) (*providerSpec, error) {

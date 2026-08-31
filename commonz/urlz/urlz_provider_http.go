@@ -8,6 +8,9 @@ import (
 )
 
 func (p *providerSpec) providerHttp() (*providerSpec, error) {
+	p.Validation = func(u *Url) error {
+		return nil
+	}
 	p.Parser = func(u *url.URL) (*Url, error) {
 		pt, err := pathz.Parse(u.Path)
 		if err != nil {

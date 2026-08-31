@@ -8,6 +8,9 @@ import (
 )
 
 func (p *providerSpec) providerGs() (*providerSpec, error) {
+	p.Validation = func(u *Url) error {
+		return nil
+	}
 	p.Parser = func(u *url.URL) (*Url, error) {
 		if u.Host == "" {
 			return nil, fmt.Errorf("gs url is missing bucket: %s", u)
