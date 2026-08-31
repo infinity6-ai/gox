@@ -1,6 +1,6 @@
-#!/bin/bash -e
+#!/bin/bash -ex
 
-[ ! -z "$I6DEV_DEBUG" ] || eval "$(i6dev meta debug i6gox-build I6DEV_DEBUG)"
+[ "$I6DEV_DEBUG" != "true" ] || eval "$(i6dev meta debug i6gox-build I6DEV_DEBUG)"
 
 function cmd_comp_list() {
   find . -maxdepth 2 -name go.mod | cut -d'/' -f2
