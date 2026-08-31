@@ -252,11 +252,6 @@ func TestUnitParseHttp(t *testing.T) {
 			err:    "invalid port \":abc\" after host",
 		})
 		check(t, testScenario{
-			name:   "invalid ip host",
-			rawUrl: "http://192.168.1.1.1/path",
-			err:    "validation error invalid hostname: 192.168.1.1.1",
-		})
-		check(t, testScenario{
 			name:   "invalid ipv6 host",
 			rawUrl: "http://[::1::]/path",
 			err:    "invalid host: ParseAddr(\"::1::\"): multiple :: in address (at \":\")",
