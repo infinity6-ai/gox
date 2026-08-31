@@ -3,11 +3,12 @@ package urlz_test
 import (
 	"testing"
 
+	"github.com/infinity6-ai/gox/commonz/pathz"
 	"github.com/infinity6-ai/gox/commonz/urlz"
 	"github.com/stretchr/testify/require"
 )
 
-func TestUnitParse(t *testing.T) {
+func TestUnitParseGs(t *testing.T) {
 	type testScenario struct {
 		name     string
 		rawUrl   string
@@ -32,13 +33,17 @@ func TestUnitParse(t *testing.T) {
 		}
 	}
 
-
-
-	t.Run("unknown scheme", func(t *testing.T) {
+	t.Run("gs", func(t *testing.T) {
+		p, err := pathz.Parse("/my-folder/my-file")
+		require.NoError(t, err)
 		check(t, testScenario{
-			name:   "unknown scheme",
-			rawUrl: "invalid-scheme://foo/bar",
-			err:    "unknown scheme",
+			name:   "google storage url",
+			rawUrl: "gs://my-bucket/my-folder/my-file",
+			expected: &urlz.Url{
+				Scheme: "gs",
+				Host:   "my-bucket",
+				Path:   p,
+			},
 		})
 	})
 }
