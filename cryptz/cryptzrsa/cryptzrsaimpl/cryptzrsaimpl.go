@@ -12,7 +12,6 @@ import (
 	"github.com/infinity6-ai/gox/commonz/errorz"
 	"github.com/infinity6-ai/gox/commonz/validation"
 	"github.com/infinity6-ai/gox/cryptz/cryptzhash"
-	"go.code.infinity6.ai/platform/util"
 )
 
 type RSAServiceImpl struct{}
@@ -45,7 +44,7 @@ func (s *RSAServiceImpl) PrivKeyExport(privateKey *rsa.PrivateKey) string {
 func (s *RSAServiceImpl) PubKeyExport(publicKey *rsa.PublicKey) string {
 
 	pubKeyBytes, err := x509.MarshalPKIXPublicKey(publicKey)
-	util.Check(err)
+	errorz.Check(err)
 	pubKeyPEM := pem.EncodeToMemory(&pem.Block{
 		Type:  "PUBLIC KEY",
 		Bytes: pubKeyBytes,
@@ -54,7 +53,8 @@ func (s *RSAServiceImpl) PubKeyExport(publicKey *rsa.PublicKey) string {
 }
 
 func (s *RSAServiceImpl) PubKeyId(pub *rsa.PublicKey) string {
-	pubKeyBytes := util.Check2(x509.MarshalPKIXPublicKey(pub))
+	pubKeyBytes, err := x509.MarshalPKIXPublicKey(pub)
+	errorz.Check(err)
 	hash, err := cryptzhash.SHA256Data(pubKeyBytes)
 	errorz.Check(err)
 	return fmt.Sprintf("%X", hash[len(hash)-8:])

@@ -4,8 +4,8 @@ import (
 	"crypto/rsa"
 	"testing"
 
+	"github.com/infinity6-ai/gox/cryptz/cryptzrsa"
 	"github.com/stretchr/testify/assert"
-	"go.code.infinity6.ai/platform/cryptz/cryptzrsa"
 )
 
 // Helper function to create a new KeyRing for tests

@@ -4,8 +4,8 @@ import (
 	"context"
 
 	"github.com/infinity6-ai/gox/cryptz/cryptzrsa/cryptzrsaimpl"
+	"github.com/infinity6-ai/gox/cryptz/cryptzrsa/cryptzrsaopenssl"
 	"github.com/infinity6-ai/gox/cryptz/cryptzrsa/cryptzrsaservice"
-	"go.code.infinity6.ai/platform/cryptz/cryptzrsa/cryptzrsaopenssl"
 )
 
 // NewService returns a new RSAService that uses the native Go crypto library.

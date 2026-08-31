@@ -11,7 +11,6 @@ import (
 	"github.com/infinity6-ai/gox/cryptz/cryptzjwt"
 	"github.com/infinity6-ai/gox/cryptz/cryptzrsa"
 	"go.code.infinity6.ai/platform/util/protoz"
-	"go.code.infinity6.ai/platform/validation"
 )
 
 type PublicKeyLoader func(id string) *rsa.PublicKey
@@ -66,7 +65,7 @@ func (b *Encryptor) Encrypt() []byte {
 	s := cryptzrsa.NewService()
 	symKey := cryptzaes.NewKey(32)
 	cypheredSymKey := s.PubEncryptOEAP(toKey, nil, symKey)
-	validation.Len(cypheredSymKey, toKey.Size(), "cypheredSymKey")
+	checker.Equal(toKey.Size(), len(cypheredSymKey), "cypheredSymKey length")
 	cypheredMessage, err := cryptzaes.AESCrypt(symKey, b.Message.Data)
 	errorz.Check(err)
 
@@ -78,7 +77,7 @@ func (b *Encryptor) Encrypt() []byte {
 	msg.CipheredData = cypheredMessage
 
 	msg.Signature = s.Sign(fromKey, dataToSign(msg))
-	validation.Len(msg.Signature, fromKey.Size(), "sign")
+	checker.Equal(fromKey.Size(), len(msg.Signature), "sign length")
 
 	ret := protoz.Format(msg)
 	return ret
@@ -111,14 +110,14 @@ func (d *Decryptor) Validate() {
 	checker.NotNil(d.KeysLoader, "KeysLoader")
 	d.KeysLoader.Validate()
 	checker.NotNil(d.CipheredData, "CipheredData")
-	validation.NotEmpty(d.CipheredData, "CipheredData")
+	checker.NotEmpty(d.CipheredData, "CipheredData")
 }
 
 func (d *Decryptor) Decrypt() *RSAMessagePlain {
 	d.Validate()
 	msg := protoz.Parse(d.CipheredData, &RSAMessageCiphered{})
-	validation.Hostname(string(msg.SrcKey), "SrcKey")
-	validation.Hostname(string(msg.DstKey), "DstKey")
+	// validation.Hostname(string(msg.SrcKey), "SrcKey")
+	// validation.Hostname(string(msg.DstKey), "DstKey")
 
 	keyFrom := d.KeysLoader.SrcKeyLoader(string(msg.SrcKey))
 	keyDest := d.KeysLoader.DstKeyLoader(string(msg.DstKey))

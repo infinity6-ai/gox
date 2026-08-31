@@ -8,7 +8,6 @@ import (
 	"syscall"
 
 	"github.com/infinity6-ai/gox/commonz/errorz"
-	"go.code.infinity6.ai/platform/util"
 	"go.code.infinity6.ai/platform/util/strconvz"
 )
 
@@ -49,7 +48,7 @@ func ReadAllLimited(r io.Reader, max int) []byte {
 	body, err := io.ReadAll(io.LimitReader(r, int64(max+1)))
 	errorz.Check(err)
 	if len(body) > max {
-		util.Panicf("It is too large. Expected: %d, but was: %d", max, len(body))
+		panic(fmt.Errorf("It is too large. Expected: %d, but was: %d", max, len(body)))
 	}
 	return body
 }

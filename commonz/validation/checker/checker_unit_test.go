@@ -73,6 +73,31 @@ func TestUnitCheckerComparable(t *testing.T) {
 			})
 		}
 	})
+
+	t.Run("OneOf", func(t *testing.T) {
+		scenarios := []testScenario{
+			{
+				name:          "OneOfPanics",
+				testFn:        func() { OneOf([]int{1, 2}, 3, "3 should be one of [1,2]") },
+				shouldPanic:   true,
+				expectedValue: []int{1, 2},
+				actualValue:   3,
+			},
+			{
+				name:          "OneOfNotPanics",
+				testFn:        func() { OneOf([]int{1, 2}, 1, "1 should be one of [1,2]") },
+				shouldPanic:   false,
+				expectedValue: []int{1, 2},
+				actualValue:   1,
+			},
+		}
+
+		for _, s := range scenarios {
+			t.Run(s.name, func(t *testing.T) {
+				check(t, s)
+			})
+		}
+	})
 }
 
 func TestUnitCheckerOrdered(t *testing.T) {
@@ -168,6 +193,16 @@ func TestUnitCheckerSlices(t *testing.T) {
 		scenarios := []testScenario{
 			{name: "NotEmptyPanics", testFn: func() { NotEmpty([]int{}, "should not be empty") }, shouldPanic: true},
 			{name: "NotEmptyNotPanics", testFn: func() { NotEmpty([]int{1}, "should not be empty") }, shouldPanic: false},
+		}
+		for _, s := range scenarios {
+			t.Run(s.name, func(t *testing.T) { check(t, s) })
+		}
+	})
+
+	t.Run("Len", func(t *testing.T) {
+		scenarios := []testScenario{
+			{name: "LenPanics", testFn: func() { Len([]int{1, 2}, 3, "length should be 3") }, shouldPanic: true},
+			{name: "LenNotPanics", testFn: func() { Len([]int{1, 2}, 2, "length should be 2") }, shouldPanic: false},
 		}
 		for _, s := range scenarios {
 			t.Run(s.name, func(t *testing.T) { check(t, s) })
