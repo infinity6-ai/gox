@@ -34,11 +34,20 @@ func Parse(urlStr string) (*Url, error) {
 		return nil, err
 	}
 	ret, err := provider.Parser(u)
+	if err != nil {
+		return nil, err
+	}
+	err = provider.Validation(ret)
+	if err != nil {
+		return nil, err
+	}
 	return ret, err
 }
 
 func (u *Url) String() string {
 	provider, err := getProvider(u.Scheme)
+	errorz.Check(err)
+	err = provider.Validation(u)
 	errorz.Check(err)
 	return provider.ToString(u)
 }

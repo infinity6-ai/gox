@@ -5,9 +5,13 @@ import (
 	"net/url"
 
 	"github.com/infinity6-ai/gox/commonz/pathz"
+	"github.com/infinity6-ai/gox/commonz/validation"
 )
 
 func (p *providerSpec) providerUnix() (*providerSpec, error) {
+	p.Validation = func(u *Url) error {
+		validation.Equal("unix", u.Scheme, "scheme")
+	}
 	p.Parser = func(u *url.URL) (*Url, error) {
 		// For unix sockets, the path can be in Opaque or Path
 		pathStr := u.Path
