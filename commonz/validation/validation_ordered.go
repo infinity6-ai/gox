@@ -11,9 +11,23 @@ func Greater[T constraints.Ordered](value, threshold T, msg string, args ...any)
 	return nil
 }
 
-func Greaterqual[T constraints.Ordered](value, threshold T, msg string, args ...any) error {
-	if value <= threshold {
+func GreaterOrEqual[T constraints.Ordered](value, threshold T, msg string, args ...any) error {
+	if value < threshold {
 		return newError("must be greater or equal than", map[string]any{"threshold": threshold, "actual": value}, msg, args...)
+	}
+	return nil
+}
+
+func Less[T constraints.Ordered](value, threshold T, msg string, args ...any) error {
+	if value >= threshold {
+		return newError("must be less than", map[string]any{"threshold": threshold, "actual": value}, msg, args...)
+	}
+	return nil
+}
+
+func LessOrEqual[T constraints.Ordered](value, threshold T, msg string, args ...any) error {
+	if value > threshold {
+		return newError("must be less or equal than", map[string]any{"threshold": threshold, "actual": value}, msg, args...)
 	}
 	return nil
 }
