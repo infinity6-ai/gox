@@ -33,3 +33,15 @@ func LessOrEqual[T constraints.Ordered](value, threshold T, msg string, args ...
 func Fail(msg string, args ...any) {
 	errorz.Check(validation.Fail(msg, args...))
 }
+
+func Empty[S ~[]E, E any](actual S, msg string, args ...any) {
+	errorz.Check(validation.Empty(actual, msg, args...))
+}
+
+func NotEmpty[S ~[]E, E any](actual S, msg string, args ...any) {
+	errorz.Check(validation.NotEmpty(actual, msg, args...))
+}
+
+func StrContains(expected string, actual string, msg string, args ...any) {
+	errorz.Check(validation.StrContains(expected, actual, msg, args...))
+}
