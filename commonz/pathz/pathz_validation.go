@@ -38,11 +38,19 @@ func (p *Path) Validate(opts ValidateOptions) error {
 	}
 	if !opts.Wildchar {
 		for _, part := range p.parts {
-			err := validation.StrContains("*", part, "path contains wildcard characters when not allowed")
+			err := validation.StrNotContains("*", part, "path contains wildcard characters when not allowed")
 			if err != nil {
 				return err
 			}
 		}
 	}
 	return nil
+}
+
+func (p *Path) ValidateAbsoluteFile() error {
+	return p.Validate(ValidateOptions{
+		Absolute: new(true),
+		Empty:    new(false),
+		Wildchar: false,
+	})
 }

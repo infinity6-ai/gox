@@ -10,8 +10,14 @@ import (
 
 func (p *providerSpec) providerUnix() (*providerSpec, error) {
 	p.Validation = func(u *Url) error {
-		validation.Equal("unix", u.Scheme, "scheme")
-		u.Path.Validate(pathz.ValidateOptions{Absolute: new(true), Empty: new(false)})
+		err := validation.Equal("unix", u.Scheme, "scheme")
+		if err != nil {
+			return err
+		}
+		err = u.Path.ValidateAbsoluteFile()
+		if err != nil {
+			return err
+		}
 		return nil
 	}
 	p.Parser = func(u *url.URL) (*Url, error) {
