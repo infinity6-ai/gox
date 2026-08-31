@@ -1,12 +1,12 @@
 package urlz
 
 type Url struct {
-	Scheme   string
-	User     string
-	Password string
-	Host     string
-	Port     string
-	Path     string
-	Query    string
-	Fragment string
+	scheme   string
+	user     string
+	password string
+	host     string
+	port     string
+	path     string
+	query    string
+	fragment string
 }
