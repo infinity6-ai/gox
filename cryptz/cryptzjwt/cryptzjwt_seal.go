@@ -6,12 +6,12 @@ import (
 	"strings"
 
 	"github.com/infinity6-ai/gox/commonz/errorz"
+	"github.com/infinity6-ai/gox/commonz/jsonz"
 	"github.com/infinity6-ai/gox/commonz/validation"
 	"github.com/infinity6-ai/gox/commonz/validation/checker"
 	"github.com/infinity6-ai/gox/cryptz/cryptzb64"
 	"github.com/infinity6-ai/gox/cryptz/cryptzrsa"
 	"github.com/infinity6-ai/gox/cryptz/cryptzrsa/cryptzrsakeyring"
-	"go.code.infinity6.ai/platform/util/jsonz"
 )
 
 func Seal(keyring *cryptzrsakeyring.KeyRing, payload *JWTPayload) (*JWTHeader, string) {
@@ -47,8 +47,8 @@ func basicVerify(tk *JWTToken) error {
 }
 
 func formatHeaderPayload(tk *JWTToken) string {
-	headerJson := jsonz.FormatString(tk.Header)
-	payloadJson := jsonz.FormatString(tk.Payload)
+	headerJson := jsonz.MustFormat(tk.Header).String()
+	payloadJson := jsonz.MustFormat(tk.Payload).String()
 	headerEncoded := cryptzb64.UrlEncode(headerJson).String()
 	payloadEncoded := cryptzb64.UrlEncode(payloadJson).String()
 	unsignedToken := fmt.Sprintf("%s.%s", headerEncoded, payloadEncoded)
@@ -78,12 +78,12 @@ func parseHeaderPayload(token string) (*JWTParsedToken, error) {
 		return nil, err
 	}
 
-	headerParsed, err := jsonz.ParseE(headerJson.Bytes(), &JWTHeader{})
+	headerParsed, err := jsonz.Parse[JWTHeader](headerJson.Bytes())
 	if err != nil {
 		return nil, err
 	}
 
-	payloadParsed, err := jsonz.ParseE(payloadJson.Bytes(), &JWTPayload{})
+	payloadParsed, err := jsonz.Parse[JWTPayload](payloadJson.Bytes())
 	if err != nil {
 		return nil, err
 	}
