@@ -1,17 +1,24 @@
 package logz
 
 import (
+	"context"
 	"fmt"
 	"reflect"
 
 	"github.com/infinity6-ai/gox/commonz/logz/logzlast"
 	"github.com/infinity6-ai/gox/commonz/logz/logzprovider"
-	"github.com/infinity6-ai/gox/commonz/logz/logzspec"
 )
 
 type Type bool
 
-func Create(logger any) logzspec.Logger {
+type Logger interface {
+	Error(ctx context.Context, op string, params map[string]any, errs ...error)
+	Info(ctx context.Context, op string, params map[string]any, errs ...error)
+	Debug(ctx context.Context, op string, params map[string]any, errs ...error)
+	Appender() string
+}
+
+func Create(logger any) Logger {
 	t := reflect.TypeOf(logger)
 	if t.Name() != "tlogger" {
 		panic(fmt.Sprintf("appender type must be tlogger, but was: %s", t.Name()))

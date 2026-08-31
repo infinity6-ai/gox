@@ -8,7 +8,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestUnitSample(t *testing.T) {
+func TestManualSample(t *testing.T) {
 	ctx := t.Context()
 
 	type tlogger logz.Type
