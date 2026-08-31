@@ -5,10 +5,23 @@ import (
 	"net/url"
 
 	"github.com/infinity6-ai/gox/commonz/pathz"
+	"github.com/infinity6-ai/gox/commonz/validation"
 )
 
 func (p *providerSpec) providerGs() (*providerSpec, error) {
 	p.Validation = func(u *Url) error {
+		err := validation.Equal("gs", u.Scheme, "scheme")
+		if err != nil {
+			return err
+		}
+		err = validation.StrNotEmpty(u.Host, "host(bucket)")
+		if err != nil {
+			return err
+		}
+		err = u.Path.ValidateAbsoluteFile()
+		if err != nil {
+			return err
+		}
 		return nil
 	}
 	p.Parser = func(u *url.URL) (*Url, error) {
