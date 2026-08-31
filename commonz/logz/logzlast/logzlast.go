@@ -36,23 +36,24 @@ type Event struct {
 
 type LoggerEvent struct {
 	logger Logger
-	events []*Event
-	mu     sync.RWMutex
 }
 
-func (l *LoggerEvent) Events() []*Event {
-	l.mu.RLock()
-	defer l.mu.RUnlock()
-	return slices.Clone(l.events)
+var events []*Event
+var mu sync.RWMutex
+
+func LastEvents() []*Event {
+	mu.RLock()
+	defer mu.RUnlock()
+	return slices.Clone(events)
 }
 
 func (l *LoggerEvent) add(event Event) {
-	l.mu.Lock()
-	defer l.mu.Unlock()
-	if len(l.events) > 5 {
-		l.events = l.events[1:]
+	mu.Lock()
+	defer mu.Unlock()
+	if len(events) >= 5 {
+		events = events[1:]
 	}
-	l.events = append(l.events, &event)
+	events = append(events, &event)
 }
 
 func (l *LoggerEvent) Appender() string {
