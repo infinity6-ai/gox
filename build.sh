@@ -13,6 +13,10 @@ function cmd_comps_run() {
   done
 }
 
+function cmd_work_init() {
+  cmd_comps_run | xargs go work init
+}
+
 function cmd_clean() {
   cmd_comps_run clean "$@"
 }
