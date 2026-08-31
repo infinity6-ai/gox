@@ -2,13 +2,32 @@ package urlz
 
 import (
 	"fmt"
+	"net"
 	"net/url"
 
 	"github.com/infinity6-ai/gox/commonz/pathz"
+	"github.com/infinity6-ai/gox/commonz/validation"
 )
 
 func (p *providerSpec) providerHttp() (*providerSpec, error) {
 	p.Validation = func(u *Url) error {
+		err := validation.OneOf([]string{"http", "https"}, u.Scheme, "scheme")
+		if err != nil {
+			return err
+		}
+		err = validation.StrNotEmpty(u.Host, "host")
+		if err != nil {
+			return err
+		}
+
+		// Path can be empty, but if it is not, it must be absolute
+		if u.Path != nil && (len(u.Path.Parts()) > 0 || u.Path.HasEndingSlash()) {
+			err = u.Path.ValidateAbsoluteFile()
+			if err != nil {
+				return err
+			}
+		}
+
 		return nil
 	}
 	p.Parser = func(u *url.URL) (*Url, error) {
@@ -39,8 +58,13 @@ func (p *providerSpec) providerHttp() (*providerSpec, error) {
 		}
 
 		host := u.Host
+		ip := net.ParseIP(host)
+		if ip != nil && ip.To4() == nil {
+			host = fmt.Sprintf("[%s]", host)
+		}
+
 		if u.Port != "" {
-			host = host + ":" + u.Port
+			host = fmt.Sprintf("%s:%s", host, u.Port)
 		}
 
 		ret := &url.URL{

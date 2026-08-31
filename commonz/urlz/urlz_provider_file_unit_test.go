@@ -9,21 +9,64 @@ import (
 )
 
 func TestUnitParseFile(t *testing.T) {
-	t.Run("file", func(t *testing.T) {
-		p, err := pathz.Parse("/tmp/x")
-		require.NoError(t, err)
+	type testScenario struct {
+		name        string
+		rawUrl      string
+		expected    *urlz.Url
+		expectedStr string
+		expectedErr string
+	}
 
-		// Remaking the test a bit since String() is not stable for file
-		rawUrl := "file:///tmp/x"
-		got, err := urlz.Parse(rawUrl)
-		require.NoError(t, err)
-		require.Equal(t, &urlz.Url{Scheme: "file", Path: p}, got)
-		require.Equal(t, rawUrl, got.String())
+	check := func(t *testing.T, s testScenario) {
+		t.Helper()
+		got, err := urlz.Parse(s.rawUrl)
 
-		rawUrl = "file:/tmp/x"
-		got, err = urlz.Parse(rawUrl)
+		if s.expectedErr != "" {
+			require.Error(t, err)
+			require.Contains(t, err.Error(), s.expectedErr)
+			require.Nil(t, got)
+			return
+		}
+
 		require.NoError(t, err)
-		require.Equal(t, &urlz.Url{Scheme: "file", Path: p}, got)
-		require.Equal(t, "file:///tmp/x", got.String())
+		require.Equal(t, s.expected, got)
+		if s.expectedStr != "" {
+			require.Equal(t, s.expectedStr, got.String())
+		}
+	}
+
+	p, err := pathz.Parse("/tmp/x")
+	require.NoError(t, err)
+
+	t.Run("absolute path with slashes", func(t *testing.T) {
+		check(t, testScenario{
+			name:   "absolute path with slashes",
+			rawUrl: "file:///tmp/x",
+			expected: &urlz.Url{
+				Scheme: "file",
+				Path:   p,
+			},
+			expectedStr: "file:///tmp/x",
+		})
+	})
+
+	t.Run("absolute path", func(t *testing.T) {
+		check(t, testScenario{
+			name:   "absolute path",
+			rawUrl: "file:/tmp/x",
+			expected: &urlz.Url{
+				Scheme: "file",
+				Path:   p,
+			},
+			expectedStr: "file:///tmp/x",
+		})
+	})
+
+	t.Run("relative path", func(t *testing.T) {
+		check(t, testScenario{
+			name:        "relative path",
+			rawUrl:      "file:tmp/x",
+			expectedErr: "path absolute flag",
+		})
 	})
 }

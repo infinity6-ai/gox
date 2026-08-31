@@ -1,6 +1,6 @@
 #!/bin/bash -e
 
-eval "$(i6dev meta debug i6gox-comp I6DEV_DEBUG)"
+[ "$I6DEV_DEBUG" != "true" ] || eval "$(i6dev meta debug i6gox-comp I6DEV_DEBUG)"
 
 function cmd_clean() {
   local _k=""
@@ -10,7 +10,8 @@ function cmd_clean() {
 }
 
 function cmd_update() {
-  i6dev golang update
+  go mod tidy
+  cmd_codegen
 }
 
 function cmd_run() {
@@ -22,15 +23,11 @@ function cmd_codegen() {
 }
 
 function cmd_test_unit() {
-  i6dev golang test_unit "$@"
+  go test -run '^TestUnit.*$' ./... "$@" 
 }
 
 function cmd_test() {
   cmd_test_unit
-}
-
-function cmd_test_remote() {
-  i6dev golang test_remote "$@"
 }
 
 function cmd_fmt() {
