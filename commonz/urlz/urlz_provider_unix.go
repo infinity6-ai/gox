@@ -11,7 +11,6 @@ import (
 func (p *providerSpec) providerUnix() (*providerSpec, error) {
 	p.Validation = func(u *Url) error {
 		validation.Equal("unix", u.Scheme, "scheme")
-		x := new(1)
 		u.Path.Validate(pathz.ValidateOptions{MaxParents: new(0)})
 		return nil
 	}
