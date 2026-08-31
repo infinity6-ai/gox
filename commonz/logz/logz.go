@@ -35,7 +35,7 @@ func (l *loggerImpl) Error(ctx context.Context, op string, params map[string]any
 }
 
 func (l *loggerImpl) Info(ctx context.Context, op string, params map[string]any, errs ...error) {
-	l.provider(ctx, logzspec.NewEntry(1, l.appender, logzspec.ERROR, op, params, errs...))
+	l.provider(ctx, logzspec.NewEntry(1, l.appender, logzspec.INFO, op, params, errs...))
 }
 
 func Create(logger any) Logger {
