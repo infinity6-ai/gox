@@ -4,7 +4,6 @@ go 1.26.1
 
 require (
 	github.com/stretchr/testify v1.11.1
-	go.code.infinity6.ai/platform v1.2.69
 )
 
 require (
