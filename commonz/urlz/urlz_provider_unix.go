@@ -11,6 +11,7 @@ import (
 func (p *providerSpec) providerUnix() (*providerSpec, error) {
 	p.Validation = func(u *Url) error {
 		validation.Equal("unix", u.Scheme, "scheme")
+		return nil
 	}
 	p.Parser = func(u *url.URL) (*Url, error) {
 		// For unix sockets, the path can be in Opaque or Path
