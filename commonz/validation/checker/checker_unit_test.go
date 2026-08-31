@@ -200,4 +200,98 @@ func TestUnitCheckerStrings(t *testing.T) {
 			t.Run(s.name, func(t *testing.T) { check(t, s) })
 		}
 	})
+
+	t.Run("StrEmpty", func(t *testing.T) {
+		scenarios := []testScenario{
+			{name: "StrEmptyPanics", testFn: func() { StrEmpty("a", "should be empty") }, shouldPanic: true},
+			{name: "StrEmptyNotPanics", testFn: func() { StrEmpty("", "should be empty") }, shouldPanic: false},
+		}
+		for _, s := range scenarios {
+			t.Run(s.name, func(t *testing.T) { check(t, s) })
+		}
+	})
+
+	t.Run("StrNotEmpty", func(t *testing.T) {
+		scenarios := []testScenario{
+			{name: "StrNotEmptyPanics", testFn: func() { StrNotEmpty("", "should not be empty") }, shouldPanic: true},
+			{name: "StrNotEmptyNotPanics", testFn: func() { StrNotEmpty("a", "should not be empty") }, shouldPanic: false},
+		}
+		for _, s := range scenarios {
+			t.Run(s.name, func(t *testing.T) { check(t, s) })
+		}
+	})
+
+	t.Run("StrNotContains", func(t *testing.T) {
+		scenarios := []testScenario{
+			{name: "StrNotContainsPanics", testFn: func() { StrNotContains("a", "abc", "abc not contains a") }, shouldPanic: true},
+			{name: "StrNotContainsNotPanics", testFn: func() { StrNotContains("a", "b", "b not contains a") }, shouldPanic: false},
+		}
+		for _, s := range scenarios {
+			t.Run(s.name, func(t *testing.T) { check(t, s) })
+		}
+	})
+}
+
+func TestUnitCheckerBool(t *testing.T) {
+	type testScenario struct {
+		name        string
+		testFn      func()
+		shouldPanic bool
+	}
+
+	check := func(t *testing.T, s testScenario) {
+		t.Helper()
+		if s.shouldPanic {
+			require.Panics(t, s.testFn)
+		} else {
+			require.NotPanics(t, s.testFn)
+		}
+	}
+
+	t.Run("True", func(t *testing.T) {
+		scenarios := []testScenario{
+			{name: "TruePanics", testFn: func() { True(false, "should be true") }, shouldPanic: true},
+			{name: "TrueNotPanics", testFn: func() { True(true, "should be true") }, shouldPanic: false},
+		}
+		for _, s := range scenarios {
+			t.Run(s.name, func(t *testing.T) { check(t, s) })
+		}
+	})
+
+	t.Run("False", func(t *testing.T) {
+		scenarios := []testScenario{
+			{name: "FalsePanics", testFn: func() { False(true, "should be false") }, shouldPanic: true},
+			{name: "FalseNotPanics", testFn: func() { False(false, "should be false") }, shouldPanic: false},
+		}
+		for _, s := range scenarios {
+			t.Run(s.name, func(t *testing.T) { check(t, s) })
+		}
+	})
+}
+
+func TestUnitCheckerRegex(t *testing.T) {
+	type testScenario struct {
+		name        string
+		testFn      func()
+		shouldPanic bool
+	}
+
+	check := func(t *testing.T, s testScenario) {
+		t.Helper()
+		if s.shouldPanic {
+			require.Panics(t, s.testFn)
+		} else {
+			require.NotPanics(t, s.testFn)
+		}
+	}
+
+	t.Run("StringRegex", func(t *testing.T) {
+		scenarios := []testScenario{
+			{name: "StringRegexPanics", testFn: func() { StringRegex(`\d+`, "abc", "should match regex") }, shouldPanic: true},
+			{name: "StringRegexNotPanics", testFn: func() { StringRegex(`\d+`, "123", "should match regex") }, shouldPanic: false},
+		}
+		for _, s := range scenarios {
+			t.Run(s.name, func(t *testing.T) { check(t, s) })
+		}
+	})
 }

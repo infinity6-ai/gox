@@ -23,4 +23,4 @@ func Equal[T comparable](expected T, actual T, msg string, args ...any) {
 
 Follow `GEMINI.md` directives to generate tests
 
-DO NOT REMOVE THIS FILE]
+DO NOT REMOVE THIS FILE AFTER FINISHING
