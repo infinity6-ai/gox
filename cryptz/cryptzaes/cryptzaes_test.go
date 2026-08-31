@@ -4,8 +4,8 @@ import (
 	"slices"
 	"testing"
 
+	"github.com/infinity6-ai/gox/cryptz/cryptzaes"
 	"github.com/stretchr/testify/assert"
-	"go.code.infinity6.ai/platform/cryptz/cryptzaes"
 )
 
 func TestUnitKey(t *testing.T) {
@@ -25,19 +25,20 @@ func TestUnitAESCryptAESDecrypt(t *testing.T) {
 	key := cryptzaes.NewKey(16)
 
 	plaintext := []byte("This is a test message.")
-	ciphertext := cryptzaes.AESCrypt(key, plaintext)
+	ciphertext, err := cryptzaes.AESCrypt(key, plaintext)
+	assert.NoError(t, err)
 
 	original := slices.Clone(ciphertext)
 	decrypted, err := cryptzaes.AESDecrypt(key, ciphertext)
-	assert.Nil(t, err)
+	assert.NoError(t, err)
 	assert.Equal(t, plaintext, decrypted.Bytes())
 	assert.Equal(t, original, ciphertext)
 
 	decrypted, err = cryptzaes.AESDecrypt(key, tamper(20, ciphertext))
-	assert.NotNil(t, err)
+	assert.Error(t, err)
 	assert.Nil(t, decrypted)
 
 	decrypted, err = cryptzaes.AESDecrypt(tamper(5, key), ciphertext)
-	assert.NotNil(t, err)
+	assert.Error(t, err)
 	assert.Nil(t, decrypted)
 }
