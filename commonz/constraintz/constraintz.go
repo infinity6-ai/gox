@@ -3,29 +3,11 @@
 // categories of types, such as integers, floats, or numbers in general.
 package constraintz
 
-// SInts is a constraint that permits any signed integer type.
-type SInts interface {
-	~int | ~int8 | ~int16 | ~int32 | ~int64
-}
-
-// UInts is a constraint that permits any unsigned integer type.
-type UInts interface {
-	~uint | ~uint8 | ~uint16 | ~uint32 | ~uint64
-}
-
-// Ints is a constraint that permits any signed or unsigned integer type.
-type Ints interface {
-	SInts | UInts
-}
-
-// Floats is a constraint that permits any floating-point type.
-type Floats interface {
-	~float32 | ~float64
-}
+import "golang.org/x/exp/constraints"
 
 // Numbers is a constraint that permits any integer or floating-point type.
 type Numbers interface {
-	Ints | Floats
+	constraints.Integer | constraints.Float
 }
 
 // Basic is a constraint that permits any string or numeric type.
