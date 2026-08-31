@@ -2,10 +2,10 @@ package cryptzb32
 
 import (
 	"encoding/base32"
+	"fmt"
 	"io"
 
 	"github.com/infinity6-ai/gox/commonz/constraintz/blobz"
-	"github.com/infinity6-ai/gox/commonz/errorz"
 )
 
 func newEncoding() *base32.Encoding {
@@ -29,12 +29,14 @@ func encode[T blobz.Data](enc *base32.Encoding, value T) blobz.Blob {
 	return blobz.New(buf)
 }
 
-func decode[T blobz.Data](enc *base32.Encoding, value T) blobz.Blob {
+func decode[T blobz.Data](enc *base32.Encoding, value T) (blobz.Blob, error) {
 	data := blobz.ToBytes(value)
 	buf := make([]byte, enc.DecodedLen(len(data)))
 	l, err := enc.Decode(buf, data)
-	errorz.Check(err)
-	return blobz.New(buf[:l])
+	if err != nil {
+		return nil, fmt.Errorf("failed to decode b32: %w", err)
+	}
+	return blobz.New(buf[:l]), nil
 }
 
 func Encode[T blobz.Data](value T) blobz.Blob {
@@ -42,22 +44,26 @@ func Encode[T blobz.Data](value T) blobz.Blob {
 	return encode(enc, value)
 }
 
-func Decode[T blobz.Data](value T) blobz.Blob {
+func Decode[T blobz.Data](value T) (blobz.Blob, error) {
 	enc := newEncoding()
 	return decode(enc, value)
 }
 
-func EncodeCopy(out io.Writer, in io.Reader) int64 {
+func EncodeCopy(out io.Writer, in io.Reader) (int64, error) {
 	w := NewEncoder(out)
 	defer w.Close()
 	ret, err := io.Copy(w, in)
-	errorz.Check(err)
-	return ret
+	if err != nil {
+		return 0, fmt.Errorf("failed to copy: %w", err)
+	}
+	return ret, nil
 }
 
-func DecodeCopy(out io.Writer, in io.Reader) int64 {
+func DecodeCopy(out io.Writer, in io.Reader) (int64, error) {
 	r := NewDecoder(in)
 	ret, err := io.Copy(out, r)
-	errorz.Check(err)
-	return ret
+	if err != nil {
+		return 0, fmt.Errorf("failed to copy: %w", err)
+	}
+	return ret, nil
 }
