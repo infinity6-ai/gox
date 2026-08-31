@@ -2,19 +2,21 @@
 
 [ "$I6DEV_DEBUG" != "true" ] || eval "$(i6dev meta debug i6gox-build I6DEV_DEBUG)"
 
-function cmd_comp_list() {
+function cmd_comps_list() {
   find . -maxdepth 2 -name go.mod | cut -d'/' -f2
 }
 
 function cmd_comps_run() {
   local _k=""
-  cmd_comp_list | while read _k; do
+  cmd_comps_list | while read _k; do
     ./comp.sh "$_k" "$@"
   done
 }
 
 function cmd_work_init() {
-  cmd_comps_run | xargs go work init
+  [ ! -f go.work.sum ] || rm go.work.sum
+  [ ! -f go.work ] || rm go.work
+  cmd_comps_list | xargs go work init
 }
 
 function cmd_clean() {
