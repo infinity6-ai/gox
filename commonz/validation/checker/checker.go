@@ -45,3 +45,28 @@ func NotEmpty[S ~[]E, E any](actual S, msg string, args ...any) {
 func StrContains(expected string, actual string, msg string, args ...any) {
 	errorz.Check(validation.StrContains(expected, actual, msg, args...))
 }
+
+func StrEmpty(actual string, msg string, args ...any) {
+	errorz.Check(validation.StrEmpty(actual, msg, args...))
+}
+
+func StrNotEmpty(actual string, msg string, args ...any) {
+	errorz.Check(validation.StrNotEmpty(actual, msg, args...))
+}
+
+func StrNotContains(expected string, actual string, msg string, args ...any) {
+	errorz.Check(validation.StrNotContains(expected, actual, msg, args...))
+}
+
+func True(actual bool, msg string, args ...any) {
+	errorz.Check(validation.True(actual, msg, args...))
+}
+
+func False(actual bool, msg string, args ...any) {
+	errorz.Check(validation.False(actual, msg, args...))
+}
+
+func StringRegex(pattern, value, msg string, args ...any) {
+	errorz.Check(validation.StringRegex(pattern, value, msg, args...))
+}
+
