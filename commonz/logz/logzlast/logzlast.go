@@ -40,6 +40,16 @@ type LoggerEvent struct {
 	mu     sync.RWMutex
 }
 
+var instance LoggerEvent
+
+func GetInstance() *LoggerEvent {
+	return &instance
+}
+
+func LastEvents() []*Event {
+	return instance.Events()
+}
+
 func (l *LoggerEvent) Events() []*Event {
 	l.mu.RLock()
 	defer l.mu.RUnlock()
