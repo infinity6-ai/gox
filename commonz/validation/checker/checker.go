@@ -74,3 +74,11 @@ func NotNil(actual any, msg string, args ...any) {
 	errorz.Check(validation.NotNil(actual, msg, args...))
 }
 
+func OneOf[T comparable](expected []T, actual T, msg string, args ...any) {
+	errorz.Check(validation.OneOf(expected, actual, msg, args...))
+}
+
+func Len[S ~[]E, E any](actual S, length int, msg string, args ...any) {
+	errorz.Check(validation.Len(actual, length, msg, args...))
+}
+

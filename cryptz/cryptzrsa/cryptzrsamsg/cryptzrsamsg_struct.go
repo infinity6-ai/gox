@@ -1,8 +1,8 @@
 package cryptzrsamsg
 
 import (
+	"github.com/infinity6-ai/gox/commonz/validation/checker"
 	"github.com/infinity6-ai/gox/cryptz/pb/cryptzmsgpb"
-	"go.code.infinity6.ai/platform/validation"
 )
 
 type RSAMessageCiphered struct {
@@ -15,12 +15,12 @@ type RSAMessageCiphered struct {
 }
 
 func (d *RSAMessageCiphered) Validate(SignatureSize int, CipheredSymKeySize int) {
-	validation.Equal(uint32(1), d.Version, "Version")
-	validation.Len(d.Signature, SignatureSize, "SignatureSize")
-	validation.NotEmpty(d.SrcKey, "SrcKey")
-	validation.NotEmpty(d.DstKey, "DstKey")
-	validation.Len(d.CipheredSymKey, CipheredSymKeySize, "CipheredSymKeySize")
-	validation.NotEmpty(d.CipheredData, "CipheredText")
+	checker.Equal(uint32(1), d.Version, "Version")
+	checker.Len(d.Signature, SignatureSize, "SignatureSize")
+	checker.StrNotEmpty(d.SrcKey, "SrcKey")
+	checker.StrNotEmpty(d.DstKey, "DstKey")
+	checker.Len(d.CipheredSymKey, CipheredSymKeySize, "CipheredSymKeySize")
+	checker.NotEmpty(d.CipheredData, "CipheredText")
 }
 
 func (d *RSAMessageCiphered) FromProto(pb *cryptzmsgpb.RSAMessageCiphered) {

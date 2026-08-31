@@ -13,3 +13,10 @@ func NotEmpty[S ~[]E, E any](actual S, msg string, args ...any) error {
 	}
 	return nil
 }
+
+func Len[S ~[]E, E any](actual S, length int, msg string, args ...any) error {
+	if len(actual) != length {
+		return newError("failed expected length", map[string]any{"expected_length": length, "actual_length": len(actual)}, msg, args...)
+	}
+	return nil
+}
