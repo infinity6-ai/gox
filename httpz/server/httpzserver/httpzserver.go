@@ -90,7 +90,7 @@ func (s *Server) Addr() net.Addr {
 
 func (s *Server) Listen() {
 	if s.listener != nil {
-		return
+		panic(fmt.Sprintf("already configured: %s", s.listener.Addr()))
 	}
 	listener, err := net.Listen("tcp", s.Options.LocalAddress)
 	errorz.Check(err)
@@ -125,14 +125,14 @@ func (s *Server) serve() {
 // Serve runs the server in the current goroutine, blocking until the server is
 // shut down.
 func (s *Server) Serve() {
-	s.Listen()
+	if s.listener == nil {
+		panic("not configured")
+	}
 	s.serve()
 }
 
 // Start runs the server in a new goroutine, making it non-blocking.
 // It waits until the server is listening for connections before returning.
 func (s *Server) Start() {
-	s.Listen()
-	go s.serve()
+	go s.Serve()
 }
-
