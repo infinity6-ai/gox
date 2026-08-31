@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"net"
 	"net/url"
+	"regexp"
+	"strings"
 
 	"github.com/infinity6-ai/gox/commonz/pathz"
 	"github.com/infinity6-ai/gox/commonz/validation"
@@ -19,9 +21,16 @@ func (p *providerSpec) providerHttp() (*providerSpec, error) {
 		if err != nil {
 			return err
 		}
-		err = validation.Host(u.Host, "host")
-		if err != nil {
-			return err
+
+		trimmedHost := strings.TrimPrefix(strings.TrimSuffix(u.Host, "]"), "[")
+		if ip := net.ParseIP(trimmedHost); ip == nil { // Not an IP, so it must be a hostname
+			// This regex is a simplified version for common hostnames, excluding IPs and special characters not allowed in domain labels.
+			// It allows alphanumeric characters and hyphens, but not leading/trailing hyphens.
+			// It does not enforce TLD rules, as that's complex and often changes.
+			hostnameRegex := regexp.MustCompile(`^(?:[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?\.)+[a-zA-Z]{2,6}\.?$`)
+			if !hostnameRegex.MatchString(u.Host) {
+				return fmt.Errorf("validation error invalid hostname: %s", u.Host)
+			}
 		}
 
 		// Path can be empty, but if it is not, it must be absolute
