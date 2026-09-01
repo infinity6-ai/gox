@@ -44,12 +44,22 @@ func Parse(urlStr string) (*Url, error) {
 	return ret, err
 }
 
-func (u *Url) String() string {
+func (u *Url) ToString() (string, error) {
 	provider, err := getProvider(u.Scheme)
-	errorz.Check(err)
+	if err != nil {
+		return "", err
+	}
 	err = provider.Validation(u)
+	if err != nil {
+		return "", err
+	}
+	return provider.ToString(u), nil
+}
+
+func (u *Url) String() string {
+	s, err := u.ToString()
 	errorz.Check(err)
-	return provider.ToString(u)
+	return s
 }
 
 func (u *Url) Clone() *Url {
