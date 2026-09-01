@@ -24,16 +24,16 @@ type FileStat struct {
 }
 
 type Paginator interface {
-	Paginate(ctx context.Context, max int) []*FileStat
+	Paginate(ctx context.Context, max int) ([]*FileStat, error)
 }
 
 type FsProvider interface {
-	Stat(ctx context.Context, url *urlz.Url) *FileStat
+	Stat(ctx context.Context, url *urlz.Url) (*FileStat, error)
 	Upload(ctx context.Context, url *urlz.Url, reader io.Reader) error
-	Download(ctx context.Context, url *urlz.Url, callback func(found bool, headers http.Header, reader io.Reader))
+	Download(ctx context.Context, url *urlz.Url, callback func(found bool, headers http.Header, reader io.Reader)) error
 	Delete(ctx context.Context, url *urlz.Url) error
 
-	Ls(ctx context.Context, prefix *urlz.Url) Paginator
+	Ls(ctx context.Context, prefix *urlz.Url) (Paginator, error)
 
 	SignGet(ctx context.Context, url *urlz.Url, duration time.Duration) (string, error)
 	SignPut(ctx context.Context, url *urlz.Url, duration time.Duration) (string, error)

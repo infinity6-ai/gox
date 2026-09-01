@@ -71,7 +71,7 @@ func TestUnitFszLs(t *testing.T) {
 	// Create some files
 	for i := 0; i < 5; i++ {
 		filePath := filepath.Join(tmpDir, fmt.Sprintf("file%d.txt", i))
-		err := os.WriteFile(filePath, []byte(fmt.Sprintf("content %d", i)), 0644)
+		err := os.WriteFile(filePath, fmt.Appendf(nil, "content %d", i), 0644)
 		require.NoError(t, err)
 	}
 
@@ -82,19 +82,23 @@ func TestUnitFszLs(t *testing.T) {
 	require.NoError(t, err)
 
 	// Paginate with max=2
-	stats1 := paginator.Paginate(ctx, 2)
+	stats1, err := paginator.Paginate(ctx, 2)
+	require.NoError(t, err)
 	require.Len(t, stats1, 2)
 
 	// Paginate with max=2
-	stats2 := paginator.Paginate(ctx, 2)
+	stats2, err := paginator.Paginate(ctx, 2)
+	require.NoError(t, err)
 	require.Len(t, stats2, 2)
 
 	// Paginate with max=2 (should get the last one)
-	stats3 := paginator.Paginate(ctx, 2)
+	stats3, err := paginator.Paginate(ctx, 2)
+	require.NoError(t, err)
 	require.Len(t, stats3, 1)
 
 	// Paginate again, should be empty
-	stats4 := paginator.Paginate(ctx, 2)
+	stats4, err := paginator.Paginate(ctx, 2)
+	require.NoError(t, err)
 	require.Len(t, stats4, 0)
 }
 
