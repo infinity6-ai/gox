@@ -5,10 +5,20 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"time"
 
 	"github.com/infinity6-ai/gox/commonz/deferz"
 	"github.com/infinity6-ai/gox/commonz/errorz"
 )
+
+var defaultHttpClient = &http.Client{
+	Timeout: 10 * time.Second,
+	Transport: &http.Transport{
+		MaxIdleConns:        100,
+		MaxIdleConnsPerHost: 100,
+		IdleConnTimeout:     90 * time.Second,
+	},
+}
 
 type Options struct {
 	BaseUrl string
@@ -34,7 +44,7 @@ func New(ctx context.Context, opts Options) *Client {
 		Context: ctx,
 		Options: opts,
 		dfz:     deferz.New(ctx),
-		client:  &http.Client{},
+		client:  defaultHttpClient,
 	}
 }
 
