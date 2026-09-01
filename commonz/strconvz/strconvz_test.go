@@ -265,3 +265,65 @@ func TestUnitParseNumber(t *testing.T) {
 		checkUint32(t, "Negative uint32", "-1", nil, uint32(0), "invalid syntax")
 	})
 }
+
+func TestUnitParseBool(t *testing.T) {
+	type testScenario struct {
+		input       string
+		defaultVals []bool
+		want        bool
+		wantErrMsg  string
+	}
+
+	check := func(t *testing.T, s testScenario) {
+		t.Helper()
+		got, err := strconvz.ParseBool(s.input, s.defaultVals...)
+
+		if s.wantErrMsg != "" {
+			require.Error(t, err)
+			require.Contains(t, err.Error(), s.wantErrMsg)
+			require.False(t, got) // On error, it should return false
+		} else {
+			require.NoError(t, err)
+			require.Equal(t, s.want, got)
+		}
+	}
+
+	t.Run("Valid true strings", func(t *testing.T) {
+		check(t, testScenario{input: "true", want: true})
+		check(t, testScenario{input: "True", want: true})
+		check(t, testScenario{input: "TRUE", want: true})
+		check(t, testScenario{input: "t", want: true})
+		check(t, testScenario{input: "T", want: true})
+		check(t, testScenario{input: "1", want: true})
+	})
+
+	t.Run("Valid false strings", func(t *testing.T) {
+		check(t, testScenario{input: "false", want: false})
+		check(t, testScenario{input: "False", want: false})
+		check(t, testScenario{input: "FALSE", want: false})
+		check(t, testScenario{input: "f", want: false})
+		check(t, testScenario{input: "F", want: false})
+		check(t, testScenario{input: "0", want: false})
+	})
+
+	t.Run("Empty string with default value", func(t *testing.T) {
+		check(t, testScenario{input: "", defaultVals: []bool{true}, want: true})
+		check(t, testScenario{input: "", defaultVals: []bool{false}, want: false})
+	})
+
+	t.Run("Empty string without default value", func(t *testing.T) {
+		check(t, testScenario{input: "", wantErrMsg: "empty string with no default value"})
+	})
+
+	t.Run("Invalid strings", func(t *testing.T) {
+		check(t, testScenario{input: "abc", wantErrMsg: "could not parse bool: abc, strconv.ParseBool: parsing \"abc\": invalid syntax"})
+		check(t, testScenario{input: "yes", wantErrMsg: "could not parse bool: yes, strconv.ParseBool: parsing \"yes\": invalid syntax"})
+		check(t, testScenario{input: "no", wantErrMsg: "could not parse bool: no, strconv.ParseBool: parsing \"no\": invalid syntax"})
+		check(t, testScenario{input: " 1 ", wantErrMsg: "could not parse bool:  1 , strconv.ParseBool: parsing \" 1 \": invalid syntax"})
+	})
+
+	t.Run("Strings with spaces", func(t *testing.T) {
+		check(t, testScenario{input: " true ", wantErrMsg: "could not parse bool:  true , strconv.ParseBool: parsing \" true \": invalid syntax"})
+	})
+}
+
