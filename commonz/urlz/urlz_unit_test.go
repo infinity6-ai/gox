@@ -182,7 +182,7 @@ func TestUnitUrlAppend(t *testing.T) {
 			name: "append with parent traversal",
 			originalUrl: originalUrl,
 			appendPaths: []*pathz.Path{pathz.MustParse("../share")},
-			expectedUrl: "file:///usr/local/share",
+			expectedErr: "path escaped error: joining '/usr/local/bin' to '[../share]' results in '/usr/local/share' which is outside the base: error appending path to url file:///usr/local/bin: [../share]",
 		})
 	})
 
@@ -192,7 +192,7 @@ func TestUnitUrlAppend(t *testing.T) {
 			name: "append resulting in escaped path",
 			originalUrl: originalUrl,
 			appendPaths: []*pathz.Path{pathz.MustParse("../../c")},
-			expectedErr: "path escaped error: joining '../../c' to 'http://example.com/a/b' results in '/c' which is outside the base",
+			expectedErr: "path escaped error: joining '/a/b' to '[../../c]' results in '/c' which is outside the base: error appending path to url http://example.com/a/b: [../../c]",
 		})
 	})
 
@@ -222,7 +222,7 @@ func TestUnitUrlAppend(t *testing.T) {
 			name: "append absolute path should discard previous and return escaped error",
 			originalUrl: originalUrl,
 			appendPaths: []*pathz.Path{pathz.MustParse("/new/absolute/path")},
-			expectedErr: "path escaped error: joining '/new/absolute/path' to 'http://example.com/base' results in '/new/absolute/path' which is outside the base",
+			expectedErr: "path escaped error: joining '/base' to '[/new/absolute/path]' results in '/new/absolute/path' which is outside the base: error appending path to url http://example.com/base: [/new/absolute/path]",
 		})
 	})
 
