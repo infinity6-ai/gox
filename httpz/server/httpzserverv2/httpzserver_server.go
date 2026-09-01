@@ -31,7 +31,7 @@ type Server struct {
 	Context  context.Context
 	Options  Options
 	listener net.Listener
-	Handler  Handler
+	Filters  []Filter
 	dfz      *deferz.Deferz
 }
 
@@ -98,8 +98,26 @@ func (s *Server) Close() error {
 }
 
 func (s *Server) serve() {
+	if s.listener == nil {
+		panic("not configured")
+	}
+
+	var h Handler
+	h = func(ctx context.Context, resp *Resp, req *Req) {
+		panic("finish it AAAA")
+	}
+	for i := len(s.Filters) - 1; i >= 0; i-- {
+		h = s.Filters[i](h)
+	}
+
 	httpServer := &http.Server{
-		Handler: s,
+		Handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			req := &Req{}
+			req.fromHttpRequest(r)
+			resp := &Resp{}
+			resp.fromHttpResponseWriter(w)
+			h(r.Context(), resp, req)
+		}),
 		BaseContext: func(l net.Listener) context.Context {
 			return s.Context
 		},
