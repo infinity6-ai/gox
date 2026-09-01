@@ -18,12 +18,6 @@ func TestUnitParent(t *testing.T) {
 	assert.Equal(t, ".", filez.Parent("any"))
 }
 
-// func TestUnitFromUrl(t *testing.T) {
-// 	assert.Equal(t, "/path/to/file", filez.FromUrl("file:///path/to/file"))
-// 	assert.Equal(t, "/path/to/file", filez.FromUrl("file:/path/to/file"))
-// 	assert.Equal(t, "path/to/file", filez.FromUrl("path/to/file"))
-// }
-
 func TestUnitRemove(t *testing.T) {
 	// Test removing an existing file
 	tmpFile, err := os.CreateTemp("", "test-remove")
@@ -90,19 +84,6 @@ func TestUnitWrite(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, "hello world", string(content))
 }
-
-// func TestUnitCreateTempSocket(t *testing.T) {
-// 	socketPath := filez.CreateTempSocket()
-// 	defer os.RemoveAll(filepath.Dir(socketPath))
-
-// 	assert.Contains(t, socketPath, "i6go-platform-tmp-xz-")
-// 	assert.True(t, strings.HasSuffix(socketPath, "xz.sock"))
-
-// 	// Check if parent dir was created
-// 	dirInfo, err := os.Stat(filepath.Dir(socketPath))
-// 	assert.NoError(t, err)
-// 	assert.True(t, dirInfo.IsDir())
-// }
 
 func TestUnitRmTree(t *testing.T) {
 	tmpDir := t.TempDir()
