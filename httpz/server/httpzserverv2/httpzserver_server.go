@@ -49,6 +49,10 @@ func New(ctx context.Context, opts Options) *Server {
 	}
 }
 
+func (s *Server) Base() string {
+	return fmt.Sprintf("http://%s", s.Addr())
+}
+
 func (s *Server) AddHandlerPrefix(p string, handler http.Handler) {
 	// checker.StrPrefix("/", p, "prefix path")
 	// s.mux.Handle(prefix, handler)
