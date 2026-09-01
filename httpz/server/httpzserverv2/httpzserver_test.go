@@ -2,6 +2,7 @@ package httpzserverv2_test
 
 import (
 	"context"
+	"fmt"
 	"io"
 	"net/http"
 	"testing"
@@ -35,15 +36,15 @@ func TestUnitListen(t *testing.T) {
 	// 	resp.Write([]byte("nok"))
 	// })
 
-	s.AddHandler("GET", "/bla/*", func(ctx context.Context, resp *httpzserverv2.Resp, req *httpzserverv2.Req) {
+	s.AddHandler("GET", "/bla/{p1}/b/{p2}/c/*", func(ctx context.Context, resp *httpzserverv2.Resp, req *httpzserverv2.Req, params map[string]string) {
 		resp.Status = http.StatusBadRequest
 		resp.Headers.Set("a", "y")
-		resp.Write([]byte("nok: " + req.Path.String()))
+		resp.Write(fmt.Appendf(nil, "body: %s - %s", req.Path, params))
 	})
 
 	s.Start()
 
-	resp, err := http.Get(s.Base())
+	resp, err := http.Get(s.Base() + "/bla/O1/b/O2/c/xyz")
 	errorz.Check(err)
 	defer resp.Body.Close()
 	require.Equal(t, http.StatusBadRequest, resp.StatusCode)
@@ -52,5 +53,5 @@ func TestUnitListen(t *testing.T) {
 	require.Equal(t, "x1", resp.Header.Get("c"))
 	data, err := io.ReadAll(resp.Body)
 	errorz.Check(err)
-	require.Equal(t, "nok", string(data))
+	require.Equal(t, "body: /bla/O1/b/O2/c/xyz - map[p1:O1 p2:O2]", string(data))
 }

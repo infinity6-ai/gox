@@ -2,6 +2,8 @@ package httpzserverv2
 
 import (
 	"context"
+	"net/http"
+	"strings"
 
 	"github.com/infinity6-ai/gox/commonz/pathz"
 )
@@ -19,10 +21,10 @@ func (s *Server) AddFilter(filter Filter) {
 type PatternHandler struct {
 	Pattern *pathz.Path
 	Prefix  bool
-	Handler Handler
+	Handler HandlerPattern
 }
 
-func (s *Server) AddHandler(method string, pattern string, handler Handler) {
+func (s *Server) AddHandler(method string, pattern string, handler HandlerPattern) {
 	p := pathz.MustParse(pattern)
 	p.Check(pathz.ValidateOptions{
 		Absolute:    new(true),
@@ -45,20 +47,39 @@ func (s *Server) AddHandler(method string, pattern string, handler Handler) {
 func (s *Server) route(ctx context.Context, resp *Resp, req *Req) {
 	actualParts := req.Path.Parts()
 	for _, ph := range s.patternHandlers {
-		match(ph.Pattern.Parts(), actualParts)
+		params, ok := match(ph.Pattern.Parts(), actualParts, ph.Prefix)
+		if ok {
+			ph.Handler(ctx, resp, req, params)
+			return
+		}
 	}
-	panic("unimplemented")
+	resp.Status = http.StatusNotFound
+	resp.Write([]byte("Not Found"))
 }
 
-func match(patternParts, actualParts []string) (map[string]string, bool) {
+func match(patternParts, actualParts []string, prefix bool) (map[string]string, bool) {
+	if !prefix && len(patternParts) != len(actualParts) {
+		return nil, false
+	}
+	if prefix && len(actualParts) < len(patternParts) {
+		return nil, false
+	}
+
+	params := make(map[string]string)
 	for i, patternPart := range patternParts {
-		if len(actualParts) <= i {
-			return nil, false
-		}
 		actualPart := actualParts[i]
-		if patternPart != actualPart {
+
+		if strings.HasPrefix(patternPart, "{") && strings.HasSuffix(patternPart, "}") {
+			paramName := patternPart[1 : len(patternPart)-1]
+			params[paramName] = actualPart
+		} else if patternPart != actualPart {
 			return nil, false
 		}
 	}
-	return nil, true
+
+	if !prefix && len(patternParts) != len(actualParts) {
+		return nil, false
+	}
+
+	return params, true
 }
