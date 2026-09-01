@@ -24,6 +24,20 @@ type Url struct {
 	Fragment string
 }
 
+func (u *Url) MustJoinPathString(others ...string) *Url {
+	paths := make([]*pathz.Path, len(others))
+	for i, other := range others {
+		paths[i] = pathz.MustParse(other)
+	}
+	return u.MustJoinPath(paths...)
+}
+
+func (u *Url) MustJoinPath(others ...*pathz.Path) *Url {
+	ret, err := u.JoinPath(others...)
+	errorz.Check(err)
+	return ret
+}
+
 func Parse(urlStr string) (*Url, error) {
 	u, err := url.Parse(urlStr)
 	if err != nil {
