@@ -71,7 +71,7 @@ func TestUnitFszLs(t *testing.T) {
 	// Create some files
 	for i := 0; i < 5; i++ {
 		filePath := filepath.Join(tmpDir, fmt.Sprintf("file%d.txt", i))
-		err := os.WriteFile(filePath, []byte(fmt.Sprintf("content %d", i)), 0644)
+		err := os.WriteFile(filePath, fmt.Appendf(nil, "content %d", i), 0644)
 		require.NoError(t, err)
 	}
 
