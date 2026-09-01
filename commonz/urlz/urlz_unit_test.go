@@ -123,11 +123,12 @@ func TestUnitUrlClone(t *testing.T) {
 
 func TestUnitUrlAppend(t *testing.T) {
 	type testScenario struct {
-		name        string
+		name string
 		originalUrl *urlz.Url
 		appendPaths []*pathz.Path
 		expectedUrl string
 		expectedErr string
+		expectedUrlOnError *urlz.Url // New field for error-case URL assertion
 	}
 
 	check := func(t *testing.T, s testScenario) {
@@ -138,7 +139,8 @@ func TestUnitUrlAppend(t *testing.T) {
 		if s.expectedErr != "" {
 			require.Error(t, err)
 			require.Contains(t, err.Error(), s.expectedErr)
-			require.Nil(t, appendedUrl)
+			require.NotNil(t, appendedUrl) // appendedUrl should not be nil even on error
+			require.Equal(t, s.expectedUrlOnError, appendedUrl, "Appended URL on error should match expected error URL")
 			// Ensure original URL is unchanged on error
 			require.Equal(t, originalPathString, s.originalUrl.Path.String(), "Original URL's path should be unchanged on error")
 			return
@@ -183,6 +185,10 @@ func TestUnitUrlAppend(t *testing.T) {
 			originalUrl: originalUrl,
 			appendPaths: []*pathz.Path{pathz.MustParse("../share")},
 			expectedErr: "path escaped error: joining '/usr/local/bin' to '[../share]' results in '/usr/local/share' which is outside the base: error appending path to url file:///usr/local/bin: [../share]",
+			expectedUrlOnError: &urlz.Url{
+				Scheme: "file",
+				Path:   pathz.MustParse("/usr/local/share"),
+			},
 		})
 	})
 
@@ -193,6 +199,11 @@ func TestUnitUrlAppend(t *testing.T) {
 			originalUrl: originalUrl,
 			appendPaths: []*pathz.Path{pathz.MustParse("../../c")},
 			expectedErr: "path escaped error: joining '/a/b' to '[../../c]' results in '/c' which is outside the base: error appending path to url http://example.com/a/b: [../../c]",
+			expectedUrlOnError: &urlz.Url{
+				Scheme: "http",
+				Host:   "example.com",
+				Path:   pathz.MustParse("/c"),
+			},
 		})
 	})
 
@@ -223,6 +234,11 @@ func TestUnitUrlAppend(t *testing.T) {
 			originalUrl: originalUrl,
 			appendPaths: []*pathz.Path{pathz.MustParse("/new/absolute/path")},
 			expectedErr: "path escaped error: joining '/base' to '[/new/absolute/path]' results in '/new/absolute/path' which is outside the base: error appending path to url http://example.com/base: [/new/absolute/path]",
+			expectedUrlOnError: &urlz.Url{
+				Scheme: "http",
+				Host:   "example.com",
+				Path:   pathz.MustParse("/new/absolute/path"),
+			},
 		})
 	})
 
