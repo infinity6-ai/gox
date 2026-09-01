@@ -1,9 +1,16 @@
 package httpzserverv2
 
-import "net/http"
+import (
+	"context"
+	"net/http"
+)
 
-type Handler interface {
-	HandleHttpz(resp *Resp, req *Req)
+type Handler func(ctx context.Context, w http.ResponseWriter, r *http.Request)
+
+type Filter func(next Handler) Handler
+
+func (s *Server) Push(filter Filter) {
+	s.Handler = filter(s.Handler)
 }
 
 func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {

@@ -11,9 +11,6 @@ import (
 	"github.com/infinity6-ai/gox/commonz/errorz"
 )
 
-// Filter is a function that wraps an http.Handler, commonly known as middleware.
-type Filter func(next http.Handler) http.Handler
-
 type Options struct {
 	LocalAddress string
 }
@@ -34,9 +31,8 @@ type Server struct {
 	Context  context.Context
 	Options  Options
 	listener net.Listener
-	// mux      *http.ServeMux
-	// filters []Filter
-	dfz *deferz.Deferz
+	Handler  Handler
+	dfz      *deferz.Deferz
 }
 
 func New(ctx context.Context, opts Options) *Server {
