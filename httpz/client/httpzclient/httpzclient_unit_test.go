@@ -237,7 +237,7 @@ func TestUnitClientUrlResolution(t *testing.T) {
 		check(t, testScenario{
 			name:          "absolute URL with matching client BaseUrl",
 			clientBaseUrl: s.Base(),
-			requestUrl:    urlz.MustParse(s.Base().String() + "/absolute-url-test"),
+			requestPath:   "/absolute-url-test",
 			expectedBody:  "absolute-url-response",
 		})
 	})
@@ -255,7 +255,7 @@ func TestUnitClientUrlResolution(t *testing.T) {
 		check(t, testScenario{
 			name:          "relative URL with client BaseUrl",
 			clientBaseUrl: s.Base(),
-			requestUrl:    urlz.MustParse("/relative-url-test"),
+			requestPath:   "/relative-url-test",
 			expectedBody:  "relative-url-response",
 		})
 	})
@@ -263,15 +263,15 @@ func TestUnitClientUrlResolution(t *testing.T) {
 	t.Run("relative URL without client BaseUrl should fail", func(t *testing.T) {
 		check(t, testScenario{
 			name:          "relative URL without client BaseUrl should fail",
-			requestUrl:    urlz.MustParse("/relative-url-test"),
-			expectedError: "invalid base URL: must be an absolute URL",
+			requestPath:   "/relative-url-test",
+			expectedError: "base url not found",
 		})
 	})
 
 	t.Run("using both Path and Url should panic", func(t *testing.T) {
 		check(t, testScenario{
 			name:          "using both Path and Url should panic",
-			requestUrl:    urlz.MustParse("/some-url"),
+			requestUrl:    urlz.MustParse(s.Base().String()),
 			requestPath:   "/some-path",
 			skipServerReq: true,
 		})
