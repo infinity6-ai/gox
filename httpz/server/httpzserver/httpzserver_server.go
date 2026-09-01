@@ -1,4 +1,4 @@
-package httpzserverv2
+package httpzserver
 
 import (
 	"context"
@@ -81,7 +81,6 @@ func (s *Server) serve() {
 		filter := s.filters[i]
 		next := h
 		h = func(ctx context.Context, resp *Resp, req *Req) {
-			println(i)
 			filter(ctx, resp, req, next)
 		}
 	}

@@ -1,4 +1,4 @@
-package httpzserverv2
+package httpzserver
 
 import (
 	"io"
@@ -10,6 +10,7 @@ import (
 )
 
 type Req struct {
+	Method  string
 	Path    *pathz.Path
 	Query   url.Values
 	Headers http.Header
@@ -17,6 +18,7 @@ type Req struct {
 }
 
 func (r *Req) fromHttpRequest(req *http.Request) {
+	r.Method = req.Method
 	r.Path = pathz.MustParse(req.URL.Path)
 	checker.True(r.Path.IsAbsolute(), "must be absolute: %s", r.Path)
 	r.Query = req.URL.Query()
