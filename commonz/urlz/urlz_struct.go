@@ -51,3 +51,26 @@ func (u *Url) String() string {
 	errorz.Check(err)
 	return provider.ToString(u)
 }
+
+func (u *Url) Clone() *Url {
+	return &Url{
+		Scheme:   u.Scheme,
+		User:     u.User,
+		Password: u.Password,
+		Host:     u.Host,
+		Port:     u.Port,
+		Path:     u.Path.Clone(),
+		Query:    u.Query,
+		Fragment: u.Fragment,
+	}
+}
+
+func (u *Url) Append(others ...*pathz.Path) (*Url, error) {
+	p, err := u.Path.Join(others...)
+	if err != nil {
+		return nil, fmt.Errorf("%w: error appending path to url %s: %s", err, u, others)
+	}
+	ret := u.Clone()
+	ret.Path = p
+	return ret, nil
+}
