@@ -38,6 +38,12 @@ func (u *Url) MustJoinPath(others ...*pathz.Path) *Url {
 	return ret
 }
 
+func MustParse(urlStr string) *Url {
+	ret, err := Parse(urlStr)
+	errorz.Check(err)
+	return ret
+}
+
 func Parse(urlStr string) (*Url, error) {
 	u, err := url.Parse(urlStr)
 	if err != nil {
