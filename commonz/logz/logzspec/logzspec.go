@@ -9,7 +9,7 @@ import (
 	"runtime/debug"
 	"time"
 
-	"go.code.infinity6.ai/platform/util/jsoner"
+	"github.com/infinity6-ai/gox/commonz/jsonz"
 )
 
 type ProviderLogger func(ctx context.Context, entry *Entry)
@@ -78,7 +78,7 @@ func parseParams(params map[string]any) map[string]string {
 		if ok {
 			value = formatError(errValue)
 		}
-		result[key] = jsoner.FormatString(value)
+		result[key] = jsonz.MustFormat(value).String()
 	}
 
 	return result

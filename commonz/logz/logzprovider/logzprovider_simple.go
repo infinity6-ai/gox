@@ -5,12 +5,13 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"maps"
 	"os"
+	"slices"
 	"time"
 
 	"github.com/infinity6-ai/gox/commonz/logz/logzcolor"
 	"github.com/infinity6-ai/gox/commonz/logz/logzspec"
-	"go.code.infinity6.ai/platform/util/mapz"
 	"golang.org/x/term"
 )
 
@@ -122,7 +123,7 @@ func apply(color logzcolor.Color, format string, a ...any) string {
 func applyMap(ck logzcolor.Color, cv logzcolor.Color, m map[string]string) string {
 	ret := "["
 
-	for i, k := range mapz.SortedKeys(m) {
+	for i, k := range slices.Sorted(maps.Keys(m)) {
 		v := m[k]
 		k = apply(ck, "%s", k)
 		v = apply(cv, "%s", v)

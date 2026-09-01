@@ -26,7 +26,7 @@ func MustParse[T any, I blobz.Data](data I) *T {
 	return res
 }
 
-func Format[T any](data *T) (blobz.Blob, error) {
+func Format(data any) (blobz.Blob, error) {
 	b, err := json.Marshal(data)
 	if err != nil {
 		return nil, fmt.Errorf("failed to marshal data: %w", err)
@@ -34,7 +34,7 @@ func Format[T any](data *T) (blobz.Blob, error) {
 	return blobz.New(b), nil
 }
 
-func MustFormat[T any](data *T) blobz.Blob {
+func MustFormat(data any) blobz.Blob {
 	res, err := Format(data)
 	errorz.Check(err)
 	return res
