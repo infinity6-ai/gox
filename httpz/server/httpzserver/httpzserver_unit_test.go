@@ -40,10 +40,10 @@ func TestUnitFilterAndHandlerInteraction(t *testing.T) {
 
 	// Second filter: uses WrapResponse to modify headers and inject content around the handler's output.
 	s.AddFilter(func(ctx context.Context, resp httpzserver.Resp, req *httpzserver.Req, next httpzserver.Handler) {
-		w := next.WrapResponse(ctx, resp, req, func(outHeaders http.Header) int {
+		w := next.WrapResponse(ctx, resp, req, func(outStatus int, outHeaders http.Header) int {
 			outHeaders.Set("b", "x2") // Overrides header from filter 1
 			outHeaders.Set("c", "x2") // Set by filter 2
-			return 0
+			return outStatus
 		}, func(outWriter io.Writer) io.Writer {
 			_, err := outWriter.Write([]byte("UUUU "))
 			errorz.Check(err)
@@ -114,14 +114,14 @@ func TestUnitFilterAndHandlerInteraction(t *testing.T) {
 
 func TestUnitRouting(t *testing.T) {
 	type testScenario struct {
-		name                string
-		registeredMethod    string
-		registeredPath      string
-		requestMethod       string
-		requestPath         string
-		expectedStatus      int
-		expectedBody        string
-		expectedParams      map[string]string
+		name                  string
+		registeredMethod      string
+		registeredPath        string
+		requestMethod         string
+		requestPath           string
+		expectedStatus        int
+		expectedBody          string
+		expectedParams        map[string]string
 		handlerShouldBeCalled bool
 	}
 
@@ -160,76 +160,76 @@ func TestUnitRouting(t *testing.T) {
 
 	t.Run("Exact match", func(t *testing.T) {
 		check(t, testScenario{
-			registeredMethod:    "GET",
-			registeredPath:      "/users/find",
-			requestMethod:       "GET",
-			requestPath:         "/users/find",
-			expectedStatus:      http.StatusOK,
-			expectedBody:        "found",
-			expectedParams:      map[string]string{},
+			registeredMethod:      "GET",
+			registeredPath:        "/users/find",
+			requestMethod:         "GET",
+			requestPath:           "/users/find",
+			expectedStatus:        http.StatusOK,
+			expectedBody:          "found",
+			expectedParams:        map[string]string{},
 			handlerShouldBeCalled: true,
 		})
 	})
 
 	t.Run("Path with parameters", func(t *testing.T) {
 		check(t, testScenario{
-			registeredMethod:    "GET",
-			registeredPath:      "/users/{id}/posts/{post_id}",
-			requestMethod:       "GET",
-			requestPath:         "/users/123/posts/abc",
-			expectedStatus:      http.StatusOK,
-			expectedBody:        "user 123, post abc",
-			expectedParams:      map[string]string{"id": "123", "post_id": "abc"},
+			registeredMethod:      "GET",
+			registeredPath:        "/users/{id}/posts/{post_id}",
+			requestMethod:         "GET",
+			requestPath:           "/users/123/posts/abc",
+			expectedStatus:        http.StatusOK,
+			expectedBody:          "user 123, post abc",
+			expectedParams:        map[string]string{"id": "123", "post_id": "abc"},
 			handlerShouldBeCalled: true,
 		})
 	})
 
 	t.Run("Prefix wildcard match", func(t *testing.T) {
 		check(t, testScenario{
-			registeredMethod:    "GET",
-			registeredPath:      "/static/*",
-			requestMethod:       "GET",
-			requestPath:         "/static/css/style.css",
-			expectedStatus:      http.StatusOK,
-			expectedBody:        "static file",
-			expectedParams:      map[string]string{},
+			registeredMethod:      "GET",
+			registeredPath:        "/static/*",
+			requestMethod:         "GET",
+			requestPath:           "/static/css/style.css",
+			expectedStatus:        http.StatusOK,
+			expectedBody:          "static file",
+			expectedParams:        map[string]string{},
 			handlerShouldBeCalled: true,
 		})
 	})
 
 	t.Run("Wildcard method match", func(t *testing.T) {
 		check(t, testScenario{
-			registeredMethod:    "*",
-			registeredPath:      "/any_method",
-			requestMethod:       "PUT",
-			requestPath:         "/any_method",
-			expectedStatus:      http.StatusOK,
-			expectedBody:        "any method allowed",
-			expectedParams:      map[string]string{},
+			registeredMethod:      "*",
+			registeredPath:        "/any_method",
+			requestMethod:         "PUT",
+			requestPath:           "/any_method",
+			expectedStatus:        http.StatusOK,
+			expectedBody:          "any method allowed",
+			expectedParams:        map[string]string{},
 			handlerShouldBeCalled: true,
 		})
 	})
 
 	t.Run("Not Found", func(t *testing.T) {
 		check(t, testScenario{
-			registeredMethod:    "GET",
-			registeredPath:      "/here",
-			requestMethod:       "GET",
-			requestPath:         "/not_here",
-			expectedStatus:      http.StatusNotFound,
-			expectedBody:        "Not Found",
+			registeredMethod:      "GET",
+			registeredPath:        "/here",
+			requestMethod:         "GET",
+			requestPath:           "/not_here",
+			expectedStatus:        http.StatusNotFound,
+			expectedBody:          "Not Found",
 			handlerShouldBeCalled: false,
 		})
 	})
 
 	t.Run("Method mismatch", func(t *testing.T) {
 		check(t, testScenario{
-			registeredMethod:    "POST",
-			registeredPath:      "/login",
-			requestMethod:       "GET",
-			requestPath:         "/login",
-			expectedStatus:      http.StatusNotFound, // Routes are method-specific
-			expectedBody:        "Not Found",
+			registeredMethod:      "POST",
+			registeredPath:        "/login",
+			requestMethod:         "GET",
+			requestPath:           "/login",
+			expectedStatus:        http.StatusNotFound, // Routes are method-specific
+			expectedBody:          "Not Found",
 			handlerShouldBeCalled: false,
 		})
 	})
@@ -246,7 +246,7 @@ func TestUnitServerLifecycle(t *testing.T) {
 		s.Listen()
 		require.NotNil(t, s.Addr())
 		require.True(t, strings.HasPrefix(s.Addr().String(), "127.0.0.1:") || strings.HasPrefix(s.Addr().String(), "[::1]:"), "address should be local")
-		
+
 		addr, ok := s.Addr().(*net.TCPAddr)
 		require.True(t, ok)
 		require.NotZero(t, addr.Port, "port should not be zero after listen")
