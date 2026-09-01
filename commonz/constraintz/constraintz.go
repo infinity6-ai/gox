@@ -5,6 +5,11 @@ package constraintz
 
 import "golang.org/x/exp/constraints"
 
+// Integer is a constraint that permits any integer type.
+type Integer interface {
+	constraints.Integer
+}
+
 // Numbers is a constraint that permits any integer or floating-point type.
 type Numbers interface {
 	constraints.Integer | constraints.Float
