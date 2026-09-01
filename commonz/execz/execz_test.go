@@ -7,11 +7,9 @@ import (
 
 	"github.com/infinity6-ai/gox/commonz/execz"
 	"github.com/infinity6-ai/gox/commonz/filez"
+	"github.com/infinity6-ai/gox/commonz/syncz/promise"
+	"github.com/infinity6-ai/gox/commonz/syncz/timerz"
 	"github.com/stretchr/testify/assert"
-	"go.code.infinity6.ai/platform/util"
-
-	"go.code.infinity6.ai/platform/util/promise"
-	"go.code.infinity6.ai/platform/util/syncz/timerz"
 )
 
 func TestUnitBasic(t *testing.T) {
@@ -44,7 +42,7 @@ func TestUnitKillSimple(t *testing.T) {
 		return nil, err
 	})
 
-	util.Sleep(50)
+	time.Sleep(50 * time.Millisecond)
 	runPromise := promise.Async(ctx, func() (any, error) {
 		err := cmd.Run()
 		return nil, err
