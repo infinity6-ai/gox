@@ -82,19 +82,23 @@ func TestUnitFszLs(t *testing.T) {
 	require.NoError(t, err)
 
 	// Paginate with max=2
-	stats1 := paginator.Paginate(ctx, 2)
+	stats1, err := paginator.Paginate(ctx, 2)
+	require.NoError(t, err)
 	require.Len(t, stats1, 2)
 
 	// Paginate with max=2
-	stats2 := paginator.Paginate(ctx, 2)
+	stats2, err := paginator.Paginate(ctx, 2)
+	require.NoError(t, err)
 	require.Len(t, stats2, 2)
 
 	// Paginate with max=2 (should get the last one)
-	stats3 := paginator.Paginate(ctx, 2)
+	stats3, err := paginator.Paginate(ctx, 2)
+	require.NoError(t, err)
 	require.Len(t, stats3, 1)
 
 	// Paginate again, should be empty
-	stats4 := paginator.Paginate(ctx, 2)
+	stats4, err := paginator.Paginate(ctx, 2)
+	require.NoError(t, err)
 	require.Len(t, stats4, 0)
 }
 

@@ -45,7 +45,7 @@ func Stat(ctx context.Context, url *urlz.Url) (*FileStat, error) {
 	if err != nil {
 		return nil, err
 	}
-	return p.Stat(ctx, url), nil
+	return p.Stat(ctx, url)
 }
 
 func Download(ctx context.Context, url *urlz.Url, callback func(found bool, headers http.Header, reader io.Reader)) error {
@@ -53,8 +53,7 @@ func Download(ctx context.Context, url *urlz.Url, callback func(found bool, head
 	if err != nil {
 		return err
 	}
-	p.Download(ctx, url, callback)
-	return nil
+	return p.Download(ctx, url, callback)
 }
 
 func Ls(ctx context.Context, url *urlz.Url) (Paginator, error) {
@@ -62,5 +61,5 @@ func Ls(ctx context.Context, url *urlz.Url) (Paginator, error) {
 	if err != nil {
 		return nil, err
 	}
-	return p.Ls(ctx, url), nil
+	return p.Ls(ctx, url)
 }

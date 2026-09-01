@@ -11,7 +11,6 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/infinity6-ai/gox/commonz/errorz"
 	"github.com/infinity6-ai/gox/commonz/filez"
 	"github.com/infinity6-ai/gox/commonz/urlz"
 )
@@ -22,32 +21,36 @@ func providerFile() FsProvider {
 
 type fileFs struct{}
 
-func (ff *fileFs) Stat(ctx context.Context, url *urlz.Url) *FileStat {
+func (ff *fileFs) Stat(ctx context.Context, url *urlz.Url) (*FileStat, error) {
 	p := url.Path.String()
 	info := filez.Stat(p)
 	if info == nil {
-		return nil
+		return nil, nil
 	}
 
 	// Read file for content type and MD5
 	file, err := os.Open(p)
-	errorz.Check(err)
+	if err != nil {
+		return nil, fmt.Errorf("failed to open file %s: %w", p, err)
+	}
 	defer file.Close()
 
 	// content type
 	contentTypeBuffer := make([]byte, 512)
 	n, err := file.Read(contentTypeBuffer)
 	if err != nil && err != io.EOF {
-		errorz.Check(err)
+		return nil, fmt.Errorf("failed to read file for content type detection %s: %w", p, err)
 	}
 	contentType := http.DetectContentType(contentTypeBuffer[:n])
 
 	// MD5
-	_, err = file.Seek(0, io.SeekStart)
-	errorz.Check(err)
+	if _, err = file.Seek(0, io.SeekStart); err != nil {
+		return nil, fmt.Errorf("failed to seek file %s: %w", p, err)
+	}
 	hash := md5.New()
-	_, err = io.Copy(hash, file)
-	errorz.Check(err)
+	if _, err = io.Copy(hash, file); err != nil {
+		return nil, fmt.Errorf("failed to copy file for md5 calculation %s: %w", p, err)
+	}
 	md5sum := hex.EncodeToString(hash.Sum(nil))
 
 	return &FileStat{
@@ -58,41 +61,47 @@ func (ff *fileFs) Stat(ctx context.Context, url *urlz.Url) *FileStat {
 		Etag:        md5sum,
 		CreatedAt:   filez.GetCreatedAt(p),
 		UpdatedAt:   filez.GetUpdatedAt(p),
-	}
+	}, nil
 }
 
 func (ff *fileFs) Upload(ctx context.Context, url *urlz.Url, reader io.Reader) error {
 	p := url.Path.String()
-	filez.CreateParentDirs(p)
-	filez.WriteFromReader(p, reader)
+	if err := filez.CreateParentDirs(p); err != nil {
+		return fmt.Errorf("failed to create parent directories for %s: %w", p, err)
+	}
+	if err := filez.WriteFromReader(p, reader); err != nil {
+		return fmt.Errorf("failed to write to file %s: %w", p, err)
+	}
 	return nil
 }
 
-func (ff *fileFs) Download(ctx context.Context, url *urlz.Url, callback func(found bool, headers http.Header, reader io.Reader)) {
+func (ff *fileFs) Download(ctx context.Context, url *urlz.Url, callback func(found bool, headers http.Header, reader io.Reader)) error {
 	p := url.Path.String()
 	info := filez.Stat(p)
 	if info == nil {
 		callback(false, nil, nil)
-		return
+		return nil
 	}
 
 	file, err := os.Open(p)
-	errorz.Check(err)
+	if err != nil {
+		return fmt.Errorf("failed to open file %s: %w", p, err)
+	}
 
 	headers := make(http.Header)
 	headers.Set("Content-Length", fmt.Sprintf("%d", info.Size()))
-	if fStat := ff.Stat(ctx, url); fStat != nil {
+	if fStat, err := ff.Stat(ctx, url); err == nil && fStat != nil {
 		headers.Set("Content-Type", fStat.ContentType)
 		headers.Set("Etag", fStat.Etag)
 	}
 
 	callback(true, headers, file)
+	return nil
 }
 
 func (ff *fileFs) Delete(ctx context.Context, url *urlz.Url) error {
 	p := url.Path.String()
-	filez.Remove(p)
-	return nil
+	return filez.Remove(p)
 }
 
 type filePaginator struct {
@@ -100,9 +109,9 @@ type filePaginator struct {
 	pos   int
 }
 
-func (p *filePaginator) Paginate(ctx context.Context, max int) []*FileStat {
+func (p *filePaginator) Paginate(ctx context.Context, max int) ([]*FileStat, error) {
 	if p.pos >= len(p.files) {
-		return nil
+		return nil, nil
 	}
 	end := p.pos + max
 	if end > len(p.files) {
@@ -110,21 +119,25 @@ func (p *filePaginator) Paginate(ctx context.Context, max int) []*FileStat {
 	}
 	results := p.files[p.pos:end]
 	p.pos = end
-	return results
+	return results, nil
 }
 
-func (ff *fileFs) Ls(ctx context.Context, prefix *urlz.Url) Paginator {
+func (ff *fileFs) Ls(ctx context.Context, prefix *urlz.Url) (Paginator, error) {
 	paginator := &filePaginator{
 		files: make([]*FileStat, 0),
 	}
 
 	dirPath := prefix.Path.String()
-	filez.Ls(dirPath, func(idx int, path string, f os.DirEntry) bool {
+	err := filez.Ls(dirPath, func(idx int, path string, f os.DirEntry) (bool, error) {
 		info, err := f.Info()
-		errorz.Check(err)
+		if err != nil {
+			return false, fmt.Errorf("failed to get file info for %s: %w", path, err)
+		}
 
 		u, err := urlz.Parse("file://" + filepath.ToSlash(path))
-		errorz.Check(err)
+		if err != nil {
+			return false, fmt.Errorf("failed to parse url for %s: %w", path, err)
+		}
 
 		fileStat := &FileStat{
 			Url:       *u,
@@ -133,10 +146,14 @@ func (ff *fileFs) Ls(ctx context.Context, prefix *urlz.Url) Paginator {
 			CreatedAt: filez.GetCreatedAt(path),
 		}
 		paginator.files = append(paginator.files, fileStat)
-		return false
+		return false, nil
 	})
 
-	return paginator
+	if err != nil {
+		return nil, err
+	}
+
+	return paginator, nil
 }
 
 func (ff *fileFs) SignGet(ctx context.Context, url *urlz.Url, duration time.Duration) (string, error) {

@@ -173,26 +173,26 @@ func GetUpdatedAt(path string) *time.Time {
 
 // CreateParentDirs creates all parent directories for the given file path.
 // It panics if any error occurs during directory creation.
-func CreateParentDirs(file string) {
+func CreateParentDirs(file string) error {
 	dir := Parent(file)
-	errorz.Check(os.MkdirAll(dir, os.ModePerm))
+	return os.MkdirAll(dir, os.ModePerm)
 }
 
 // Remove deletes the file or directory at the given path. It returns `true` if
 // the path was successfully removed, and `false` if the path did not exist or
 // was not a directory. It panics for any other error.
-func Remove(path string) bool {
+func Remove(path string) error {
 	err := os.Remove(path)
 	if err != nil {
 		e, ok := err.(*os.PathError)
 		if ok && e.Err == syscall.ENOENT {
-			return false
+			return nil
 		} else if ok && e.Err == syscall.ENOTDIR {
-			return false
+			return nil
 		}
-		errorz.Check(err)
+		return err
 	}
-	return true
+	return nil
 }
 
 // RmTree recursively deletes the directory at the given path, along with all
@@ -227,12 +227,12 @@ func CreateTempFile(name string, content []byte) string {
 // CreateFileFromPath creates a new file at the given path, including any necessary
 // parent directories. It returns the created `*os.File`. It panics if any error
 // occurs.
-func CreateFileFromPath(path string) *os.File {
-	CreateParentDirs(path)
+func CreateFileFromPath(path string) (*os.File, error) {
+	if err := CreateParentDirs(path); err != nil {
+		return nil, err
+	}
 
-	file, err := os.Create(path)
-	errorz.Check(err)
-	return file
+	return os.Create(path)
 }
 
 // -----------------------------------------------------------------------------
@@ -259,40 +259,50 @@ func Write(dest string, payload []byte) {
 
 // WriteFile writes the given data to a file at the specified path. It creates
 // parent directories if they do not exist. It panics if any error occurs.
-func WriteFile(file string, data []byte) {
-	CreateParentDirs(file)
-	err := os.WriteFile(file, data, os.ModePerm)
-	errorz.Check(err)
+func WriteFile(file string, data []byte) error {
+	if err := CreateParentDirs(file); err != nil {
+		return err
+	}
+	return os.WriteFile(file, data, os.ModePerm)
 }
 
 // WriteFromReader writes the content from the given `io.Reader` to a file at
 // the specified path. It panics if any error occurs.
-func WriteFromReader(path string, reader io.Reader) {
+func WriteFromReader(path string, reader io.Reader) error {
 	file, err := os.Create(path)
-	errorz.Check(err)
+	if err != nil {
+		return err
+	}
 	defer file.Close()
 	buf := make([]byte, 8*1024)
 	_, err = io.CopyBuffer(file, reader, buf)
-	errorz.Check(err)
+	return err
 }
 
 // Move moves a file from `fileFrom` to `fileTo`. It creates parent directories
 // for the destination if they do not exist. It panics if any error occurs.
-func Move(fileFrom string, fileTo string) {
-	CreateParentDirs(fileTo)
+func Move(fileFrom string, fileTo string) error {
+	if err := CreateParentDirs(fileTo); err != nil {
+		return err
+	}
 
 	in, err := os.Open(fileFrom)
-	errorz.Check(err)
+	if err != nil {
+		return err
+	}
 	defer in.Close()
 
 	out, err := os.Create(fileTo)
-	errorz.Check(err)
+	if err != nil {
+		return err
+	}
 	defer out.Close()
 
-	_, err = io.Copy(out, in)
-	errorz.Check(err)
+	if _, err = io.Copy(out, in); err != nil {
+		return err
+	}
 
-	Remove(fileFrom)
+	return Remove(fileFrom)
 }
 
 // -----------------------------------------------------------------------------
@@ -385,19 +395,24 @@ func Walk(base string, callback func(path string, f fs.DirEntry) bool) {
 
 // Ls lists the contents of a directory and calls the provided `callback` function
 // for each entry. The callback returns `true` to stop the listing.
-func Ls(dir string, callback func(idx int, path string, f fs.DirEntry) bool) {
+func Ls(dir string, callback func(idx int, path string, f fs.DirEntry) (bool, error)) error {
 	files, err := os.ReadDir(dir)
 	if err != nil {
 		if !os.IsNotExist(err) {
-			errorz.Check(err)
+			return err
 		}
 	}
 	for idx, file := range files {
 		path := filepath.Join(dir, file.Name())
-		if callback(idx, path, file) {
-			return
+		stop, err := callback(idx, path, file)
+		if err != nil {
+			return err
+		}
+		if stop {
+			return nil
 		}
 	}
+	return nil
 }
 
 // DirList returns a list of file names in the given directory that match the

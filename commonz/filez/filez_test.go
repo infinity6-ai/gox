@@ -25,22 +25,23 @@ func TestUnitRemove(t *testing.T) {
 	filePath := tmpFile.Name()
 	tmpFile.Close()
 
-	assert.True(t, filez.Remove(filePath), "Should return true for existing file")
+	assert.NoError(t, filez.Remove(filePath), "Should not return error for existing file")
 	_, err = os.Stat(filePath)
 	assert.True(t, os.IsNotExist(err), "File should not exist after removal")
 
 	// Test removing a non-existent file
-	assert.False(t, filez.Remove("/non/existent/file/path"), "Should return false for non-existent file")
+	assert.NoError(t, filez.Remove("/non/existent/file/path"), "Should not return error for non-existent file")
 
 	// Test removing a non-existent file in an existing directory
-	assert.False(t, filez.Remove(filepath.Join(os.TempDir(), "non-existent-file")), "Should return false for non-existent file in existing dir")
+	assert.NoError(t, filez.Remove(filepath.Join(os.TempDir(), "non-existent-file")), "Should not return error for non-existent file in existing dir")
 }
 
 func TestUnitCreateParentDirs(t *testing.T) {
 	tmpDir := t.TempDir()
 	newFilePath := filepath.Join(tmpDir, "new", "dir", "file.txt")
 
-	filez.CreateParentDirs(newFilePath)
+	err := filez.CreateParentDirs(newFilePath)
+	assert.NoError(t, err)
 
 	parentDir := filepath.Dir(newFilePath)
 	info, err := os.Stat(parentDir)
@@ -162,12 +163,13 @@ func TestUnitLs(t *testing.T) {
 	os.Mkdir(filepath.Join(dir, "subdir"), 0755)
 
 	var entries []string
-	callback := func(idx int, path string, f fs.DirEntry) bool {
+	callback := func(idx int, path string, f fs.DirEntry) (bool, error) {
 		entries = append(entries, f.Name())
-		return false
+		return false, nil
 	}
 
-	filez.Ls(dir, callback)
+	err := filez.Ls(dir, callback)
+	assert.NoError(t, err)
 
 	assert.ElementsMatch(t, []string{"file1.txt", "file2.log", "subdir"}, entries)
 }
@@ -258,7 +260,8 @@ func TestUnitMove(t *testing.T) {
 	err := os.WriteFile(fileFrom, content, 0644)
 	assert.NoError(t, err)
 
-	filez.Move(fileFrom, fileTo)
+	err = filez.Move(fileFrom, fileTo)
+	assert.NoError(t, err)
 
 	// Check if source is gone
 	_, err = os.Stat(fileFrom)
