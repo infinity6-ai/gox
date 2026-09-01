@@ -6,6 +6,7 @@ import (
 	"net/url"
 
 	"github.com/infinity6-ai/gox/commonz/pathz"
+	"github.com/infinity6-ai/gox/commonz/validation/checker"
 )
 
 type Req struct {
@@ -17,6 +18,7 @@ type Req struct {
 
 func (r *Req) fromHttpRequest(req *http.Request) {
 	r.Path = pathz.MustParse(req.URL.Path)
+	checker.True(r.Path.IsAbsolute(), "must be absolute: %s", r.Path)
 	r.Query = req.URL.Query()
 	r.Headers = req.Header
 	r.Body = req.Body
