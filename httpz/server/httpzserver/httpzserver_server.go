@@ -8,8 +8,10 @@ import (
 	"net/http"
 	"os"
 
+	"github.com/infinity6-ai/gox/commonz/constraintz"
 	"github.com/infinity6-ai/gox/commonz/deferz"
 	"github.com/infinity6-ai/gox/commonz/errorz"
+	"github.com/infinity6-ai/gox/commonz/syncz/promise"
 )
 
 type Options struct {
@@ -35,15 +37,23 @@ type Server struct {
 	filters         []Filter
 	patternHandlers []PatternHandler
 	dfz             *deferz.Deferz
+	servePromise    *promise.Promise[constraintz.Void]
+	httpServer      *http.Server
 }
 
 func New(ctx context.Context, opts Options) *Server {
 	opts.fix()
-	return &Server{
+	ret := &Server{
 		Context: ctx,
 		Options: opts,
 		dfz:     deferz.New(ctx),
 	}
+	ret.dfz.Add(func() {
+		if ret.servePromise != nil {
+			ret.servePromise.GetV()
+		}
+	})
+	return ret
 }
 
 func (s *Server) Base() string {
@@ -68,14 +78,26 @@ func (s *Server) Listen() {
 }
 
 func (s *Server) Close() error {
-	return s.dfz.Close()
+	if s.dfz != nil {
+		return s.dfz.Close()
+	}
+	return nil
 }
 
-func (s *Server) serve() {
+func (s *Server) internalServe() {
+	err := s.httpServer.Serve(s.listener)
+	if err != nil && err != http.ErrServerClosed {
+		panic(fmt.Errorf("http server failed: %w", err))
+	}
+}
+
+func (s *Server) startServer() {
 	if s.listener == nil {
 		panic("not configured")
 	}
-
+	if s.httpServer != nil {
+		panic("already configured")
+	}
 	var h Handler
 	h = s.route
 	for i := len(s.filters) - 1; i >= 0; i-- {
@@ -86,7 +108,7 @@ func (s *Server) serve() {
 		}
 	}
 
-	httpServer := &http.Server{
+	s.httpServer = &http.Server{
 		Handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			req := &Req{}
 			req.fromHttpRequest(r)
@@ -105,13 +127,8 @@ func (s *Server) serve() {
 	}
 
 	s.dfz.Add(func() {
-		_ = httpServer.Shutdown(s.Context)
+		_ = s.httpServer.Shutdown(s.Context)
 	})
-
-	err := httpServer.Serve(s.listener)
-	if err != nil && err != http.ErrServerClosed {
-		panic(fmt.Errorf("http server failed: %w", err))
-	}
 }
 
 // Serve runs the server in the current goroutine, blocking until the server is
@@ -120,7 +137,8 @@ func (s *Server) Serve() {
 	if s.listener == nil {
 		panic("not configured")
 	}
-	s.serve()
+	s.startServer()
+	s.internalServe()
 }
 
 // Start runs the server in a new goroutine, making it non-blocking.
@@ -128,5 +146,6 @@ func (s *Server) Start() {
 	if s.listener == nil {
 		panic("not configured")
 	}
-	go s.Serve()
+	s.startServer()
+	s.servePromise = promise.AsyncV(s.Context, s.internalServe)
 }

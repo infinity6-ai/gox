@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"sync"
 
+	"github.com/infinity6-ai/gox/commonz/constraintz"
 	"github.com/infinity6-ai/gox/commonz/errorz"
 	"github.com/infinity6-ai/gox/commonz/logz"
 )
@@ -105,8 +106,8 @@ func Async[T any](ctx context.Context, fn func() (T, error)) *Promise[T] {
 	return p
 }
 
-func AsyncV(ctx context.Context, fn func()) *Promise[any] {
-	return Async(ctx, func() (any, error) {
+func AsyncV(ctx context.Context, fn func()) *Promise[constraintz.Void] {
+	return Async(ctx, func() (constraintz.Void, error) {
 		fn()
 		return nil, nil
 	})

@@ -26,13 +26,10 @@ var allowedMethods = []string{
 
 type Handler func(ctx context.Context, resp Resp, req *Req)
 
-func (h Handler) WrapResponse(ctx context.Context, resp Resp, req *Req, fixHeaders func(outHeaders http.Header) int, fixWriter func(outWriter io.Writer) io.Writer) io.Writer {
+func (h Handler) WrapResponse(ctx context.Context, resp Resp, req *Req, fixHeaders func(outStatus int, outHeaders http.Header) int, fixWriter func(outWriter io.Writer) io.Writer) io.Writer {
 	var rWriter io.Writer
 	nResp := func(nStatus int, nHeaders http.Header) io.Writer {
-		status := fixHeaders(nHeaders)
-		if status == 0 {
-			status = nStatus
-		}
+		status := fixHeaders(nStatus, nHeaders)
 		rWriter = resp(status, nHeaders)
 		rWriter = fixWriter(rWriter)
 		return rWriter
