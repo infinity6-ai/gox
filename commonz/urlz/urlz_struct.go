@@ -65,6 +65,33 @@ func (u *Url) Clone() *Url {
 	}
 }
 
+// IsBaseOf checks if the current URL (u) is a base for the provided 'other' URL.
+// It is considered a base if:
+// 1. The Scheme, User, Password, Host, and Port are identical.
+// 2. The Path of 'u' is a base of 'other.Path' (as determined by pathz.IsBaseOf).
+// Query and Fragment are not considered in this check.
+func (u *Url) IsBaseOf(other *Url) bool {
+	if u.Scheme != other.Scheme {
+		return false
+	}
+	if u.User != other.User {
+		return false
+	}
+	if u.Password != other.Password {
+		return false
+	}
+	if u.Host != other.Host {
+		return false
+	}
+	if u.Port != other.Port {
+		return false
+	}
+	if u.Path == nil || other.Path == nil {
+		return u.Path == other.Path
+	}
+	return u.Path.IsBaseOf(other.Path)
+}
+
 func (u *Url) JoinPath(others ...*pathz.Path) (*Url, error) {
 	p, err := u.Path.Join(others...)
 	if err != nil {
