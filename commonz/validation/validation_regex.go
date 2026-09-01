@@ -2,13 +2,12 @@ package validation
 
 import (
 	"regexp"
-
-	"github.com/infinity6-ai/gox/commonz/errorz"
 )
 
-func StringRegex(pattern, value, msg string, args ...any) error {
-	matched, err := regexp.MatchString(pattern, value)
-	errorz.Check(err)
+func RegexMatch(pattern *regexp.Regexp, value, msg string, args ...any) error {
+	// matched, err := regexp.MatchString(pattern, value)
+	// errorz.Check(err)
+	matched := pattern.MatchString(value)
 	if !matched {
 		return newError("validation fail StringRegex", map[string]any{"regex": pattern, "actual": value}, msg, args...)
 	}

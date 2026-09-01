@@ -178,20 +178,6 @@ func TestUnitLessOrEqual(t *testing.T) {
 	})
 }
 
-func TestUnitStringRegex(t *testing.T) {
-	t.Run("should not panic when regex matches", func(t *testing.T) {
-		require.NotPanics(t, func() {
-			StringRegex(`^\d+$`, "123", "should match regex")
-		})
-	})
-
-	t.Run("should panic when regex does not match", func(t *testing.T) {
-		require.Panics(t, func() {
-			StringRegex(`^\d+$`, "abc", "should match regex")
-		})
-	})
-}
-
 func TestUnitEmpty(t *testing.T) {
 	t.Run("should not panic when slice is empty", func(t *testing.T) {
 		require.NotPanics(t, func() {

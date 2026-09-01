@@ -60,12 +60,6 @@ func LessOrEqual[T constraints.Ordered](value, threshold T, msg string, args ...
 	errorz.Check(validation.LessOrEqual(value, threshold, msg, args...))
 }
 
-// From validation/validation_regex.go
-
-func StringRegex(pattern, value, msg string, args ...any) {
-	errorz.Check(validation.StringRegex(pattern, value, msg, args...))
-}
-
 // From validation/validation_slices.go
 
 func Empty[S ~[]E, E any](actual S, msg string, args ...any) {
