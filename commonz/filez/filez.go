@@ -16,7 +16,8 @@ import (
 
 	"github.com/infinity6-ai/gox/commonz/constraintz/blobz"
 	"github.com/infinity6-ai/gox/commonz/errorz"
-	"go.code.infinity6.ai/platform/util/strconvz"
+	"github.com/infinity6-ai/gox/commonz/strconvz"
+
 	"golang.org/x/sys/unix"
 )
 
@@ -58,7 +59,7 @@ func Write(dest string, payload []byte) {
 	fd := -1
 	if strings.HasPrefix(dest, "@") {
 		fdStr := strings.TrimPrefix(dest, "@")
-		fd = strconvz.ParseInt(fdStr)
+		fd = strconvz.MustParseNumber[int](fdStr)
 	} else {
 		file, err := os.OpenFile(dest, os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0644)
 		errorz.Check(err)
