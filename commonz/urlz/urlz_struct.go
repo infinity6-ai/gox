@@ -1,6 +1,9 @@
 package urlz
 
 import (
+	"bytes"
+	"encoding/gob"
+	"encoding/json"
 	"fmt"
 	"net/url"
 
@@ -44,12 +47,22 @@ func Parse(urlStr string) (*Url, error) {
 	return ret, err
 }
 
-func (u *Url) String() string {
+func (u *Url) ToString() (string, error) {
 	provider, err := getProvider(u.Scheme)
-	errorz.Check(err)
+	if err != nil {
+		return "", err
+	}
 	err = provider.Validation(u)
+	if err != nil {
+		return "", err
+	}
+	return provider.ToString(u), nil
+}
+
+func (u *Url) String() string {
+	s, err := u.ToString()
 	errorz.Check(err)
-	return provider.ToString(u)
+	return s
 }
 
 func (u *Url) Clone() *Url {
@@ -103,4 +116,56 @@ func (u *Url) JoinPath(others ...*pathz.Path) (*Url, error) {
 		ret.Path = p
 	}
 	return ret, err
+}
+
+func (u *Url) GobEncode() ([]byte, error) {
+	s, err := u.ToString()
+	if err != nil {
+		return nil, err
+	}
+	var buf bytes.Buffer
+	if err := gob.NewEncoder(&buf).Encode(s); err != nil {
+		return nil, fmt.Errorf("cannot marshal url to gob: %w", err)
+	}
+	return buf.Bytes(), nil
+}
+
+func (u *Url) GobDecode(data []byte) error {
+	var s string
+	buf := bytes.NewBuffer(data)
+	if err := gob.NewDecoder(buf).Decode(&s); err != nil {
+		return fmt.Errorf("cannot unmarshal url from gob: %w", err)
+	}
+
+	parsedUrl, err := Parse(s)
+	if err != nil {
+		return fmt.Errorf("cannot parse url from gob: %w", err)
+	}
+
+	*u = *parsedUrl
+	return nil
+}
+
+func (u *Url) MarshalJSON() ([]byte, error) {
+	s, err := u.ToString()
+	if err != nil {
+		return nil, err
+	}
+	return json.Marshal(s)
+}
+
+func (u *Url) UnmarshalJSON(data []byte) error {
+	var s string
+	if err := json.Unmarshal(data, &s); err != nil {
+		return fmt.Errorf("cannot unmarshal url from json: %w", err)
+	}
+	if len(s) == 0 {
+		return nil
+	}
+	parsedUrl, err := Parse(s)
+	if err != nil {
+		return fmt.Errorf("cannot parse url from json: %w", err)
+	}
+	*u = *parsedUrl
+	return nil
 }

@@ -55,7 +55,6 @@ func (p *Path) Validate(opts ValidateOptions) error {
 func (p *Path) ValidateAbsoluteFile() error {
 	return p.Validate(ValidateOptions{
 		Absolute: new(true),
-		Empty:    new(false),
 		Wildchar: false,
 	})
 }
