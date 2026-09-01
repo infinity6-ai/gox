@@ -76,9 +76,7 @@ func (s *Server) serve() {
 	}
 
 	var h Handler
-	h = func(ctx context.Context, resp *Resp, req *Req) {
-		panic("finish it AAAA")
-	}
+	h = s.route
 	for i := len(s.filters) - 1; i >= 0; i-- {
 		filter := s.filters[i]
 		next := h

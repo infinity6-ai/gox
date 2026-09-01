@@ -41,3 +41,24 @@ func (s *Server) AddHandler(method string, pattern string, handler Handler) {
 	}
 	s.patternHandlers = append(s.patternHandlers, *ph)
 }
+
+func (s *Server) route(ctx context.Context, resp *Resp, req *Req) {
+	actualParts := req.Path.Parts()
+	for _, ph := range s.patternHandlers {
+		match(ph.Pattern.Parts(), actualParts)
+	}
+	panic("unimplemented")
+}
+
+func match(patternParts, actualParts []string) (map[string]string, bool) {
+	for i, patternPart := range patternParts {
+		if len(actualParts) <= i {
+			return nil, false
+		}
+		actualPart := actualParts[i]
+		if patternPart != actualPart {
+			return nil, false
+		}
+	}
+	return nil, true
+}
