@@ -19,16 +19,16 @@ func TestUnitListen(t *testing.T) {
 
 	s.Push(func(next httpzserverv2.Handler) httpzserverv2.Handler {
 		return func(ctx context.Context, resp *httpzserverv2.Resp, req *httpzserverv2.Req) {
-			resp.Status = http.StatusBadRequest
-			resp.Headers.Set("a", "x1")
-			resp.Write([]byte("nok"))
+			resp.Headers.Set("b", "x2")
+			next(ctx, resp, req)
 		}
 	})
 
 	s.Push(func(next httpzserverv2.Handler) httpzserverv2.Handler {
 		return func(ctx context.Context, resp *httpzserverv2.Resp, req *httpzserverv2.Req) {
-			resp.Headers.Set("b", "x2")
-			next(ctx, resp, req)
+			resp.Status = http.StatusBadRequest
+			resp.Headers.Set("a", "x1")
+			resp.Write([]byte("nok"))
 		}
 	})
 
