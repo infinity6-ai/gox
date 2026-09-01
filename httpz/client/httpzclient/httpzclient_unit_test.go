@@ -125,14 +125,9 @@ func TestUnitClientPathResolution(t *testing.T) {
 	t.Run("with path prefix and no trailing slash", func(t *testing.T) {
 		client := httpzclient.New(ctx, httpzclient.Options{BaseUrl: s.Base().MustJoinPathString("/api/v1")})
 		req := httpzclient.NewReq("GET", "/test")
-		resp, err := client.Do(req)
-		require.NoError(t, err)
-		defer resp.Body.Close()
-
-		require.Equal(t, http.StatusOK, resp.StatusCode)
-		respBody, err := io.ReadAll(resp.Body)
-		require.NoError(t, err)
-		require.Equal(t, "path-prefix-test", string(respBody))
+		_, err := client.Do(req)
+		require.Error(t, err)
+		require.Contains(t, err.Error(), "path escaped error")
 	})
 
 	t.Run("without path prefix", func(t *testing.T) {
