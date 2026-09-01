@@ -42,11 +42,17 @@ type Server struct {
 
 func New(ctx context.Context, opts Options) *Server {
 	opts.fix()
-	return &Server{
+	ret := &Server{
 		Context: ctx,
 		Options: opts,
 		dfz:     deferz.New(ctx),
 	}
+	ret.dfz.Add(func() {
+		if ret.servePromise != nil {
+			ret.servePromise.GetV()
+		}
+	})
+	return ret
 }
 
 func (s *Server) Base() string {
@@ -106,10 +112,6 @@ func (s *Server) serve() {
 			return s.Context
 		},
 	}
-
-	s.dfz.Add(func() {
-		_ = s.listener.Close()
-	})
 
 	s.dfz.Add(func() {
 		_ = httpServer.Shutdown(s.Context)
