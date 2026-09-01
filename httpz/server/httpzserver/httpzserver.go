@@ -40,6 +40,10 @@ type Server struct {
 	dfz      *deferz.Deferz
 }
 
+func (s *Server) Base() string {
+	return fmt.Sprintf("http://%s", s.Addr())
+}
+
 func New(ctx context.Context, opts Options) *Server {
 	opts.fix()
 	return &Server{

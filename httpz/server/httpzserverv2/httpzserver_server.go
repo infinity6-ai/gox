@@ -34,9 +34,9 @@ type Server struct {
 	Context  context.Context
 	Options  Options
 	listener net.Listener
-	mux      *http.ServeMux
-	filters  []Filter
-	dfz      *deferz.Deferz
+	// mux      *http.ServeMux
+	filters []Filter
+	dfz     *deferz.Deferz
 }
 
 func New(ctx context.Context, opts Options) *Server {
@@ -45,7 +45,7 @@ func New(ctx context.Context, opts Options) *Server {
 		Context: ctx,
 		Options: opts,
 		dfz:     deferz.New(ctx),
-		mux:     http.NewServeMux(),
+		// mux:     http.NewServeMux(),
 	}
 }
 
@@ -54,27 +54,27 @@ func (s *Server) AddHandlerPrefix(p string, handler http.Handler) {
 	// s.mux.Handle(prefix, handler)
 }
 
-// AddHandlerPrefixFunc registers a handler function for the given prefix.
-func (s *Server) AddHandlerPrefixFunc(prefix string, handlerFunc http.HandlerFunc) {
-	s.AddHandlerPrefix(prefix, handlerFunc)
-}
+// // AddHandlerPrefixFunc registers a handler function for the given prefix.
+// func (s *Server) AddHandlerPrefixFunc(prefix string, handlerFunc http.HandlerFunc) {
+// 	s.AddHandlerPrefix(prefix, handlerFunc)
+// }
 
-// AddHandlerPattern registers a handler for the given pattern.
-// The pattern can include wildcards, like /users/{id}.
-func (s *Server) AddHandlerPattern(pattern string, handler http.Handler) {
-	s.mux.Handle(pattern, handler)
-}
+// // AddHandlerPattern registers a handler for the given pattern.
+// // The pattern can include wildcards, like /users/{id}.
+// func (s *Server) AddHandlerPattern(pattern string, handler http.Handler) {
+// 	s.mux.Handle(pattern, handler)
+// }
 
-// AddHandlerPatternFunc registers a handler function for the given pattern.
-func (s *Server) AddHandlerPatternFunc(pattern string, handlerFunc http.HandlerFunc) {
-	s.AddHandlerPattern(pattern, handlerFunc)
-}
+// // AddHandlerPatternFunc registers a handler function for the given pattern.
+// func (s *Server) AddHandlerPatternFunc(pattern string, handlerFunc http.HandlerFunc) {
+// 	s.AddHandlerPattern(pattern, handlerFunc)
+// }
 
-// AddFilter adds a new filter to the server's filter chain.
-// Filters are applied in the reverse order they are added.
-func (s *Server) AddFilter(filter Filter) {
-	s.filters = append(s.filters, filter)
-}
+// // AddFilter adds a new filter to the server's filter chain.
+// // Filters are applied in the reverse order they are added.
+// func (s *Server) AddFilter(filter Filter) {
+// 	s.filters = append(s.filters, filter)
+// }
 
 func (s *Server) Addr() net.Addr {
 	if s.listener == nil {
@@ -98,13 +98,16 @@ func (s *Server) Close() error {
 }
 
 func (s *Server) serve() {
-	var handler http.Handler = s.mux
-	for i := len(s.filters) - 1; i >= 0; i-- {
-		handler = s.filters[i](handler)
-	}
+	// var handler http.Handler = s.mux
+	// for i := len(s.filters) - 1; i >= 0; i-- {
+	// 	handler = s.filters[i](handler)
+	// }
 
 	httpServer := &http.Server{
-		Handler: handler,
+		Handler: s,
+		BaseContext: func(l net.Listener) context.Context {
+			return s.Context
+		},
 	}
 
 	s.dfz.Add(func() {
@@ -113,7 +116,7 @@ func (s *Server) serve() {
 
 	err := httpServer.Serve(s.listener)
 	if err != nil && err != http.ErrServerClosed {
-		errorz.Check(fmt.Errorf("http server failed: %w", err))
+		panic(fmt.Errorf("http server failed: %w", err))
 	}
 }
 
