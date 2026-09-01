@@ -28,7 +28,7 @@ func TestUnitFszFileProvider(t *testing.T) {
 	u, err := urlz.Parse("file://" + filePath)
 	require.NoError(t, err)
 
-	err = Upload(ctx, u, strings.NewReader(content))
+	err = Upload(ctx, u, nil, strings.NewReader(content))
 	require.NoError(t, err)
 
 	// 2. Stat the file
@@ -155,4 +155,113 @@ func TestUnitDownloadCallbackReader(t *testing.T) {
 	})
 	require.NoError(t, err)
 	require.Equal(t, content, downloadedData.String())
+}
+
+func TestUnitFszCopy(t *testing.T) {
+	tmpDir := filez.CreateTempDir("fsz-copy-test")
+	defer os.RemoveAll(tmpDir)
+
+	ctx := context.Background()
+
+	type testScenario struct {
+		name          string
+		srcContent    string
+		srcFilename   string
+		destFilename  string
+		expectError   bool
+		expectedError string
+	}
+
+	check := func(t *testing.T, s testScenario) {
+		t.Helper()
+
+		srcPath := filepath.Join(tmpDir, s.srcFilename)
+		destPath := filepath.Join(tmpDir, s.destFilename)
+
+		// Create source file if content is provided
+		if s.srcContent != "" {
+			err := os.WriteFile(srcPath, []byte(s.srcContent), 0644)
+			require.NoError(t, err)
+		}
+
+		srcURL, err := urlz.Parse("file://" + srcPath)
+		require.NoError(t, err)
+		destURL, err := urlz.Parse("file://" + destPath)
+		require.NoError(t, err)
+
+		err = Copy(ctx, srcURL, destURL)
+
+		if s.expectError {
+			require.Error(t, err)
+			if s.expectedError != "" {
+				require.Contains(t, err.Error(), s.expectedError)
+			}
+			// Ensure destination file does not exist if copy failed as expected
+			_, statErr := os.Stat(destPath)
+			require.True(t, os.IsNotExist(statErr), "Destination file should not exist if copy failed")
+		} else {
+			require.NoError(t, err)
+
+			// Verify destination file exists and content is correct
+			destContent, err := os.ReadFile(destPath)
+			require.NoError(t, err)
+			require.Equal(t, s.srcContent, string(destContent))
+
+			// Verify Stat on destination
+			stat, err := Stat(ctx, destURL)
+			require.NoError(t, err)
+			require.NotNil(t, stat)
+			require.Equal(t, uint64(len(s.srcContent)), stat.Size)
+		}
+	}
+
+	t.Run("Copy existing file", func(t *testing.T) {
+		check(t, testScenario{
+			name:        "Copy existing file",
+			srcContent:  "content for source file",
+			srcFilename: "src.txt",
+			destFilename: "dest.txt",
+			expectError: false,
+		})
+	})
+
+	t.Run("Copy non-existent source file", func(t *testing.T) {
+		check(t, testScenario{
+			name:          "Copy non-existent source file",
+			srcContent:    "", // Means source file is not created
+			srcFilename:   "nonexistent_src.txt",
+			destFilename:  "nonexistent_dest.txt",
+			expectError:   true,
+			expectedError: "failed to open source file",
+		})
+	})
+
+	t.Run("Copy to a new directory", func(t *testing.T) {
+		check(t, testScenario{
+			name:        "Copy to a new directory",
+			srcContent:  "content for another source",
+			srcFilename: "src2.txt",
+			destFilename: "newdir/dest2.txt",
+			expectError: false,
+		})
+	})
+
+	t.Run("Overwrite existing destination file", func(t *testing.T) {
+		// Create a destination file with different content first
+		existingDestPath := filepath.Join(tmpDir, "overwrite_dest.txt")
+		err := os.WriteFile(existingDestPath, []byte("original content"), 0644)
+		require.NoError(t, err)
+
+		check(t, testScenario{
+			name:        "Overwrite existing destination file",
+			srcContent:  "new content to overwrite",
+			srcFilename: "overwrite_src.txt",
+			destFilename: "overwrite_dest.txt",
+			expectError: false,
+		})
+		// Verify the content is overwritten
+		overwrittenContent, err := os.ReadFile(existingDestPath)
+		require.NoError(t, err)
+		require.Equal(t, "new content to overwrite", string(overwrittenContent))
+	})
 }

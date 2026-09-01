@@ -32,12 +32,12 @@ func Delete(ctx context.Context, url *urlz.Url) error {
 	return p.Delete(ctx, url)
 }
 
-func Upload(ctx context.Context, url *urlz.Url, reader io.Reader) error {
+func Upload(ctx context.Context, url *urlz.Url, headers http.Header, reader io.Reader) error {
 	p, err := getProvider(url.Scheme)
 	if err != nil {
 		return err
 	}
-	return p.Upload(ctx, url, reader)
+	return p.Upload(ctx, url, headers, reader)
 }
 
 func Stat(ctx context.Context, url *urlz.Url) (*FileStat, error) {
@@ -62,4 +62,36 @@ func Ls(ctx context.Context, url *urlz.Url) (Paginator, error) {
 		return nil, err
 	}
 	return p.Ls(ctx, url)
+}
+
+func Copy(ctx context.Context, src *urlz.Url, dest *urlz.Url) error {
+	if src.Scheme != dest.Scheme {
+		srcProvider, err := getProvider(src.Scheme)
+		if err != nil {
+			return err
+		}
+		destProvider, err := getProvider(dest.Scheme)
+		if err != nil {
+			return err
+		}
+		var uploadErr error
+		err = srcProvider.Download(ctx, src, func(found bool, headers http.Header, reader io.Reader) {
+			// headers = CopyHeaders(headers, nil)
+			uploadErr = destProvider.Upload(ctx, dest, headers, reader)
+		})
+
+		if err != nil {
+			return err
+		}
+		if uploadErr != nil {
+			return uploadErr
+		}
+		return nil
+	}
+
+	prv, err := getProvider(src.Scheme)
+	if err != nil {
+		return err
+	}
+	return prv.Copy(ctx, src, dest)
 }
