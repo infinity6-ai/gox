@@ -110,7 +110,7 @@ func TestUnitClientPathResolution(t *testing.T) {
 	s.Start()
 
 	t.Run("with path prefix and trailing slash", func(t *testing.T) {
-		client := httpzclient.New(ctx, httpzclient.Options{BaseUrl: s.Base() + "/api/v1/"})
+		client := httpzclient.New(ctx, httpzclient.Options{BaseUrl: s.Base().MustJoinPathString("/api/v1/")})
 		req := httpzclient.NewReq("GET", "test")
 		resp, err := client.Do(req)
 		require.NoError(t, err)
@@ -123,7 +123,7 @@ func TestUnitClientPathResolution(t *testing.T) {
 	})
 
 	t.Run("with path prefix and no trailing slash", func(t *testing.T) {
-		client := httpzclient.New(ctx, httpzclient.Options{BaseUrl: s.Base() + "/api/v1"})
+		client := httpzclient.New(ctx, httpzclient.Options{BaseUrl: s.Base().MustJoinPathString("/api/v1")})
 		req := httpzclient.NewReq("GET", "/test")
 		resp, err := client.Do(req)
 		require.NoError(t, err)
@@ -164,14 +164,6 @@ func TestUnitClientErrorHandling(t *testing.T) {
 	s.Start()
 	s.Close()
 	s.Close()
-
-	t.Run("Invalid base URL", func(t *testing.T) {
-		client := httpzclient.New(ctx, httpzclient.Options{BaseUrl: "invalid-url"})
-		req := httpzclient.NewReq("GET", "/")
-		_, err := client.Do(req)
-		require.Error(t, err)
-		require.Contains(t, err.Error(), "invalid base URL")
-	})
 
 	t.Run("Request execution fails", func(t *testing.T) {
 		// Using a non-routable IP address to simulate a network error

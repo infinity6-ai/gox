@@ -11,7 +11,9 @@ import (
 	"github.com/infinity6-ai/gox/commonz/constraintz"
 	"github.com/infinity6-ai/gox/commonz/deferz"
 	"github.com/infinity6-ai/gox/commonz/errorz"
+	"github.com/infinity6-ai/gox/commonz/pathz"
 	"github.com/infinity6-ai/gox/commonz/syncz/promise"
+	"github.com/infinity6-ai/gox/commonz/urlz"
 )
 
 type Options struct {
@@ -56,8 +58,12 @@ func New(ctx context.Context, opts Options) *Server {
 	return ret
 }
 
-func (s *Server) Base() string {
-	return fmt.Sprintf("http://%s", s.Addr())
+func (s *Server) Base() *urlz.Url {
+	return &urlz.Url{
+		Scheme: "http",
+		Host:   s.Addr().String(),
+		Path:   pathz.MustParse("/"),
+	}
 }
 
 func (s *Server) Addr() net.Addr {

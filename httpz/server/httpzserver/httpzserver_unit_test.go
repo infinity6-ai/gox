@@ -83,7 +83,7 @@ func TestUnitFilterAndHandlerInteraction(t *testing.T) {
 	s.Start()
 
 	// Perform the request
-	resp, err := http.Post(s.Base()+"/bla/O1/b/O2/c/xyz", "text/plain", strings.NewReader("mybody"))
+	resp, err := http.Post(s.Base().MustJoinPathString("/bla/O1/b/O2/c/xyz").String(), "text/plain", strings.NewReader("mybody"))
 	require.NoError(t, err)
 	defer resp.Body.Close()
 
@@ -143,7 +143,7 @@ func TestUnitRouting(t *testing.T) {
 
 		srv.Start()
 
-		req, err := http.NewRequest(s.requestMethod, srv.Base()+s.requestPath, nil)
+		req, err := http.NewRequest(s.requestMethod, srv.Base().MustJoinPathString(s.requestPath).String(), nil)
 		require.NoError(t, err)
 
 		httpResp, err := http.DefaultClient.Do(req)
@@ -252,7 +252,7 @@ func TestUnitServerLifecycle(t *testing.T) {
 		require.NotZero(t, addr.Port, "port should not be zero after listen")
 
 		base := s.Base()
-		require.Equal(t, fmt.Sprintf("http://%s", s.Addr()), base)
+		require.Equal(t, fmt.Sprintf("http://%s/", s.Addr()), base.String())
 	})
 
 	t.Run("Double listen panics", func(t *testing.T) {
