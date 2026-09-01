@@ -6,9 +6,10 @@ import (
 	"time"
 
 	"github.com/infinity6-ai/gox/commonz/execz"
+	"github.com/infinity6-ai/gox/commonz/filez"
 	"github.com/stretchr/testify/assert"
 	"go.code.infinity6.ai/platform/util"
-	"go.code.infinity6.ai/platform/util/filez"
+
 	"go.code.infinity6.ai/platform/util/promise"
 	"go.code.infinity6.ai/platform/util/syncz/timerz"
 )
@@ -19,7 +20,7 @@ func TestUnitBasic(t *testing.T) {
 	defer filez.Remove(file)
 	cmd := execz.New(ctx, "bash", "-xc", "echo aaa > \"$1\"", "--", file)
 	assert.NoError(t, cmd.Run())
-	assert.Equal(t, "aaa\n", filez.ReadFileString(file, 10))
+	assert.Equal(t, "aaa\n", filez.ReadFile(file, 10).String())
 	assert.Error(t, cmd.Run())
 }
 
@@ -30,7 +31,7 @@ func TestUnitWait(t *testing.T) {
 	cmd := execz.New(ctx, "bash", "-xc", "echo before > \"$1\" && sleep 0.2 && echo after > \"$1\"", "--", file)
 	go cmd.Run()
 	assert.NoError(t, cmd.Wait())
-	assert.Equal(t, "after\n", filez.ReadFileString(file, 10))
+	assert.Equal(t, "after\n", filez.ReadFile(file, 10).String())
 }
 
 func TestUnitKillSimple(t *testing.T) {
@@ -50,12 +51,12 @@ func TestUnitKillSimple(t *testing.T) {
 	})
 
 	timerz.DelayFor(ctx, 250*time.Millisecond, cmd.Kill)
-	assert.Equal(t, "before\n", filez.ReadFileString(file, 10))
+	assert.Equal(t, "before\n", filez.ReadFile(file, 10).String())
 
 	err := cmd.Wait()
 	assert.Error(t, err)
 	assert.ErrorIs(t, err, cmd.Error())
-	assert.Equal(t, "before\n", filez.ReadFileString(file, 10))
+	assert.Equal(t, "before\n", filez.ReadFile(file, 10).String())
 
 	_, err = waitPromise.Get()
 	assert.Error(t, err)
