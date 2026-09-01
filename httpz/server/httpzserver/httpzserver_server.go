@@ -8,8 +8,10 @@ import (
 	"net/http"
 	"os"
 
+	"github.com/infinity6-ai/gox/commonz/constraintz"
 	"github.com/infinity6-ai/gox/commonz/deferz"
 	"github.com/infinity6-ai/gox/commonz/errorz"
+	"github.com/infinity6-ai/gox/commonz/syncz/promise"
 )
 
 type Options struct {
@@ -35,6 +37,7 @@ type Server struct {
 	filters         []Filter
 	patternHandlers []PatternHandler
 	dfz             *deferz.Deferz
+	servePromise    *promise.Promise[constraintz.Void]
 }
 
 func New(ctx context.Context, opts Options) *Server {
@@ -105,6 +108,10 @@ func (s *Server) serve() {
 	}
 
 	s.dfz.Add(func() {
+		_ = s.listener.Close()
+	})
+
+	s.dfz.Add(func() {
 		_ = httpServer.Shutdown(s.Context)
 	})
 
@@ -128,5 +135,5 @@ func (s *Server) Start() {
 	if s.listener == nil {
 		panic("not configured")
 	}
-	go s.Serve()
+	s.servePromise = promise.AsyncV(s.Context, s.Serve)
 }
