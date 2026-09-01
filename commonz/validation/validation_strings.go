@@ -4,7 +4,7 @@ import "strings"
 
 func StrPrefix(expected string, actual string, msg string, args ...any) error {
 	if !strings.HasPrefix(actual, expected) {
-		return newError("prefix not found", map[string]any{"actual": actual, "prefix": expected})
+		return newError("prefix not found", map[string]any{"actual": actual, "prefix": expected}, msg, args...)
 	}
 	return nil
 }
