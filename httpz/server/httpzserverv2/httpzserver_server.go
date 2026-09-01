@@ -31,7 +31,7 @@ type Server struct {
 	Context  context.Context
 	Options  Options
 	listener net.Listener
-	Filters  []Filter
+	Filters  []FilterX
 	dfz      *deferz.Deferz
 }
 
@@ -107,7 +107,12 @@ func (s *Server) serve() {
 		panic("finish it AAAA")
 	}
 	for i := len(s.Filters) - 1; i >= 0; i-- {
-		h = s.Filters[i](h)
+		filter := s.Filters[i]
+		next := h
+		h = func(ctx context.Context, resp *Resp, req *Req) {
+			println(i)
+			filter(ctx, resp, req, next)
+		}
 	}
 
 	httpServer := &http.Server{
