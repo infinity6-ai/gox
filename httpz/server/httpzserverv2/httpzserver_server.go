@@ -11,9 +11,6 @@ import (
 	"github.com/infinity6-ai/gox/commonz/errorz"
 )
 
-// Filter is a function that wraps an http.Handler, commonly known as middleware.
-type Filter func(next http.Handler) http.Handler
-
 type Options struct {
 	LocalAddress string
 }
@@ -34,9 +31,8 @@ type Server struct {
 	Context  context.Context
 	Options  Options
 	listener net.Listener
-	// mux      *http.ServeMux
-	// filters []Filter
-	dfz *deferz.Deferz
+	Filters  []Filter
+	dfz      *deferz.Deferz
 }
 
 func New(ctx context.Context, opts Options) *Server {
@@ -45,40 +41,12 @@ func New(ctx context.Context, opts Options) *Server {
 		Context: ctx,
 		Options: opts,
 		dfz:     deferz.New(ctx),
-		// mux:     http.NewServeMux(),
 	}
 }
 
 func (s *Server) Base() string {
 	return fmt.Sprintf("http://%s", s.Addr())
 }
-
-func (s *Server) AddHandlerPrefix(p string, handler http.Handler) {
-	// checker.StrPrefix("/", p, "prefix path")
-	// s.mux.Handle(prefix, handler)
-}
-
-// // AddHandlerPrefixFunc registers a handler function for the given prefix.
-// func (s *Server) AddHandlerPrefixFunc(prefix string, handlerFunc http.HandlerFunc) {
-// 	s.AddHandlerPrefix(prefix, handlerFunc)
-// }
-
-// // AddHandlerPattern registers a handler for the given pattern.
-// // The pattern can include wildcards, like /users/{id}.
-// func (s *Server) AddHandlerPattern(pattern string, handler http.Handler) {
-// 	s.mux.Handle(pattern, handler)
-// }
-
-// // AddHandlerPatternFunc registers a handler function for the given pattern.
-// func (s *Server) AddHandlerPatternFunc(pattern string, handlerFunc http.HandlerFunc) {
-// 	s.AddHandlerPattern(pattern, handlerFunc)
-// }
-
-// // AddFilter adds a new filter to the server's filter chain.
-// // Filters are applied in the reverse order they are added.
-// func (s *Server) AddFilter(filter Filter) {
-// 	s.filters = append(s.filters, filter)
-// }
 
 func (s *Server) Addr() net.Addr {
 	if s.listener == nil {
@@ -102,8 +70,31 @@ func (s *Server) Close() error {
 }
 
 func (s *Server) serve() {
+	if s.listener == nil {
+		panic("not configured")
+	}
+
+	var h Handler
+	h = func(ctx context.Context, resp *Resp, req *Req) {
+		panic("finish it AAAA")
+	}
+	for i := len(s.Filters) - 1; i >= 0; i-- {
+		filter := s.Filters[i]
+		next := h
+		h = func(ctx context.Context, resp *Resp, req *Req) {
+			println(i)
+			filter(ctx, resp, req, next)
+		}
+	}
+
 	httpServer := &http.Server{
-		Handler: s,
+		Handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			req := &Req{}
+			req.fromHttpRequest(r)
+			resp := &Resp{}
+			resp.fromHttpResponseWriter(w)
+			h(r.Context(), resp, req)
+		}),
 		BaseContext: func(l net.Listener) context.Context {
 			return s.Context
 		},

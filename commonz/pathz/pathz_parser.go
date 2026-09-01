@@ -6,6 +6,8 @@ import (
 	"path"
 	"slices"
 	"strings"
+
+	"github.com/infinity6-ai/gox/commonz/errorz"
 )
 
 var ErrNavigationError = errors.New("path navigation error")
@@ -128,6 +130,12 @@ func (p *Path) Parse(input string) error {
 		return err
 	}
 	return nil
+}
+
+func MustParse(input string) *Path {
+	ret, err := Parse(input)
+	errorz.Check(err)
+	return ret
 }
 
 func Parse(input string) (*Path, error) {
