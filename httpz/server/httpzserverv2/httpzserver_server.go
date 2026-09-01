@@ -102,11 +102,6 @@ func (s *Server) Close() error {
 }
 
 func (s *Server) serve() {
-	// var handler http.Handler = s.mux
-	// for i := len(s.filters) - 1; i >= 0; i-- {
-	// 	handler = s.filters[i](handler)
-	// }
-
 	httpServer := &http.Server{
 		Handler: s,
 		BaseContext: func(l net.Listener) context.Context {
