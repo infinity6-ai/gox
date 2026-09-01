@@ -1,6 +1,7 @@
 package pathz
 
 import (
+	"github.com/infinity6-ai/gox/commonz/errorz"
 	"github.com/infinity6-ai/gox/commonz/validation"
 )
 
@@ -10,6 +11,10 @@ type ValidateOptions struct {
 	Wildchar    bool
 	EndingSlash *bool
 	Empty       *bool
+}
+
+func (p *Path) Check(opts ValidateOptions) {
+	errorz.Check(p.Validate(opts))
 }
 
 func (p *Path) Validate(opts ValidateOptions) error {

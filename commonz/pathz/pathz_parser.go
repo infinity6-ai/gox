@@ -178,5 +178,8 @@ func IsValidChar(r rune) bool {
 	if r == '-' || r == '_' || r == '.' || r == '/' || r == '=' || r == '{' || r == '}' {
 		return true
 	}
+	if r == '*' {
+		return true
+	}
 	return false
 }
