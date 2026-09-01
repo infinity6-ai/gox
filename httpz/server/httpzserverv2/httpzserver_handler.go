@@ -2,6 +2,10 @@ package httpzserverv2
 
 import "net/http"
 
+type Handler interface {
+	HandleHttpz(resp *Resp, req *Req)
+}
+
 func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	req := &Req{}
 	req.fromHttpRequest(r)
