@@ -66,11 +66,11 @@ func (u *Url) Clone() *Url {
 }
 
 func (u *Url) Append(others ...*pathz.Path) (*Url, error) {
-	p, err := u.Path.Join(others...)
-	if err != nil {
-		return nil, fmt.Errorf("%w: error appending path to url %s: %s", err, u, others)
-	}
 	ret := u.Clone()
+	p, err := u.Path.Join(others...)
 	ret.Path = p
-	return ret, nil
+	if err != nil {
+		err = fmt.Errorf("%w: error appending path to url %s: %s", err, u, others)
+	}
+	return ret, err
 }
