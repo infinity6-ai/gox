@@ -29,10 +29,16 @@ func TestUnitListen(t *testing.T) {
 		next(ctx, resp, req)
 	})
 
-	s.AddFilter(func(ctx context.Context, resp *httpzserverv2.Resp, req *httpzserverv2.Req, next httpzserverv2.Handler) {
+	// s.AddFilter(func(ctx context.Context, resp *httpzserverv2.Resp, req *httpzserverv2.Req, next httpzserverv2.Handler) {
+	// 	resp.Status = http.StatusBadRequest
+	// 	resp.Headers.Set("a", "y")
+	// 	resp.Write([]byte("nok"))
+	// })
+
+	s.AddHandler("GET", "/bla/*", func(ctx context.Context, resp *httpzserverv2.Resp, req *httpzserverv2.Req) {
 		resp.Status = http.StatusBadRequest
 		resp.Headers.Set("a", "y")
-		resp.Write([]byte("nok"))
+		resp.Write([]byte("nok: " + req.Path.String()))
 	})
 
 	s.Start()
