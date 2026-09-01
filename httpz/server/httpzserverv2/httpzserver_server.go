@@ -28,11 +28,12 @@ func (o *Options) fix() {
 }
 
 type Server struct {
-	Context  context.Context
-	Options  Options
-	listener net.Listener
-	Filters  []Filter
-	dfz      *deferz.Deferz
+	Context         context.Context
+	Options         Options
+	listener        net.Listener
+	filters         []Filter
+	patternHandlers []PatternHandler
+	dfz             *deferz.Deferz
 }
 
 func New(ctx context.Context, opts Options) *Server {
@@ -78,8 +79,8 @@ func (s *Server) serve() {
 	h = func(ctx context.Context, resp *Resp, req *Req) {
 		panic("finish it AAAA")
 	}
-	for i := len(s.Filters) - 1; i >= 0; i-- {
-		filter := s.Filters[i]
+	for i := len(s.filters) - 1; i >= 0; i-- {
+		filter := s.filters[i]
 		next := h
 		h = func(ctx context.Context, resp *Resp, req *Req) {
 			println(i)
