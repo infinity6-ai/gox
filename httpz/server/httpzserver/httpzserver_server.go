@@ -81,7 +81,7 @@ func (s *Server) serve() {
 	for i := len(s.filters) - 1; i >= 0; i-- {
 		filter := s.filters[i]
 		next := h
-		h = func(ctx context.Context, resp RespX, req *Req) {
+		h = func(ctx context.Context, resp Resp, req *Req) {
 			filter(ctx, resp, req, next)
 		}
 	}

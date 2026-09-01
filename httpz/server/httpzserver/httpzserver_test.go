@@ -19,7 +19,7 @@ func TestUnitListen(t *testing.T) {
 	defer s.Close()
 	s.Listen()
 
-	s.AddFilter(func(ctx context.Context, resp httpzserver.RespX, req *httpzserver.Req, next httpzserver.Handler) {
+	s.AddFilter(func(ctx context.Context, resp httpzserver.Resp, req *httpzserver.Req, next httpzserver.Handler) {
 		preBody := strings.NewReader("reqpre-")
 		originalBody := req.Body
 		sufBody := strings.NewReader("-reqsuf")
@@ -33,7 +33,7 @@ func TestUnitListen(t *testing.T) {
 
 	})
 
-	s.AddFilter(func(ctx context.Context, resp httpzserver.RespX, req *httpzserver.Req, next httpzserver.Handler) {
+	s.AddFilter(func(ctx context.Context, resp httpzserver.Resp, req *httpzserver.Req, next httpzserver.Handler) {
 		var rWriter io.Writer
 		nResp := func(status int, nHeaders http.Header) io.Writer {
 			nHeaders.Set("b", "x2")
@@ -46,7 +46,7 @@ func TestUnitListen(t *testing.T) {
 		rWriter.Write([]byte(" ZZZZ"))
 	})
 
-	s.AddHandler("POST", "/bla/{p1}/b/{p2}/c/*", func(ctx context.Context, resp httpzserver.RespX, req *httpzserver.Req, params map[string]string) {
+	s.AddHandler("POST", "/bla/{p1}/b/{p2}/c/*", func(ctx context.Context, resp httpzserver.Resp, req *httpzserver.Req, params map[string]string) {
 		reqBody, err := io.ReadAll(req.Body)
 		errorz.Check(err)
 		body := fmt.Appendf(nil, "r: %s - %s, req: %s", req.Path, params, string(reqBody))
