@@ -17,11 +17,9 @@ func TestUnitListen(t *testing.T) {
 	defer s.Close()
 	s.Listen()
 
-	s.Add(func(next httpzserverv2.Handler) httpzserverv2.Handler {
-		return func(ctx context.Context, resp *httpzserverv2.Resp, req *httpzserverv2.Req) {
-			resp.Headers.Set("b", "x2")
-			next(ctx, resp, req)
-		}
+	s.AddX(func(ctx context.Context, resp *httpzserverv2.Resp, req *httpzserverv2.Req, next httpzserverv2.Handler) {
+		resp.Headers.Set("b", "x2")
+		next(ctx, resp, req)
 	})
 
 	s.Add(func(next httpzserverv2.Handler) httpzserverv2.Handler {

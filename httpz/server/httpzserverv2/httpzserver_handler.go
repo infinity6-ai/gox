@@ -9,6 +9,16 @@ type Handler func(ctx context.Context, resp *Resp, req *Req)
 
 type Filter func(next Handler) Handler
 
+type FilterX func(ctx context.Context, resp *Resp, req *Req, next Handler)
+
+func (s *Server) AddX(filter FilterX) {
+	s.Add(func(next Handler) Handler {
+		return func(ctx context.Context, resp *Resp, req *Req) {
+			filter(ctx, resp, req, next)
+		}
+	})
+}
+
 func (s *Server) Add(filter Filter) {
 	s.Filters = append(s.Filters, filter)
 }
