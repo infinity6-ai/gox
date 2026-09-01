@@ -4,11 +4,10 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
-	"strings"
 	"testing"
 
+	"github.com/infinity6-ai/gox/commonz/filez"
 	"github.com/stretchr/testify/assert"
-	"go.code.infinity6.ai/platform/util/filez"
 )
 
 func TestUnitParent(t *testing.T) {
@@ -17,12 +16,6 @@ func TestUnitParent(t *testing.T) {
 	assert.Equal(t, ".", filez.Parent(""))
 	assert.Equal(t, ".", filez.Parent("any.txt"))
 	assert.Equal(t, ".", filez.Parent("any"))
-}
-
-func TestUnitFromUrl(t *testing.T) {
-	assert.Equal(t, "/path/to/file", filez.FromUrl("file:///path/to/file"))
-	assert.Equal(t, "/path/to/file", filez.FromUrl("file:/path/to/file"))
-	assert.Equal(t, "path/to/file", filez.FromUrl("path/to/file"))
 }
 
 func TestUnitRemove(t *testing.T) {
@@ -90,19 +83,6 @@ func TestUnitWrite(t *testing.T) {
 	content, err = os.ReadFile(tmpFile)
 	assert.NoError(t, err)
 	assert.Equal(t, "hello world", string(content))
-}
-
-func TestUnitCreateTempSocket(t *testing.T) {
-	socketPath := filez.CreateTempSocket()
-	defer os.RemoveAll(filepath.Dir(socketPath))
-
-	assert.Contains(t, socketPath, "i6go-platform-tmp-xz-")
-	assert.True(t, strings.HasSuffix(socketPath, "xz.sock"))
-
-	// Check if parent dir was created
-	dirInfo, err := os.Stat(filepath.Dir(socketPath))
-	assert.NoError(t, err)
-	assert.True(t, dirInfo.IsDir())
 }
 
 func TestUnitRmTree(t *testing.T) {
@@ -229,7 +209,7 @@ func TestUnitCreateTempDir(t *testing.T) {
 	info, err := os.Stat(dir)
 	assert.NoError(t, err)
 	assert.True(t, info.IsDir())
-	assert.Contains(t, filepath.Base(dir), "i6go-platform-tmp-my-test-")
+	assert.Contains(t, filepath.Base(dir), "gox-tmp-my-test-")
 }
 
 func TestUnitCreateTempFile(t *testing.T) {
@@ -240,7 +220,7 @@ func TestUnitCreateTempFile(t *testing.T) {
 	info, err := os.Stat(filePath)
 	assert.NoError(t, err)
 	assert.False(t, info.IsDir())
-	assert.Contains(t, filepath.Base(filePath), "i6go-platform-tmp-my-test-file-")
+	assert.Contains(t, filepath.Base(filePath), "gox-tmp-my-test-file-")
 
 	readContent, err := os.ReadFile(filePath)
 	assert.NoError(t, err)

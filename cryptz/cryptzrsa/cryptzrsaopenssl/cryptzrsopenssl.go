@@ -7,9 +7,9 @@ import (
 	"os"
 
 	"github.com/infinity6-ai/gox/commonz/errorz"
+	"github.com/infinity6-ai/gox/commonz/execz"
+	"github.com/infinity6-ai/gox/commonz/filez"
 	"github.com/infinity6-ai/gox/cryptz/cryptzrsa/cryptzrsaimpl"
-	"go.code.infinity6.ai/platform/util/execz"
-	"go.code.infinity6.ai/platform/util/filez"
 )
 
 type RSAServiceOpenssl struct {
@@ -36,7 +36,7 @@ func (s *RSAServiceOpenssl) PrivKeyCreate(bits int) *rsa.PrivateKey {
 	errorz.Check(err)
 
 	keyData := filez.ReadFile(privKeyFilePath, 4096) // Max size for 2048-bit RSA key PEM
-	return s.PrivKeyImport(string(keyData))
+	return s.PrivKeyImport(keyData.String())
 }
 
 func (s *RSAServiceOpenssl) PrivKeyExport(privateKey *rsa.PrivateKey) string {
@@ -73,7 +73,7 @@ func (s *RSAServiceOpenssl) Sign(privateKey *rsa.PrivateKey, message []byte) []b
 	errorz.Check(err)
 
 	signature := filez.ReadFile(sigFilePath, 2048) // Max size for a 256-byte signature (RSA 2048-bit)
-	return signature
+	return signature.Bytes()
 }
 
 func (s *RSAServiceOpenssl) Verify(publicKey *rsa.PublicKey, message []byte, signature []byte) bool {
@@ -114,7 +114,7 @@ func (s *RSAServiceOpenssl) PubEncryptOEAP(publicKey *rsa.PublicKey, label []byt
 	err := execz.New(s.ctx, "openssl", args...).Run()
 	errorz.Check(err)
 
-	return filez.ReadFile(outFilePath, 4096) // Max size for RSA 2048-bit encrypted data
+	return filez.ReadFile(outFilePath, 4096).Bytes() // Max size for RSA 2048-bit encrypted data
 }
 
 func (s *RSAServiceOpenssl) PrivDecryptOEAP(privateKey *rsa.PrivateKey, label []byte, ciphertext []byte) []byte {
@@ -136,5 +136,5 @@ func (s *RSAServiceOpenssl) PrivDecryptOEAP(privateKey *rsa.PrivateKey, label []
 	err := execz.New(s.ctx, "openssl", args...).Run()
 	errorz.Check(err)
 
-	return filez.ReadFile(outFilePath, 4096)
+	return filez.ReadFile(outFilePath, 4096).Bytes()
 }

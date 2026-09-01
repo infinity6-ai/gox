@@ -7,11 +7,11 @@ import (
 	"slices"
 
 	"github.com/infinity6-ai/gox/commonz/errorz"
+	"github.com/infinity6-ai/gox/commonz/protoz"
 	"github.com/infinity6-ai/gox/commonz/validation/checker"
 	"github.com/infinity6-ai/gox/cryptz/cryptzaes"
 	"github.com/infinity6-ai/gox/cryptz/cryptzjwt"
 	"github.com/infinity6-ai/gox/cryptz/cryptzrsa"
-	"go.code.infinity6.ai/platform/util/protoz"
 )
 
 var patternKey = regexp.MustCompile(`^[a-zA-z0-9\.\-_]+$`)
