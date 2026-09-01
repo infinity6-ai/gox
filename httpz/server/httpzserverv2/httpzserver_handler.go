@@ -3,5 +3,16 @@ package httpzserverv2
 import "net/http"
 
 func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	w.WriteHeader(http.StatusNoContent)
+	req := &Req{}
+	req.fromHttpRequest(r)
+	// ctx := r.Context()
+	resp := &Resp{}
+	resp.fromHttpResponseWriter(w)
+
+	resp.Status = http.StatusBadRequest
+	resp.Headers.Set("x", "a")
+	resp.Write([]byte("nok"))
+
+	// resp.fromHttpResponseWriter(ctx, w)
+	// w.WriteHeader(http.StatusNoContent)
 }

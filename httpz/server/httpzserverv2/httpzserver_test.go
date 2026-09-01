@@ -1,6 +1,7 @@
 package httpzserverv2_test
 
 import (
+	"io"
 	"net/http"
 	"testing"
 
@@ -16,8 +17,12 @@ func TestUnitListen(t *testing.T) {
 	s.Listen()
 	s.Start()
 
-	r, err := http.Get(s.Base())
+	resp, err := http.Get(s.Base())
 	errorz.Check(err)
-	defer r.Body.Close()
-	require.Equal(t, http.StatusNoContent, r.StatusCode)
+	defer resp.Body.Close()
+	require.Equal(t, http.StatusBadRequest, resp.StatusCode)
+	require.Equal(t, "a", resp.Header.Get("x"))
+	data, err := io.ReadAll(resp.Body)
+	errorz.Check(err)
+	require.Equal(t, "nok", string(data))
 }
