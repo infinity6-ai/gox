@@ -4,11 +4,10 @@ import (
 	"context"
 	"fmt"
 	"net/http"
-	"net/url"
-	"path"
 	"time"
 
 	"github.com/infinity6-ai/gox/commonz/deferz"
+	"github.com/infinity6-ai/gox/commonz/urlz"
 	"github.com/infinity6-ai/gox/commonz/validation/checker"
 )
 
@@ -22,12 +21,12 @@ var defaultHttpClient = &http.Client{
 }
 
 type Options struct {
-	BaseUrl   string
+	BaseUrl   *urlz.Url
 	GetClient func(ctx context.Context) *http.Client
 }
 
 func (o *Options) fix() {
-	checker.StrNotEmpty(o.BaseUrl, "baseurl")
+	checker.NotNil(o.BaseUrl, "baseurl")
 }
 
 type Client struct {
@@ -97,7 +96,8 @@ func (c *Client) send(req *Req) (*Resp, error) {
 }
 
 func (c *Client) buildURL(req *Req) (string, error) {
-	u, err := url.Parse(c.Options.BaseUrl)
+	u, err := req.ResolveUrl(c.Options.BaseUrl)
+	// u, err := url.Parse(c.Options.BaseUrl)
 	if err != nil {
 		return "", fmt.Errorf("invalid base URL: %w", err)
 	}
@@ -106,8 +106,8 @@ func (c *Client) buildURL(req *Req) (string, error) {
 		return "", fmt.Errorf("invalid base URL: must be an absolute URL: %s", c.Options.BaseUrl)
 	}
 
-	u.Path = path.Join(u.Path, req.Path.String())
-	u.RawQuery = req.Query.Encode()
+	// u.Path = path.Join(u.Path, req.Path.String())
+	u.Query = req.Query.Encode()
 
 	return u.String(), nil
 }
