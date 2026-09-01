@@ -21,8 +21,8 @@ var defaultHttpClient = &http.Client{
 }
 
 type Options struct {
-	BaseUrl    string
-	OpenClient func(ctx context.Context) *http.Client
+	BaseUrl   string
+	GetClient func(ctx context.Context) *http.Client
 }
 
 func (o *Options) fix() {
@@ -33,7 +33,6 @@ type Client struct {
 	Context context.Context
 	Options Options
 	filters []Filter
-	dfz     *deferz.Deferz
 	client  *http.Client
 }
 
@@ -43,19 +42,11 @@ func New(ctx context.Context, opts Options) *Client {
 		Context: ctx,
 		Options: opts,
 		client:  defaultHttpClient,
-		dfz:     deferz.New(ctx),
 	}
-	if opts.OpenClient != nil {
-		ret.client = opts.OpenClient(ctx)
-		ret.dfz.Add(ret.client.CloseIdleConnections)
+	if opts.GetClient != nil {
+		ret.client = opts.GetClient(ctx)
 	}
 	return ret
-}
-
-func (c *Client) Close() {
-	if c.dfz != nil {
-		c.dfz.Close()
-	}
 }
 
 func (c *Client) AddFilter(filter Filter) {

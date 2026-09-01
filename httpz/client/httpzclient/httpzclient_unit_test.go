@@ -98,6 +98,13 @@ func TestUnitClientRequestBuilding(t *testing.T) {
 func TestUnitClientErrorHandling(t *testing.T) {
 	ctx := t.Context()
 
+	s := httpzserver.New(ctx, httpzserver.Options{LocalAddress: "localhost:0"})
+	defer s.Close()
+	s.Listen()
+	s.Start()
+	s.Close()
+	s.Close()
+
 	t.Run("Invalid base URL", func(t *testing.T) {
 		client := httpzclient.New(ctx, httpzclient.Options{BaseUrl: "invalid-url"})
 		req := httpzclient.NewReq("GET", "/")
@@ -108,7 +115,7 @@ func TestUnitClientErrorHandling(t *testing.T) {
 
 	t.Run("Request execution fails", func(t *testing.T) {
 		// Using a non-routable IP address to simulate a network error
-		client := httpzclient.New(ctx, httpzclient.Options{BaseUrl: "http://192.0.2.1:80"})
+		client := httpzclient.New(ctx, httpzclient.Options{BaseUrl: s.Base()})
 		req := httpzclient.NewReq("GET", "/")
 		_, err := client.Do(req)
 		require.Error(t, err)
