@@ -20,24 +20,26 @@ func TestUnitListen(t *testing.T) {
 	s.Listen()
 
 	s.AddFilter(func(ctx context.Context, resp *httpzserver.Resp, req *httpzserver.Req, next httpzserver.Handler) {
-		resp.Headers.Set("a", "x1")
-		resp.Headers.Set("b", "x1")
-		resp.Headers.Set("c", "x1")
 		preBody := strings.NewReader("reqpre-")
 		originalBody := req.Body
 		sufBody := strings.NewReader("-reqsuf")
 		req.Body = io.MultiReader(preBody, originalBody, sufBody)
 		next(ctx, resp, req)
+		resp.Headers.Set("a", "x1")
+		resp.Headers.Set("b", "x1")
+
 	})
 
 	s.AddFilter(func(ctx context.Context, resp *httpzserver.Resp, req *httpzserver.Req, next httpzserver.Handler) {
-		resp.Headers.Set("b", "x2")
 		next(ctx, resp, req)
+		resp.Headers.Set("b", "x2")
+		resp.Headers.Set("c", "x2")
 	})
 
 	s.AddHandler("POST", "/bla/{p1}/b/{p2}/c/*", func(ctx context.Context, resp *httpzserver.Resp, req *httpzserver.Req, params map[string]string) {
 		resp.Status = http.StatusBadRequest
 		resp.Headers.Set("a", "y")
+		resp.Headers.Set("d", "y")
 		reqBody, err := io.ReadAll(req.Body)
 		errorz.Check(err)
 		resp.Write(fmt.Appendf(nil, "r: %s - %s, req: %s", req.Path, params, string(reqBody)))
@@ -49,9 +51,10 @@ func TestUnitListen(t *testing.T) {
 	errorz.Check(err)
 	defer resp.Body.Close()
 	require.Equal(t, http.StatusBadRequest, resp.StatusCode)
-	require.Equal(t, "y", resp.Header.Get("a"))
+	require.Equal(t, "x1", resp.Header.Get("a"))
 	require.Equal(t, "x2", resp.Header.Get("b"))
-	require.Equal(t, "x1", resp.Header.Get("c"))
+	require.Equal(t, "x2", resp.Header.Get("c"))
+	require.Equal(t, "y", resp.Header.Get("d"))
 	data, err := io.ReadAll(resp.Body)
 	errorz.Check(err)
 	require.Equal(t, "r: /bla/O1/b/O2/c/xyz - map[p1:O1 p2:O2], req: reqpre-mybody-reqsuf", string(data))
