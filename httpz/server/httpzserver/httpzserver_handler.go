@@ -22,11 +22,11 @@ var allowedMethods = []string{
 	"*",
 }
 
-type Handler func(ctx context.Context, resp *Resp, req *Req)
+type Handler func(ctx context.Context, resp RespX, req *Req)
 
-type HandlerPattern func(ctx context.Context, resp *Resp, req *Req, params map[string]string)
+type HandlerPattern func(ctx context.Context, resp RespX, req *Req, params map[string]string)
 
-type Filter func(ctx context.Context, resp *Resp, req *Req, next Handler)
+type Filter func(ctx context.Context, resp RespX, req *Req, next Handler)
 
 func (s *Server) AddFilter(filter Filter) {
 	s.filters = append(s.filters, filter)
@@ -61,7 +61,7 @@ func (s *Server) AddHandler(method string, pattern string, handler HandlerPatter
 	s.patternHandlers = append(s.patternHandlers, *ph)
 }
 
-func (s *Server) route(ctx context.Context, resp *Resp, req *Req) {
+func (s *Server) route(ctx context.Context, resp RespX, req *Req) {
 	actualParts := req.Path.Parts()
 	for _, ph := range s.patternHandlers {
 		if ph.Method != "*" && ph.Method != req.Method {
@@ -73,8 +73,9 @@ func (s *Server) route(ctx context.Context, resp *Resp, req *Req) {
 			return
 		}
 	}
-	resp.Status = http.StatusNotFound
-	resp.Write([]byte("Not Found"))
+	resp(http.StatusNotFound, nil).Write([]byte("Not Found"))
+	// resp.Status = http.StatusNotFound
+	// resp.Write([]byte("Not Found"))
 }
 
 func match(patternParts, actualParts []string, prefix bool) (map[string]string, bool) {

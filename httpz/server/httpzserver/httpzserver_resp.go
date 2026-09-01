@@ -1,37 +1,40 @@
 package httpzserver
 
 import (
+	"io"
 	"net/http"
 )
 
-type Resp struct {
-	Status  int
-	Headers http.Header
+type RespX func(status int, headers http.Header) io.Writer
 
-	headersSent bool
-	w           http.ResponseWriter
-}
+// type Resp struct {
+// 	Status  int
+// 	Headers http.Header
 
-func (r *Resp) Flush() {
-	r.sendHeaders()
-	r.w.(http.Flusher).Flush()
-}
+// 	headersSent bool
+// 	w           http.ResponseWriter
+// }
 
-func (r *Resp) Write(p []byte) (n int, err error) {
-	r.sendHeaders()
-	return r.w.Write(p)
-}
+// func (r *Resp) Flush() {
+// 	r.sendHeaders()
+// 	r.w.(http.Flusher).Flush()
+// }
 
-func (r *Resp) sendHeaders() {
-	if r.headersSent {
-		return
-	}
-	r.headersSent = true
-	r.w.WriteHeader(r.Status)
-}
+// func (r *Resp) Write(p []byte) (n int, err error) {
+// 	r.sendHeaders()
+// 	return r.w.Write(p)
+// }
 
-func (r *Resp) fromHttpResponseWriter(w http.ResponseWriter) {
-	r.w = w
-	r.Status = -1
-	r.Headers = w.Header()
-}
+// func (r *Resp) sendHeaders() {
+// 	if r.headersSent {
+// 		return
+// 	}
+// 	r.headersSent = true
+// 	r.w.WriteHeader(r.Status)
+// }
+
+// func (r *Resp) fromHttpResponseWriter(w http.ResponseWriter) {
+// 	r.w = w
+// 	r.Status = -1
+// 	r.Headers = w.Header()
+// }

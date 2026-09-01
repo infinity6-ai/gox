@@ -3,6 +3,7 @@ package httpzserver
 import (
 	"context"
 	"fmt"
+	"io"
 	"net"
 	"net/http"
 	"os"
@@ -80,7 +81,7 @@ func (s *Server) serve() {
 	for i := len(s.filters) - 1; i >= 0; i-- {
 		filter := s.filters[i]
 		next := h
-		h = func(ctx context.Context, resp *Resp, req *Req) {
+		h = func(ctx context.Context, resp RespX, req *Req) {
 			filter(ctx, resp, req, next)
 		}
 	}
@@ -89,8 +90,15 @@ func (s *Server) serve() {
 		Handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			req := &Req{}
 			req.fromHttpRequest(r)
-			resp := &Resp{}
-			resp.fromHttpResponseWriter(w)
+			// resp := &Resp{}
+			// resp.fromHttpResponseWriter(w)
+			resp := func(status int, headers http.Header) io.Writer {
+				for k, v := range headers {
+					w.Header()[k] = v
+				}
+				w.WriteHeader(status)
+				return w
+			}
 			h(r.Context(), resp, req)
 		}),
 		BaseContext: func(l net.Listener) context.Context {
