@@ -2,10 +2,13 @@ package cryptzrsakeyring
 
 import (
 	"crypto/rsa"
+	"regexp"
 
 	"github.com/infinity6-ai/gox/commonz/validation/checker"
 	"github.com/infinity6-ai/gox/cryptz/cryptzrsa"
 )
+
+var patternOwner = regexp.MustCompile(`^[a-z][a-z0-9]*$`)
 
 type Keys struct {
 	keys map[string]*Key
@@ -90,7 +93,7 @@ func (k *KeyRing) AddPrivate(owner string, privKey *rsa.PrivateKey) {
 }
 
 func (k *KeyRing) AddPublic(owner string, pubKey *rsa.PublicKey) *Key {
-	checker.StringRegex("^[a-z][a-z0-9]*$", owner, "owner")
+	checker.RegexMatch(patternOwner, owner, "owner")
 	s := cryptzrsa.NewService()
 	keyId := s.PubKeyId(pubKey)
 	if k.owners == nil {

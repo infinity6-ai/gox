@@ -3,6 +3,7 @@ package cryptzjwtmsg
 import (
 	"crypto/rsa"
 	"errors"
+	"regexp"
 	"slices"
 
 	"github.com/infinity6-ai/gox/commonz/errorz"
@@ -12,6 +13,8 @@ import (
 	"github.com/infinity6-ai/gox/cryptz/cryptzrsa"
 	"go.code.infinity6.ai/platform/util/protoz"
 )
+
+var patternKey = regexp.MustCompile(`^[a-zA-z0-9\.\-_]+$`)
 
 type PublicKeyLoader func(id string) *rsa.PublicKey
 type PrivateKeyLoader func(id string) *rsa.PrivateKey
@@ -25,10 +28,10 @@ type RSAMessagePlain struct {
 func (d *RSAMessagePlain) Validate() {
 	checker.StrNotEmpty(d.SrcKey, "SrcKey")
 	// validation.Hostname(d.SrcKey, "SrcKey")
-	checker.StringRegex(`^[a-zA-z0-9\.\-_]+$`, d.SrcKey, "SrcKey")
+	checker.RegexMatch(patternKey, d.SrcKey, "SrcKey")
 	checker.StrNotEmpty(d.DstKey, "DstKey")
 	// validation.Hostname(d.DstKey, "DstKey")
-	checker.StringRegex(`^[a-zA-z0-9\.\-_]+$`, d.DstKey, "DstKey")
+	checker.RegexMatch(patternKey, d.DstKey, "DstKey")
 	checker.NotNil(d.Data, "Data")
 }
 
