@@ -75,5 +75,5 @@ func (u *Url) Append(others ...*pathz.Path) (*Url, error) {
 		ret = u.Clone()
 		ret.Path = p
 	}
-	return ret, nil
+	return ret, err
 }

@@ -44,10 +44,10 @@ func TestUnitParse(t *testing.T) {
 
 func TestUnitUrlClone(t *testing.T) {
 	type testScenario struct {
-		name string
-		originalUrl *urlz.Url
+		name           string
+		originalUrl    *urlz.Url
 		expectedScheme string
-		expectedPath string
+		expectedPath   string
 	}
 
 	check := func(t *testing.T, s testScenario) {
@@ -83,10 +83,10 @@ func TestUnitUrlClone(t *testing.T) {
 			Query:  "param=value",
 		}
 		check(t, testScenario{
-			name: "simple URL clone",
-			originalUrl: originalUrl,
+			name:           "simple URL clone",
+			originalUrl:    originalUrl,
 			expectedScheme: "http",
-			expectedPath: "/a/b/c",
+			expectedPath:   "/a/b/c",
 		})
 	})
 
@@ -98,10 +98,10 @@ func TestUnitUrlClone(t *testing.T) {
 			Path:   originalPath,
 		}
 		check(t, testScenario{
-			name: "URL with empty path clone",
-			originalUrl: originalUrl,
+			name:           "URL with empty path clone",
+			originalUrl:    originalUrl,
 			expectedScheme: "file",
-			expectedPath: "",
+			expectedPath:   "",
 		})
 	})
 
@@ -113,17 +113,17 @@ func TestUnitUrlClone(t *testing.T) {
 			Path:   originalPath,
 		}
 		check(t, testScenario{
-			name: "URL with root path clone",
-			originalUrl: originalUrl,
+			name:           "URL with root path clone",
+			originalUrl:    originalUrl,
 			expectedScheme: "gs",
-			expectedPath: "/",
+			expectedPath:   "/",
 		})
 	})
 }
 
 func TestUnitUrlAppend(t *testing.T) {
 	type testScenario struct {
-		name string
+		name        string
 		originalUrl *urlz.Url
 		appendPaths []*pathz.Path
 		expectedUrl string
@@ -159,7 +159,7 @@ func TestUnitUrlAppend(t *testing.T) {
 	t.Run("append single relative path", func(t *testing.T) {
 		originalUrl := &urlz.Url{Scheme: "http", Host: "example.com", Path: pathz.MustParse("/base")}
 		check(t, testScenario{
-			name: "append single relative path",
+			name:        "append single relative path",
 			originalUrl: originalUrl,
 			appendPaths: []*pathz.Path{pathz.MustParse("segment")},
 			expectedUrl: "http://example.com/base/segment",
@@ -169,7 +169,7 @@ func TestUnitUrlAppend(t *testing.T) {
 	t.Run("append multiple relative paths", func(t *testing.T) {
 		originalUrl := &urlz.Url{Scheme: "http", Host: "example.com", Path: pathz.MustParse("/base/folder/")}
 		check(t, testScenario{
-			name: "append multiple relative paths",
+			name:        "append multiple relative paths",
 			originalUrl: originalUrl,
 			appendPaths: []*pathz.Path{pathz.MustParse("sub"), pathz.MustParse("file.txt")},
 			expectedUrl: "http://example.com/base/folder/sub/file.txt",
@@ -179,7 +179,7 @@ func TestUnitUrlAppend(t *testing.T) {
 	t.Run("append with parent traversal", func(t *testing.T) {
 		originalUrl := &urlz.Url{Scheme: "file", Path: pathz.MustParse("/usr/local/bin")}
 		check(t, testScenario{
-			name: "append with parent traversal",
+			name:        "append with parent traversal",
 			originalUrl: originalUrl,
 			appendPaths: []*pathz.Path{pathz.MustParse("../share")},
 			expectedErr: "path escaped error: joining '/usr/local/bin' to '[../share]' results in '/usr/local/share' which is outside the base: error appending path to url file:///usr/local/bin: [../share]",
@@ -189,7 +189,7 @@ func TestUnitUrlAppend(t *testing.T) {
 	t.Run("append resulting in escaped path", func(t *testing.T) {
 		originalUrl := &urlz.Url{Scheme: "http", Host: "example.com", Path: pathz.MustParse("/a/b")}
 		check(t, testScenario{
-			name: "append resulting in escaped path",
+			name:        "append resulting in escaped path",
 			originalUrl: originalUrl,
 			appendPaths: []*pathz.Path{pathz.MustParse("../../c")},
 			expectedErr: "path escaped error: joining '/a/b' to '[../../c]' results in '/c' which is outside the base: error appending path to url http://example.com/a/b: [../../c]",
@@ -199,7 +199,7 @@ func TestUnitUrlAppend(t *testing.T) {
 	t.Run("append empty path", func(t *testing.T) {
 		originalUrl := &urlz.Url{Scheme: "http", Host: "example.com", Path: pathz.MustParse("/base")}
 		check(t, testScenario{
-			name: "append empty path",
+			name:        "append empty path",
 			originalUrl: originalUrl,
 			appendPaths: []*pathz.Path{pathz.MustParse("")},
 			expectedUrl: "http://example.com/base",
@@ -209,7 +209,7 @@ func TestUnitUrlAppend(t *testing.T) {
 	t.Run("append to root path", func(t *testing.T) {
 		originalUrl := &urlz.Url{Scheme: "file", Path: pathz.MustParse("/")}
 		check(t, testScenario{
-			name: "append to root path",
+			name:        "append to root path",
 			originalUrl: originalUrl,
 			appendPaths: []*pathz.Path{pathz.MustParse("folder/file.txt")},
 			expectedUrl: "file:///folder/file.txt",
@@ -219,7 +219,7 @@ func TestUnitUrlAppend(t *testing.T) {
 	t.Run("append absolute path should discard previous and return escaped error", func(t *testing.T) {
 		originalUrl := &urlz.Url{Scheme: "http", Host: "example.com", Path: pathz.MustParse("/base")}
 		check(t, testScenario{
-			name: "append absolute path should discard previous and return escaped error",
+			name:        "append absolute path should discard previous and return escaped error",
 			originalUrl: originalUrl,
 			appendPaths: []*pathz.Path{pathz.MustParse("/new/absolute/path")},
 			expectedErr: "path escaped error: joining '/base' to '[/new/absolute/path]' results in '/new/absolute/path' which is outside the base: error appending path to url http://example.com/base: [/new/absolute/path]",
@@ -229,7 +229,7 @@ func TestUnitUrlAppend(t *testing.T) {
 	t.Run("append with query parameters (should not affect query)", func(t *testing.T) {
 		originalUrl := &urlz.Url{Scheme: "http", Host: "example.com", Path: pathz.MustParse("/base"), Query: "q=test"}
 		check(t, testScenario{
-			name: "append with query parameters",
+			name:        "append with query parameters",
 			originalUrl: originalUrl,
 			appendPaths: []*pathz.Path{pathz.MustParse("segment")},
 			expectedUrl: "http://example.com/base/segment?q=test",
@@ -239,7 +239,7 @@ func TestUnitUrlAppend(t *testing.T) {
 	t.Run("append with fragment (should not affect fragment)", func(t *testing.T) {
 		originalUrl := &urlz.Url{Scheme: "http", Host: "example.com", Path: pathz.MustParse("/base"), Fragment: "anchor"}
 		check(t, testScenario{
-			name: "append with fragment",
+			name:        "append with fragment",
 			originalUrl: originalUrl,
 			appendPaths: []*pathz.Path{pathz.MustParse("segment")},
 			expectedUrl: "http://example.com/base/segment#anchor",
