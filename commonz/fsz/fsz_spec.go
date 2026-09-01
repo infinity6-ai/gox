@@ -29,9 +29,11 @@ type Paginator interface {
 
 type FsProvider interface {
 	Stat(ctx context.Context, url *urlz.Url) (*FileStat, error)
-	Upload(ctx context.Context, url *urlz.Url, reader io.Reader) error
+	Upload(ctx context.Context, url *urlz.Url, headers http.Header, reader io.Reader) error
 	Download(ctx context.Context, url *urlz.Url, callback func(found bool, headers http.Header, reader io.Reader)) error
 	Delete(ctx context.Context, url *urlz.Url) error
+
+	Copy(ctx context.Context, src *urlz.Url, dest *urlz.Url) error
 
 	Ls(ctx context.Context, prefix *urlz.Url) (Paginator, error)
 
