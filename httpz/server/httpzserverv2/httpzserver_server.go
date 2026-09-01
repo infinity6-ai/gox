@@ -35,8 +35,8 @@ type Server struct {
 	Options  Options
 	listener net.Listener
 	// mux      *http.ServeMux
-	filters []Filter
-	dfz     *deferz.Deferz
+	// filters []Filter
+	dfz *deferz.Deferz
 }
 
 func New(ctx context.Context, opts Options) *Server {
