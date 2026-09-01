@@ -39,7 +39,6 @@ func TestUnitClientWithServer(t *testing.T) {
 
 	// 2. Setup client
 	client := httpzclient.New(ctx, httpzclient.Options{BaseUrl: s.Base()})
-	defer client.Close()
 
 	// Add a filter to the client
 	client.AddFilter(func(req *httpzclient.Req, next httpzclient.Handler) (*httpzclient.Resp, error) {

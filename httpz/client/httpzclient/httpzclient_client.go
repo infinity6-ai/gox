@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/infinity6-ai/gox/commonz/deferz"
-	"github.com/infinity6-ai/gox/commonz/errorz"
+	"github.com/infinity6-ai/gox/commonz/validation/checker"
 )
 
 var defaultHttpClient = &http.Client{
@@ -21,39 +21,45 @@ var defaultHttpClient = &http.Client{
 }
 
 type Options struct {
-	BaseUrl string
+	BaseUrl    string
+	OpenClient func(ctx context.Context) *http.Client
 }
 
 func (o *Options) fix() {
-	if o.BaseUrl == "" {
-		o.BaseUrl = "http://localhost:8080"
-	}
+	checker.StrNotEmpty(o.BaseUrl, "baseurl")
 }
 
 type Client struct {
 	Context context.Context
 	Options Options
-	dfz     *deferz.Deferz
 	filters []Filter
+	dfz     *deferz.Deferz
 	client  *http.Client
 }
 
 func New(ctx context.Context, opts Options) *Client {
 	opts.fix()
-	return &Client{
+	ret := &Client{
 		Context: ctx,
 		Options: opts,
-		dfz:     deferz.New(ctx),
 		client:  defaultHttpClient,
+		dfz:     deferz.New(ctx),
+	}
+	if opts.OpenClient != nil {
+		ret.client = opts.OpenClient(ctx)
+		ret.dfz.Add(ret.client.CloseIdleConnections)
+	}
+	return ret
+}
+
+func (c *Client) Close() {
+	if c.dfz != nil {
+		c.dfz.Close()
 	}
 }
 
 func (c *Client) AddFilter(filter Filter) {
 	c.filters = append(c.filters, filter)
-}
-
-func (c *Client) Close() error {
-	return c.dfz.Close()
 }
 
 func (c *Client) Do(req *Req) (*Resp, error) {
@@ -69,6 +75,9 @@ func (c *Client) Do(req *Req) (*Resp, error) {
 }
 
 func (c *Client) send(req *Req) (*Resp, error) {
+	dfz := deferz.New(c.Context)
+	defer dfz.Close()
+
 	urlString, err := c.buildURL(req)
 	if err != nil {
 		return nil, fmt.Errorf("failed to build URL: %w", err)
@@ -87,14 +96,11 @@ func (c *Client) send(req *Req) (*Resp, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to execute request: %w", err)
 	}
-
+	dfz.AddCloserS(httpResp.Body)
 	resp := &Resp{}
 	resp.fromHttpResponse(httpResp)
 
-	c.dfz.Add(func() {
-		errorz.Check(httpResp.Body.Close())
-	})
-
+	dfz.Detach()
 	return resp, nil
 }
 
