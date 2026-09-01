@@ -121,11 +121,11 @@ func TestUnitUrlClone(t *testing.T) {
 	})
 }
 
-func TestUnitUrlAppend(t *testing.T) {
+func TestUnitUrlJoinPath(t *testing.T) {
 	type testScenario struct {
 		name string
 		originalUrl *urlz.Url
-		appendPaths []*pathz.Path
+		joinPaths []*pathz.Path
 		expectedUrl string
 		expectedErr string
 		expectedUrlOnError *urlz.Url // New field for error-case URL assertion
@@ -134,57 +134,57 @@ func TestUnitUrlAppend(t *testing.T) {
 	check := func(t *testing.T, s testScenario) {
 		t.Helper()
 		originalPathString := s.originalUrl.Path.String() // Save original path string for immutability check
-		appendedUrl, err := s.originalUrl.Append(s.appendPaths...)
+		joinedUrl, err := s.originalUrl.JoinPath(s.joinPaths...)
 
 		if s.expectedErr != "" {
 			require.Error(t, err)
 			require.Contains(t, err.Error(), s.expectedErr)
-			require.NotNil(t, appendedUrl) // appendedUrl should not be nil even on error
-			require.Equal(t, s.expectedUrlOnError, appendedUrl, "Appended URL on error should match expected error URL")
+			require.NotNil(t, joinedUrl) // joinedUrl should not be nil even on error
+			require.Equal(t, s.expectedUrlOnError, joinedUrl, "Joined URL on error should match expected error URL")
 			// Ensure original URL is unchanged on error
 			require.Equal(t, originalPathString, s.originalUrl.Path.String(), "Original URL's path should be unchanged on error")
 			return
 		}
 
 		require.NoError(t, err)
-		require.NotNil(t, appendedUrl)
-		require.NotSame(t, s.originalUrl, appendedUrl, "Appended URL should be a new object")
-		require.NotSame(t, s.originalUrl.Path, appendedUrl.Path, "Appended URL's Path should be a new object")
+		require.NotNil(t, joinedUrl)
+		require.NotSame(t, s.originalUrl, joinedUrl, "Joined URL should be a new object")
+		require.NotSame(t, s.originalUrl.Path, joinedUrl.Path, "Joined URL's Path should be a new object")
 
 		// Verify the new URL's string representation
-		require.Equal(t, s.expectedUrl, appendedUrl.String(), "Appended URL string should match expected")
+		require.Equal(t, s.expectedUrl, joinedUrl.String(), "Joined URL string should match expected")
 
 		// Ensure original URL is unchanged
-		require.Equal(t, originalPathString, s.originalUrl.Path.String(), "Original URL's path should be unchanged after append")
+		require.Equal(t, originalPathString, s.originalUrl.Path.String(), "Original URL's path should be unchanged after join")
 	}
 
-	t.Run("append single relative path", func(t *testing.T) {
+	t.Run("join single relative path", func(t *testing.T) {
 		originalUrl := &urlz.Url{Scheme: "http", Host: "example.com", Path: pathz.MustParse("/base")}
 		check(t, testScenario{
-			name:        "append single relative path",
+			name:        "join single relative path",
 			originalUrl: originalUrl,
-			appendPaths: []*pathz.Path{pathz.MustParse("segment")},
+			joinPaths: []*pathz.Path{pathz.MustParse("segment")},
 			expectedUrl: "http://example.com/base/segment",
 		})
 	})
 
-	t.Run("append multiple relative paths", func(t *testing.T) {
+	t.Run("join multiple relative paths", func(t *testing.T) {
 		originalUrl := &urlz.Url{Scheme: "http", Host: "example.com", Path: pathz.MustParse("/base/folder/")}
 		check(t, testScenario{
-			name:        "append multiple relative paths",
+			name:        "join multiple relative paths",
 			originalUrl: originalUrl,
-			appendPaths: []*pathz.Path{pathz.MustParse("sub"), pathz.MustParse("file.txt")},
+			joinPaths: []*pathz.Path{pathz.MustParse("sub"), pathz.MustParse("file.txt")},
 			expectedUrl: "http://example.com/base/folder/sub/file.txt",
 		})
 	})
 
-	t.Run("append with parent traversal", func(t *testing.T) {
+	t.Run("join with parent traversal", func(t *testing.T) {
 		originalUrl := &urlz.Url{Scheme: "file", Path: pathz.MustParse("/usr/local/bin")}
 		check(t, testScenario{
-			name:        "append with parent traversal",
+			name:        "join with parent traversal",
 			originalUrl: originalUrl,
-			appendPaths: []*pathz.Path{pathz.MustParse("../share")},
-			expectedErr: "path escaped error: joining '/usr/local/bin' to '[../share]' results in '/usr/local/share' which is outside the base: error appending path to url file:///usr/local/bin: [../share]",
+			joinPaths: []*pathz.Path{pathz.MustParse("../share")},
+			expectedErr: "path escaped error: joining '/usr/local/bin' to '[../share]' results in '/usr/local/share' which is outside the base: error joining path to url file:///usr/local/bin: [../share]",
 			expectedUrlOnError: &urlz.Url{
 				Scheme: "file",
 				Path:   pathz.MustParse("/usr/local/share"),
@@ -192,13 +192,13 @@ func TestUnitUrlAppend(t *testing.T) {
 		})
 	})
 
-	t.Run("append resulting in escaped path", func(t *testing.T) {
+	t.Run("join resulting in escaped path", func(t *testing.T) {
 		originalUrl := &urlz.Url{Scheme: "http", Host: "example.com", Path: pathz.MustParse("/a/b")}
 		check(t, testScenario{
-			name:        "append resulting in escaped path",
+			name:        "join resulting in escaped path",
 			originalUrl: originalUrl,
-			appendPaths: []*pathz.Path{pathz.MustParse("../../c")},
-			expectedErr: "path escaped error: joining '/a/b' to '[../../c]' results in '/c' which is outside the base: error appending path to url http://example.com/a/b: [../../c]",
+			joinPaths: []*pathz.Path{pathz.MustParse("../../c")},
+			expectedErr: "path escaped error: joining '/a/b' to '[../../c]' results in '/c' which is outside the base: error joining path to url http://example.com/a/b: [../../c]",
 			expectedUrlOnError: &urlz.Url{
 				Scheme: "http",
 				Host:   "example.com",
@@ -207,33 +207,33 @@ func TestUnitUrlAppend(t *testing.T) {
 		})
 	})
 
-	t.Run("append empty path", func(t *testing.T) {
+	t.Run("join empty path", func(t *testing.T) {
 		originalUrl := &urlz.Url{Scheme: "http", Host: "example.com", Path: pathz.MustParse("/base")}
 		check(t, testScenario{
-			name:        "append empty path",
+			name:        "join empty path",
 			originalUrl: originalUrl,
-			appendPaths: []*pathz.Path{pathz.MustParse("")},
+			joinPaths: []*pathz.Path{pathz.MustParse("")},
 			expectedUrl: "http://example.com/base",
 		})
 	})
 
-	t.Run("append to root path", func(t *testing.T) {
+	t.Run("join to root path", func(t *testing.T) {
 		originalUrl := &urlz.Url{Scheme: "file", Path: pathz.MustParse("/")}
 		check(t, testScenario{
-			name:        "append to root path",
+			name:        "join to root path",
 			originalUrl: originalUrl,
-			appendPaths: []*pathz.Path{pathz.MustParse("folder/file.txt")},
+			joinPaths: []*pathz.Path{pathz.MustParse("folder/file.txt")},
 			expectedUrl: "file:///folder/file.txt",
 		})
 	})
 
-	t.Run("append absolute path should discard previous and return escaped error", func(t *testing.T) {
+	t.Run("join absolute path should discard previous and return escaped error", func(t *testing.T) {
 		originalUrl := &urlz.Url{Scheme: "http", Host: "example.com", Path: pathz.MustParse("/base")}
 		check(t, testScenario{
-			name:        "append absolute path should discard previous and return escaped error",
+			name:        "join absolute path should discard previous and return escaped error",
 			originalUrl: originalUrl,
-			appendPaths: []*pathz.Path{pathz.MustParse("/new/absolute/path")},
-			expectedErr: "path escaped error: joining '/base' to '[/new/absolute/path]' results in '/new/absolute/path' which is outside the base: error appending path to url http://example.com/base: [/new/absolute/path]",
+			joinPaths: []*pathz.Path{pathz.MustParse("/new/absolute/path")},
+			expectedErr: "path escaped error: joining '/base' to '[/new/absolute/path]' results in '/new/absolute/path' which is outside the base: error joining path to url http://example.com/base: [/new/absolute/path]",
 			expectedUrlOnError: &urlz.Url{
 				Scheme: "http",
 				Host:   "example.com",
@@ -242,22 +242,22 @@ func TestUnitUrlAppend(t *testing.T) {
 		})
 	})
 
-	t.Run("append with query parameters (should not affect query)", func(t *testing.T) {
+	t.Run("join with query parameters (should not affect query)", func(t *testing.T) {
 		originalUrl := &urlz.Url{Scheme: "http", Host: "example.com", Path: pathz.MustParse("/base"), Query: "q=test"}
 		check(t, testScenario{
-			name:        "append with query parameters",
+			name:        "join with query parameters",
 			originalUrl: originalUrl,
-			appendPaths: []*pathz.Path{pathz.MustParse("segment")},
+			joinPaths: []*pathz.Path{pathz.MustParse("segment")},
 			expectedUrl: "http://example.com/base/segment?q=test",
 		})
 	})
 
-	t.Run("append with fragment (should not affect fragment)", func(t *testing.T) {
+	t.Run("join with fragment (should not affect fragment)", func(t *testing.T) {
 		originalUrl := &urlz.Url{Scheme: "http", Host: "example.com", Path: pathz.MustParse("/base"), Fragment: "anchor"}
 		check(t, testScenario{
-			name:        "append with fragment",
+			name:        "join with fragment",
 			originalUrl: originalUrl,
-			appendPaths: []*pathz.Path{pathz.MustParse("segment")},
+			joinPaths: []*pathz.Path{pathz.MustParse("segment")},
 			expectedUrl: "http://example.com/base/segment#anchor",
 		})
 	})
