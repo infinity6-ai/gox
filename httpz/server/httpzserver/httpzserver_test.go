@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strings"
 	"testing"
 
 	"github.com/infinity6-ai/gox/commonz/errorz"
@@ -30,15 +31,17 @@ func TestUnitListen(t *testing.T) {
 		next(ctx, resp, req)
 	})
 
-	s.AddHandler("GET", "/bla/{p1}/b/{p2}/c/*", func(ctx context.Context, resp *httpzserver.Resp, req *httpzserver.Req, params map[string]string) {
+	s.AddHandler("POST", "/bla/{p1}/b/{p2}/c/*", func(ctx context.Context, resp *httpzserver.Resp, req *httpzserver.Req, params map[string]string) {
 		resp.Status = http.StatusBadRequest
 		resp.Headers.Set("a", "y")
-		resp.Write(fmt.Appendf(nil, "body: %s - %s", req.Path, params))
+		reqBody, err := io.ReadAll(req.Body)
+		errorz.Check(err)
+		resp.Write(fmt.Appendf(nil, "r: %s - %s, req: %s", req.Path, params, string(reqBody)))
 	})
 
 	s.Start()
 
-	resp, err := http.Get(s.Base() + "/bla/O1/b/O2/c/xyz")
+	resp, err := http.Post(s.Base()+"/bla/O1/b/O2/c/xyz", "text/plain", strings.NewReader("mybody"))
 	errorz.Check(err)
 	defer resp.Body.Close()
 	require.Equal(t, http.StatusBadRequest, resp.StatusCode)
@@ -47,5 +50,5 @@ func TestUnitListen(t *testing.T) {
 	require.Equal(t, "x1", resp.Header.Get("c"))
 	data, err := io.ReadAll(resp.Body)
 	errorz.Check(err)
-	require.Equal(t, "body: /bla/O1/b/O2/c/xyz - map[p1:O1 p2:O2]", string(data))
+	require.Equal(t, "r: /bla/O1/b/O2/c/xyz - map[p1:O1 p2:O2], req: mybody", string(data))
 }
