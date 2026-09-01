@@ -2,9 +2,11 @@ package httpzserver
 
 import (
 	"context"
+	"io"
 	"net/http"
 	"strings"
 
+	"github.com/infinity6-ai/gox/commonz/errorz"
 	"github.com/infinity6-ai/gox/commonz/pathz"
 	"github.com/infinity6-ai/gox/commonz/validation/checker"
 )
@@ -23,6 +25,21 @@ var allowedMethods = []string{
 }
 
 type Handler func(ctx context.Context, resp Resp, req *Req)
+
+func (h Handler) WrapResponse(ctx context.Context, resp Resp, req *Req, fixHeaders func(outHeaders http.Header) int, fixWriter func(outWriter io.Writer) io.Writer) io.Writer {
+	var rWriter io.Writer
+	nResp := func(nStatus int, nHeaders http.Header) io.Writer {
+		status := fixHeaders(nHeaders)
+		if status == 0 {
+			status = nStatus
+		}
+		rWriter = resp(status, nHeaders)
+		rWriter = fixWriter(rWriter)
+		return rWriter
+	}
+	h(ctx, nResp, req)
+	return rWriter
+}
 
 type HandlerPattern func(ctx context.Context, resp Resp, req *Req, params map[string]string)
 
@@ -73,7 +90,9 @@ func (s *Server) route(ctx context.Context, resp Resp, req *Req) {
 			return
 		}
 	}
-	resp(http.StatusNotFound, nil).Write([]byte("Not Found"))
+	w := resp(http.StatusNotFound, nil)
+	_, err := w.Write([]byte("Not Found"))
+	errorz.Check(err)
 }
 
 func match(patternParts, actualParts []string, prefix bool) (map[string]string, bool) {

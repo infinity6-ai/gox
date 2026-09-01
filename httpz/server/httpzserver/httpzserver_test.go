@@ -34,16 +34,17 @@ func TestUnitListen(t *testing.T) {
 	})
 
 	s.AddFilter(func(ctx context.Context, resp httpzserver.Resp, req *httpzserver.Req, next httpzserver.Handler) {
-		var rWriter io.Writer
-		nResp := func(status int, nHeaders http.Header) io.Writer {
-			nHeaders.Set("b", "x2")
-			nHeaders.Set("c", "x2")
-			rWriter = resp(status, nHeaders)
-			rWriter.Write([]byte("UUUU "))
-			return rWriter
-		}
-		next(ctx, nResp, req)
-		rWriter.Write([]byte(" ZZZZ"))
+		w := next.WrapResponse(ctx, resp, req, func(outHeaders http.Header) int {
+			outHeaders.Set("b", "x2")
+			outHeaders.Set("c", "x2")
+			return 0
+		}, func(outWriter io.Writer) io.Writer {
+			_, err := outWriter.Write([]byte("UUUU "))
+			errorz.Check(err)
+			return outWriter
+		})
+		_, err := w.Write([]byte(" ZZZZ"))
+		errorz.Check(err)
 	})
 
 	s.AddHandler("POST", "/bla/{p1}/b/{p2}/c/*", func(ctx context.Context, resp httpzserver.Resp, req *httpzserver.Req, params map[string]string) {
