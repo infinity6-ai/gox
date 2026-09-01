@@ -26,14 +26,14 @@ func New(parents int, parts []string, hasEndingSlash bool) *Path {
 
 func (p *Path) Clone() *Path {
 	return &Path{
-		parts:          slices.Clone(p.parts),
+		parts:          p.Parts(),
 		parents:        p.parents,
 		hasEndingSlash: p.hasEndingSlash,
 	}
 }
 
 func (p *Path) Parts() []string {
-	return p.parts
+	return slices.Clone(p.parts)
 }
 
 func (p *Path) Parents() int {
