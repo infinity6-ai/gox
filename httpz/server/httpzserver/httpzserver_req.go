@@ -1,4 +1,4 @@
-package httpzserverv2
+package httpzserver
 
 import (
 	"io"

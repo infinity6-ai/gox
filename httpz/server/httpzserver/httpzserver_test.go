@@ -1,292 +1,57 @@
 package httpzserver_test
 
 import (
+	"context"
 	"fmt"
 	"io"
 	"net/http"
-	"strconv"
-	"strings"
 	"testing"
-	"time"
 
-	"github.com/infinity6-ai/gox/httpz/server/httpzresp"
+	"github.com/infinity6-ai/gox/commonz/errorz"
 	"github.com/infinity6-ai/gox/httpz/server/httpzserver"
 	"github.com/stretchr/testify/require"
 )
-
-// suffixResponseWriter is a wrapper around http.ResponseWriter that allows appending a suffix to the response body.
-type suffixResponseWriter struct {
-	http.ResponseWriter
-	suffix      []byte
-	headers     http.Header
-	wroteHeader bool
-	t           *testing.T
-}
-
-// newSuffixResponseWriter creates a new suffixResponseWriter.
-func newSuffixResponseWriter(w http.ResponseWriter, suffix []byte, t *testing.T) *suffixResponseWriter {
-	return &suffixResponseWriter{
-		ResponseWriter: w,
-		suffix:         suffix,
-		headers:        make(http.Header),
-		t:              t,
-	}
-}
-
-// Header returns the header map that will be sent by WriteHeader.
-func (srw *suffixResponseWriter) Header() http.Header {
-	return srw.headers
-}
-
-// Write writes the data to the connection as part of an HTTP reply.
-func (srw *suffixResponseWriter) Write(data []byte) (int, error) {
-	if !srw.wroteHeader {
-		srw.WriteHeader(http.StatusOK)
-	}
-	return srw.ResponseWriter.Write(data)
-}
-
-// WriteHeader sends an HTTP response header with the provided status code.
-func (srw *suffixResponseWriter) WriteHeader(statusCode int) {
-	if srw.wroteHeader {
-		return
-	}
-
-	// Copy headers from the original response writer in case they were set before wrapping.
-	for k, v := range srw.ResponseWriter.Header() {
-		if _, ok := srw.headers[k]; !ok {
-			srw.headers[k] = v
-		}
-	}
-
-	// If handler set a content length, we need to adjust it.
-	if cl := srw.headers.Get("Content-Length"); cl != "" {
-		if clInt, err := strconv.Atoi(cl); err == nil {
-			clInt += len(srw.suffix)
-			srw.headers.Set("Content-Length", strconv.Itoa(clInt))
-		}
-	}
-
-	// Copy our headers to the underlying response writer.
-	for k, v := range srw.headers {
-		srw.ResponseWriter.Header()[k] = v
-	}
-
-	srw.ResponseWriter.WriteHeader(statusCode)
-	srw.wroteHeader = true
-}
-
-// flush writes the suffix to the response body.
-func (srw *suffixResponseWriter) flush() {
-	if !srw.wroteHeader {
-		srw.WriteHeader(http.StatusOK)
-	}
-	_, err := srw.ResponseWriter.Write(srw.suffix)
-	require.NoError(srw.t, err)
-}
 
 func TestUnitListen(t *testing.T) {
 	ctx := t.Context()
 	s := httpzserver.New(ctx, httpzserver.Options{LocalAddress: "localhost:0"})
 	defer s.Close()
 	s.Listen()
-}
 
-func TestUnitServer_EndToEnd(t *testing.T) {
-	ctx := t.Context()
-	s := httpzserver.New(ctx, httpzserver.Options{LocalAddress: "localhost:0"})
-
-	// Add a filter
-	s.AddFilter(func(next http.Handler) http.Handler {
-		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			w.Header().Set("X-Test-Filter", "true")
-			next.ServeHTTP(w, r)
-		})
+	s.AddFilter(func(ctx context.Context, resp *httpzserver.Resp, req *httpzserver.Req, next httpzserver.Handler) {
+		resp.Headers.Set("a", "x1")
+		resp.Headers.Set("b", "x1")
+		resp.Headers.Set("c", "x1")
+		next(ctx, resp, req)
 	})
 
-	// Add a handler with a path parameter
-	s.AddHandlerPatternFunc("GET /test/{id}", func(w http.ResponseWriter, r *http.Request) {
-		id := r.PathValue("id")
-		fmt.Fprintf(w, "ID is %s", id)
+	s.AddFilter(func(ctx context.Context, resp *httpzserver.Resp, req *httpzserver.Req, next httpzserver.Handler) {
+		resp.Headers.Set("b", "x2")
+		next(ctx, resp, req)
 	})
 
-	// Add a prefix handler
-	s.AddHandlerPrefixFunc("/prefix/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		fmt.Fprint(w, "prefix matched")
-	}))
+	// s.AddFilter(func(ctx context.Context, resp *httpzserverv2.Resp, req *httpzserverv2.Req, next httpzserverv2.Handler) {
+	// 	resp.Status = http.StatusBadRequest
+	// 	resp.Headers.Set("a", "y")
+	// 	resp.Write([]byte("nok"))
+	// })
 
-	s.Listen()
-	serverAddr := s.Addr().String()
-
-	serverErr := make(chan error, 1)
-	go func() {
-		s.Start()
-		serverErr <- nil
-	}()
-
-	// Allow some time for the server to start
-	time.Sleep(50 * time.Millisecond)
-
-	client := &http.Client{}
-
-	// Test pattern handler
-	t.Run("PatternHandler", func(t *testing.T) {
-		resp, err := client.Get(fmt.Sprintf("http://%s/test/123", serverAddr))
-		require.NoError(t, err)
-		defer resp.Body.Close()
-
-		require.Equal(t, http.StatusOK, resp.StatusCode)
-		require.Equal(t, "true", resp.Header.Get("X-Test-Filter"))
-
-		body, err := io.ReadAll(resp.Body)
-		require.NoError(t, err)
-		require.Equal(t, "ID is 123", string(body))
+	s.AddHandler("GET", "/bla/{p1}/b/{p2}/c/*", func(ctx context.Context, resp *httpzserver.Resp, req *httpzserver.Req, params map[string]string) {
+		resp.Status = http.StatusBadRequest
+		resp.Headers.Set("a", "y")
+		resp.Write(fmt.Appendf(nil, "body: %s - %s", req.Path, params))
 	})
 
-	// Test prefix handler
-	t.Run("PrefixHandler", func(t *testing.T) {
-		resp, err := client.Get(fmt.Sprintf("http://%s/prefix/anything", serverAddr))
-		require.NoError(t, err)
-		defer resp.Body.Close()
+	s.Start()
 
-		require.Equal(t, http.StatusOK, resp.StatusCode)
-		require.Equal(t, "true", resp.Header.Get("X-Test-Filter"))
-
-		body, err := io.ReadAll(resp.Body)
-		require.NoError(t, err)
-		require.Equal(t, "prefix matched", string(body))
-	})
-
-	// Test not found
-	t.Run("NotFound", func(t *testing.T) {
-		resp, err := client.Get(fmt.Sprintf("http://%s/not/found", serverAddr))
-		require.NoError(t, err)
-		defer resp.Body.Close()
-
-		require.Equal(t, http.StatusNotFound, resp.StatusCode)
-		// The filter should still run for 404s served by the mux
-		require.Equal(t, "true", resp.Header.Get("X-Test-Filter"))
-	})
-
-	// Shutdown server
-	require.NoError(t, s.Close())
-
-	select {
-	case err := <-serverErr:
-		require.NoError(t, err)
-	case <-time.After(1 * time.Second):
-		t.Fatal("server did not shut down gracefully")
-	}
-}
-
-func TestUnitServer_FilterModifiesBody(t *testing.T) {
-	ctx := t.Context()
-	s := httpzserver.New(ctx, httpzserver.Options{LocalAddress: "localhost:0"})
-
-	// Add filter to modify request and response bodies
-	s.AddFilter(func(next http.Handler) http.Handler {
-		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			// // Modify request body without full read
-			reqSuffix := "-modified-req"
-			if r.ContentLength != -1 {
-				r.ContentLength += int64(len(reqSuffix))
-			}
-			r.Body = io.NopCloser(io.MultiReader(r.Body, strings.NewReader(reqSuffix)))
-
-			// // Wrap the response writer to append a suffix to the response body
-			// respSuffix := "-modified-resp"
-			// srw := newSuffixResponseWriter(w, []byte(respSuffix), t)
-			// defer srw.flush()
-
-			// next.ServeHTTP(srw, r)
-
-			// sent := false
-			// w2 := httpzresp.New(w, httpzresp.Options{
-			// 	Header: func(w httpzresp.Resp) http.Header {
-			// 		return w.Original.Header()
-			// 	},
-			// 	Write: func(w httpzresp.Resp, data []byte) (int, error) {
-			// 		if !sent {
-			// 			sent = true
-			// 			w.Original.WriteHeader(http.StatusOK)
-			// 		}
-			// 		return w.Original.Write(data)
-			// 	},
-			// 	WriteHeader: func(w httpzresp.Resp, statusCode int) {
-			// 		sent = true
-			// 		w.Original.WriteHeader(statusCode)
-			// 	},
-			// })
-
-			w2 := &httpzresp.StreamInterceptor{
-				ResponseWriter: w,
-				Writer:         w,
-				BeforeHeader: func(i int) int {
-					x := w.Header().Get("Content-Length")
-					if x != "" {
-						if clInt, err := strconv.Atoi(x); err == nil {
-							clInt += len("-modified-resp")
-							w.Header().Set("Content-Length", strconv.Itoa(clInt))
-						}
-					}
-					return i
-				},
-			}
-
-			next.ServeHTTP(w2, r)
-			w2.Write([]byte("-modified-resp"))
-			// w.Write([]byte("-modified-resp"))
-		})
-	})
-
-	// Add handler that echoes the request body
-	s.AddHandlerPatternFunc("POST /echo", func(w http.ResponseWriter, r *http.Request) {
-		body, err := io.ReadAll(r.Body)
-		if err != nil {
-			http.Error(w, "failed to read body", http.StatusInternalServerError)
-			return
-		}
-		b := fmt.Sprintf("echo:%s", string(body))
-		w.Header().Set("Content-Type", "text/plain")
-		w.Header().Set("Content-Length", strconv.Itoa(len(b)))
-		w.WriteHeader(200)
-		w.Write([]byte(b))
-	})
-
-	s.Listen()
-	serverAddr := s.Addr().String()
-
-	serverErr := make(chan error, 1)
-	go func() {
-		s.Start()
-		serverErr <- nil
-	}()
-
-	// Allow some time for the server to start
-	time.Sleep(50 * time.Millisecond)
-
-	client := &http.Client{}
-
-	// Make request
-	reqBody := "hello"
-	resp, err := client.Post(fmt.Sprintf("http://%s/echo", serverAddr), "text/plain", strings.NewReader(reqBody))
-	require.NoError(t, err)
+	resp, err := http.Get(s.Base() + "/bla/O1/b/O2/c/xyz")
+	errorz.Check(err)
 	defer resp.Body.Close()
-
-	require.Equal(t, http.StatusOK, resp.StatusCode)
-
-	respBody, err := io.ReadAll(resp.Body)
-	require.NoError(t, err)
-	expectedRespBody := "echo:hello-modified-req-modified-resp"
-	require.Equal(t, expectedRespBody, string(respBody))
-
-	// Shutdown server
-	require.NoError(t, s.Close())
-
-	select {
-	case err := <-serverErr:
-		require.NoError(t, err)
-	case <-time.After(1 * time.Second):
-		t.Fatal("server did not shut down gracefully")
-	}
+	require.Equal(t, http.StatusBadRequest, resp.StatusCode)
+	require.Equal(t, "y", resp.Header.Get("a"))
+	require.Equal(t, "x2", resp.Header.Get("b"))
+	require.Equal(t, "x1", resp.Header.Get("c"))
+	data, err := io.ReadAll(resp.Body)
+	errorz.Check(err)
+	require.Equal(t, "body: /bla/O1/b/O2/c/xyz - map[p1:O1 p2:O2]", string(data))
 }
