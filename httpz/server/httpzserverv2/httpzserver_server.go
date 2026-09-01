@@ -31,7 +31,7 @@ type Server struct {
 	Context  context.Context
 	Options  Options
 	listener net.Listener
-	Filters  []FilterX
+	Filters  []Filter
 	dfz      *deferz.Deferz
 }
 
