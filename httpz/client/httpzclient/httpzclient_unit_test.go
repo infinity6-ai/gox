@@ -95,6 +95,66 @@ func TestUnitClientRequestBuilding(t *testing.T) {
 	require.Equal(t, "body", string(bodyBytes))
 }
 
+func TestUnitClientPathResolution(t *testing.T) {
+	// 1. Setup server
+	ctx := t.Context()
+	s := httpzserver.New(ctx, httpzserver.Options{LocalAddress: "localhost:0"})
+	defer s.Close()
+
+	s.AddHandler("GET", "/api/v1/test", func(ctx context.Context, resp httpzserver.Resp, req *httpzserver.Req, params map[string]string) {
+		w := resp(http.StatusOK, http.Header{})
+		_, err := w.Write([]byte("path-prefix-test"))
+		require.NoError(t, err)
+	})
+	s.Listen()
+	s.Start()
+
+	t.Run("with path prefix and trailing slash", func(t *testing.T) {
+		client := httpzclient.New(ctx, httpzclient.Options{BaseUrl: s.Base() + "/api/v1/"})
+		req := httpzclient.NewReq("GET", "test")
+		resp, err := client.Do(req)
+		require.NoError(t, err)
+		defer resp.Body.Close()
+
+		require.Equal(t, http.StatusOK, resp.StatusCode)
+		respBody, err := io.ReadAll(resp.Body)
+		require.NoError(t, err)
+		require.Equal(t, "path-prefix-test", string(respBody))
+	})
+
+	t.Run("with path prefix and no trailing slash", func(t *testing.T) {
+		client := httpzclient.New(ctx, httpzclient.Options{BaseUrl: s.Base() + "/api/v1"})
+		req := httpzclient.NewReq("GET", "/test")
+		resp, err := client.Do(req)
+		require.NoError(t, err)
+		defer resp.Body.Close()
+
+		require.Equal(t, http.StatusOK, resp.StatusCode)
+		respBody, err := io.ReadAll(resp.Body)
+		require.NoError(t, err)
+		require.Equal(t, "path-prefix-test", string(respBody))
+	})
+
+	t.Run("without path prefix", func(t *testing.T) {
+		s.AddHandler("GET", "/test", func(ctx context.Context, resp httpzserver.Resp, req *httpzserver.Req, params map[string]string) {
+			w := resp(http.StatusOK, http.Header{})
+			_, err := w.Write([]byte("no-prefix-test"))
+			require.NoError(t, err)
+		})
+
+		client := httpzclient.New(ctx, httpzclient.Options{BaseUrl: s.Base()})
+		req := httpzclient.NewReq("GET", "/test")
+		resp, err := client.Do(req)
+		require.NoError(t, err)
+		defer resp.Body.Close()
+
+		require.Equal(t, http.StatusOK, resp.StatusCode)
+		respBody, err := io.ReadAll(resp.Body)
+		require.NoError(t, err)
+		require.Equal(t, "no-prefix-test", string(respBody))
+	})
+}
+
 func TestUnitClientErrorHandling(t *testing.T) {
 	ctx := t.Context()
 

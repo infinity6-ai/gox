@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"path"
 	"time"
 
 	"github.com/infinity6-ai/gox/commonz/deferz"
@@ -105,7 +106,7 @@ func (c *Client) buildURL(req *Req) (string, error) {
 		return "", fmt.Errorf("invalid base URL: must be an absolute URL: %s", c.Options.BaseUrl)
 	}
 
-	u.Path = req.Path.String()
+	u.Path = path.Join(u.Path, req.Path.String())
 	u.RawQuery = req.Query.Encode()
 
 	return u.String(), nil
