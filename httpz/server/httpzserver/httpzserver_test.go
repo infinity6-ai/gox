@@ -23,6 +23,10 @@ func TestUnitListen(t *testing.T) {
 		resp.Headers.Set("a", "x1")
 		resp.Headers.Set("b", "x1")
 		resp.Headers.Set("c", "x1")
+		preBody := strings.NewReader("reqpre-")
+		originalBody := req.Body
+		sufBody := strings.NewReader("-reqsuf")
+		req.Body = io.MultiReader(preBody, originalBody, sufBody)
 		next(ctx, resp, req)
 	})
 
@@ -50,5 +54,5 @@ func TestUnitListen(t *testing.T) {
 	require.Equal(t, "x1", resp.Header.Get("c"))
 	data, err := io.ReadAll(resp.Body)
 	errorz.Check(err)
-	require.Equal(t, "r: /bla/O1/b/O2/c/xyz - map[p1:O1 p2:O2], req: mybody", string(data))
+	require.Equal(t, "r: /bla/O1/b/O2/c/xyz - map[p1:O1 p2:O2], req: reqpre-mybody-reqsuf", string(data))
 }
