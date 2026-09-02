@@ -17,10 +17,10 @@ const (
 )
 
 type Rule struct {
-	Name      string      `json:"name"`
+	Name      string         `json:"name"`
 	Regexp    *regexp.Regexp `json:"-"` // Exclude from direct JSON marshaling
-	Operation Operation   `json:"operation"`
-	Out       string      `json:"out"`
+	Operation Operation      `json:"operation"`
+	Out       string         `json:"out"`
 }
 
 // jsonRule is an auxiliary struct for JSON marshaling/unmarshaling of Rule
@@ -90,14 +90,14 @@ type Engine struct {
 	Rules []Rule `json:"rules"`
 }
 
-func (e *Engine) Apply(s string) (string, bool) {
+func (e *Engine) Apply(s string) (string, int, bool) {
 	c := s
-	for _, rule := range e.Rules {
+	for idx, rule := range e.Rules {
 		var ok bool
 		c, ok = rule.Apply(c)
 		if !ok {
-			return s, false
+			return s, idx, false
 		}
 	}
-	return c, true
+	return c, -1, true
 }
