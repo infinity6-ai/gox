@@ -11,7 +11,7 @@ We use `github.com/stretchr/testify` for our testing assertions. When writing te
 All test functions should follow the pattern `Test[Type][Scenario]`. The `[Type]` segment categorizes the test based on its dependencies and execution environment:
 
 -   **Unit**: Pure unit tests with no external dependencies.
--   **Remote**: Tests that require external resources or cloud services (e.g., APIs, databases).
+-   **Remote**: Tests that require external resources or cloud services (e.g., APIs, databases). Avoid run it if you do not need them.
 -   **Manual**: Tests that are intended to be run manually only, often for complex scenarios or integration with systems not suitable for automated CI.
 
 We do not mix different test types within the same test file. Test file names should reflect the type of tests they contain, using the pattern `[testfilename]_[type]_test.go`.
