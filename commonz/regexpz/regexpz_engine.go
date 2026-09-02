@@ -1,6 +1,7 @@
 package regexpz
 
 import (
+	"encoding/json"
 	"regexp"
 	"strings"
 )
@@ -16,10 +17,49 @@ const (
 )
 
 type Rule struct {
-	Name      string
-	Regexp    *regexp.Regexp
-	Operation Operation
-	Out       string
+	Name      string      `json:"name"`
+	Regexp    *regexp.Regexp `json:"-"` // Exclude from direct JSON marshaling
+	Operation Operation   `json:"operation"`
+	Out       string      `json:"out"`
+}
+
+// jsonRule is an auxiliary struct for JSON marshaling/unmarshaling of Rule
+type jsonRule struct {
+	Name          string    `json:"name"`
+	RegexpPattern string    `json:"regexp_pattern"`
+	Operation     Operation `json:"operation"`
+	Out           string    `json:"out"`
+}
+
+// MarshalJSON implements the json.Marshaler interface for Rule.
+func (r *Rule) MarshalJSON() ([]byte, error) {
+	if r.Regexp == nil {
+		return nil, nil // Or return an error, depending on desired behavior
+	}
+	jr := jsonRule{
+		Name:          r.Name,
+		RegexpPattern: r.Regexp.String(),
+		Operation:     r.Operation,
+		Out:           r.Out,
+	}
+	return json.Marshal(jr)
+}
+
+// UnmarshalJSON implements the json.Unmarshaler interface for Rule.
+func (r *Rule) UnmarshalJSON(data []byte) error {
+	jr := jsonRule{}
+	if err := json.Unmarshal(data, &jr); err != nil {
+		return err
+	}
+	compiledRegexp, err := regexp.Compile(jr.RegexpPattern)
+	if err != nil {
+		return err
+	}
+	r.Name = jr.Name
+	r.Regexp = compiledRegexp
+	r.Operation = jr.Operation
+	r.Out = jr.Out
+	return nil
 }
 
 func (r *Rule) Apply(s string) (string, bool) {
