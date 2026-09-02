@@ -2,37 +2,36 @@ package regexpz
 
 import (
 	"fmt"
-	"regexp"
 	"sync"
 
 	"github.com/infinity6-ai/gox/commonz/errorz"
 )
 
 type Collection struct {
-	coll map[string]*regexp.Regexp
+	coll map[string]*Regexp
 	mu   sync.RWMutex
 }
 
 func New(buffer int) *Collection {
 	return &Collection{
-		coll: make(map[string]*regexp.Regexp, buffer),
+		coll: make(map[string]*Regexp, buffer),
 	}
 }
 
 var root = New(0)
 
-func (c *Collection) internalGet(pattern string) *regexp.Regexp {
+func (c *Collection) internalGet(pattern string) *Regexp {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
 	return c.coll[pattern]
 }
 
-func (c *Collection) Get(pattern string, re *regexp.Regexp) (*regexp.Regexp, error) {
+func (c *Collection) Get(pattern string, re *Regexp) (*Regexp, error) {
 	ret := c.internalGet(pattern)
 	if ret != nil {
 		return ret, nil
 	}
-	ret, err := regexp.Compile(pattern)
+	ret, err := NewRegexp(pattern)
 	if err != nil {
 		return nil, fmt.Errorf("%w: error compiling regexp: %s", err, pattern)
 	}
@@ -42,16 +41,16 @@ func (c *Collection) Get(pattern string, re *regexp.Regexp) (*regexp.Regexp, err
 	return ret, nil
 }
 
-func (c *Collection) Must(pattern string, re *regexp.Regexp) *regexp.Regexp {
+func (c *Collection) Must(pattern string, re *Regexp) *Regexp {
 	ret, err := c.Get(pattern, re)
 	errorz.Check(err)
 	return ret
 }
 
-func Get(pattern string, re *regexp.Regexp) (*regexp.Regexp, error) {
+func Get(pattern string, re *Regexp) (*Regexp, error) {
 	return root.Get(pattern, re)
 }
 
-func Must(pattern string, re *regexp.Regexp) *regexp.Regexp {
+func Must(pattern string, re *Regexp) *Regexp {
 	return root.Must(pattern, re)
 }
