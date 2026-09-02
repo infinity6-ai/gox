@@ -14,7 +14,7 @@ type Field struct {
 	Type Type `json:"type"`
 
 	// array
-	Field *Field `json:"field"`
+	ArrayType *Field `json:"array_type"`
 
 	// object
 	Fields map[string]*Field `json:"fields"`
