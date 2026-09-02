@@ -16,10 +16,10 @@ const (
 )
 
 type Rule struct {
-	Name      string         `json:"name"`
-	Regexp    *regexp.Regexp `json:"regexp"`
-	Operation Operation      `json:"operation"`
-	Out       string         `json:"out"`
+	Name      string
+	Regexp    *regexp.Regexp
+	Operation Operation
+	Out       string
 }
 
 func (r *Rule) Apply(s string) (string, bool) {
