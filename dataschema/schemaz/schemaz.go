@@ -1,4 +1,4 @@
-package dataschema
+package schemaz
 
 import "github.com/infinity6-ai/gox/commonz/regexpz"
 

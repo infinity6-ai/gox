@@ -1,4 +1,4 @@
-package regexpz
+package rulez
 
 import (
 	"encoding/json"
