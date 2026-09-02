@@ -16,10 +16,10 @@ const (
 )
 
 type Rule struct {
-	Name      string
-	Regexp    *regexp.Regexp
-	Operation Operation
-	Out       string
+	Name      string         `json:"name"`
+	Regexp    *regexp.Regexp `json:"regexp"`
+	Operation Operation      `json:"operation"`
+	Out       string         `json:"out"`
 }
 
 func (r *Rule) Apply(s string) (string, bool) {
@@ -43,7 +43,7 @@ func (r *Rule) Apply(s string) (string, bool) {
 }
 
 type Engine struct {
-	Rules []Rule
+	Rules []Rule `json:"rules"`
 }
 
 func (e *Engine) Apply(s string) (string, bool) {
