@@ -1,4 +1,4 @@
-package fsz
+package fsz_test
 
 import (
 	"bytes"
@@ -12,6 +12,7 @@ import (
 	"testing"
 
 	"github.com/infinity6-ai/gox/commonz/filez"
+	"github.com/infinity6-ai/gox/commonz/fsz"
 	"github.com/infinity6-ai/gox/commonz/urlz"
 	"github.com/stretchr/testify/require"
 )
@@ -28,11 +29,11 @@ func TestUnitFszFileProvider(t *testing.T) {
 	u, err := urlz.Parse("file://" + filePath)
 	require.NoError(t, err)
 
-	err = Upload(ctx, u, nil, strings.NewReader(content))
+	err = fsz.Upload(ctx, u, nil, strings.NewReader(content))
 	require.NoError(t, err)
 
 	// 2. Stat the file
-	stat, err := Stat(ctx, u)
+	stat, err := fsz.Stat(ctx, u)
 	require.NoError(t, err)
 	require.NotNil(t, stat)
 	require.Equal(t, uint64(len(content)), stat.Size)
@@ -40,7 +41,7 @@ func TestUnitFszFileProvider(t *testing.T) {
 	require.Empty(t, stat.Etag)
 
 	// 3. Download the file
-	err = Download(ctx, u, func(found bool, headers http.Header, reader io.Reader) error {
+	err = fsz.Download(ctx, u, func(found bool, headers http.Header, reader io.Reader) error {
 		require.True(t, found)
 		require.NotNil(t, reader)
 
@@ -52,11 +53,11 @@ func TestUnitFszFileProvider(t *testing.T) {
 	require.NoError(t, err)
 
 	// 4. Delete the file
-	err = Delete(ctx, u)
+	err = fsz.Delete(ctx, u)
 	require.NoError(t, err)
 
 	// 5. Stat again, should be nil
-	stat, err = Stat(ctx, u)
+	stat, err = fsz.Stat(ctx, u)
 	require.NoError(t, err)
 	require.Nil(t, stat)
 }
@@ -77,7 +78,7 @@ func TestUnitFszLs(t *testing.T) {
 	u, err := urlz.Parse("file://" + tmpDir)
 	require.NoError(t, err)
 
-	paginator, err := Ls(ctx, u)
+	paginator, err := fsz.Ls(ctx, u)
 	require.NoError(t, err)
 
 	// Paginate with max=2
@@ -110,7 +111,7 @@ func TestUnitDownloadNotFound(t *testing.T) {
 	u, err := urlz.Parse("file://" + filePath)
 	require.NoError(t, err)
 
-	err = Download(ctx, u, func(found bool, headers http.Header, reader io.Reader) error {
+	err = fsz.Download(ctx, u, func(found bool, headers http.Header, reader io.Reader) error {
 		require.False(t, found)
 		require.Nil(t, headers)
 		require.Nil(t, reader)
@@ -128,7 +129,7 @@ func TestUnitStatNotFound(t *testing.T) {
 	u, err := urlz.Parse("file://" + filePath)
 	require.NoError(t, err)
 
-	stat, err := Stat(ctx, u)
+	stat, err := fsz.Stat(ctx, u)
 	require.NoError(t, err)
 	require.Nil(t, stat)
 }
@@ -147,7 +148,7 @@ func TestUnitDownloadCallbackReader(t *testing.T) {
 	require.NoError(t, err)
 
 	var downloadedData bytes.Buffer
-	err = Download(ctx, u, func(found bool, headers http.Header, reader io.Reader) error {
+	err = fsz.Download(ctx, u, func(found bool, headers http.Header, reader io.Reader) error {
 		require.True(t, found)
 		_, err := io.Copy(&downloadedData, reader)
 		require.NoError(t, err)
@@ -189,7 +190,7 @@ func TestUnitFszCopy(t *testing.T) {
 		destURL, err := urlz.Parse("file://" + destPath)
 		require.NoError(t, err)
 
-		err = Copy(ctx, srcURL, destURL)
+		err = fsz.Copy(ctx, srcURL, destURL)
 
 		if s.expectError {
 			require.Error(t, err)
@@ -208,7 +209,7 @@ func TestUnitFszCopy(t *testing.T) {
 			require.Equal(t, s.srcContent, string(destContent))
 
 			// Verify Stat on destination
-			stat, err := Stat(ctx, destURL)
+			stat, err := fsz.Stat(ctx, destURL)
 			require.NoError(t, err)
 			require.NotNil(t, stat)
 			require.Equal(t, uint64(len(s.srcContent)), stat.Size)

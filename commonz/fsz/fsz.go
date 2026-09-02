@@ -4,12 +4,14 @@ import (
 	"context"
 	"io"
 	"net/http"
+	"time"
 
 	"github.com/infinity6-ai/gox/commonz/urlz"
 )
 
 var providers = map[string]FsProvider{
 	"file": providerFile(),
+	"gs":   providerGs(),
 }
 
 func RegisterFS(scheme string, fs FsProvider) {
@@ -86,4 +88,28 @@ func Copy(ctx context.Context, src *urlz.Url, dest *urlz.Url) error {
 		return err
 	}
 	return prv.Copy(ctx, src, dest)
+}
+
+func SignGet(ctx context.Context, url *urlz.Url, duration time.Duration) (string, error) {
+	prv, err := getProvider(url.Scheme)
+	if err != nil {
+		return "", err
+	}
+	return prv.SignGet(ctx, url, duration)
+}
+
+func SignPut(ctx context.Context, url *urlz.Url, duration time.Duration) (string, error) {
+	prv, err := getProvider(url.Scheme)
+	if err != nil {
+		return "", err
+	}
+	return prv.SignPut(ctx, url, duration)
+}
+
+func SignDelete(ctx context.Context, url *urlz.Url, duration time.Duration) (string, error) {
+	prv, err := getProvider(url.Scheme)
+	if err != nil {
+		return "", err
+	}
+	return prv.SignDelete(ctx, url, duration)
 }
