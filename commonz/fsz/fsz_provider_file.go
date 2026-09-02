@@ -69,102 +69,131 @@ func (ff *fileFs) Delete(ctx context.Context, url *urlz.Url) error {
 	return filez.Remove(p)
 }
 
-type filePaginator struct {
-	files []*FileStat
-	pos   int
+// Paginator for Ls (non-recursive, streaming)
+type fileLsPaginator struct {
+	dir     *os.File
+	dirPath string
 }
 
-func (p *filePaginator) Close() error {
-	return nil
+func (p *fileLsPaginator) Close() error {
+	return p.dir.Close()
 }
 
-func (p *filePaginator) Paginate(ctx context.Context, max int) ([]*FileStat, error) {
-	if p.pos >= len(p.files) {
+func (p *fileLsPaginator) Paginate(ctx context.Context, max int) ([]*FileStat, error) {
+	entries, err := p.dir.Readdir(max)
+	if err == io.EOF {
 		return nil, nil
 	}
-	end := p.pos + max
-	if end > len(p.files) {
-		end = len(p.files)
+	if err != nil {
+		return nil, err
 	}
-	results := p.files[p.pos:end]
-	p.pos = end
+
+	var results []*FileStat
+	for _, info := range entries {
+		path := filepath.Join(p.dirPath, info.Name())
+		u, err := urlz.Parse("file://" + filepath.ToSlash(path))
+		if err != nil {
+			continue
+		}
+		results = append(results, &FileStat{
+			Url:       u,
+			Size:      uint64(info.Size()),
+			UpdatedAt: filez.GetUpdatedAt(path),
+			CreatedAt: filez.GetCreatedAt(path),
+		})
+	}
 	return results, nil
 }
 
 func (ff *fileFs) Ls(ctx context.Context, prefix *urlz.Url) (Paginator, error) {
-	paginator := &filePaginator{
-		files: make([]*FileStat, 0),
-	}
-
 	dirPath := prefix.Path.String()
-	err := filez.Ls(dirPath, func(idx int, path string, f os.DirEntry) (bool, error) {
-		info, err := f.Info()
-		if err != nil {
-			return false, fmt.Errorf("failed to get file info for %s: %w", path, err)
-		}
-
-		u, err := urlz.Parse("file://" + filepath.ToSlash(path))
-		if err != nil {
-			return false, fmt.Errorf("failed to parse url for %s: %w", path, err)
-		}
-
-		fileStat := &FileStat{
-			Url:       u,
-			Size:      uint64(info.Size()),
-			UpdatedAt: filez.GetUpdatedAt(path),
-			CreatedAt: filez.GetCreatedAt(path),
-		}
-		paginator.files = append(paginator.files, fileStat)
-		return false, nil
-	})
-
+	dir, err := os.Open(dirPath)
 	if err != nil {
 		return nil, err
 	}
+	return &fileLsPaginator{dir: dir, dirPath: dirPath}, nil
+}
 
-	return paginator, nil
+type filePaginatorItem struct {
+	stat *FileStat
+	err  error
+}
+
+// Paginator for Find (recursive, streaming)
+type fileFindPaginator struct {
+	ch     <-chan *filePaginatorItem
+	cancel context.CancelFunc
+}
+
+func (p *fileFindPaginator) Close() error {
+	p.cancel()
+	return nil
+}
+
+func (p *fileFindPaginator) Paginate(ctx context.Context, max int) ([]*FileStat, error) {
+	var results []*FileStat
+	for i := 0; i < max; i++ {
+		select {
+		case item, ok := <-p.ch:
+			if !ok {
+				return results, nil
+			}
+			if item.err != nil {
+				return nil, item.err
+			}
+			results = append(results, item.stat)
+		case <-ctx.Done():
+			return results, ctx.Err()
+		}
+	}
+	return results, nil
 }
 
 func (ff *fileFs) Find(ctx context.Context, prefix *urlz.Url) (Paginator, error) {
-	paginator := &filePaginator{
-		files: make([]*FileStat, 0),
-	}
+	ch := make(chan *filePaginatorItem)
+	pCtx, cancel := context.WithCancel(ctx)
 
-	dirPath := prefix.Path.String()
-	err := filepath.WalkDir(dirPath, func(path string, d os.DirEntry, err error) error {
-		if err != nil {
-			return err
-		}
-		if d.IsDir() {
+	go func() {
+		defer close(ch)
+		dirPath := prefix.Path.String()
+		err := filepath.WalkDir(dirPath, func(path string, d os.DirEntry, err error) error {
+			if err != nil {
+				return err
+			}
+			if d.IsDir() {
+				return nil
+			}
+
+			info, err := d.Info()
+			if err != nil {
+				return fmt.Errorf("failed to get file info for %s: %w", path, err)
+			}
+
+			u, err := urlz.Parse("file://" + filepath.ToSlash(path))
+			if err != nil {
+				return fmt.Errorf("failed to parse url for %s: %w", path, err)
+			}
+
+			select {
+			case ch <- &filePaginatorItem{stat: &FileStat{
+				Url:       u,
+				Size:      uint64(info.Size()),
+				UpdatedAt: filez.GetUpdatedAt(path),
+				CreatedAt: filez.GetCreatedAt(path),
+			}}:
+			case <-pCtx.Done():
+				return pCtx.Err()
+			}
 			return nil
-		}
-
-		info, err := d.Info()
+		})
 		if err != nil {
-			return fmt.Errorf("failed to get file info for %s: %w", path, err)
+			ch <- &filePaginatorItem{err: err}
 		}
+	}()
 
-		u, err := urlz.Parse("file://" + filepath.ToSlash(path))
-		if err != nil {
-			return fmt.Errorf("failed to parse url for %s: %w", path, err)
-		}
-
-		fileStat := &FileStat{
-			Url:       u,
-			Size:      uint64(info.Size()),
-			UpdatedAt: filez.GetUpdatedAt(path),
-			CreatedAt: filez.GetCreatedAt(path),
-		}
-		paginator.files = append(paginator.files, fileStat)
-		return nil
-	})
-
-	if err != nil {
-		return nil, err
-	}
-
-	return paginator, nil
+	return &fileFindPaginator{ch: ch, cancel: cancel}, nil
 }
+
 
 func (ff *fileFs) SignGet(ctx context.Context, url *urlz.Url, duration time.Duration) (string, error) {
 	return "", ErrUnsupportedOperation
