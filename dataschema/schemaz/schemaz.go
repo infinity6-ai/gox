@@ -10,12 +10,37 @@ const (
 	TypeBoolean Type = "boolean"
 )
 
-type Field struct {
+type Desc struct {
+	Name     string
+	Summary  string
+	Markdown string
+}
+
+type Spec struct {
 	Type Type `json:"type"`
 
 	// array
-	ArrayType *Field `json:"array_type"`
+	ArrayType Type `json:"array_type"`
 
 	// object
-	Fields map[string]*Field `json:"fields"`
+	Fields []Field `json:"fields"`
+}
+
+type Field struct {
+	Name string `json:"name"`
+	Desc Desc   `json:"desc"`
+	Spec Spec   `json:"spec"`
+}
+
+type Api struct {
+	Id        string
+	Desc      Desc
+	Method    string
+	Path      string
+	ReqParams []Field // basics
+	ReqQuery  []Field // basics
+	ReqMeta   []Field // basics
+	ReqBody   Field
+	RespMeta  []Field // basics
+	RespBody  Field
 }
