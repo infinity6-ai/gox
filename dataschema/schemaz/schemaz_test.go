@@ -1,4 +1,4 @@
-package dataschema_test
+package schemaz_test
 
 import "testing"
 

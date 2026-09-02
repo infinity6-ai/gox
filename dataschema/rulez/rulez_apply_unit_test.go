@@ -1,4 +1,4 @@
-package regexpz
+package rulez
 
 import (
 	"regexp"
@@ -9,22 +9,24 @@ import (
 
 func TestUnitEngineApply(t *testing.T) {
 	type testScenario struct {
-		name     string
-		engine   *Engine
-		input    string
-		expected string
-		ok       bool
+		name        string
+		engine      *Rules
+		input       string
+		expected    string
+		ok          bool
+		expectedIdx int
 	}
 
 	check := func(t *testing.T, s testScenario) {
 		t.Helper()
-		output, ok := s.engine.Apply(s.input)
+		output, idx, ok := s.engine.Apply(s.input)
 		require.Equal(t, s.ok, ok)
 		require.Equal(t, s.expected, output)
+		require.Equal(t, s.expectedIdx, idx)
 	}
 
 	t.Run("ComplexTransformWithGrouping", func(t *testing.T) {
-		engine := &Engine{
+		engine := &Rules{
 			Rules: []Rule{
 				{
 					Name:      "Swap words",
@@ -48,16 +50,17 @@ func TestUnitEngineApply(t *testing.T) {
 		}
 
 		check(t, testScenario{
-			name:     "should transform the string",
-			engine:   engine,
-			input:    "The quick brown fox jumps over the lazy dog",
-			expected: "The-brown-quick-FOX-jumps-over-the-lazy-dog",
-			ok:       true,
+			name:        "should transform the string",
+			engine:      engine,
+			input:       "The quick brown fox jumps over the lazy dog",
+			expected:    "The-brown-quick-FOX-jumps-over-the-lazy-dog",
+			ok:          true,
+			expectedIdx: -1,
 		})
 	})
 
 	t.Run("MismatchOperationFailsChain", func(t *testing.T) {
-		engine := &Engine{
+		engine := &Rules{
 			Rules: []Rule{
 				{
 					Name:      "Should match",
@@ -73,16 +76,17 @@ func TestUnitEngineApply(t *testing.T) {
 		}
 
 		check(t, testScenario{
-			name:     "mismatch should fail the chain",
-			engine:   engine,
-			input:    "start processing",
-			expected: "start processing",
-			ok:       false,
+			name:        "mismatch should fail the chain",
+			engine:      engine,
+			input:       "start processing",
+			expected:    "start processing",
+			ok:          false,
+			expectedIdx: 1,
 		})
 	})
 
 	t.Run("DeleteOperation", func(t *testing.T) {
-		engine := &Engine{
+		engine := &Rules{
 			Rules: []Rule{
 				{
 					Name:      "Delete vowels",
@@ -93,11 +97,12 @@ func TestUnitEngineApply(t *testing.T) {
 		}
 
 		check(t, testScenario{
-			name:     "should delete all vowels",
-			engine:   engine,
-			input:    "hello world",
-			expected: "hll wrld",
-			ok:       true,
+			name:        "should delete all vowels",
+			engine:      engine,
+			input:       "hello world",
+			expected:    "hll wrld",
+			ok:          true,
+			expectedIdx: -1,
 		})
 	})
 }
