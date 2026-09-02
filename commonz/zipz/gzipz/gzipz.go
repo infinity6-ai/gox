@@ -6,7 +6,7 @@ import (
 	"fmt"
 
 	"github.com/infinity6-ai/gox/commonz/constraintz/blobz"
-	"go.code.infinity6.ai/platform/util"
+	"github.com/infinity6-ai/gox/commonz/filez"
 )
 
 const GUNZIP_MAX_SIZE = 10 * 1025 * 1024
@@ -33,7 +33,7 @@ func GunzipLimited(data []byte, maxSize int) (blobz.Blob, error) {
 		return nil, fmt.Errorf("failed to gunzip: %w", err)
 	}
 	defer gzipReader.Close()
-	result := util.ReadAllLimited(gzipReader, maxSize)
+	result := filez.ReadAllLimited(gzipReader, maxSize)
 	return blobz.New(result), nil
 }
 
