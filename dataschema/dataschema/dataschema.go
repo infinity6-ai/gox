@@ -1,5 +1,7 @@
 package dataschema
 
+import "github.com/infinity6-ai/gox/commonz/regexpz"
+
 type Type string
 
 const (
@@ -18,6 +20,9 @@ type Field struct {
 
 	// object
 	Fields map[string]*Field `json:"fields"`
+
+	Nullable     bool            `json:"nullable"`
+	RegexpEngine *regexpz.Engine `json:"regexp_engine"`
 }
 
 func (f *Field) Validate(name string, t Type) error {
