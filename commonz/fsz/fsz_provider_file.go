@@ -125,6 +125,47 @@ func (ff *fileFs) Ls(ctx context.Context, prefix *urlz.Url) (Paginator, error) {
 	return paginator, nil
 }
 
+func (ff *fileFs) Find(ctx context.Context, prefix *urlz.Url) (Paginator, error) {
+	paginator := &filePaginator{
+		files: make([]*FileStat, 0),
+	}
+
+	dirPath := prefix.Path.String()
+	err := filepath.WalkDir(dirPath, func(path string, d os.DirEntry, err error) error {
+		if err != nil {
+			return err
+		}
+		if d.IsDir() {
+			return nil
+		}
+
+		info, err := d.Info()
+		if err != nil {
+			return fmt.Errorf("failed to get file info for %s: %w", path, err)
+		}
+
+		u, err := urlz.Parse("file://" + filepath.ToSlash(path))
+		if err != nil {
+			return fmt.Errorf("failed to parse url for %s: %w", path, err)
+		}
+
+		fileStat := &FileStat{
+			Url:       u,
+			Size:      uint64(info.Size()),
+			UpdatedAt: filez.GetUpdatedAt(path),
+			CreatedAt: filez.GetCreatedAt(path),
+		}
+		paginator.files = append(paginator.files, fileStat)
+		return nil
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	return paginator, nil
+}
+
 func (ff *fileFs) SignGet(ctx context.Context, url *urlz.Url, duration time.Duration) (string, error) {
 	return "", ErrUnsupportedOperation
 }

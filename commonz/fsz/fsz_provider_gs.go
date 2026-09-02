@@ -166,6 +166,19 @@ func (gf *gsFs) Ls(ctx context.Context, prefix *urlz.Url) (Paginator, error) {
 
 	bucket := prefix.Host
 	path := strings.TrimPrefix(prefix.Path.String(), "/")
+	it := client.Bucket(bucket).Objects(ctx, &storage.Query{Prefix: path, Delimiter: "/"})
+
+	return &gsPaginator{it: it, client: client}, nil
+}
+
+func (gf *gsFs) Find(ctx context.Context, prefix *urlz.Url) (Paginator, error) {
+	client, err := gf.getClient(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create gcs client: %w", err)
+	}
+
+	bucket := prefix.Host
+	path := strings.TrimPrefix(prefix.Path.String(), "/")
 	it := client.Bucket(bucket).Objects(ctx, &storage.Query{Prefix: path})
 
 	return &gsPaginator{it: it, client: client}, nil

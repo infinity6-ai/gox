@@ -66,6 +66,14 @@ func Ls(ctx context.Context, url *urlz.Url) (Paginator, error) {
 	return p.Ls(ctx, url)
 }
 
+func Find(ctx context.Context, url *urlz.Url) (Paginator, error) {
+	p, err := getProvider(url.Scheme)
+	if err != nil {
+		return nil, err
+	}
+	return p.Find(ctx, url)
+}
+
 func Copy(ctx context.Context, src *urlz.Url, dest *urlz.Url) error {
 	if src.Scheme != dest.Scheme {
 		srcProvider, err := getProvider(src.Scheme)

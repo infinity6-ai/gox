@@ -267,3 +267,46 @@ func TestUnitFszCopy(t *testing.T) {
 		require.Equal(t, "new content to overwrite", string(overwrittenContent))
 	})
 }
+
+func TestUnitFszFind(t *testing.T) {
+	tmpDir := filez.CreateTempDir("fsz-find-test")
+	defer os.RemoveAll(tmpDir)
+
+	ctx := context.Background()
+
+	// Create some files
+	files := []string{
+		"a/b/c.txt",
+		"a/b/d.txt",
+		"a/e.txt",
+		"f.txt",
+		"g/h/i.log",
+		"g/j.txt",
+	}
+	for _, f := range files {
+		filePath := filepath.Join(tmpDir, f)
+		err := filez.CreateParentDirs(filePath)
+		require.NoError(t, err)
+		err = os.WriteFile(filePath, []byte("content"), 0644)
+		require.NoError(t, err)
+	}
+
+	u, err := urlz.Parse("file://" + tmpDir)
+	require.NoError(t, err)
+
+	paginator, err := fsz.Find(ctx, u)
+	require.NoError(t, err)
+	defer paginator.Close()
+
+	var foundFiles int
+	for {
+		stats, err := paginator.Paginate(ctx, 2)
+		require.NoError(t, err)
+		if len(stats) == 0 {
+			break
+		}
+		foundFiles += len(stats)
+	}
+
+	require.Equal(t, len(files), foundFiles)
+}

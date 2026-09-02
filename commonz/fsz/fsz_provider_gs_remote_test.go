@@ -266,4 +266,42 @@ func TestRemoteGsProvider(t *testing.T) {
 		require.NotNil(t, stat)
 		require.Equal(t, uint64(len(srcContent)), stat.Size)
 	})
+
+	t.Run("Find", func(t *testing.T) {
+		baseObjectName := fmt.Sprintf("test-find-base-%d", time.Now().UnixNano())
+		prefixUrl, err := urlz.Parse(fmt.Sprintf("gs://%s/%s/", testBucket, baseObjectName))
+		require.NoError(t, err)
+
+		// Create some objects
+		objects := []string{
+			"a/b/c.txt",
+			"a/b/d.txt",
+			"a/e.txt",
+			"f.txt",
+			"g/h/i.log",
+			"g/j.txt",
+		}
+		for _, obj := range objects {
+			objUrl, _ := urlz.Parse(fmt.Sprintf("gs://%s/%s/%s", testBucket, baseObjectName, obj))
+			err := fsz.Upload(ctx, objUrl, nil, strings.NewReader("content"))
+			require.NoError(t, err)
+			defer fsz.Delete(ctx, objUrl) // Ensure cleanup for all created objects
+		}
+
+		paginator, err := fsz.Find(ctx, prefixUrl)
+		require.NoError(t, err)
+		defer paginator.Close()
+
+		var foundFiles int
+		for {
+			stats, err := paginator.Paginate(ctx, 2)
+			require.NoError(t, err)
+			if len(stats) == 0 {
+				break
+			}
+			foundFiles += len(stats)
+		}
+
+		require.Equal(t, len(objects), foundFiles)
+	})
 }
