@@ -1,4 +1,4 @@
-package regexpzcomp
+package regexpz
 
 import (
 	"fmt"
