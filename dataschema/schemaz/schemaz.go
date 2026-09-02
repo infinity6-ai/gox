@@ -20,10 +20,6 @@ type Field struct {
 	Fields map[string]*Field `json:"fields"`
 }
 
-func (f *Field) Validate(name string, t Type) error {
-	return nil
-}
-
 type Schema struct {
 	Name string `json:"name"`
 	Root *Field `json:"root"`
