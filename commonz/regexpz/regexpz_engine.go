@@ -28,7 +28,7 @@ func (r *Rule) Apply(s string) (string, bool) {
 		matched := r.Regexp.MatchString(s)
 		return s, matched
 	case MismatchOperation:
-		return s, false
+		return s, !r.Regexp.MatchString(s)
 	case ReplaceOperation:
 		return r.Regexp.ReplaceAllString(s, r.Out), true
 	case SplitOperation:
