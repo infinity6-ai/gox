@@ -86,11 +86,11 @@ func (r *Rule) Apply(s string) (string, bool) {
 
 }
 
-type Engine struct {
+type Rules struct {
 	Rules []Rule `json:"rules"`
 }
 
-func (e *Engine) Apply(s string) (string, int, bool) {
+func (e *Rules) Apply(s string) (string, int, bool) {
 	c := s
 	for idx, rule := range e.Rules {
 		var ok bool

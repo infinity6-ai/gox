@@ -102,7 +102,7 @@ func TestUnitRuleJSONSerialization(t *testing.T) {
 func TestUnitEngineJSONSerialization(t *testing.T) {
 	type testScenario struct {
 		name          string
-		inputEngine   Engine
+		inputEngine   Rules
 		expectedJSON  string
 		expectedError string
 	}
@@ -116,7 +116,7 @@ func TestUnitEngineJSONSerialization(t *testing.T) {
 		require.JSONEq(t, s.expectedJSON, string(marshaled))
 
 		// Test UnmarshalJSON
-		var unmarshaled Engine
+		var unmarshaled Rules
 		err = json.Unmarshal(marshaled, &unmarshaled)
 		if s.expectedError != "" {
 			require.Error(t, err)
@@ -141,7 +141,7 @@ func TestUnitEngineJSONSerialization(t *testing.T) {
 	t.Run("Engine with multiple Rules", func(t *testing.T) {
 		check(t, testScenario{
 			name: "Engine with multiple Rules",
-			inputEngine: Engine{
+			inputEngine: Rules{
 				Rules: []Rule{
 					{
 						Name:      "rule1",
@@ -164,7 +164,7 @@ func TestUnitEngineJSONSerialization(t *testing.T) {
 	t.Run("Engine with an invalid regex pattern in JSON", func(t *testing.T) {
 		// This test specifically checks UnmarshalJSON error handling
 		invalidJSON := `{"rules":[{"name":"bad_rule","regexp_pattern":"[invalid","operation":"match","out":""}]}`
-		var unmarshaled Engine
+		var unmarshaled Rules
 		err := json.Unmarshal([]byte(invalidJSON), &unmarshaled)
 		require.Error(t, err)
 		require.Contains(t, err.Error(), "error parsing regexp: missing closing ]")
@@ -173,7 +173,7 @@ func TestUnitEngineJSONSerialization(t *testing.T) {
 	t.Run("Engine with a nil Rule in the slice", func(t *testing.T) {
 		check(t, testScenario{
 			name: "Engine with a nil Rule in the slice",
-			inputEngine: Engine{
+			inputEngine: Rules{
 				Rules: []Rule{
 					{
 						Name:      "rule1",

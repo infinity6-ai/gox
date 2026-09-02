@@ -10,7 +10,7 @@ import (
 func TestUnitEngineApply(t *testing.T) {
 	type testScenario struct {
 		name        string
-		engine      *Engine
+		engine      *Rules
 		input       string
 		expected    string
 		ok          bool
@@ -26,7 +26,7 @@ func TestUnitEngineApply(t *testing.T) {
 	}
 
 	t.Run("ComplexTransformWithGrouping", func(t *testing.T) {
-		engine := &Engine{
+		engine := &Rules{
 			Rules: []Rule{
 				{
 					Name:      "Swap words",
@@ -60,7 +60,7 @@ func TestUnitEngineApply(t *testing.T) {
 	})
 
 	t.Run("MismatchOperationFailsChain", func(t *testing.T) {
-		engine := &Engine{
+		engine := &Rules{
 			Rules: []Rule{
 				{
 					Name:      "Should match",
@@ -86,7 +86,7 @@ func TestUnitEngineApply(t *testing.T) {
 	})
 
 	t.Run("DeleteOperation", func(t *testing.T) {
-		engine := &Engine{
+		engine := &Rules{
 			Rules: []Rule{
 				{
 					Name:      "Delete vowels",
