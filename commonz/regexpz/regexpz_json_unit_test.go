@@ -34,6 +34,12 @@ func TestUnitRuleJSONSerialization(t *testing.T) {
 		err = json.Unmarshal(marshaled, &unmarshaled)
 		require.NoError(t, err)
 
+		// if we marshal to null, we can't get the original data back
+		if string(marshaled) == "null" {
+			require.Nil(t, unmarshaled.Regexp)
+			return
+		}
+
 		require.Equal(t, s.inputRule.Name, unmarshaled.Name)
 		require.Equal(t, s.inputRule.Operation, unmarshaled.Operation)
 		require.Equal(t, s.inputRule.Out, unmarshaled.Out)

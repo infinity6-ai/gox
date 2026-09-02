@@ -34,7 +34,7 @@ type jsonRule struct {
 // MarshalJSON implements the json.Marshaler interface for Rule.
 func (r *Rule) MarshalJSON() ([]byte, error) {
 	if r.Regexp == nil {
-		return nil, nil // Or return an error, depending on desired behavior
+		return []byte("null"), nil
 	}
 	jr := jsonRule{
 		Name:          r.Name,
@@ -47,6 +47,10 @@ func (r *Rule) MarshalJSON() ([]byte, error) {
 
 // UnmarshalJSON implements the json.Unmarshaler interface for Rule.
 func (r *Rule) UnmarshalJSON(data []byte) error {
+	if string(data) == "null" {
+		*r = Rule{}
+		return nil
+	}
 	jr := jsonRule{}
 	if err := json.Unmarshal(data, &jr); err != nil {
 		return err
