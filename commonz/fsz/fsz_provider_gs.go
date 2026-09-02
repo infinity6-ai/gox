@@ -190,7 +190,7 @@ type SignOptions struct {
 	ContentType string
 }
 
-func gcssign(ctx context.Context, url *urlz.Url, opts *SignOptions) (string, error) {
+func gcssign(url *urlz.Url, opts *SignOptions) (string, error) {
 	bucket := url.Host
 	object := strings.TrimPrefix(url.Path.String(), "/")
 	o := &storage.SignedURLOptions{
@@ -203,21 +203,21 @@ func gcssign(ctx context.Context, url *urlz.Url, opts *SignOptions) (string, err
 }
 
 func (gf *gsFs) SignGet(ctx context.Context, url *urlz.Url, duration time.Duration) (string, error) {
-	return gcssign(ctx, url, &SignOptions{
+	return gcssign(url, &SignOptions{
 		Method:   "GET",
 		Duration: duration,
 	})
 }
 
 func (gf *gsFs) SignPut(ctx context.Context, url *urlz.Url, duration time.Duration) (string, error) {
-	return gcssign(ctx, url, &SignOptions{
+	return gcssign(url, &SignOptions{
 		Method:   "PUT",
 		Duration: duration,
 	})
 }
 
 func (gf *gsFs) SignDelete(ctx context.Context, url *urlz.Url, duration time.Duration) (string, error) {
-	return gcssign(ctx, url, &SignOptions{
+	return gcssign(url, &SignOptions{
 		Method:   "DELETE",
 		Duration: duration,
 	})

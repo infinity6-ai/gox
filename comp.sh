@@ -26,6 +26,10 @@ function cmd_test_unit() {
   go test -run '^TestUnit.*$' ./... "$@" 
 }
 
+function cmd_test_remote() {
+  go test -run '^TestRemote.*$' ./... "$@" 
+}
+
 function cmd_test() {
   cmd_test_unit
 }
