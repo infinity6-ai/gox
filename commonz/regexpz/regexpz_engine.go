@@ -1,6 +1,7 @@
 package regexpz
 
 import (
+	"regexp"
 	"strings"
 )
 
@@ -15,22 +16,13 @@ const (
 )
 
 type Rule struct {
-	Name      string    `json:"name"`
-	Regexp    *Regexp   `json:"regexp"`
-	Operation Operation `json:"operation"`
-	Out       string    `json:"out"`
+	Name      string         `json:"name"`
+	Regexp    *regexp.Regexp `json:"regexp"`
+	Operation Operation      `json:"operation"`
+	Out       string         `json:"out"`
 }
 
 func (r *Rule) Apply(s string) (string, bool) {
-	if r.Regexp == nil || r.Regexp.Regexp == nil {
-		if r.Operation == MatchOperation {
-			return s, false // A nil regexp matches nothing.
-		}
-		if r.Operation == MismatchOperation {
-			return s, true // A nil regexp mismatches everything.
-		}
-		return s, true // For other operations, it's a no-op that succeeds.
-	}
 	switch r.Operation {
 	case MatchOperation:
 		matched := r.Regexp.MatchString(s)

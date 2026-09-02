@@ -1,6 +1,7 @@
 package regexpz
 
 import (
+	"regexp"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -27,19 +28,19 @@ func TestUnitEngineApply(t *testing.T) {
 			Rules: []Rule{
 				{
 					Name:      "Swap words",
-					Regexp:    MustCompile(`(quick)\s(brown)`),
+					Regexp:    regexp.MustCompile(`(quick)\s(brown)`),
 					Operation: ReplaceOperation,
 					Out:       `$2 $1`,
 				},
 				{
 					Name:      "Capitalize fox",
-					Regexp:    MustCompile(`(fox)`),
+					Regexp:    regexp.MustCompile(`(fox)`),
 					Operation: ReplaceOperation,
 					Out:       `FOX`,
 				},
 				{
 					Name:      "Join with hyphens",
-					Regexp:    MustCompile(`\s`),
+					Regexp:    regexp.MustCompile(`\s`),
 					Operation: SplitOperation,
 					Out:       "-",
 				},
@@ -60,12 +61,12 @@ func TestUnitEngineApply(t *testing.T) {
 			Rules: []Rule{
 				{
 					Name:      "Should match",
-					Regexp:    MustCompile(`^start`),
+					Regexp:    regexp.MustCompile(`^start`),
 					Operation: MatchOperation,
 				},
 				{
 					Name:      "Should mismatch and fail",
-					Regexp:    MustCompile(`processing`),
+					Regexp:    regexp.MustCompile(`processing`),
 					Operation: MismatchOperation,
 				},
 			},
@@ -85,7 +86,7 @@ func TestUnitEngineApply(t *testing.T) {
 			Rules: []Rule{
 				{
 					Name:      "Delete vowels",
-					Regexp:    MustCompile(`[aeiou]`),
+					Regexp:    regexp.MustCompile(`[aeiou]`),
 					Operation: DeleteOperation,
 				},
 			},

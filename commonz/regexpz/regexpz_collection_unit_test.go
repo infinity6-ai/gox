@@ -1,6 +1,7 @@
 package regexpz
 
 import (
+	"regexp"
 	"sync"
 	"testing"
 
@@ -40,7 +41,7 @@ func TestUnitCollectionGet(t *testing.T) {
 		t.Helper()
 		// If the pattern is supposed to be cached, add it manually before the test
 		if s.alreadyCached {
-			re, err := NewRegexp(s.pattern)
+			re, err := regexp.Compile(s.pattern)
 			require.NoError(t, err)
 			c.mu.Lock()
 			c.coll[s.pattern] = re
