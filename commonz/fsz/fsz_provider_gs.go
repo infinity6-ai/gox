@@ -94,7 +94,6 @@ func (gf *gsFs) Download(ctx context.Context, url *urlz.Url, callback func(found
 
 	headers := make(http.Header)
 	headers.Set("Content-Type", rc.Attrs.ContentType)
-	// headers.Set("Etag", rc.Attrs.Etag)
 
 	return callback(true, headers, rc)
 }
