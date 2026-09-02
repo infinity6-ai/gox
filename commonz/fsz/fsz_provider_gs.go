@@ -2,6 +2,7 @@ package fsz
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -34,7 +35,7 @@ func (gf *gsFs) Stat(ctx context.Context, url *urlz.Url) (*FileStat, error) {
 	object := strings.TrimPrefix(url.Path.String(), "/")
 
 	attrs, err := client.Bucket(bucket).Object(object).Attrs(ctx)
-	if err == storage.ErrObjectNotExist {
+	if errors.Is(err, storage.ErrObjectNotExist) {
 		return nil, nil
 	}
 	if err != nil {
@@ -84,7 +85,7 @@ func (gf *gsFs) Download(ctx context.Context, url *urlz.Url, callback func(found
 	object := strings.TrimPrefix(url.Path.String(), "/")
 
 	rc, err := client.Bucket(bucket).Object(object).NewReader(ctx)
-	if err == storage.ErrObjectNotExist {
+	if errors.Is(err, storage.ErrObjectNotExist) {
 		return callback(false, nil, nil)
 	}
 	if err != nil {
@@ -109,7 +110,7 @@ func (gf *gsFs) Delete(ctx context.Context, url *urlz.Url) error {
 	object := strings.TrimPrefix(url.Path.String(), "/")
 
 	err = client.Bucket(bucket).Object(object).Delete(ctx)
-	if err == storage.ErrObjectNotExist {
+	if errors.Is(err, storage.ErrObjectNotExist) {
 		return nil
 	}
 	return err

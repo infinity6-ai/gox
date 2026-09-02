@@ -152,7 +152,12 @@ func TestRemoteGsProvider(t *testing.T) {
 		defer fsz.Delete(ctx, testUrl)
 
 		signedURL, err := fsz.SignGet(ctx, testUrl, 5*time.Minute)
-		require.NoError(t, err)
+		if err != nil {
+			if strings.Contains(err.Error(), "missing required GoogleAccessID") {
+				t.Skip("Skipping SignGet test: environment not configured for signing URLs")
+			}
+			require.NoError(t, err)
+		}
 		require.NotEmpty(t, signedURL)
 
 		// Attempt to download using the signed URL
