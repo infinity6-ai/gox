@@ -19,8 +19,3 @@ type Field struct {
 	// object
 	Fields map[string]*Field `json:"fields"`
 }
-
-type Schema struct {
-	Name string `json:"name"`
-	Root *Field `json:"root"`
-}
