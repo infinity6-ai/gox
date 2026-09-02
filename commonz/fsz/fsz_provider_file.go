@@ -74,6 +74,10 @@ type filePaginator struct {
 	pos   int
 }
 
+func (p *filePaginator) Close() error {
+	return nil
+}
+
 func (p *filePaginator) Paginate(ctx context.Context, max int) ([]*FileStat, error) {
 	if p.pos >= len(p.files) {
 		return nil, nil

@@ -103,6 +103,7 @@ func TestRemoteGsProvider(t *testing.T) {
 		prefixURL, _ := urlz.Parse(fmt.Sprintf("gs://%s/%s/dir1/", testBucket, basePath))
 		paginator, err := fsz.Ls(ctx, prefixURL)
 		require.NoError(t, err)
+		defer paginator.Close()
 
 		stats, err := paginator.Paginate(ctx, 10)
 		require.NoError(t, err)
@@ -171,5 +172,98 @@ func TestRemoteGsProvider(t *testing.T) {
 		require.Equal(t, content, string(data))
 	})
 
-	// TODO: Add more tests for SignPut, SignDelete, and cross-bucket copy if applicable
+	t.Run("SignPut", func(t *testing.T) {
+		objectName := fmt.Sprintf("test-signed-put-%d", time.Now().UnixNano())
+		testUrl, err := urlz.Parse(fmt.Sprintf("gs://%s/%s", testBucket, objectName))
+		require.NoError(t, err)
+
+		defer fsz.Delete(ctx, testUrl)
+
+		signedURL, err := fsz.SignPut(ctx, testUrl, 5*time.Minute)
+		if err != nil {
+			if strings.Contains(err.Error(), "missing required GoogleAccessID") {
+				t.Skip("Skipping SignPut test: environment not configured for signing URLs")
+			}
+			require.NoError(t, err)
+		}
+		require.NotEmpty(t, signedURL)
+
+		content := "signed put content"
+		req, err := http.NewRequest(http.MethodPut, signedURL, strings.NewReader(content))
+		require.NoError(t, err)
+		resp, err := http.DefaultClient.Do(req)
+		require.NoError(t, err)
+		defer resp.Body.Close()
+		require.Equal(t, http.StatusOK, resp.StatusCode)
+
+		// Verify upload
+		var downloadedContent bytes.Buffer
+		err = fsz.Download(ctx, testUrl, func(found bool, headers http.Header, reader io.Reader) error {
+			require.True(t, found)
+			_, err := io.Copy(&downloadedContent, reader)
+			return err
+		})
+		require.NoError(t, err)
+		require.Equal(t, content, downloadedContent.String())
+	})
+
+	t.Run("SignDelete", func(t *testing.T) {
+		objectName := fmt.Sprintf("test-signed-delete-%d", time.Now().UnixNano())
+		testUrl, err := urlz.Parse(fmt.Sprintf("gs://%s/%s", testBucket, objectName))
+		require.NoError(t, err)
+
+		// Upload a file to be deleted
+		content := "to be deleted"
+		err = fsz.Upload(ctx, testUrl, nil, strings.NewReader(content))
+		require.NoError(t, err)
+
+		signedURL, err := fsz.SignDelete(ctx, testUrl, 5*time.Minute)
+		if err != nil {
+			if strings.Contains(err.Error(), "missing required GoogleAccessID") {
+				t.Skip("Skipping SignDelete test: environment not configured for signing URLs")
+			}
+			require.NoError(t, err)
+		}
+		require.NotEmpty(t, signedURL)
+
+		req, err := http.NewRequest(http.MethodDelete, signedURL, nil)
+		require.NoError(t, err)
+		resp, err := http.DefaultClient.Do(req)
+		require.NoError(t, err)
+		defer resp.Body.Close()
+		require.Equal(t, http.StatusNoContent, resp.StatusCode)
+
+		// Verify deletion
+		stat, err := fsz.Stat(ctx, testUrl)
+		require.NoError(t, err)
+		require.Nil(t, stat)
+	})
+
+	const testBucket2 = "i6-tmp"
+
+	t.Run("CopyCrossBucket", func(t *testing.T) {
+		srcObjectName := fmt.Sprintf("test-cross-bucket-copy-src-%d", time.Now().UnixNano())
+		srcUrl, err := urlz.Parse(fmt.Sprintf("gs://%s/%s", testBucket, srcObjectName))
+		require.NoError(t, err)
+
+		destObjectName := fmt.Sprintf("test-cross-bucket-copy-dest-%d", time.Now().UnixNano())
+		destUrl, err := urlz.Parse(fmt.Sprintf("gs://%s/%s", testBucket2, destObjectName))
+		require.NoError(t, err)
+
+		defer fsz.Delete(ctx, srcUrl)
+		defer fsz.Delete(ctx, destUrl)
+
+		srcContent := "cross-bucket content"
+		err = fsz.Upload(ctx, srcUrl, nil, strings.NewReader(srcContent))
+		require.NoError(t, err)
+
+		err = fsz.Copy(ctx, srcUrl, destUrl)
+		require.NoError(t, err)
+
+		// Verify copy
+		stat, err := fsz.Stat(ctx, destUrl)
+		require.NoError(t, err)
+		require.NotNil(t, stat)
+		require.Equal(t, uint64(len(srcContent)), stat.Size)
+	})
 }

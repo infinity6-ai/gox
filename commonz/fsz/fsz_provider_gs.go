@@ -117,7 +117,12 @@ func (gf *gsFs) Delete(ctx context.Context, url *urlz.Url) error {
 }
 
 type gsPaginator struct {
-	it *storage.ObjectIterator
+	it     *storage.ObjectIterator
+	client *storage.Client
+}
+
+func (p *gsPaginator) Close() error {
+	return p.client.Close()
 }
 
 func (p *gsPaginator) Paginate(ctx context.Context, max int) ([]*FileStat, error) {
@@ -158,17 +163,12 @@ func (gf *gsFs) Ls(ctx context.Context, prefix *urlz.Url) (Paginator, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to create gcs client: %w", err)
 	}
-	// Note: The client should not be closed here as it's used by the paginator.
-	// The paginator should not be responsible for closing the client.
-	// This creates a potential resource leak if the client is not managed outside.
-	// For this implementation, we will assume the caller of Ls will handle client lifecycle,
-	// or we accept the leak for simplicity in this context. A better solution would involve a shared client.
 
 	bucket := prefix.Host
 	path := strings.TrimPrefix(prefix.Path.String(), "/")
 	it := client.Bucket(bucket).Objects(ctx, &storage.Query{Prefix: path})
 
-	return &gsPaginator{it: it}, nil
+	return &gsPaginator{it: it, client: client}, nil
 }
 
 func (gf *gsFs) SignGet(ctx context.Context, url *urlz.Url, duration time.Duration) (string, error) {

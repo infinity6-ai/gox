@@ -25,6 +25,7 @@ type FileStat struct {
 
 type Paginator interface {
 	Paginate(ctx context.Context, max int) ([]*FileStat, error)
+	Close() error
 }
 
 type FsProvider interface {
@@ -36,6 +37,7 @@ type FsProvider interface {
 	Copy(ctx context.Context, src *urlz.Url, dest *urlz.Url) error
 
 	Ls(ctx context.Context, prefix *urlz.Url) (Paginator, error)
+	Find(ctx context.Context, prefix *urlz.Url) (Paginator, error)
 
 	SignGet(ctx context.Context, url *urlz.Url, duration time.Duration) (string, error)
 	SignPut(ctx context.Context, url *urlz.Url, duration time.Duration) (string, error)

@@ -80,6 +80,7 @@ func TestUnitFszLs(t *testing.T) {
 
 	paginator, err := fsz.Ls(ctx, u)
 	require.NoError(t, err)
+	defer paginator.Close()
 
 	// Paginate with max=2
 	stats1, err := paginator.Paginate(ctx, 2)
