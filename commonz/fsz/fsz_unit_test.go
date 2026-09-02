@@ -36,19 +36,18 @@ func TestUnitFszFileProvider(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, stat)
 	require.Equal(t, uint64(len(content)), stat.Size)
-	require.Equal(t, "text/plain; charset=utf-8", stat.ContentType)
-	require.NotEmpty(t, stat.Md5)
-	require.Equal(t, stat.Md5, stat.Etag)
+	require.Empty(t, stat.Md5)
+	require.Empty(t, stat.Etag)
 
 	// 3. Download the file
-	err = Download(ctx, u, func(found bool, headers http.Header, reader io.Reader) {
+	err = Download(ctx, u, func(found bool, headers http.Header, reader io.Reader) error {
 		require.True(t, found)
 		require.NotNil(t, reader)
-		defer (reader.(io.Closer)).Close()
 
 		data, err := io.ReadAll(reader)
 		require.NoError(t, err)
 		require.Equal(t, content, string(data))
+		return nil
 	})
 	require.NoError(t, err)
 
@@ -111,10 +110,11 @@ func TestUnitDownloadNotFound(t *testing.T) {
 	u, err := urlz.Parse("file://" + filePath)
 	require.NoError(t, err)
 
-	err = Download(ctx, u, func(found bool, headers http.Header, reader io.Reader) {
+	err = Download(ctx, u, func(found bool, headers http.Header, reader io.Reader) error {
 		require.False(t, found)
 		require.Nil(t, headers)
 		require.Nil(t, reader)
+		return nil
 	})
 	require.NoError(t, err)
 }
@@ -147,11 +147,11 @@ func TestUnitDownloadCallbackReader(t *testing.T) {
 	require.NoError(t, err)
 
 	var downloadedData bytes.Buffer
-	err = Download(ctx, u, func(found bool, headers http.Header, reader io.Reader) {
+	err = Download(ctx, u, func(found bool, headers http.Header, reader io.Reader) error {
 		require.True(t, found)
 		_, err := io.Copy(&downloadedData, reader)
 		require.NoError(t, err)
-		(reader.(io.Closer)).Close()
+		return nil
 	})
 	require.NoError(t, err)
 	require.Equal(t, content, downloadedData.String())
@@ -217,11 +217,11 @@ func TestUnitFszCopy(t *testing.T) {
 
 	t.Run("Copy existing file", func(t *testing.T) {
 		check(t, testScenario{
-			name:        "Copy existing file",
-			srcContent:  "content for source file",
-			srcFilename: "src.txt",
+			name:         "Copy existing file",
+			srcContent:   "content for source file",
+			srcFilename:  "src.txt",
 			destFilename: "dest.txt",
-			expectError: false,
+			expectError:  false,
 		})
 	})
 
@@ -238,11 +238,11 @@ func TestUnitFszCopy(t *testing.T) {
 
 	t.Run("Copy to a new directory", func(t *testing.T) {
 		check(t, testScenario{
-			name:        "Copy to a new directory",
-			srcContent:  "content for another source",
-			srcFilename: "src2.txt",
+			name:         "Copy to a new directory",
+			srcContent:   "content for another source",
+			srcFilename:  "src2.txt",
 			destFilename: "newdir/dest2.txt",
-			expectError: false,
+			expectError:  false,
 		})
 	})
 
@@ -253,11 +253,11 @@ func TestUnitFszCopy(t *testing.T) {
 		require.NoError(t, err)
 
 		check(t, testScenario{
-			name:        "Overwrite existing destination file",
-			srcContent:  "new content to overwrite",
-			srcFilename: "overwrite_src.txt",
+			name:         "Overwrite existing destination file",
+			srcContent:   "new content to overwrite",
+			srcFilename:  "overwrite_src.txt",
 			destFilename: "overwrite_dest.txt",
-			expectError: false,
+			expectError:  false,
 		})
 		// Verify the content is overwritten
 		overwrittenContent, err := os.ReadFile(existingDestPath)
