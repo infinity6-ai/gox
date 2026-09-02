@@ -40,7 +40,7 @@ type Api struct {
 	ReqParams []Field // basics
 	ReqQuery  []Field // basics
 	ReqMeta   []Field // basics
-	ReqBody   Field
+	ReqBody   *Spec
 	RespMeta  []Field // basics
-	RespBody  Field
+	RespBody  *Spec
 }
