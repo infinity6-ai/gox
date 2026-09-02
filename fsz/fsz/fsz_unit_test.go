@@ -12,8 +12,8 @@ import (
 	"testing"
 
 	"github.com/infinity6-ai/gox/commonz/filez"
-	"github.com/infinity6-ai/gox/commonz/fsz"
 	"github.com/infinity6-ai/gox/commonz/urlz"
+	"github.com/infinity6-ai/gox/fsz/fsz"
 	"github.com/stretchr/testify/require"
 )
 
