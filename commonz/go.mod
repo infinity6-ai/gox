@@ -3,6 +3,7 @@ module github.com/infinity6-ai/gox/commonz
 go 1.26.1
 
 require (
+	github.com/infinity6-ai/gox/cryptz v0.0.0-20260902200903-56e0229457cf
 	github.com/stretchr/testify v1.11.1
 	golang.org/x/exp v0.0.0-20260824195058-e88cd73687aa
 	golang.org/x/sys v0.47.0
