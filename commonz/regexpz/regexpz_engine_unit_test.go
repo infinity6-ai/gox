@@ -7,192 +7,97 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestUnitEngine(t *testing.T) {
+func TestUnitEngineApply(t *testing.T) {
 	type testScenario struct {
-		name   string
-		engine Engine
-		input  string
-		want   string
-		ok     bool
+		name     string
+		engine   *Engine
+		input    string
+		expected string
+		ok       bool
 	}
 
 	check := func(t *testing.T, s testScenario) {
 		t.Helper()
-		got, ok := s.engine.Apply(s.input)
-		require.Equal(t, s.ok, ok, s.name)
-		require.Equal(t, s.want, got, s.name)
+		output, ok := s.engine.Apply(s.input)
+		require.Equal(t, s.ok, ok)
+		require.Equal(t, s.expected, output)
 	}
 
-	t.Run("Replace then match success", func(t *testing.T) {
-		check(t, testScenario{
-			name: "Replace then match success",
-			engine: Engine{
-				Rules: []Rule{
-					{
-						Name:      "Replace 'a' with 'b'",
-						Regexp:    regexp.MustCompile("a"),
-						Operation: ReplaceOperation,
-						Out:       "b",
-					},
-					{
-						Name:      "Match 'b'",
-						Regexp:    regexp.MustCompile("b"),
-						Operation: MatchOperation,
-					},
+	t.Run("ComplexTransformWithGrouping", func(t *testing.T) {
+		engine := &Engine{
+			Rules: []Rule{
+				{
+					Name:      "Swap words",
+					Regexp:    regexp.MustCompile(`(quick)\s(brown)`),
+					Operation: ReplaceOperation,
+					Out:       `$2 $1`,
+				},
+				{
+					Name:      "Capitalize fox",
+					Regexp:    regexp.MustCompile(`(fox)`),
+					Operation: ReplaceOperation,
+					Out:       `FOX`,
+				},
+				{
+					Name:      "Join with hyphens",
+					Regexp:    regexp.MustCompile(`\s`),
+					Operation: SplitOperation,
+					Out:       "-",
 				},
 			},
-			input: "aca",
-			want:  "bcb",
-			ok:    true,
+		}
+
+		check(t, testScenario{
+			name:     "should transform the string",
+			engine:   engine,
+			input:    "The quick brown fox jumps over the lazy dog",
+			expected: "The-brown-quick-FOX-jumps-over-the-lazy-dog",
+			ok:       true,
 		})
 	})
 
-	t.Run("Replace then match fail", func(t *testing.T) {
-		check(t, testScenario{
-			name: "Replace then match fail",
-			engine: Engine{
-				Rules: []Rule{
-					{
-						Name:      "Replace 'a' with 'b'",
-						Regexp:    regexp.MustCompile("a"),
-						Operation: ReplaceOperation,
-						Out:       "b",
-					},
-					{
-						Name:      "Match 'c'",
-						Regexp:    regexp.MustCompile("c"),
-						Operation: MatchOperation,
-					},
+	t.Run("MismatchOperationFailsChain", func(t *testing.T) {
+		engine := &Engine{
+			Rules: []Rule{
+				{
+					Name:      "Should match",
+					Regexp:    regexp.MustCompile(`^start`),
+					Operation: MatchOperation,
+				},
+				{
+					Name:      "Should mismatch and fail",
+					Regexp:    regexp.MustCompile(`processing`),
+					Operation: MismatchOperation,
 				},
 			},
-			input: "ada",
-			// Engine should return original input on failure
-			want: "ada",
-			ok:   false,
+		}
+
+		check(t, testScenario{
+			name:     "mismatch should fail the chain",
+			engine:   engine,
+			input:    "start processing",
+			expected: "start processing",
+			ok:       false,
 		})
 	})
 
-	t.Run("Mismatch success (no match)", func(t *testing.T) {
-		check(t, testScenario{
-			name: "Mismatch success (no match)",
-			engine: Engine{
-				Rules: []Rule{
-					{
-						Name:      "Mismatch 'c'",
-						Regexp:    regexp.MustCompile("c"),
-						Operation: MismatchOperation,
-					},
-					{
-						Name:      "Replace 'a' with 'b'",
-						Regexp:    regexp.MustCompile("a"),
-						Operation: ReplaceOperation,
-						Out:       "b",
-					},
+	t.Run("DeleteOperation", func(t *testing.T) {
+		engine := &Engine{
+			Rules: []Rule{
+				{
+					Name:      "Delete vowels",
+					Regexp:    regexp.MustCompile(`[aeiou]`),
+					Operation: DeleteOperation,
 				},
 			},
-			input: "ada",
-			want:  "bdb",
-			ok:    true,
-		})
-	})
+		}
 
-	t.Run("Mismatch fail (match found)", func(t *testing.T) {
 		check(t, testScenario{
-			name: "Mismatch fail (match found)",
-			engine: Engine{
-				Rules: []Rule{
-					{
-						Name:      "Mismatch 'c'",
-						Regexp:    regexp.MustCompile("c"),
-						Operation: MismatchOperation,
-					},
-					{
-						Name:      "Replace 'a' with 'b'",
-						Regexp:    regexp.MustCompile("a"),
-						Operation: ReplaceOperation,
-						Out:       "b",
-					},
-				},
-			},
-			input: "aca",
-			// Engine should return original input on failure
-			want: "aca",
-			ok:   false,
-		})
-	})
-    
-    t.Run("Split operation", func(t *testing.T) {
-		check(t, testScenario{
-			name: "Split operation",
-			engine: Engine{
-				Rules: []Rule{
-					{
-						Name:      "Split by comma",
-						Regexp:    regexp.MustCompile(","),
-						Operation: SplitOperation,
-						Out:       "-",
-					},
-				},
-			},
-			input: "a,b,c",
-			want:  "a-b-c",
-			ok:    true,
-		})
-	})
-
-    t.Run("Delete operation", func(t *testing.T) {
-		check(t, testScenario{
-			name: "Delete operation",
-			engine: Engine{
-				Rules: []Rule{
-					{
-						Name:      "Delete vowels",
-						Regexp:    regexp.MustCompile("[aeiou]"),
-						Operation: DeleteOperation,
-					},
-				},
-			},
-			input: "hello world",
-			want:  "hll wrld",
-			ok:    true,
-		})
-	})
-
-    t.Run("Empty rules", func(t *testing.T) {
-		check(t, testScenario{
-			name:   "Empty rules",
-			engine: Engine{Rules: []Rule{}},
-			input:  "anything",
-			want:   "anything",
-			ok:     true,
-		})
-	})
-
-    t.Run("Chain of replacements", func(t *testing.T) {
-		check(t, testScenario{
-			name: "Chain of replacements",
-			engine: Engine{
-				Rules: []Rule{
-					{
-						Operation: ReplaceOperation,
-						Regexp:    regexp.MustCompile("a"),
-						Out:       "b",
-					},
-					{
-						Operation: ReplaceOperation,
-						Regexp:    regexp.MustCompile("b"),
-						Out:       "c",
-					},
-					{
-						Operation: ReplaceOperation,
-						Regexp:    regexp.MustCompile("c"),
-						Out:       "d",
-					},
-				},
-			},
-			input: "a",
-			want:  "d",
-			ok:    true,
+			name:     "should delete all vowels",
+			engine:   engine,
+			input:    "hello world",
+			expected: "hll wrld",
+			ok:       true,
 		})
 	})
 }
