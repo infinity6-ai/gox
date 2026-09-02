@@ -2,8 +2,6 @@ package fsz
 
 import (
 	"context"
-	"crypto/md5"
-	"encoding/hex"
 	"fmt"
 	"io"
 	"net/http"
@@ -28,39 +26,11 @@ func (ff *fileFs) Stat(ctx context.Context, url *urlz.Url) (*FileStat, error) {
 		return nil, nil
 	}
 
-	// Read file for content type and MD5
-	file, err := os.Open(p)
-	if err != nil {
-		return nil, fmt.Errorf("failed to open file %s: %w", p, err)
-	}
-	defer file.Close()
-
-	// content type
-	contentTypeBuffer := make([]byte, 512)
-	n, err := file.Read(contentTypeBuffer)
-	if err != nil && err != io.EOF {
-		return nil, fmt.Errorf("failed to read file for content type detection %s: %w", p, err)
-	}
-	contentType := http.DetectContentType(contentTypeBuffer[:n])
-
-	// MD5
-	if _, err = file.Seek(0, io.SeekStart); err != nil {
-		return nil, fmt.Errorf("failed to seek file %s: %w", p, err)
-	}
-	hash := md5.New()
-	if _, err = io.Copy(hash, file); err != nil {
-		return nil, fmt.Errorf("failed to copy file for md5 calculation %s: %w", p, err)
-	}
-	md5sum := hex.EncodeToString(hash.Sum(nil))
-
 	return &FileStat{
-		Url:         *url,
-		ContentType: contentType,
-		Md5:         md5sum,
-		Size:        uint64(info.Size()),
-		Etag:        md5sum,
-		CreatedAt:   filez.GetCreatedAt(p),
-		UpdatedAt:   filez.GetUpdatedAt(p),
+		Url:       url,
+		Size:      uint64(info.Size()),
+		CreatedAt: filez.GetCreatedAt(p),
+		UpdatedAt: filez.GetUpdatedAt(p),
 	}, nil
 }
 
@@ -75,7 +45,7 @@ func (ff *fileFs) Upload(ctx context.Context, url *urlz.Url, headers http.Header
 	return nil
 }
 
-func (ff *fileFs) Download(ctx context.Context, url *urlz.Url, callback func(found bool, headers http.Header, reader io.Reader)) error {
+func (ff *fileFs) Download(ctx context.Context, url *urlz.Url, callback func(found bool, headers http.Header, reader io.Reader) error) error {
 	p := url.Path.String()
 	info := filez.Stat(p)
 	if info == nil {
@@ -87,16 +57,11 @@ func (ff *fileFs) Download(ctx context.Context, url *urlz.Url, callback func(fou
 	if err != nil {
 		return fmt.Errorf("failed to open file %s: %w", p, err)
 	}
+	defer file.Close()
 
 	headers := make(http.Header)
-	headers.Set("Content-Length", fmt.Sprintf("%d", info.Size()))
-	if fStat, err := ff.Stat(ctx, url); err == nil && fStat != nil {
-		headers.Set("Content-Type", fStat.ContentType)
-		headers.Set("Etag", fStat.Etag)
-	}
 
-	callback(true, headers, file)
-	return nil
+	return callback(true, headers, file)
 }
 
 func (ff *fileFs) Delete(ctx context.Context, url *urlz.Url) error {
@@ -107,6 +72,10 @@ func (ff *fileFs) Delete(ctx context.Context, url *urlz.Url) error {
 type filePaginator struct {
 	files []*FileStat
 	pos   int
+}
+
+func (p *filePaginator) Close() error {
+	return nil
 }
 
 func (p *filePaginator) Paginate(ctx context.Context, max int) ([]*FileStat, error) {
@@ -140,7 +109,7 @@ func (ff *fileFs) Ls(ctx context.Context, prefix *urlz.Url) (Paginator, error) {
 		}
 
 		fileStat := &FileStat{
-			Url:       *u,
+			Url:       u,
 			Size:      uint64(info.Size()),
 			UpdatedAt: filez.GetUpdatedAt(path),
 			CreatedAt: filez.GetCreatedAt(path),

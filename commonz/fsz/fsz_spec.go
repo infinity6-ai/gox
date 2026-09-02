@@ -14,7 +14,7 @@ var ErrUnknownScheme = errors.New("unknown scheme")
 var ErrUnsupportedOperation = errors.New("unsupported operation")
 
 type FileStat struct {
-	Url         urlz.Url   `json:"url"`
+	Url         *urlz.Url  `json:"url"`
 	ContentType string     `json:"content_type"`
 	Md5         string     `json:"md5"`
 	Size        uint64     `json:"size"`
@@ -25,17 +25,19 @@ type FileStat struct {
 
 type Paginator interface {
 	Paginate(ctx context.Context, max int) ([]*FileStat, error)
+	Close() error
 }
 
 type FsProvider interface {
 	Stat(ctx context.Context, url *urlz.Url) (*FileStat, error)
 	Upload(ctx context.Context, url *urlz.Url, headers http.Header, reader io.Reader) error
-	Download(ctx context.Context, url *urlz.Url, callback func(found bool, headers http.Header, reader io.Reader)) error
+	Download(ctx context.Context, url *urlz.Url, callback func(found bool, headers http.Header, reader io.Reader) error) error
 	Delete(ctx context.Context, url *urlz.Url) error
 
 	Copy(ctx context.Context, src *urlz.Url, dest *urlz.Url) error
 
 	Ls(ctx context.Context, prefix *urlz.Url) (Paginator, error)
+	Find(ctx context.Context, prefix *urlz.Url) (Paginator, error)
 
 	SignGet(ctx context.Context, url *urlz.Url, duration time.Duration) (string, error)
 	SignPut(ctx context.Context, url *urlz.Url, duration time.Duration) (string, error)
