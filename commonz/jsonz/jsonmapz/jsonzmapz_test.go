@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	"github.com/infinity6-ai/gox/commonz/errorz"
-	"github.com/infinity6-ai/gox/commonz/legacyjsonz/jsonmapz"
+	"github.com/infinity6-ai/gox/commonz/jsonz/jsonmapz"
 	"github.com/stretchr/testify/assert"
 )
 
