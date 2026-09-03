@@ -39,3 +39,20 @@ func Format(v any) (blobz.Blob, error) {
 	}
 	return blobz.New(b), nil
 }
+
+// Copy marshals the input to JSON and unmarshals it into the output.
+// This is useful for deep copying or type conversion through JSON serialization.
+// It returns the populated output object.
+func Copy[I any, O any](input I, output O) (O, error) {
+	data, err := Format(input)
+	if err != nil {
+		return output, err
+	}
+	return Parse(data.Bytes(), output)
+}
+
+// Clone creates a deep copy of the input object using JSON marshaling and unmarshaling.
+// It returns a new instance of the same type as the input.
+func Clone[T any](input T, output T) (T, error) {
+	return Copy(input, output)
+}
