@@ -1,6 +1,7 @@
 package jsonmapz_test
 
 import (
+	"encoding/json"
 	"testing"
 
 	"github.com/infinity6-ai/gox/commonz/errorz"
@@ -22,6 +23,8 @@ func TestUnitHowTo(t *testing.T) {
 		"d": []float64{},
 		"e": &Data{},
 		"f": []*Data{},
+		"h": map[string]any{},
+		"i": []map[string]any{},
 	}
 
 	unparsed := map[string][]string{
@@ -32,6 +35,8 @@ func TestUnitHowTo(t *testing.T) {
 		"e": {"{\"Id\":\"e1\", \"Age\":10}", "{\"Id\":\"e2\", \"Age\":11}"},
 		"f": {"{\"Id\":\"f1\", \"Age\":20}", "{\"Id\":\"f2\", \"Age\":21}"},
 		"g": {"ignored"},
+		"h": {"{\"Id\":\"h1\", \"Age\":30}", "{\"Id\":\"h2\", \"Age\":31}"},
+		"i": {"{\"Id\":\"i1\", \"Age\":40}", "{\"Id\":\"i2\", \"Age\":41}"},
 	}
 
 	expected := map[string]any{
@@ -43,6 +48,11 @@ func TestUnitHowTo(t *testing.T) {
 		"f": []*Data{
 			{Id: "f1", Age: 20},
 			{Id: "f2", Age: 21},
+		},
+		"h": map[string]any{"Id": "h1", "Age": json.Number("30")},
+		"i": []map[string]any{
+			{"Id": "i1", "Age": json.Number("40")},
+			{"Id": "i2", "Age": json.Number("41")},
 		},
 	}
 
