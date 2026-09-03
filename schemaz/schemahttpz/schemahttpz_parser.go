@@ -1,0 +1,4 @@
+package schemahttpz
+
+func A() {
+}

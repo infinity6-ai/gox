@@ -2,11 +2,11 @@ package schemazsamplefraction
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/infinity6-ai/gox/httpz/server/httpzserver"
 	"github.com/infinity6-ai/gox/schemaz/schemahttpz"
 	"github.com/infinity6-ai/gox/schemaz/schemaz"
-	"go.code.infinity6.ai/platform/errorz"
 )
 
 type ReqParams struct {
@@ -83,19 +83,17 @@ func Api() *schemaz.Api {
 }
 
 func Handlers(s *httpzserver.Server) {
-	schemahttpz.Add(s, &schemahttpz.Api[*ReqParams, any, *ReqHeaders, *ReqBody, *RespHeaders, *RespBody]{
+	schemahttpz.Add(s, &schemahttpz.Api[*ReqParams, *ReqHeaders, *ReqHeaders, *ReqBody, *RespHeaders, *RespBody]{
 		Schema: Api(),
-		Handler: func(ctx context.Context, req *schemahttpz.Req[*ReqParams, any, *ReqHeaders, *ReqBody]) (*RespHeaders, *RespBody, error) {
-			return nil, nil, errorz.Business(404, "aaa").PayloadFormat("fsdfjskd")
-
-			// return &RespHeaders{
-			// 		ReqId: "xxx",
-			// 	},
-			// 	&RespBody{
-			// 		Display: "aaa",
-			// 		Result:  0,
-			// 	},
-			// 	nil
+		Handler: func(ctx context.Context, req *schemahttpz.Req[*ReqParams, *ReqHeaders, *ReqHeaders, *ReqBody]) (*RespHeaders, *RespBody, error) {
+			return &RespHeaders{
+					ReqId: fmt.Sprintf("reason: %s, trace: %s", req.ReqBody.Reason, req.ReqHeaders.TraceId),
+				},
+				&RespBody{
+					Display: fmt.Sprintf("%f/%f", req.PathParams.Numerator, req.PathParams.Denumerator),
+					Result:  req.PathParams.Numerator / req.PathParams.Denumerator,
+				},
+				nil
 		},
 	})
 }
