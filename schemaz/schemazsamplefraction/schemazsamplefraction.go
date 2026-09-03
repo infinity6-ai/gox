@@ -1,9 +1,6 @@
 package schemazsamplefraction
 
 import (
-	"context"
-
-	"github.com/infinity6-ai/gox/httpz/server/httpzserver"
 	"github.com/infinity6-ai/gox/schemaz/schemaz"
 )
 
@@ -16,8 +13,8 @@ type RespBody struct {
 	Result  float64 `json:"result"`
 }
 
-func Api() schemaz.Api[ReqBody, RespBody] {
-	return schemaz.Api[ReqBody, RespBody]{
+func Api() schemaz.Api {
+	return schemaz.Api{
 		Id: "samplefraction",
 
 		Desc: schemaz.Desc{
@@ -48,7 +45,6 @@ func Api() schemaz.Api[ReqBody, RespBody] {
 				{Name: "reason", Desc: schemaz.Desc{Summary: "reason"}, Spec: schemaz.Spec{Type: schemaz.TypeString}},
 			},
 		},
-		ReqType: ReqBody{},
 
 		RespHeaders: []schemaz.Field{
 			{Name: "req_id", Desc: schemaz.Desc{Summary: "request id"}, Spec: schemaz.Spec{Type: schemaz.TypeString}},
@@ -61,13 +57,27 @@ func Api() schemaz.Api[ReqBody, RespBody] {
 				{Name: "result", Desc: schemaz.Desc{Summary: "fraction result"}, Spec: schemaz.Spec{Type: schemaz.TypeNumber}},
 			},
 		},
-		RespType: RespBody{},
 	}
 }
 
-func AddHandler[I, O any](s *httpzserver.Server, api schemaz.Api[I, O]) {
-	s.AddHandler(api.Method, api.Path, func(ctx context.Context, resp httpzserver.Resp, req *httpzserver.Req, params map[string]string) {
-		// reqBody, err := jsonz.NewReader[I](req.Body).ReadItem()
+// type Req[P any, Q any, IH any, IB any] struct {
+// 	PathParams  P
+// 	QueryParams Q
+// 	ReqHeaders  IH
+// 	ReqBody     IB
+// }
 
-	})
-}
+// type Resp[OH any, OB any] struct {
+// 	RespHeaders OH
+// 	RespBody    OB
+// }
+
+// func AddHandler[P any, Q any, IH any, IB any, OH any, OB any](s *httpzserver.Server, api schemaz.Api[IB, OB], handler func(ctx context.Context, req *Req[I, O], resp *Resp[I, O])) {
+
+// 	s.AddHandler(api.Method, api.Path, func(ctx context.Context, resp httpzserver.Resp, req *httpzserver.Req, params map[string]string) {
+// 		if api.ReqBody != nil {
+// 			// reqBody := jsonz.NewReader[I](req.Body).MustReadItem()
+// 		}
+
+// 	})
+// }
