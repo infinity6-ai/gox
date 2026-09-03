@@ -10,40 +10,35 @@ import (
 	"github.com/infinity6-ai/gox/schemaz/schemaz"
 )
 
-type Req[Params any, Query any, ReqHeaders any, ReqBody any] struct {
-	PathParams  Params
-	QueryParams Query
-	ReqHeaders  ReqHeaders
-	ReqBody     ReqBody
+type Req[P any, Q any, IH any, IB any] struct {
+	PathParams  P
+	QueryParams Q
+	ReqHeaders  IH
+	ReqBody     IB
 }
 
-// type Resp[RespHeaders any, RespBody any] struct {
-// 	RespHeaders RespHeaders
-// 	RespBody    RespBody
-// }
+type Handler[P any, Q any, IH any, IB any, OH any, OB any] func(ctx context.Context, req *Req[P, Q, IH, IB]) (OH, OB, error)
 
-type Handler[Params any, Query any, ReqHeaders any, ReqBody any, RespHeaders any, RespBody any] func(ctx context.Context, req *Req[Params, Query, ReqHeaders, ReqBody]) (RespHeaders, RespBody, error)
-
-type Api[Params any, Query any, ReqHeaders any, ReqBody any, RespHeaders any, RespBody any] struct {
+type Api[P any, Q any, IH any, IB any, OH any, OB any] struct {
 	Schema  *schemaz.Api
-	Handler Handler[Params, Query, ReqHeaders, ReqBody, RespHeaders, RespBody]
+	Handler Handler[P, Q, IH, IB, OH, OB]
 }
 
-func (a *Api[Params, Query, ReqHeaders, ReqBody, RespHeaders, RespBody]) Zeros() (Params, Query, ReqHeaders, ReqBody) {
-	var p Params
-	var q Query
-	var reqHeaders ReqHeaders
-	var reqBody ReqBody
+func (a *Api[P, Q, IH, IB, OH, OB]) Zeros() (P, Q, IH, IB) {
+	var p P
+	var q Q
+	var reqHeaders IH
+	var reqBody IB
 	return p, q, reqHeaders, reqBody
 }
 
-func (a *Api[Params, Query, ReqHeaders, ReqBody, RespHeaders, RespBody]) ParseRequest(ctx context.Context, req *httpzserver.Req, params map[string]string) *Req[Params, Query, ReqHeaders, ReqBody] {
+func (a *Api[P, Q, IH, IB, OH, OB]) ParseRequest(ctx context.Context, req *httpzserver.Req, params map[string]string) *Req[P, Q, IH, IB] {
 	p, q, reqHeaders, reqBody := a.Zeros()
 	jsonz.Copy(params, &p)
 	jsonz.Copy(req.Query, &q)
 	jsonz.Copy(req.Headers, &reqHeaders)
 	jsonz.Copy(req.Body, &reqBody)
-	return &Req[Params, Query, ReqHeaders, ReqBody]{
+	return &Req[P, Q, IH, IB]{
 		PathParams:  p,
 		QueryParams: q,
 		ReqHeaders:  reqHeaders,
@@ -51,7 +46,7 @@ func (a *Api[Params, Query, ReqHeaders, ReqBody, RespHeaders, RespBody]) ParseRe
 	}
 }
 
-func Add[Params any, Query any, ReqHeaders any, ReqBody any, RespHeaders any, RespBody any](s *httpzserver.Server, api *Api[Params, Query, ReqHeaders, ReqBody, RespHeaders, RespBody]) {
+func Add[P any, Q any, IH any, IB any, OH any, OB any](s *httpzserver.Server, api *Api[P, Q, IH, IB, OH, OB]) {
 	s.AddHandler(api.Schema.Method, api.Schema.Path, func(ctx context.Context, resp httpzserver.Resp, req *httpzserver.Req, params map[string]string) {
 		parsedReq := api.ParseRequest(ctx, req, params)
 		respHedaers, _, err := api.Handler(ctx, parsedReq)
@@ -60,14 +55,6 @@ func Add[Params any, Query any, ReqHeaders any, ReqBody any, RespHeaders any, Re
 		formattedHeaders.Set("Content-Type", "application/json")
 		jsonz.Copy(respHedaers, &formattedHeaders)
 		w := resp(200, formattedHeaders)
-		jsonz.NewWriter[*RespBody](w).MustWriteItem(nil)
+		jsonz.NewWriter[*OB](w).MustWriteItem(nil)
 	})
 }
-
-// 	s.AddHandler(api.Method, api.Path, func(ctx context.Context, resp httpzserver.Resp, req *httpzserver.Req, params map[string]string) {
-// 		if api.ReqBody != nil {
-// 			// reqBody := jsonz.NewReader[I](req.Body).MustReadItem()
-// 		}
-
-// 	})
-// }
