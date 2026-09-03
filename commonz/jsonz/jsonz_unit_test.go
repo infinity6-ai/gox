@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"encoding/json"
+
 	"github.com/stretchr/testify/require"
 )
 
@@ -87,7 +88,7 @@ func TestUnitFormat(t *testing.T) {
 	require.NotNil(t, blob)
 	// Comparing strings for JSON is tricky due to key order and whitespace.
 	// Let's parse it back to be sure.
-	result, err := Parse[testStruct](blob.String())
+	result, err := Parse[*testStruct](blob.String())
 	require.NoError(t, err)
 	require.Equal(t, data, result)
 }
@@ -98,7 +99,7 @@ func TestUnitMustFormat(t *testing.T) {
 		require.NotPanics(t, func() {
 			blob := MustFormat(data)
 			require.NotNil(t, blob)
-			result, err := Parse[testStruct](blob.String())
+			result, err := Parse[*testStruct](blob.String())
 			require.NoError(t, err)
 			require.Equal(t, data, result)
 		})

@@ -10,17 +10,17 @@ import (
 	"github.com/infinity6-ai/gox/commonz/errorz"
 )
 
-func Parse[T any, I blobz.Data](data I) (*T, error) {
+func Parse[T any, I blobz.Data](data I) (T, error) {
 	var result T
 	decoder := json.NewDecoder(blobz.New(data).NewReader())
 	decoder.UseNumber()
 	if err := decoder.Decode(&result); err != nil {
-		return nil, fmt.Errorf("failed to decode json: %w", err)
+		return result, fmt.Errorf("failed to decode json: %w", err)
 	}
-	return &result, nil
+	return result, nil
 }
 
-func MustParse[T any, I blobz.Data](data I) *T {
+func MustParse[T any, I blobz.Data](data I) T {
 	res, err := Parse[T](data)
 	errorz.Check(err)
 	return res
