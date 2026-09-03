@@ -1,6 +1,9 @@
 package schemazsamplefraction
 
 import (
+	"context"
+
+	"github.com/infinity6-ai/gox/httpz/server/httpzserver"
 	"github.com/infinity6-ai/gox/schemaz/schemaz"
 )
 
@@ -60,4 +63,11 @@ func Api() schemaz.Api[ReqBody, RespBody] {
 		},
 		RespType: RespBody{},
 	}
+}
+
+func AddHandler[I, O any](s *httpzserver.Server, api schemaz.Api[I, O]) {
+	s.AddHandler(api.Method, api.Path, func(ctx context.Context, resp httpzserver.Resp, req *httpzserver.Req, params map[string]string) {
+		// reqBody, err := jsonz.NewReader[I](req.Body).ReadItem()
+
+	})
 }

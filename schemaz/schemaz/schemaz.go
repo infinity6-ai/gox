@@ -32,7 +32,7 @@ type Field struct {
 	Spec Spec   `json:"spec"`
 }
 
-type Api[Req any, Resp any] struct {
+type Api[I any, O any] struct {
 	Id         string
 	Desc       Desc
 	Method     string
@@ -42,10 +42,20 @@ type Api[Req any, Resp any] struct {
 	ReqHeaders []Field // basics
 
 	ReqBody *Spec
-	ReqType Req
+	ReqType I
 
 	RespHeaders []Field // basics
 
 	RespBody *Spec
-	RespType Resp
+	RespType O
+}
+
+func (a Api[I, O]) NewReqBody() I {
+	var b I
+	return b
+}
+
+func (a Api[I, O]) NewRespBody() O {
+	var b O
+	return b
 }
