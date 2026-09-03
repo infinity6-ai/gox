@@ -23,8 +23,17 @@ func Parse[T any, I blobz.Data](data I, v T) (T, error) {
 	return ParseReader(blobz.New(data).NewReader(), v)
 }
 
-func Format(data any) (blobz.Blob, error) {
-	b, err := json.Marshal(data)
+func FormatWriter(w io.Writer, v any) error {
+	encoder := json.NewEncoder(w)
+	err := encoder.Encode(v)
+	if err != nil {
+		return fmt.Errorf("failed to marshal data: %w", err)
+	}
+	return nil
+}
+
+func Format(v any) (blobz.Blob, error) {
+	b, err := json.Marshal(v)
 	if err != nil {
 		return nil, fmt.Errorf("failed to marshal data: %w", err)
 	}
