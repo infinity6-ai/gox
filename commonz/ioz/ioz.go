@@ -7,8 +7,11 @@ type closer struct {
 	f func() error
 }
 
-func (me *closer) Close() error {
-	return me.f()
+func (c *closer) Close() error {
+	if c.f == nil {
+		return nil
+	}
+	return c.f()
 }
 
 func Closer(f func() error) io.Closer {
