@@ -51,6 +51,12 @@ func Parse(in map[string][]string, out any) error {
 	return nil
 }
 
+func MustFormat(in any) map[string][]string {
+	out, err := Format(in)
+	errorz.Check(err)
+	return out
+}
+
 // Format converts a struct `in` to a map of string slices.
 // `in` must be a pointer to a struct.
 // The mapping is determined by the struct's `json` tags.

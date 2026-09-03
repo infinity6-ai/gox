@@ -28,6 +28,11 @@ func NewReq(method string, path string) *Req {
 	}
 }
 
+func (r *Req) SetQuery(key, value string) *Req {
+	r.Query.Set(key, value)
+	return r
+}
+
 func (r *Req) AddQuery(key, value string) *Req {
 	r.Query.Add(key, value)
 	return r
@@ -35,6 +40,11 @@ func (r *Req) AddQuery(key, value string) *Req {
 
 func (r *Req) AddHeader(key, value string) *Req {
 	r.Headers.Add(key, value)
+	return r
+}
+
+func (r *Req) SetHeader(key, value string) *Req {
+	r.Headers.Set(key, value)
 	return r
 }
 

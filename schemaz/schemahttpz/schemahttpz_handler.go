@@ -3,6 +3,8 @@ package schemahttpz
 import (
 	"context"
 	"net/http"
+	"strings"
+	"unicode"
 
 	"github.com/infinity6-ai/gox/commonz/errorz"
 	"github.com/infinity6-ai/gox/commonz/jsonz"
@@ -33,12 +35,36 @@ func (a *Api[P, Q, IH, IB, OH, OB]) Zeros() (P, Q, IH, IB) {
 	return p, q, reqHeaders, reqBody
 }
 
+func header2json(headers http.Header) map[string][]string {
+	n := make(map[string][]string, len(headers))
+	for k, v := range headers {
+		nk := strings.Map(func(r rune) rune {
+			if r == '-' {
+				return '_'
+			}
+			return unicode.ToLower(r)
+		}, k)
+		n[nk] = v
+	}
+	return n
+}
+
+func json2header(in map[string][]string, out http.Header) {
+	for k, v := range in {
+		nk := strings.ReplaceAll(k, "_", "-")
+		out.Del(nk)
+		for _, vv := range v {
+			out.Add(nk, vv)
+		}
+	}
+}
+
 func (a *Api[P, Q, IH, IB, OH, OB]) ParseRequest(ctx context.Context, req *httpzserver.Req, params map[string]string) *Req[P, Q, IH, IB] {
 	p, q, reqHeaders, reqBody := a.Zeros()
 	structjsonz.MustParseSingle(params, &p)
 	structjsonz.MustParse(req.Query, &q)
-	structjsonz.MustParse(req.Headers, &reqHeaders)
-	jsonz.Copy(req.Body, &reqBody)
+	structjsonz.MustParse(header2json(req.Headers), &reqHeaders)
+	jsonz.MustParseReader(req.Body, &reqBody)
 	return &Req[P, Q, IH, IB]{
 		PathParams:  p,
 		QueryParams: q,
@@ -54,7 +80,8 @@ func Add[P any, Q any, IH any, IB any, OH any, OB any](s *httpzserver.Server, ap
 		errorz.Check(err)
 		formattedHeaders := make(http.Header)
 		formattedHeaders.Set("Content-Type", "application/json")
-		jsonz.Copy(respHedaers, &formattedHeaders)
+		mapRespHedaers := structjsonz.MustFormat(respHedaers)
+		json2header(mapRespHedaers, formattedHeaders)
 		w := resp(200, formattedHeaders)
 		jsonz.FormatWriter(w, respBody)
 	})
