@@ -79,6 +79,16 @@ func TestUnitUrlJoinPath(t *testing.T) {
 		})
 	})
 
+	t.Run("join with boxlocal scheme", func(t *testing.T) {
+		originalUrl := &urlz.Url{Scheme: "boxlocal", Path: pathz.MustParse("/my/box")}
+		check(t, testScenario{
+			name:        "join with boxlocal scheme",
+			originalUrl: originalUrl,
+			joinPaths:   []*pathz.Path{pathz.MustParse("item")},
+			expectedUrl: "boxlocal:///my/box/item",
+		})
+	})
+
 	t.Run("join resulting in escaped path", func(t *testing.T) {
 		originalUrl := &urlz.Url{Scheme: "http", Host: "example.com", Path: pathz.MustParse("/a/b")}
 		check(t, testScenario{

@@ -100,6 +100,18 @@ func TestUnitUrlGobSerialization(t *testing.T) {
 			},
 		})
 	})
+
+	t.Run("boxlocal url", func(t *testing.T) {
+		p, err := pathz.Parse("/path/to/box")
+		require.NoError(t, err)
+		check(t, testScenario{
+			name: "gob serialization of boxlocal url",
+			inputURL: &urlz.Url{
+				Scheme: "boxlocal",
+				Path:   p,
+			},
+		})
+	})
 }
 
 func TestUnitUrlJsonSerialization(t *testing.T) {
@@ -189,6 +201,18 @@ func TestUnitUrlJsonSerialization(t *testing.T) {
 			name: "json serialization of unix url",
 			inputURL: &urlz.Url{
 				Scheme: "unix",
+				Path:   p,
+			},
+		})
+	})
+
+	t.Run("boxlocal url", func(t *testing.T) {
+		p, err := pathz.Parse("/path/to/box")
+		require.NoError(t, err)
+		check(t, testScenario{
+			name: "json serialization of boxlocal url",
+			inputURL: &urlz.Url{
+				Scheme: "boxlocal",
 				Path:   p,
 			},
 		})

@@ -85,4 +85,18 @@ func TestUnitUrlClone(t *testing.T) {
 			expectedPath:   "/",
 		})
 	})
+
+	t.Run("URL with boxlocal scheme", func(t *testing.T) {
+		originalPath := pathz.MustParse("/some/box/path")
+		originalUrl := &urlz.Url{
+			Scheme: "boxlocal",
+			Path:   originalPath,
+		}
+		check(t, testScenario{
+			name:           "URL with boxlocal scheme",
+			originalUrl:    originalUrl,
+			expectedScheme: "boxlocal",
+			expectedPath:   "/some/box/path",
+		})
+	})
 }
