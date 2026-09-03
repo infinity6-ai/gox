@@ -17,9 +17,9 @@ func TestUnitHowTo(t *testing.T) {
 	}
 
 	out := map[string]any{
-		"a": "",         // string type gets the first string as is
-		"b": []string{}, // []string gets a copy []string
-		"c": float64(0), // every other type should use jsonz.Parse
+		"a": "",
+		"b": []string{},
+		"c": float64(0),
 		"d": []float64{},
 		"e": &Data{},
 		"f": []*Data{},
@@ -55,6 +55,11 @@ func TestUnitHowTo(t *testing.T) {
 			{"Id": "i2", "Age": json.Number("41")},
 		},
 	}
+
+	// for each unparsed entry value we need to:
+	// - ignore if it is not in out map
+	// - if out[key] is string (use first) or []string just copy it
+	// - else jsonz.Parse into out[key]
 
 	err := jsonmapz.ParseMap(unparsed, out)
 	errorz.Check(err)
