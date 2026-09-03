@@ -44,15 +44,12 @@ func MustFormat[T any](data *T) []byte {
 func NewReader[T any](r io.Reader) parserz.ItemReader[T] {
 	decoder := gob.NewDecoder(r)
 	return parserz.NewItemReaderWriter[T](
-		func() (*T, error) {
+		func() (T, error) {
 			var item T
 			if err := decoder.Decode(&item); err != nil {
-				if err == io.EOF {
-					return nil, io.EOF // Return nil, io.EOF for EOF
-				}
-				return nil, err // For other errors, return nil and the error
+				return item, err // Return zero value and the error
 			}
-			return &item, nil
+			return item, nil
 		},
 		nil,
 	)
@@ -63,7 +60,7 @@ func NewWriter[T any](w io.Writer) parserz.ItemWriter[T] {
 	encoder := gob.NewEncoder(w)
 	return parserz.NewItemReaderWriter[T](
 		nil,
-		func(item *T) error {
+		func(item T) error {
 			return encoder.Encode(item)
 		},
 	)
@@ -75,17 +72,14 @@ func NewReaderWriter[T any](rw io.ReadWriter) parserz.ItemReaderWriter[T] {
 	encoder := gob.NewEncoder(rw)
 
 	return parserz.NewItemReaderWriter(
-		func() (*T, error) {
+		func() (T, error) {
 			var item T
 			if err := decoder.Decode(&item); err != nil {
-				if err == io.EOF {
-					return nil, io.EOF // Return nil, io.EOF for EOF
-				}
-				return nil, err // For other errors, return nil and the error
+				return item, err // Return zero value and the error
 			}
-			return &item, nil
+			return item, nil
 		},
-		func(item *T) error {
+		func(item T) error {
 			return encoder.Encode(item)
 		},
 	)

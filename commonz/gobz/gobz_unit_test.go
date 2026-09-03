@@ -103,15 +103,14 @@ func TestUnitNewReader(t *testing.T) {
 		for i := 0; i < len(s.items); i++ {
 			item, err := reader.ReadItem()
 			require.NoError(t, err)
-			require.NotNil(t, item)
 			require.Equal(t, s.items[i].Foo, item.Foo)
 			require.Equal(t, s.items[i].Bar, item.Bar)
 		}
 
-		// After reading all items, next call should return nil, io.EOF
+		// After reading all items, next call should return a zero value and io.EOF
 		item, err := reader.ReadItem()
-		require.Equal(t, io.EOF, err) // Expect io.EOF for EOF
-		require.Nil(t, item)          // Expect nil item for EOF
+		require.Equal(t, io.EOF, err)
+		require.Equal(t, testStruct{}, item)
 	}
 
 	t.Run("read multiple items", func(t *testing.T) {
@@ -139,7 +138,7 @@ func TestUnitNewReader(t *testing.T) {
 		reader := NewReader[testStruct](&buf)
 		item, err := reader.ReadItem()
 		require.Equal(t, io.EOF, err)
-		require.Nil(t, item)
+		require.Equal(t, testStruct{}, item)
 	})
 
 	t.Run("invalid gob in stream", func(t *testing.T) {
@@ -157,7 +156,7 @@ func TestUnitNewReader(t *testing.T) {
 func TestUnitNewWriter(t *testing.T) {
 	type testScenario struct {
 		name  string
-		items []*testStruct
+		items []testStruct
 	}
 
 	check := func(t *testing.T, s testScenario) {
@@ -174,20 +173,19 @@ func TestUnitNewWriter(t *testing.T) {
 		for i := 0; i < len(s.items); i++ {
 			item, err := reader.ReadItem()
 			require.NoError(t, err)
-			require.NotNil(t, item)
-			require.Equal(t, *s.items[i], *item)
+			require.Equal(t, s.items[i], item)
 		}
 
 		// Check for EOF
 		item, err := reader.ReadItem()
 		require.Equal(t, io.EOF, err)
-		require.Nil(t, item)
+		require.Equal(t, testStruct{}, item)
 	}
 
 	t.Run("write multiple items", func(t *testing.T) {
 		check(t, testScenario{
 			name: "write multiple items",
-			items: []*testStruct{
+			items: []testStruct{
 				{Foo: "one", Bar: 1},
 				{Foo: "two", Bar: 2},
 				{Foo: "three", Bar: 3},
@@ -198,7 +196,7 @@ func TestUnitNewWriter(t *testing.T) {
 	t.Run("write single item", func(t *testing.T) {
 		check(t, testScenario{
 			name: "write single item",
-			items: []*testStruct{
+			items: []testStruct{
 				{Foo: "single", Bar: 100},
 			},
 		})
@@ -207,7 +205,7 @@ func TestUnitNewWriter(t *testing.T) {
 	t.Run("write no items", func(t *testing.T) {
 		check(t, testScenario{
 			name:  "write no items",
-			items: []*testStruct{},
+			items: []testStruct{},
 		})
 	})
 }
@@ -215,7 +213,7 @@ func TestUnitNewWriter(t *testing.T) {
 func TestUnitNewReaderWriter(t *testing.T) {
 	type testScenario struct {
 		name  string
-		items []*testStruct
+		items []testStruct
 	}
 
 	check := func(t *testing.T, s testScenario) {
@@ -231,20 +229,19 @@ func TestUnitNewReaderWriter(t *testing.T) {
 		for i := 0; i < len(s.items); i++ {
 			item, err := rw.ReadItem()
 			require.NoError(t, err)
-			require.NotNil(t, item)
-			require.Equal(t, *s.items[i], *item)
+			require.Equal(t, s.items[i], item)
 		}
 
 		// Check for EOF
 		item, err := rw.ReadItem()
 		require.Equal(t, io.EOF, err)
-		require.Nil(t, item)
+		require.Equal(t, testStruct{}, item)
 	}
 
 	t.Run("read/write multiple items", func(t *testing.T) {
 		check(t, testScenario{
 			name: "read/write multiple items",
-			items: []*testStruct{
+			items: []testStruct{
 				{Foo: "one", Bar: 1},
 				{Foo: "two", Bar: 2},
 				{Foo: "three", Bar: 3},
@@ -255,7 +252,7 @@ func TestUnitNewReaderWriter(t *testing.T) {
 	t.Run("read/write single item", func(t *testing.T) {
 		check(t, testScenario{
 			name: "read/write single item",
-			items: []*testStruct{
+			items: []testStruct{
 				{Foo: "single", Bar: 100},
 			},
 		})
@@ -264,7 +261,7 @@ func TestUnitNewReaderWriter(t *testing.T) {
 	t.Run("read/write no items", func(t *testing.T) {
 		check(t, testScenario{
 			name:  "read/write no items",
-			items: []*testStruct{},
+			items: []testStruct{},
 		})
 	})
 }

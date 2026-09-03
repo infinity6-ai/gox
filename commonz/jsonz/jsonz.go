@@ -46,15 +46,15 @@ func NewReader[T any](r io.Reader) parserz.ItemReader[T] {
 	decoder.UseNumber() // Maintain consistent decoding behavior with Parse
 
 	return parserz.NewItemReaderWriter(
-		func() (*T, error) {
+		func() (T, error) {
 			var item T
 			if err := decoder.Decode(&item); err != nil {
 				if err == io.EOF {
-					return nil, io.EOF // Return nil, io.EOF for EOF
+					return item, io.EOF // Return zero value, io.EOF for EOF
 				}
-				return nil, fmt.Errorf("failed to decode json item: %w", err)
+				return item, fmt.Errorf("failed to decode json item: %w", err)
 			}
-			return &item, nil
+			return item, nil
 		},
 		nil,
 	)
@@ -67,7 +67,7 @@ func NewWriter[T any](w io.Writer) parserz.ItemWriter[T] {
 
 	return parserz.NewItemReaderWriter[T](
 		nil,
-		func(item *T) error {
+		func(item T) error {
 			if err := encoder.Encode(item); err != nil {
 				return fmt.Errorf("failed to encode json item: %w", err)
 			}
@@ -84,17 +84,17 @@ func NewReaderWriter[T any](rw io.ReadWriter) parserz.ItemReaderWriter[T] {
 	encoder.SetEscapeHTML(false)
 
 	return parserz.NewItemReaderWriter(
-		func() (*T, error) {
+		func() (T, error) {
 			var item T
 			if err := decoder.Decode(&item); err != nil {
 				if err == io.EOF {
-					return nil, io.EOF // Return nil, io.EOF for EOF
+					return item, io.EOF // Return zero value, io.EOF for EOF
 				}
-				return nil, fmt.Errorf("failed to decode json item: %w", err)
+				return item, fmt.Errorf("failed to decode json item: %w", err)
 			}
-			return &item, nil
+			return item, nil
 		},
-		func(item *T) error {
+		func(item T) error {
 			if err := encoder.Encode(item); err != nil {
 				return fmt.Errorf("failed to encode json item: %w", err)
 			}
