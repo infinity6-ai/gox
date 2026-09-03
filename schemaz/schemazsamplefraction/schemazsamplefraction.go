@@ -3,6 +3,7 @@ package schemazsamplefraction
 import (
 	"context"
 	"fmt"
+	"strconv"
 
 	"github.com/infinity6-ai/gox/httpz/server/httpzserver"
 	"github.com/infinity6-ai/gox/schemaz/schemahttpz"
@@ -15,7 +16,7 @@ type ReqParams struct {
 }
 
 type ReqQuery struct {
-	Precision float64 `json:"precision"`
+	Precision int `json:"precision"`
 }
 
 type ReqHeaders struct {
@@ -31,8 +32,8 @@ type RespHeaders struct {
 }
 
 type RespBody struct {
-	Display string  `json:"display"`
-	Result  float64 `json:"result"`
+	Display string `json:"display"`
+	Result  string `json:"result"`
 }
 
 func Api() *schemaz.Api {
@@ -91,7 +92,7 @@ func Handlers(s *httpzserver.Server) {
 				},
 				&RespBody{
 					Display: fmt.Sprintf(fmt.Sprintf("%%.%df/%%.%df", int(req.QueryParams.Precision), int(req.QueryParams.Precision)), req.PathParams.Numerator, req.PathParams.Denumerator),
-					Result:  req.PathParams.Numerator / req.PathParams.Denumerator,
+					Result:  strconv.FormatFloat(req.PathParams.Numerator/req.PathParams.Denumerator, 'f', req.QueryParams.Precision, 64),
 				},
 				nil
 		},

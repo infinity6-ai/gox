@@ -24,15 +24,19 @@ func TestUnitBasic(t *testing.T) {
 	c := httpzclient.New(ctx, httpzclient.Options{
 		BaseUrl: s.Base(),
 	})
-	resp, err := c.Do(httpzclient.NewReq("POST", "/api/gox/dataschema/sample/fraction/10/3").AddQuery("precision", "3").SetBody(strings.NewReader("{\"reason\":\"myreason\"}")))
+	req := httpzclient.NewReq("POST", "/api/gox/dataschema/sample/fraction/10/3").
+		SetQuery("precision", "3").
+		SetHeader("Trace-Id", "xx").
+		SetBody(strings.NewReader("{\"reason\":\"myreason\"}"))
+	resp, err := c.Do(req)
 	errorz.Check(err)
 	defer resp.Body.Close()
 	require.Equal(t, 200, resp.StatusCode)
 	require.Equal(t, "application/json", resp.Headers.Get("content-type"))
-	// require.Equal(t, "xx", resp.Headers.Get("req_id"))
+	require.Equal(t, "reason: myreason, trace: xx", resp.Headers.Get("Req-Id"))
 	respBody := jsonz.MustParseReader(resp.Body, &schemazsamplefraction.RespBody{})
 	require.Equal(t, &schemazsamplefraction.RespBody{
 		Display: "10.000/3.000",
-		Result:  10.0 / 3.0,
+		Result:  "3.333",
 	}, respBody)
 }
