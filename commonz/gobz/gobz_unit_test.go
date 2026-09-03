@@ -65,7 +65,7 @@ func TestUnitFormat(t *testing.T) {
 	require.NotNil(t, bytes)
 
 	// Let's parse it back to be sure.
-	result, err := Parse[testStruct](bytes)
+	result, err := Parse[*testStruct](bytes)
 	require.NoError(t, err)
 	require.Equal(t, data, result)
 }
@@ -76,7 +76,7 @@ func TestUnitMustFormat(t *testing.T) {
 		require.NotPanics(t, func() {
 			bytes := MustFormat(data)
 			require.NotNil(t, bytes)
-			result, err := Parse[testStruct](bytes)
+			result, err := Parse[*testStruct](bytes)
 			require.NoError(t, err)
 			require.Equal(t, data, result)
 		})
