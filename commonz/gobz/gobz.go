@@ -85,3 +85,53 @@ func NewReaderWriter[T any](rw io.ReadWriter) parserz.ItemReaderWriter[T] {
 		},
 	)
 }
+
+// Copy marshals the input to gob and unmarshals it into the output.
+// This is useful for deep copying or type conversion through gob serialization.
+// It returns the populated output object.
+func Copy[I any, O any](input I, output O) (O, error) {
+	var buf bytes.Buffer
+	encoder := gob.NewEncoder(&buf)
+	if err := encoder.Encode(input); err != nil {
+		return output, fmt.Errorf("failed to encode input: %w", err)
+	}
+
+	decoder := gob.NewDecoder(&buf)
+	if err := decoder.Decode(output); err != nil {
+		return output, fmt.Errorf("failed to decode into output: %w", err)
+	}
+	return output, nil
+}
+
+// MustCopy is a convenience function that calls Copy and panics if an error occurs.
+// It returns the populated output object.
+func MustCopy[I any, O any](input I, output O) O {
+	res, err := Copy(input, output)
+	errorz.Check(err)
+	return res
+}
+
+// Clone creates a deep copy of the input object using gob marshaling and unmarshaling.
+// It returns a new instance of the same type as the input.
+func Clone[T any](input T) (T, error) {
+	var cloned T
+	var buf bytes.Buffer
+	encoder := gob.NewEncoder(&buf)
+	if err := encoder.Encode(input); err != nil {
+		return cloned, fmt.Errorf("failed to encode input for cloning: %w", err)
+	}
+
+	decoder := gob.NewDecoder(&buf)
+	if err := decoder.Decode(&cloned); err != nil {
+		return cloned, fmt.Errorf("failed to decode into cloned object: %w", err)
+	}
+	return cloned, nil
+}
+
+// MustClone is a convenience function that calls Clone and panics if an error occurs.
+func MustClone[T any](input T) T {
+	res, err := Clone(input)
+	errorz.Check(err)
+	return res
+}
+
