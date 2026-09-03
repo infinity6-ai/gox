@@ -28,7 +28,7 @@ func (o *Options) fix() {
 		}
 	}
 	if o.LocalAddress == "" {
-		o.LocalAddress = "localhost:8080"
+		o.LocalAddress = "localhost:0"
 	}
 }
 
