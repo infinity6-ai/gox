@@ -1,6 +1,5 @@
 package schemazsamplefraction
 
-import "github.com/infinity6-ai/gox/dataschema/schemaz"
 
 func Api() schemaz.Api {
 	return schemaz.Api{
