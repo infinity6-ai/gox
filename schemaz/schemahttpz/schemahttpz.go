@@ -4,6 +4,7 @@ import (
 	"context"
 	"net/http"
 
+	"github.com/infinity6-ai/gox/commonz/errorz"
 	"github.com/infinity6-ai/gox/commonz/jsonz"
 	"github.com/infinity6-ai/gox/httpz/server/httpzserver"
 	"github.com/infinity6-ai/gox/schemaz/schemaz"
@@ -53,16 +54,13 @@ func (a *Api[Params, Query, ReqHeaders, ReqBody, RespHeaders, RespBody]) ParseRe
 func Add[Params any, Query any, ReqHeaders any, ReqBody any, RespHeaders any, RespBody any](s *httpzserver.Server, api *Api[Params, Query, ReqHeaders, ReqBody, RespHeaders, RespBody]) {
 	s.AddHandler(api.Schema.Method, api.Schema.Path, func(ctx context.Context, resp httpzserver.Resp, req *httpzserver.Req, params map[string]string) {
 		parsedReq := api.ParseRequest(ctx, req, params)
-		respHedaers, respBody, err := api.Handler(ctx, parsedReq)
-		if err != nil {
-			panic(err)
-		}
-		var formattedHeaders http.Header
+		respHedaers, _, err := api.Handler(ctx, parsedReq)
+		errorz.Check(err)
+		formattedHeaders := make(http.Header)
+		formattedHeaders.Set("Content-Type", "application/json")
 		jsonz.Copy(respHedaers, &formattedHeaders)
-		w := resp(2000, formattedHeaders)
-		jsonz.NewWriter[RespBody](w).MustWriteItem(respBody)
-		// jsonz.Copy(respBody, &respBody)
-		// resp(200, )
+		w := resp(200, formattedHeaders)
+		jsonz.NewWriter[*RespBody](w).MustWriteItem(nil)
 	})
 }
 
