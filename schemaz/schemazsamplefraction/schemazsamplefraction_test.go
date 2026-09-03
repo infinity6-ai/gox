@@ -1,7 +1,6 @@
 package schemazsamplefraction_test
 
 import (
-	"io"
 	"strings"
 	"testing"
 
@@ -32,9 +31,9 @@ func TestUnitBasic(t *testing.T) {
 	require.Equal(t, "application/json", resp.Headers.Get("content-type"))
 	// require.Equal(t, "xx", resp.Headers.Get("req_id"))
 	respBody, err := jsonz.ParseReader(resp.Body, &schemazsamplefraction.RespBody{})
-	require.ErrorIs(t, err, io.EOF)
+	require.NoError(t, err)
 	require.Equal(t, &schemazsamplefraction.RespBody{
-		Display: "xxx",
-		Result:  111,
+		Display: "10.000/3.000",
+		Result:  10.0 / 3.0,
 	}, respBody)
 }

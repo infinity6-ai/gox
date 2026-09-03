@@ -54,7 +54,7 @@ func Api() *schemaz.Api {
 		},
 
 		ReqQuery: []schemaz.Field{
-			{Name: "precsion", Desc: schemaz.Desc{Summary: "precision"}, Spec: schemaz.Spec{Type: schemaz.TypeNumber}},
+			{Name: "precision", Desc: schemaz.Desc{Summary: "precision"}, Spec: schemaz.Spec{Type: schemaz.TypeNumber}},
 		},
 
 		ReqHeaders: []schemaz.Field{
@@ -83,14 +83,14 @@ func Api() *schemaz.Api {
 }
 
 func Handlers(s *httpzserver.Server) {
-	schemahttpz.Add(s, &schemahttpz.Api[*ReqParams, *ReqHeaders, *ReqHeaders, *ReqBody, *RespHeaders, *RespBody]{
+	schemahttpz.Add(s, &schemahttpz.Api[ReqParams, ReqQuery, ReqHeaders, ReqBody, *RespHeaders, *RespBody]{
 		Schema: Api(),
-		Handler: func(ctx context.Context, req *schemahttpz.Req[*ReqParams, *ReqHeaders, *ReqHeaders, *ReqBody]) (*RespHeaders, *RespBody, error) {
+		Handler: func(ctx context.Context, req *schemahttpz.Req[ReqParams, ReqQuery, ReqHeaders, ReqBody]) (*RespHeaders, *RespBody, error) {
 			return &RespHeaders{
 					ReqId: fmt.Sprintf("reason: %s, trace: %s", req.ReqBody.Reason, req.ReqHeaders.TraceId),
 				},
 				&RespBody{
-					Display: fmt.Sprintf("%f/%f", req.PathParams.Numerator, req.PathParams.Denumerator),
+					Display: fmt.Sprintf(fmt.Sprintf("%%.%df/%%.%df", int(req.QueryParams.Precision), int(req.QueryParams.Precision)), req.PathParams.Numerator, req.PathParams.Denumerator),
 					Result:  req.PathParams.Numerator / req.PathParams.Denumerator,
 				},
 				nil
