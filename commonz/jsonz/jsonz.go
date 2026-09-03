@@ -65,7 +65,7 @@ func NewWriter[T any](w io.Writer) parserz.ItemWriter[T] {
 	encoder := json.NewEncoder(w)
 	encoder.SetEscapeHTML(false) // Preserve original behavior if any
 
-	return parserz.NewItemReaderWriter[T](
+	return parserz.NewItemReaderWriter(
 		nil,
 		func(item T) error {
 			if err := encoder.Encode(item); err != nil {
