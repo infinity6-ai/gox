@@ -2,6 +2,7 @@ package fsz
 
 import (
 	"context"
+	"fmt"
 	"io"
 	"net/http"
 	"time"
@@ -32,7 +33,7 @@ func RegisterFS(ctx context.Context, scheme string, fs FsProvider) io.Closer {
 func getProvider(scheme string) (FsProvider, error) {
 	prv, ok := providers[scheme]
 	if !ok {
-		return nil, ErrUnknownScheme
+		return nil, fmt.Errorf("%w: %s", ErrUnknownScheme, scheme)
 	}
 	return prv, nil
 }
