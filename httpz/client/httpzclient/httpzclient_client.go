@@ -8,7 +8,6 @@ import (
 
 	"github.com/infinity6-ai/gox/commonz/deferz"
 	"github.com/infinity6-ai/gox/commonz/urlz"
-	"github.com/infinity6-ai/gox/commonz/validation/checker"
 )
 
 var defaultHttpClient = &http.Client{
@@ -26,7 +25,6 @@ type Options struct {
 }
 
 func (o *Options) fix() {
-	checker.NotNil(o.BaseUrl, "baseurl")
 }
 
 type Client struct {
