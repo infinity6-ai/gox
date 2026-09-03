@@ -32,7 +32,7 @@ type Field struct {
 	Spec Spec   `json:"spec"`
 }
 
-type Api struct {
+type Api[Req any, Resp any] struct {
 	Id         string
 	Desc       Desc
 	Method     string
@@ -42,8 +42,10 @@ type Api struct {
 	ReqHeaders []Field // basics
 
 	ReqBody *Spec
+	ReqType Req
 
 	RespHeaders []Field // basics
 
 	RespBody *Spec
+	RespType Resp
 }

@@ -4,8 +4,17 @@ import (
 	"github.com/infinity6-ai/gox/schemaz/schemaz"
 )
 
-func Api() schemaz.Api {
-	return schemaz.Api{
+type ReqBody struct {
+	Reason string `json:"reason"`
+}
+
+type RespBody struct {
+	Display string  `json:"display"`
+	Result  float64 `json:"result"`
+}
+
+func Api() schemaz.Api[ReqBody, RespBody] {
+	return schemaz.Api[ReqBody, RespBody]{
 		Id: "samplefraction",
 
 		Desc: schemaz.Desc{
@@ -36,6 +45,7 @@ func Api() schemaz.Api {
 				{Name: "reason", Desc: schemaz.Desc{Summary: "reason"}, Spec: schemaz.Spec{Type: schemaz.TypeString}},
 			},
 		},
+		ReqType: ReqBody{},
 
 		RespHeaders: []schemaz.Field{
 			{Name: "req_id", Desc: schemaz.Desc{Summary: "request id"}, Spec: schemaz.Spec{Type: schemaz.TypeString}},
@@ -48,5 +58,6 @@ func Api() schemaz.Api {
 				{Name: "result", Desc: schemaz.Desc{Summary: "fraction result"}, Spec: schemaz.Spec{Type: schemaz.TypeNumber}},
 			},
 		},
+		RespType: RespBody{},
 	}
 }
