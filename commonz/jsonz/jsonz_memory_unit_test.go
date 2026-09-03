@@ -104,7 +104,7 @@ func TestUnitParse(t *testing.T) {
 	t.Run("Invalid JSON string using Parse", func(t *testing.T) {
 		initial := &MyStruct{}
 		input := `{"status":`
-		wantErr := "failed to parse json: unexpected end of JSON input"
+		wantErr := "failed to parse json: unexpected EOF"
 
 		got, err := Parse(input, initial)
 
