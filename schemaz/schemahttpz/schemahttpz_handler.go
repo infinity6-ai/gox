@@ -35,9 +35,9 @@ func (a *Api[P, Q, IH, IB, OH, OB]) Zeros() (P, Q, IH, IB) {
 
 func (a *Api[P, Q, IH, IB, OH, OB]) ParseRequest(ctx context.Context, req *httpzserver.Req, params map[string]string) *Req[P, Q, IH, IB] {
 	p, q, reqHeaders, reqBody := a.Zeros()
-	structjsonz.ParseSingle(params, &p)
-	structjsonz.Parse(req.Query, &q)
-	structjsonz.Parse(req.Headers, &reqHeaders)
+	structjsonz.MustParseSingle(params, p)
+	structjsonz.MustParse(req.Query, &q)
+	structjsonz.MustParse(req.Headers, &reqHeaders)
 	jsonz.Copy(req.Body, &reqBody)
 	return &Req[P, Q, IH, IB]{
 		PathParams:  p,

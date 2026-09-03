@@ -6,8 +6,17 @@ import (
 	"reflect"
 	"strings"
 
+	"github.com/infinity6-ai/gox/commonz/errorz"
 	"github.com/infinity6-ai/gox/commonz/jsonz/jsonmapz"
 )
+
+func MustParseSingle(in map[string]string, out any) {
+	errorz.Check(ParseSingle(in, out))
+}
+
+func MustParse(in map[string][]string, out any) {
+	errorz.Check(Parse(in, out))
+}
 
 func ParseSingle(in map[string]string, out any) error {
 	n := make(map[string][]string, len(in))
@@ -23,7 +32,7 @@ func ParseSingle(in map[string]string, out any) error {
 func Parse(in map[string][]string, out any) error {
 	v := reflect.ValueOf(out)
 	if v.Kind() != reflect.Ptr || v.Elem().Kind() != reflect.Struct {
-		return fmt.Errorf("out must be a pointer to a struct")
+		return fmt.Errorf("out must be a pointer to a struct, but got %T (%s, %s)", out, v.Kind(), v.Elem().Kind())
 	}
 
 	structMap, err := structToMap(out)
@@ -48,7 +57,7 @@ func Parse(in map[string][]string, out any) error {
 func Format(in any) (map[string][]string, error) {
 	v := reflect.ValueOf(in)
 	if v.Kind() != reflect.Ptr || v.Elem().Kind() != reflect.Struct {
-		return nil, fmt.Errorf("in must be a pointer to a struct")
+		return nil, fmt.Errorf("in must be a pointer to a struct, but got %T (%s, %s)", in, v.Kind(), v.Elem().Kind())
 	}
 
 	structMap, err := structToMap(in)
