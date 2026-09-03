@@ -4,10 +4,12 @@ import "github.com/infinity6-ai/gox/commonz/errorz"
 
 type ItemReader[T any] interface {
 	ReadItem() (T, error)
+	MustReadItem() T
 }
 
 type ItemWriter[T any] interface {
 	WriteItem(item T) error
+	MustWriteItem(item T)
 }
 
 type ItemReaderWriter[T any] interface {
