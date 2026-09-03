@@ -78,12 +78,12 @@ func parseHeaderPayload(token string) (*JWTParsedToken, error) {
 		return nil, err
 	}
 
-	headerParsed, err := jsonz.Parse[JWTHeader](headerJson.Bytes())
+	headerParsed, err := jsonz.Parse[*JWTHeader](headerJson.Bytes())
 	if err != nil {
 		return nil, err
 	}
 
-	payloadParsed, err := jsonz.Parse[JWTPayload](payloadJson.Bytes())
+	payloadParsed, err := jsonz.Parse[*JWTPayload](payloadJson.Bytes())
 	if err != nil {
 		return nil, err
 	}
