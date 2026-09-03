@@ -17,9 +17,9 @@ func TestUnitHowTo(t *testing.T) {
 	}
 
 	out := map[string]any{
-		"a": "",
-		"b": []string{},
-		"c": float64(0),
+		"a": "",         // string type gets the first string as is
+		"b": []string{}, // []string gets a copy []string
+		"c": float64(0), // every other type should use jsonz.Parse
 		"d": []float64{},
 		"e": &Data{},
 		"f": []*Data{},
