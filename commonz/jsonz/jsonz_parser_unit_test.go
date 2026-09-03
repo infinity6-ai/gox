@@ -259,3 +259,89 @@ func TestUnitFormat(t *testing.T) {
 		})
 	})
 }
+
+func TestUnitParseReaderUntilEOF(t *testing.T) {
+	type MyStruct struct {
+		Name string `json:"name"`
+		ID   int    `json:"id"`
+	}
+
+	type testScenario struct {
+		name    string
+		input   string
+		want    []*MyStruct
+		wantErr string
+	}
+
+	check := func(t *testing.T, s testScenario) {
+		t.Helper()
+		reader := strings.NewReader(s.input)
+		got, err := ParseReaderUntilEOF[MyStruct](reader)
+
+		if s.wantErr != "" {
+			require.Error(t, err)
+			require.Contains(t, err.Error(), s.wantErr)
+			require.Nil(t, got)
+		} else {
+			require.NoError(t, err)
+			require.Equal(t, s.want, got)
+		}
+	}
+
+	t.Run("Stream with multiple valid JSON objects", func(t *testing.T) {
+		check(t, testScenario{
+			name:  "multiple valid objects",
+			input: `{"name":"first","id":1}{"name":"second","id":2}{"name":"third","id":3}`,
+			want: []*MyStruct{
+				{Name: "first", ID: 1},
+				{Name: "second", ID: 2},
+				{Name: "third", ID: 3},
+			},
+		})
+	})
+
+	t.Run("Stream with whitespace between objects", func(t *testing.T) {
+		check(t, testScenario{
+			name:  "whitespace between objects",
+			input: `{"name":"first","id":1}  	{"name":"second","id":2}
+{"name":"third","id":3}`,
+			want: []*MyStruct{
+				{Name: "first", ID: 1},
+				{Name: "second", ID: 2},
+				{Name: "third", ID: 3},
+			},
+		})
+	})
+
+	t.Run("Empty input stream", func(t *testing.T) {
+		check(t, testScenario{
+			name:  "empty input",
+			input: ``,
+			want:  []*MyStruct{},
+		})
+	})
+
+	t.Run("Input stream with only whitespace", func(t *testing.T) {
+		check(t, testScenario{
+			name:  "only whitespace",
+			input: `   `,
+			want:  []*MyStruct{},
+		})
+	})
+
+	t.Run("Stream with an invalid JSON object", func(t *testing.T) {
+		check(t, testScenario{
+			name:    "invalid json object",
+			input:   `{"name":"first","id":1}{"name":"invalid"`,
+			wantErr: "failed to parse json stream: unexpected EOF",
+		})
+	})
+
+	t.Run("Stream starting with an invalid object", func(t *testing.T) {
+		check(t, testScenario{
+			name:    "invalid first object",
+			input:   `{"name":}`,
+			wantErr: "failed to parse json stream: invalid character '}' looking for beginning of value",
+		})
+	})
+}
