@@ -20,6 +20,8 @@ func getProvider(scheme string) (*providerSpec, error) {
 		return prv.providerHttp()
 	case "file":
 		return prv.providerFile()
+	case "boxlocal":
+		return prv.providerBoxlocal()
 	case "gs":
 		return prv.providerGs()
 	case "unix":

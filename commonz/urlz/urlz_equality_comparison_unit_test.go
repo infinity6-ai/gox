@@ -126,6 +126,24 @@ func TestUnitUrlEquality(t *testing.T) {
 		})
 	})
 
+	t.Run("identical boxlocal urls", func(t *testing.T) {
+		check(t, testScenario{
+			name:        "identical boxlocal urls",
+			url1:        "boxlocal:///a/b/c",
+			url2:        "boxlocal:///a/b/c",
+			expectEqual: true,
+		})
+	})
+
+	t.Run("different boxlocal urls", func(t *testing.T) {
+		check(t, testScenario{
+			name:        "different boxlocal urls",
+			url1:        "boxlocal:///a/b",
+			url2:        "boxlocal:///a/c",
+			expectEqual: false,
+		})
+	})
+
 	t.Run("equivalent but different representation", func(t *testing.T) {
 		u1, err := urlz.Parse("http://example.com/a/b")
 		require.NoError(t, err)

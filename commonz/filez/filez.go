@@ -325,13 +325,13 @@ func ReadAllStringLimited(r io.Reader, max int) string {
 
 // ReadAllLimited reads all content from the given `io.Reader` up to a specified
 // maximum number of bytes. It panics if the content size exceeds the limit.
-func ReadAllLimited(r io.Reader, max int) []byte {
+func ReadAllLimited(r io.Reader, max int) blobz.Blob {
 	body, err := io.ReadAll(io.LimitReader(r, int64(max+1)))
 	errorz.Check(err)
 	if len(body) > max {
 		panic(fmt.Errorf("It is too large. Expected: %d, but was: %d", max, len(body)))
 	}
-	return body
+	return blobz.New(body)
 }
 
 // TailFile reads the last `size` bytes of a file and returns them as a byte slice.
@@ -367,7 +367,7 @@ func ReadFile(file string, max int) blobz.Blob {
 	f, err := os.Open(file)
 	errorz.Check(err)
 	defer f.Close()
-	return blobz.New(ReadAllLimited(f, max))
+	return ReadAllLimited(f, max)
 }
 
 // -----------------------------------------------------------------------------
