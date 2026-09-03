@@ -99,14 +99,14 @@ func TestUnitNewReader(t *testing.T) {
 		reader := NewReader[testStruct](&buf)
 
 		for i := 0; i < len(s.items); i++ {
-			item, err := reader.ReadItem()
+			item, err := reader.ReadItemInto(testStruct{})
 			require.NoError(t, err)
 			require.Equal(t, s.items[i].Foo, item.Foo)
 			require.Equal(t, s.items[i].Bar, item.Bar)
 		}
 
 		// After reading all items, next call should return a zero value and io.EOF
-		item, err := reader.ReadItem()
+		item, err := reader.ReadItemInto(testStruct{})
 		require.Equal(t, io.EOF, err)
 		require.Equal(t, testStruct{}, item)
 	}
@@ -134,7 +134,7 @@ func TestUnitNewReader(t *testing.T) {
 	t.Run("read empty stream", func(t *testing.T) {
 		var buf bytes.Buffer
 		reader := NewReader[testStruct](&buf)
-		item, err := reader.ReadItem()
+		item, err := reader.ReadItemInto(testStruct{})
 		require.Equal(t, io.EOF, err)
 		require.Equal(t, testStruct{}, item)
 	})
@@ -144,7 +144,7 @@ func TestUnitNewReader(t *testing.T) {
 		buf.Write([]byte("this is not a gob"))
 
 		reader := NewReader[testStruct](&buf)
-		_, err := reader.ReadItem()
+		_, err := reader.ReadItemInto(testStruct{})
 		require.Error(t, err)
 		// The error should not be io.EOF here, as it's an invalid gob, not just end of stream.
 		require.NotEqual(t, io.EOF, err)
@@ -169,13 +169,13 @@ func TestUnitNewWriter(t *testing.T) {
 		// Now read them back to verify
 		reader := NewReader[testStruct](&buf)
 		for i := 0; i < len(s.items); i++ {
-			item, err := reader.ReadItem()
+			item, err := reader.ReadItemInto(testStruct{})
 			require.NoError(t, err)
 			require.Equal(t, s.items[i], item)
 		}
 
 		// Check for EOF
-		item, err := reader.ReadItem()
+		item, err := reader.ReadItemInto(testStruct{})
 		require.Equal(t, io.EOF, err)
 		require.Equal(t, testStruct{}, item)
 	}
@@ -225,13 +225,13 @@ func TestUnitNewReaderWriter(t *testing.T) {
 
 		// Now read them back to verify
 		for i := 0; i < len(s.items); i++ {
-			item, err := rw.ReadItem()
+			item, err := rw.ReadItemInto(testStruct{})
 			require.NoError(t, err)
 			require.Equal(t, s.items[i], item)
 		}
 
 		// Check for EOF
-		item, err := rw.ReadItem()
+		item, err := rw.ReadItemInto(testStruct{})
 		require.Equal(t, io.EOF, err)
 		require.Equal(t, testStruct{}, item)
 	}

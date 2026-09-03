@@ -1,12 +1,12 @@
 package parserz
 
-import "github.com/infinity6-ai/gox/commonz/errorz"
+import (
+	"github.com/infinity6-ai/gox/commonz/errorz"
+)
 
 type ItemReader[T any] interface {
 	ReadItemInto(item T) (T, error)
 	MustReadItemInto(item T) T
-	ReadItem() (T, error)
-	MustReadItem() T
 }
 
 type ItemWriter[T any] interface {
@@ -19,17 +19,8 @@ type ItemReaderWriter[T any] interface {
 	ItemWriter[T]
 }
 
-type MustItemReader[T any] interface {
-	MustReadItem() T
-}
-
 type MustItemWriter[T any] interface {
 	MustWriteItem(item T)
-}
-
-type MustItemReaderWriter[T any] interface {
-	MustItemReader[T]
-	MustItemWriter[T]
 }
 
 type itemReaderWriter[T any] struct {
@@ -38,28 +29,16 @@ type itemReaderWriter[T any] struct {
 }
 
 func (r *itemReaderWriter[T]) ReadItemInto(item T) (T, error) {
-	// if r.read == nil {
-	// 	panic("ReadItemInto called on a write-only stream")
-	// }
-	// val, err := r.read()
-	// if err != nil {
-	// 	return err
-	// }
-	// item = val
-	// return nil
-	panic("implement me")
+	if r.read == nil {
+		panic("ReadItemInto called on a write-only stream")
+	}
+	return r.read()
 }
 
 func (r *itemReaderWriter[T]) MustReadItemInto(item T) T {
-	// errorz.Check(r.ReadItemInto(item))
-	panic("implement me")
-}
-
-func (r *itemReaderWriter[T]) ReadItem() (T, error) {
-	if r.read == nil {
-		panic("ReadItem called on a write-only stream")
-	}
-	return r.read()
+	res, err := r.ReadItemInto(item)
+	errorz.Check(err)
+	return res
 }
 
 func (r *itemReaderWriter[T]) WriteItem(item T) error {
@@ -67,13 +46,6 @@ func (r *itemReaderWriter[T]) WriteItem(item T) error {
 		panic("WriteItem called on a read-only stream")
 	}
 	return r.write(item)
-}
-
-func (r *itemReaderWriter[T]) MustReadItem() T {
-	item, err := r.ReadItem()
-	errorz.Check(err)
-
-	return item
 }
 
 func (r *itemReaderWriter[T]) MustWriteItem(item T) {
@@ -87,9 +59,8 @@ func NewItemReaderWriter[T any](reader func() (T, error), writer func(item T) er
 	}
 }
 
-func NewMustItemReaderWriter[T any](reader func() (T, error), writer func(item T) error) MustItemReaderWriter[T] {
+func NewMustItemWriter[T any](writer func(item T) error) MustItemWriter[T] {
 	return &itemReaderWriter[T]{
-		read:  reader,
 		write: writer,
 	}
 }
