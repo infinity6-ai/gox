@@ -22,8 +22,7 @@ func TestUnitParse(t *testing.T) {
 		require.NoError(t, err)
 
 		// Now, parse it back
-		var result testStruct
-		err = Parse[testStruct](data, &result)
+		result, err := Parse[testStruct](data)
 		require.NoError(t, err)
 		require.Equal(t, "hello", result.Foo)
 		require.Equal(t, 123, result.Bar)
@@ -31,8 +30,7 @@ func TestUnitParse(t *testing.T) {
 
 	t.Run("invalid gob", func(t *testing.T) {
 		data := []byte("this is not gob")
-		var result testStruct
-		err := Parse[testStruct](data, &result)
+		_, err := Parse[testStruct](data)
 		require.Error(t, err)
 	})
 }
@@ -44,8 +42,7 @@ func TestUnitMustParse(t *testing.T) {
 		require.NoError(t, err)
 
 		require.NotPanics(t, func() {
-			var result testStruct
-			MustParse[testStruct](data, &result)
+			result := MustParse[testStruct](data)
 			require.Equal(t, "hello", result.Foo)
 			require.Equal(t, 123, result.Bar)
 		})
@@ -54,8 +51,7 @@ func TestUnitMustParse(t *testing.T) {
 	t.Run("invalid gob", func(t *testing.T) {
 		data := []byte("this is not gob")
 		require.Panics(t, func() {
-			var result testStruct
-			MustParse[testStruct](data, &result)
+			_ = MustParse[testStruct](data)
 		})
 	})
 }
@@ -67,8 +63,7 @@ func TestUnitFormat(t *testing.T) {
 	require.NotNil(t, bytes)
 
 	// Let's parse it back to be sure.
-	var result *testStruct
-	err = Parse[*testStruct](bytes, &result)
+	result, err := Parse[*testStruct](bytes)
 	require.NoError(t, err)
 	require.Equal(t, data, result)
 }
@@ -79,8 +74,7 @@ func TestUnitMustFormat(t *testing.T) {
 		require.NotPanics(t, func() {
 			bytes := MustFormat(data)
 			require.NotNil(t, bytes)
-			var result *testStruct
-			err := Parse[*testStruct](bytes, &result)
+			result, err := Parse[*testStruct](bytes)
 			require.NoError(t, err)
 			require.Equal(t, data, result)
 		})
