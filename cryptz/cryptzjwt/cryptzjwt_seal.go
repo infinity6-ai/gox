@@ -6,7 +6,7 @@ import (
 	"strings"
 
 	"github.com/infinity6-ai/gox/commonz/errorz"
-	"github.com/infinity6-ai/gox/commonz/legacyjsonz"
+	"github.com/infinity6-ai/gox/commonz/jsonz"
 	"github.com/infinity6-ai/gox/commonz/validation"
 	"github.com/infinity6-ai/gox/commonz/validation/checker"
 	"github.com/infinity6-ai/gox/cryptz/cryptzb64"
@@ -47,8 +47,8 @@ func basicVerify(tk *JWTToken) error {
 }
 
 func formatHeaderPayload(tk *JWTToken) string {
-	headerJson := legacyjsonz.MustFormat(tk.Header).String()
-	payloadJson := legacyjsonz.MustFormat(tk.Payload).String()
+	headerJson := jsonz.MustFormat(tk.Header).String()
+	payloadJson := jsonz.MustFormat(tk.Payload).String()
 	headerEncoded := cryptzb64.UrlEncode(headerJson).String()
 	payloadEncoded := cryptzb64.UrlEncode(payloadJson).String()
 	unsignedToken := fmt.Sprintf("%s.%s", headerEncoded, payloadEncoded)
@@ -78,12 +78,12 @@ func parseHeaderPayload(token string) (*JWTParsedToken, error) {
 		return nil, err
 	}
 
-	headerParsed, err := legacyjsonz.Parse[*JWTHeader](headerJson.Bytes())
+	headerParsed, err := jsonz.Parse(headerJson.Bytes(), &JWTHeader{})
 	if err != nil {
 		return nil, err
 	}
 
-	payloadParsed, err := legacyjsonz.Parse[*JWTPayload](payloadJson.Bytes())
+	payloadParsed, err := jsonz.Parse(payloadJson.Bytes(), &JWTPayload{})
 	if err != nil {
 		return nil, err
 	}
