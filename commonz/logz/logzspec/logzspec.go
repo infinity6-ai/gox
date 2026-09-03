@@ -9,7 +9,7 @@ import (
 	"runtime/debug"
 	"time"
 
-	"github.com/infinity6-ai/gox/commonz/jsonz"
+	"github.com/infinity6-ai/gox/commonz/legacyjsonz"
 )
 
 type ProviderLogger func(ctx context.Context, entry *Entry)
@@ -78,7 +78,7 @@ func parseParams(params map[string]any) map[string]string {
 		if ok {
 			value = formatError(errValue)
 		}
-		result[key] = jsonz.MustFormat(value).String()
+		result[key] = legacyjsonz.MustFormat(value).String()
 	}
 
 	return result

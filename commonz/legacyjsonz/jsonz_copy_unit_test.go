@@ -1,4 +1,4 @@
-package jsonz
+package legacyjsonz
 
 import (
 	"testing"

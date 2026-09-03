@@ -5,7 +5,7 @@ import (
 	"net/http"
 
 	"github.com/infinity6-ai/gox/commonz/errorz"
-	"github.com/infinity6-ai/gox/commonz/jsonz"
+	"github.com/infinity6-ai/gox/commonz/legacyjsonz"
 	"github.com/infinity6-ai/gox/httpz/server/httpzserver"
 	"github.com/infinity6-ai/gox/schemaz/schemaz"
 )
@@ -34,10 +34,10 @@ func (a *Api[P, Q, IH, IB, OH, OB]) Zeros() (P, Q, IH, IB) {
 
 func (a *Api[P, Q, IH, IB, OH, OB]) ParseRequest(ctx context.Context, req *httpzserver.Req, params map[string]string) *Req[P, Q, IH, IB] {
 	p, q, reqHeaders, reqBody := a.Zeros()
-	jsonz.Copy(params, &p)
-	jsonz.Copy(req.Query, &q)
-	jsonz.Copy(req.Headers, &reqHeaders)
-	jsonz.Copy(req.Body, &reqBody)
+	legacyjsonz.Copy(params, &p)
+	legacyjsonz.Copy(req.Query, &q)
+	legacyjsonz.Copy(req.Headers, &reqHeaders)
+	legacyjsonz.Copy(req.Body, &reqBody)
 	return &Req[P, Q, IH, IB]{
 		PathParams:  p,
 		QueryParams: q,
@@ -53,8 +53,8 @@ func Add[P any, Q any, IH any, IB any, OH any, OB any](s *httpzserver.Server, ap
 		errorz.Check(err)
 		formattedHeaders := make(http.Header)
 		formattedHeaders.Set("Content-Type", "application/json")
-		jsonz.Copy(respHedaers, &formattedHeaders)
+		legacyjsonz.Copy(respHedaers, &formattedHeaders)
 		w := resp(200, formattedHeaders)
-		jsonz.NewWriter[*OB](w).MustWriteItem(nil)
+		legacyjsonz.NewWriter[*OB](w).MustWriteItem(nil)
 	})
 }
