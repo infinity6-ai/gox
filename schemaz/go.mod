@@ -3,7 +3,7 @@ module github.com/infinity6-ai/gox/schemaz
 go 1.26.1
 
 require (
-	github.com/infinity6-ai/gox/commonz v0.0.0-20260903173305-2ff92ee53ded
+	github.com/infinity6-ai/gox/commonz v0.0.0-20260903192535-16d3d3b691a2
 	github.com/infinity6-ai/gox/httpz v0.0.0-20260903174430-aad09a8670d6
 	github.com/stretchr/testify v1.12.1
 )
