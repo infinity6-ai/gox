@@ -23,12 +23,13 @@ func TestUnitCopy(t *testing.T) {
 
 	check := func(t *testing.T, s testScenario) {
 		t.Helper()
-		err := Copy(s.input, s.output)
+		res, err := Copy(s.input, s.output)
 		if s.wantErr {
 			require.Error(t, err)
 		} else {
 			require.NoError(t, err)
 			require.Equal(t, s.wantOutput, *s.output)
+			require.Same(t, s.output, res)
 		}
 	}
 
@@ -71,10 +72,12 @@ func TestUnitMustCopy(t *testing.T) {
 				MustCopy(s.input, s.output)
 			})
 		} else {
+			var res *sampleStruct
 			require.NotPanics(t, func() {
-				MustCopy(s.input, s.output)
+				res = MustCopy(s.input, s.output)
 			})
 			require.Equal(t, s.wantOutput, *s.output)
+			require.Same(t, s.output, res)
 		}
 	}
 

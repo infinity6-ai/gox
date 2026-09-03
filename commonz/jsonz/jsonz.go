@@ -105,20 +105,24 @@ func NewReaderWriter[T any](rw io.ReadWriter) parserz.ItemReaderWriter[T] {
 
 // Copy marshals the input to JSON and unmarshals it into the output.
 // This is useful for deep copying or type conversion through JSON serialization.
-func Copy[I any, O any](input I, output O) error {
+// It returns the populated output object.
+func Copy[I any, O any](input I, output O) (O, error) {
 	b, err := json.Marshal(input)
 	if err != nil {
-		return fmt.Errorf("failed to marshal input: %w", err)
+		return output, fmt.Errorf("failed to marshal input: %w", err)
 	}
 	if err := json.Unmarshal(b, output); err != nil {
-		return fmt.Errorf("failed to unmarshal into output: %w", err)
+		return output, fmt.Errorf("failed to unmarshal into output: %w", err)
 	}
-	return nil
+	return output, nil
 }
 
 // MustCopy is a convenience function that calls Copy and panics if an error occurs.
-func MustCopy[I any, O any](input I, output O) {
-	errorz.Check(Copy(input, output))
+// It returns the populated output object.
+func MustCopy[I any, O any](input I, output O) O {
+	res, err := Copy(input, output)
+	errorz.Check(err)
+	return res
 }
 
 // Clone creates a deep copy of the input object using JSON marshaling and unmarshaling.
