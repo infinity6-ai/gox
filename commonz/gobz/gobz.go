@@ -10,19 +10,16 @@ import (
 	"github.com/infinity6-ai/gox/commonz/errorz"
 )
 
-func Parse[T any](data []byte) (T, error) {
-	var result T
+func Parse[T any](data []byte, out *T) error {
 	decoder := gob.NewDecoder(bytes.NewReader(data))
-	if err := decoder.Decode(&result); err != nil {
-		return result, fmt.Errorf("failed to decode gob: %w", err)
+	if err := decoder.Decode(out); err != nil {
+		return fmt.Errorf("failed to decode gob: %w", err)
 	}
-	return result, nil
+	return nil
 }
 
-func MustParse[T any](data []byte) T {
-	res, err := Parse[T](data)
-	errorz.Check(err)
-	return res
+func MustParse[T any](data []byte, out *T) {
+	errorz.Check(Parse[T](data, out))
 }
 
 func Format[T any](data *T) ([]byte, error) {
