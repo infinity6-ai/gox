@@ -22,8 +22,7 @@ type testStructWithNumber struct {
 func TestUnitParse(t *testing.T) {
 	t.Run("string", func(t *testing.T) {
 		data := `{"foo": "hello", "bar": 123}`
-		var result testStruct
-		err := Parse(data, &result)
+		result, err := Parse[testStruct](data)
 		require.NoError(t, err)
 		require.Equal(t, "hello", result.Foo)
 		require.Equal(t, 123, result.Bar)
@@ -31,8 +30,7 @@ func TestUnitParse(t *testing.T) {
 
 	t.Run("bytes", func(t *testing.T) {
 		data := []byte(`{"foo": "world", "bar": 456}`)
-		var result testStruct
-		err := Parse(data, &result)
+		result, err := Parse[testStruct](data)
 		require.NoError(t, err)
 		require.Equal(t, "world", result.Foo)
 		require.Equal(t, 456, result.Bar)
@@ -40,24 +38,15 @@ func TestUnitParse(t *testing.T) {
 
 	t.Run("invalid json", func(t *testing.T) {
 		data := `{"foo": "hello", "bar": 123`
-		var result testStruct
-		err := Parse(data, &result)
+		_, err := Parse[testStruct](data)
 		require.Error(t, err)
 	})
 
 	t.Run("json number", func(t *testing.T) {
 		data := `{"value": 12345678901234567890}`
-		var result testStructWithNumber
-		err := Parse(data, &result)
+		result, err := Parse[testStructWithNumber](data)
 		require.NoError(t, err)
 		require.Equal(t, json.Number("12345678901234567890"), result.Value)
-	})
-
-	t.Run("nil out reference", func(t *testing.T) {
-		data := `{"foo": "hello", "bar": 123}`
-		err := Parse[testStruct](data, nil)
-		require.Error(t, err)
-		require.Contains(t, err.Error(), "output reference cannot be nil")
 	})
 }
 
@@ -66,7 +55,7 @@ func TestUnitMustParse(t *testing.T) {
 		data := `{"foo": "hello", "bar": 123}`
 		var result testStruct
 		require.NotPanics(t, func() {
-			MustParse(data, &result)
+			result = MustParse[testStruct](data)
 		})
 		require.Equal(t, "hello", result.Foo)
 		require.Equal(t, 123, result.Bar)
@@ -74,9 +63,8 @@ func TestUnitMustParse(t *testing.T) {
 
 	t.Run("invalid json", func(t *testing.T) {
 		data := `{"foo": "hello", "bar": 123`
-		var result testStruct
 		require.Panics(t, func() {
-			MustParse(data, &result)
+			_ = MustParse[testStruct](data)
 		})
 	})
 
@@ -84,16 +72,9 @@ func TestUnitMustParse(t *testing.T) {
 		data := `{"value": 12345678901234567890}`
 		var result testStructWithNumber
 		require.NotPanics(t, func() {
-			MustParse(data, &result)
+			result = MustParse[testStructWithNumber](data)
 		})
 		require.Equal(t, json.Number("12345678901234567890"), result.Value)
-	})
-
-	t.Run("nil out reference", func(t *testing.T) {
-		data := `{"foo": "hello", "bar": 123}`
-		require.Panics(t, func() {
-			MustParse[testStruct](data, nil)
-		})
 	})
 }
 
@@ -104,8 +85,7 @@ func TestUnitFormat(t *testing.T) {
 	require.NotNil(t, blob)
 	// Comparing strings for JSON is tricky due to key order and whitespace.
 	// Let's parse it back to be sure.
-	var result testStruct
-	err = Parse(blob.String(), &result)
+	result, err := Parse[testStruct](blob.String())
 	require.NoError(t, err)
 	require.Equal(t, *data, result)
 }
@@ -116,8 +96,7 @@ func TestUnitMustFormat(t *testing.T) {
 		require.NotPanics(t, func() {
 			blob := MustFormat(data)
 			require.NotNil(t, blob)
-			var result testStruct
-			err := Parse(blob.String(), &result)
+			result, err := Parse[testStruct](blob.String())
 			require.NoError(t, err)
 			require.Equal(t, *data, result)
 		})
