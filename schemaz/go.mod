@@ -1,4 +1,4 @@
-module github.com/infinity6-ai/gox/dataschema
+module github.com/infinity6-ai/gox/schemaz
 
 go 1.26.1
 

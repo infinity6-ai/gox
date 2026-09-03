@@ -24,7 +24,6 @@ func TestUnitParse(t *testing.T) {
 		// Now, parse it back
 		result, err := Parse[testStruct](data)
 		require.NoError(t, err)
-		require.NotNil(t, result)
 		require.Equal(t, "hello", result.Foo)
 		require.Equal(t, 123, result.Bar)
 	})
@@ -44,7 +43,6 @@ func TestUnitMustParse(t *testing.T) {
 
 		require.NotPanics(t, func() {
 			result := MustParse[testStruct](data)
-			require.NotNil(t, result)
 			require.Equal(t, "hello", result.Foo)
 			require.Equal(t, 123, result.Bar)
 		})
@@ -53,7 +51,7 @@ func TestUnitMustParse(t *testing.T) {
 	t.Run("invalid gob", func(t *testing.T) {
 		data := []byte("this is not gob")
 		require.Panics(t, func() {
-			MustParse[testStruct](data)
+			_ = MustParse[testStruct](data)
 		})
 	})
 }
@@ -65,7 +63,7 @@ func TestUnitFormat(t *testing.T) {
 	require.NotNil(t, bytes)
 
 	// Let's parse it back to be sure.
-	result, err := Parse[testStruct](bytes)
+	result, err := Parse[*testStruct](bytes)
 	require.NoError(t, err)
 	require.Equal(t, data, result)
 }
@@ -76,7 +74,7 @@ func TestUnitMustFormat(t *testing.T) {
 		require.NotPanics(t, func() {
 			bytes := MustFormat(data)
 			require.NotNil(t, bytes)
-			result, err := Parse[testStruct](bytes)
+			result, err := Parse[*testStruct](bytes)
 			require.NoError(t, err)
 			require.Equal(t, data, result)
 		})
@@ -101,17 +99,16 @@ func TestUnitNewReader(t *testing.T) {
 		reader := NewReader[testStruct](&buf)
 
 		for i := 0; i < len(s.items); i++ {
-			item, err := reader.ReadItem()
+			item, err := reader.ReadItemInto(testStruct{})
 			require.NoError(t, err)
-			require.NotNil(t, item)
 			require.Equal(t, s.items[i].Foo, item.Foo)
 			require.Equal(t, s.items[i].Bar, item.Bar)
 		}
 
-		// After reading all items, next call should return nil, io.EOF
-		item, err := reader.ReadItem()
-		require.Equal(t, io.EOF, err) // Expect io.EOF for EOF
-		require.Nil(t, item)          // Expect nil item for EOF
+		// After reading all items, next call should return a zero value and io.EOF
+		item, err := reader.ReadItemInto(testStruct{})
+		require.Equal(t, io.EOF, err)
+		require.Equal(t, testStruct{}, item)
 	}
 
 	t.Run("read multiple items", func(t *testing.T) {
@@ -137,9 +134,9 @@ func TestUnitNewReader(t *testing.T) {
 	t.Run("read empty stream", func(t *testing.T) {
 		var buf bytes.Buffer
 		reader := NewReader[testStruct](&buf)
-		item, err := reader.ReadItem()
+		item, err := reader.ReadItemInto(testStruct{})
 		require.Equal(t, io.EOF, err)
-		require.Nil(t, item)
+		require.Equal(t, testStruct{}, item)
 	})
 
 	t.Run("invalid gob in stream", func(t *testing.T) {
@@ -147,7 +144,7 @@ func TestUnitNewReader(t *testing.T) {
 		buf.Write([]byte("this is not a gob"))
 
 		reader := NewReader[testStruct](&buf)
-		_, err := reader.ReadItem()
+		_, err := reader.ReadItemInto(testStruct{})
 		require.Error(t, err)
 		// The error should not be io.EOF here, as it's an invalid gob, not just end of stream.
 		require.NotEqual(t, io.EOF, err)
@@ -157,7 +154,7 @@ func TestUnitNewReader(t *testing.T) {
 func TestUnitNewWriter(t *testing.T) {
 	type testScenario struct {
 		name  string
-		items []*testStruct
+		items []testStruct
 	}
 
 	check := func(t *testing.T, s testScenario) {
@@ -172,22 +169,21 @@ func TestUnitNewWriter(t *testing.T) {
 		// Now read them back to verify
 		reader := NewReader[testStruct](&buf)
 		for i := 0; i < len(s.items); i++ {
-			item, err := reader.ReadItem()
+			item, err := reader.ReadItemInto(testStruct{})
 			require.NoError(t, err)
-			require.NotNil(t, item)
-			require.Equal(t, *s.items[i], *item)
+			require.Equal(t, s.items[i], item)
 		}
 
 		// Check for EOF
-		item, err := reader.ReadItem()
+		item, err := reader.ReadItemInto(testStruct{})
 		require.Equal(t, io.EOF, err)
-		require.Nil(t, item)
+		require.Equal(t, testStruct{}, item)
 	}
 
 	t.Run("write multiple items", func(t *testing.T) {
 		check(t, testScenario{
 			name: "write multiple items",
-			items: []*testStruct{
+			items: []testStruct{
 				{Foo: "one", Bar: 1},
 				{Foo: "two", Bar: 2},
 				{Foo: "three", Bar: 3},
@@ -198,7 +194,7 @@ func TestUnitNewWriter(t *testing.T) {
 	t.Run("write single item", func(t *testing.T) {
 		check(t, testScenario{
 			name: "write single item",
-			items: []*testStruct{
+			items: []testStruct{
 				{Foo: "single", Bar: 100},
 			},
 		})
@@ -207,7 +203,7 @@ func TestUnitNewWriter(t *testing.T) {
 	t.Run("write no items", func(t *testing.T) {
 		check(t, testScenario{
 			name:  "write no items",
-			items: []*testStruct{},
+			items: []testStruct{},
 		})
 	})
 }
@@ -215,7 +211,7 @@ func TestUnitNewWriter(t *testing.T) {
 func TestUnitNewReaderWriter(t *testing.T) {
 	type testScenario struct {
 		name  string
-		items []*testStruct
+		items []testStruct
 	}
 
 	check := func(t *testing.T, s testScenario) {
@@ -229,22 +225,21 @@ func TestUnitNewReaderWriter(t *testing.T) {
 
 		// Now read them back to verify
 		for i := 0; i < len(s.items); i++ {
-			item, err := rw.ReadItem()
+			item, err := rw.ReadItemInto(testStruct{})
 			require.NoError(t, err)
-			require.NotNil(t, item)
-			require.Equal(t, *s.items[i], *item)
+			require.Equal(t, s.items[i], item)
 		}
 
 		// Check for EOF
-		item, err := rw.ReadItem()
+		item, err := rw.ReadItemInto(testStruct{})
 		require.Equal(t, io.EOF, err)
-		require.Nil(t, item)
+		require.Equal(t, testStruct{}, item)
 	}
 
 	t.Run("read/write multiple items", func(t *testing.T) {
 		check(t, testScenario{
 			name: "read/write multiple items",
-			items: []*testStruct{
+			items: []testStruct{
 				{Foo: "one", Bar: 1},
 				{Foo: "two", Bar: 2},
 				{Foo: "three", Bar: 3},
@@ -255,7 +250,7 @@ func TestUnitNewReaderWriter(t *testing.T) {
 	t.Run("read/write single item", func(t *testing.T) {
 		check(t, testScenario{
 			name: "read/write single item",
-			items: []*testStruct{
+			items: []testStruct{
 				{Foo: "single", Bar: 100},
 			},
 		})
@@ -264,7 +259,7 @@ func TestUnitNewReaderWriter(t *testing.T) {
 	t.Run("read/write no items", func(t *testing.T) {
 		check(t, testScenario{
 			name:  "read/write no items",
-			items: []*testStruct{},
+			items: []testStruct{},
 		})
 	})
 }
