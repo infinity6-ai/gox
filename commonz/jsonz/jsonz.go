@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"reflect"
 
 	"github.com/infinity6-ai/gox/commonz/constraintz/blobz"
 )
@@ -54,5 +55,10 @@ func Copy[I any, O any](input I, output O) (O, error) {
 // Clone creates a deep copy of the input object using JSON marshaling and unmarshaling.
 // It returns a new instance of the same type as the input.
 func Clone[T any](input T, output T) (T, error) {
+	val := reflect.ValueOf(input)
+	if val.Kind() == reflect.Ptr && val.IsNil() {
+		var zero T
+		return zero, nil
+	}
 	return Copy(input, output)
 }
