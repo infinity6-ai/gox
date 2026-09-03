@@ -1,4 +1,4 @@
-package gobz
+package legacygobz
 
 import (
 	"testing"

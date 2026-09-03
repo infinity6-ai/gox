@@ -1,4 +1,4 @@
-package gobz
+package legacygobz
 
 import (
 	"bytes"
@@ -134,4 +134,3 @@ func MustClone[T any](input T) T {
 	errorz.Check(err)
 	return res
 }
-
