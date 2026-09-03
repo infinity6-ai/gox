@@ -1,6 +1,10 @@
 package schemazsamplefraction
 
 import (
+	"context"
+
+	"github.com/infinity6-ai/gox/httpz/server/httpzserver"
+	"github.com/infinity6-ai/gox/schemaz/schemahttpz"
 	"github.com/infinity6-ai/gox/schemaz/schemaz"
 )
 
@@ -30,8 +34,8 @@ type RespBody struct {
 	Result  float64 `json:"result"`
 }
 
-func Api() schemaz.Api {
-	return schemaz.Api{
+func Api() *schemaz.Api {
+	return &schemaz.Api{
 		Id: "samplefraction",
 
 		Desc: schemaz.Desc{
@@ -75,6 +79,24 @@ func Api() schemaz.Api {
 			},
 		},
 	}
+}
+
+func Handlers(s *httpzserver.Server) {
+	schemahttpz.Add(s, &schemahttpz.Api[*ReqParams, any, *ReqHeaders, *ReqBody, *RespHeaders, *RespBody]{
+		Schema: Api(),
+		Handler: func(ctx context.Context, req *schemahttpz.Req[*ReqParams, any, *ReqHeaders, *ReqBody]) (*RespHeaders, *RespBody, error) {
+			// return nil, nil, errorz.Business(404, "aaa").PayloadFormat("fsdfjskd")
+
+			// return &RespHeaders{
+			// 		ReqId: "xxx",
+			// 	},
+			// 	&RespBody{
+			// 		Display: "aaa",
+			// 		Result:  0,
+			// 	},
+			// 	nil
+		},
+	})
 }
 
 // type Req[P any, Q any, IH any, IB any] struct {

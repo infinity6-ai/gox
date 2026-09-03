@@ -1,9 +1,10 @@
-package schemazsamplefraction
+package schemazsamplefraction_test
 
 import (
 	"testing"
 
 	"github.com/infinity6-ai/gox/httpz/server/httpzserver"
+	"github.com/infinity6-ai/gox/schemaz/schemazsamplefraction"
 )
 
 func TestUnitBasic(t *testing.T) {
@@ -13,4 +14,5 @@ func TestUnitBasic(t *testing.T) {
 	s.Listen()
 	s.Start()
 
+	schemazsamplefraction.Handlers(s)
 }
