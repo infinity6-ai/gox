@@ -3,8 +3,8 @@ package parserz
 import "github.com/infinity6-ai/gox/commonz/errorz"
 
 type ItemReader[T any] interface {
-	ReadItemInto(item T) error
-	MustReadItemInto(item T)
+	ReadItemInto(item T) (T, error)
+	MustReadItemInto(item T) T
 	ReadItem() (T, error)
 	MustReadItem() T
 }
@@ -37,20 +37,22 @@ type itemReaderWriter[T any] struct {
 	write func(item T) error
 }
 
-func (r *itemReaderWriter[T]) ReadItemInto(item T) error {
-	if r.read == nil {
-		panic("ReadItemInto called on a write-only stream")
-	}
-	val, err := r.read()
-	if err != nil {
-		return err
-	}
-	item = val
-	return nil
+func (r *itemReaderWriter[T]) ReadItemInto(item T) (T, error) {
+	// if r.read == nil {
+	// 	panic("ReadItemInto called on a write-only stream")
+	// }
+	// val, err := r.read()
+	// if err != nil {
+	// 	return err
+	// }
+	// item = val
+	// return nil
+	panic("implement me")
 }
 
-func (r *itemReaderWriter[T]) MustReadItemInto(item T) {
-	errorz.Check(r.ReadItemInto(item))
+func (r *itemReaderWriter[T]) MustReadItemInto(item T) T {
+	// errorz.Check(r.ReadItemInto(item))
+	panic("implement me")
 }
 
 func (r *itemReaderWriter[T]) ReadItem() (T, error) {
