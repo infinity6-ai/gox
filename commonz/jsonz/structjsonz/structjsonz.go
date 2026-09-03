@@ -9,6 +9,14 @@ import (
 	"github.com/infinity6-ai/gox/commonz/jsonz/jsonmapz"
 )
 
+func ParseSingle(in map[string]string, out any) error {
+	n := make(map[string][]string, len(in))
+	for k, v := range in {
+		n[k] = []string{v}
+	}
+	return Parse(n, out)
+}
+
 // Parse populates the fields of a struct `out` from a map of string slices `in`.
 // `out` must be a pointer to a struct.
 // The mapping between `in` keys and struct fields is determined by the struct's `json` tags.
