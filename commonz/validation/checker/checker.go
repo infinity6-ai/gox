@@ -36,6 +36,10 @@ func NotNil(value any, msg string, args ...any) {
 	errorz.Check(validation.NotNil(value, msg, args...))
 }
 
+func Nil(value any, msg string, args ...any) {
+	errorz.Check(validation.Nil(value, msg, args...))
+}
+
 func Greater[T constraints.Ordered](value, threshold T, msg string, args ...any) {
 	errorz.Check(validation.Greater(value, threshold, msg, args...))
 }
