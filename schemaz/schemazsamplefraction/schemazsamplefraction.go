@@ -26,7 +26,7 @@ func Api() schemaz.Api {
 			{Name: "precsion", Desc: schemaz.Desc{Summary: "precision"}, Spec: schemaz.Spec{Type: schemaz.TypeNumber}},
 		},
 
-		ReqMeta: []schemaz.Field{
+		ReqHeaders: []schemaz.Field{
 			{Name: "trace_id", Desc: schemaz.Desc{Summary: "trace id"}, Spec: schemaz.Spec{Type: schemaz.TypeNumber}},
 		},
 
@@ -37,7 +37,7 @@ func Api() schemaz.Api {
 			},
 		},
 
-		RespMeta: []schemaz.Field{
+		RespHeaders: []schemaz.Field{
 			{Name: "req_id", Desc: schemaz.Desc{Summary: "request id"}, Spec: schemaz.Spec{Type: schemaz.TypeString}},
 		},
 

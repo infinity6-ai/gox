@@ -33,14 +33,17 @@ type Field struct {
 }
 
 type Api struct {
-	Id        string
-	Desc      Desc
-	Method    string
-	Path      string
-	ReqParams []Field // basics
-	ReqQuery  []Field // basics
-	ReqMeta   []Field // basics
-	ReqBody   *Spec
-	RespMeta  []Field // basics
-	RespBody  *Spec
+	Id         string
+	Desc       Desc
+	Method     string
+	Path       string
+	ReqParams  []Field // basics
+	ReqQuery   []Field // basics
+	ReqHeaders []Field // basics
+
+	ReqBody *Spec
+
+	RespHeaders []Field // basics
+
+	RespBody *Spec
 }
