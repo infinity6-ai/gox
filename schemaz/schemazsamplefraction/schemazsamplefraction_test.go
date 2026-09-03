@@ -30,8 +30,7 @@ func TestUnitBasic(t *testing.T) {
 	require.Equal(t, 200, resp.StatusCode)
 	require.Equal(t, "application/json", resp.Headers.Get("content-type"))
 	// require.Equal(t, "xx", resp.Headers.Get("req_id"))
-	respBody, err := jsonz.ParseReader(resp.Body, &schemazsamplefraction.RespBody{})
-	require.NoError(t, err)
+	respBody := jsonz.MustParseReader(resp.Body, &schemazsamplefraction.RespBody{})
 	require.Equal(t, &schemazsamplefraction.RespBody{
 		Display: "10.000/3.000",
 		Result:  10.0 / 3.0,
