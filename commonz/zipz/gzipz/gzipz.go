@@ -41,7 +41,7 @@ func GunzipLimited(data []byte, maxSize int) (blobz.Blob, error) {
 	}
 	defer gzipReader.Close()
 	result := filez.ReadAllLimited(gzipReader, maxSize)
-	return blobz.New(result), nil
+	return result, nil
 }
 
 func Gunzip(data []byte) (blobz.Blob, error) {

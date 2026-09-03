@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/infinity6-ai/gox/commonz/deferz"
 	"github.com/infinity6-ai/gox/commonz/urlz"
 )
 
@@ -14,8 +15,18 @@ var providers = map[string]FsProvider{
 	"gs":   providerGs(),
 }
 
-func RegisterFS(scheme string, fs FsProvider) {
+func RegisterFS(ctx context.Context, scheme string, fs FsProvider) io.Closer {
+	dfz := deferz.New(ctx)
+	defer dfz.Close()
+
+	old := providers[scheme]
+	if old != nil {
+		dfz.Add(func() {
+			providers[scheme] = old
+		})
+	}
 	providers[scheme] = fs
+	return dfz.Detach()
 }
 
 func getProvider(scheme string) (FsProvider, error) {

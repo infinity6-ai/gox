@@ -20,3 +20,9 @@ func (p *Path) ExtractRelative(other *Path) (*Path, error) {
 	relativeParts := other.parts[len(p.parts):]
 	return New(0, relativeParts, other.hasEndingSlash), nil
 }
+
+func (p *Path) ForceCurrent() *Path {
+	ret := p.Clone()
+	ret.parents = 0
+	return ret
+}
