@@ -59,7 +59,7 @@ func TestUnitHowTo(t *testing.T) {
 	// for each unparsed entry value we need to:
 	// - ignore if it is not in out map
 	// - if out[key] is string (use first) or []string just copy it
-	// - else if out[key] is an slice, jsonz.Parse the unparsed[key][0]
+	// - else if out[key] is not a slice, jsonz.Parse the unparsed[key][0]
 	// - else (it is a slice) jsonz.Parse the unparsed[key] into out[key]
 
 	err := jsonmapz.ParseMap(unparsed, out)
