@@ -1,7 +1,6 @@
 package jsonmapz
 
 import (
-	"encoding/json"
 	"fmt"
 	"reflect"
 
@@ -80,20 +79,20 @@ func FormatMap(in map[string]any, out map[string][]string) error {
 				// It's a slice of something other than string.
 				var stringSlice []string
 				for i := 0; i < val.Len(); i++ {
-					b, err := json.Marshal(val.Index(i).Interface())
+					b, err := jsonz.Format(val.Index(i).Interface())
 					if err != nil {
 						return fmt.Errorf("failed to marshal slice element for key '%s': %w", key, err)
 					}
-					stringSlice = append(stringSlice, string(b))
+					stringSlice = append(stringSlice, string(b.String()))
 				}
 				out[key] = stringSlice
 			} else {
 				// It's a single item.
-				b, err := json.Marshal(v)
+				b, err := jsonz.Format(v)
 				if err != nil {
 					return fmt.Errorf("failed to marshal value for key '%s': %w", key, err)
 				}
-				out[key] = []string{string(b)}
+				out[key] = []string{string(b.String())}
 			}
 		}
 	}
