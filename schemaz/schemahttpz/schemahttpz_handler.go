@@ -49,12 +49,12 @@ func (a *Api[P, Q, IH, IB, OH, OB]) ParseRequest(ctx context.Context, req *httpz
 func Add[P any, Q any, IH any, IB any, OH any, OB any](s *httpzserver.Server, api *Api[P, Q, IH, IB, OH, OB]) {
 	s.AddHandler(api.Schema.Method, api.Schema.Path, func(ctx context.Context, resp httpzserver.Resp, req *httpzserver.Req, params map[string]string) {
 		parsedReq := api.ParseRequest(ctx, req, params)
-		respHedaers, _, err := api.Handler(ctx, parsedReq)
+		respHedaers, respBody, err := api.Handler(ctx, parsedReq)
 		errorz.Check(err)
 		formattedHeaders := make(http.Header)
 		formattedHeaders.Set("Content-Type", "application/json")
 		jsonz.Copy(respHedaers, &formattedHeaders)
 		w := resp(200, formattedHeaders)
-		jsonz.FormatWriter(w, "aaaa")
+		jsonz.FormatWriter(w, respBody)
 	})
 }

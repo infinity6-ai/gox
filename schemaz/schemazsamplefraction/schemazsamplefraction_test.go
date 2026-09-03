@@ -1,10 +1,12 @@
 package schemazsamplefraction_test
 
 import (
+	"io"
 	"strings"
 	"testing"
 
 	"github.com/infinity6-ai/gox/commonz/errorz"
+	"github.com/infinity6-ai/gox/commonz/jsonz"
 	"github.com/infinity6-ai/gox/httpz/client/httpzclient"
 	"github.com/infinity6-ai/gox/httpz/server/httpzserver"
 	"github.com/infinity6-ai/gox/schemaz/schemazsamplefraction"
@@ -29,6 +31,10 @@ func TestUnitBasic(t *testing.T) {
 	require.Equal(t, 200, resp.StatusCode)
 	require.Equal(t, "application/json", resp.Headers.Get("content-type"))
 	// require.Equal(t, "xx", resp.Headers.Get("req_id"))
-	// respBody := jsonz.NewReader[*schemazsamplefraction.RespBody](resp.Body).MustReadItemInto(&schemazsamplefraction.RespBody{})
-	// require.Equal(t, nil, respBody)
+	respBody, err := jsonz.ParseReader(resp.Body, &schemazsamplefraction.RespBody{})
+	require.ErrorIs(t, err, io.EOF)
+	require.Equal(t, &schemazsamplefraction.RespBody{
+		Display: "xxx",
+		Result:  111,
+	}, respBody)
 }
