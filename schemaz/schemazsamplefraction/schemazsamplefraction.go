@@ -4,8 +4,25 @@ import (
 	"github.com/infinity6-ai/gox/schemaz/schemaz"
 )
 
+type ReqParams struct {
+	Numerator   float64 `json:"numerator"`
+	Denumerator float64 `json:"denumerator"`
+}
+
+type ReqQuery struct {
+	Precision float64 `json:"precision"`
+}
+
+type ReqHeaders struct {
+	TraceId string `json:"trace_id"`
+}
+
 type ReqBody struct {
 	Reason string `json:"reason"`
+}
+
+type RespHeaders struct {
+	ReqId string `json:"req_id"`
 }
 
 type RespBody struct {
