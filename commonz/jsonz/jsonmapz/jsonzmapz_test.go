@@ -8,7 +8,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestPocHowTo(t *testing.T) {
+func TestUnitHowTo(t *testing.T) {
 
 	type Data struct {
 		Id  string
@@ -31,6 +31,7 @@ func TestPocHowTo(t *testing.T) {
 		"d": {"20.2", "21.2"},
 		"e": {"{\"Id\":\"e1\", \"Age\":10}", "{\"Id\":\"e2\", \"Age\":11}"},
 		"f": {"{\"Id\":\"f1\", \"Age\":20}", "{\"Id\":\"f2\", \"Age\":21}"},
+		"g": {"ignored"},
 	}
 
 	expected := map[string]any{
@@ -39,7 +40,7 @@ func TestPocHowTo(t *testing.T) {
 		"c": 10.2,
 		"d": []float64{20.2, 21.2},
 		"e": &Data{Id: "e1", Age: 10},
-		"F": []*Data{
+		"f": []*Data{
 			{Id: "f1", Age: 20},
 			{Id: "f2", Age: 21},
 		},
