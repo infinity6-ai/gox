@@ -21,7 +21,7 @@ func TestPocHowTo(t *testing.T) {
 		"c": float64(0),
 		"d": []float64{},
 		"e": &Data{},
-		"F": []*Data{},
+		"f": []*Data{},
 	}
 
 	unparsed := map[string][]string{
@@ -30,7 +30,7 @@ func TestPocHowTo(t *testing.T) {
 		"c": {"10.2", "11.2"},
 		"d": {"20.2", "21.2"},
 		"e": {"{\"Id\":\"e1\", \"Age\":10}", "{\"Id\":\"e2\", \"Age\":11}"},
-		"F": {"{\"Id\":\"f1\", \"Age\":20}", "{\"Id\":\"f2\", \"Age\":21}"},
+		"f": {"{\"Id\":\"f1\", \"Age\":20}", "{\"Id\":\"f2\", \"Age\":21}"},
 	}
 
 	expected := map[string]any{
