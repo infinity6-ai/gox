@@ -73,13 +73,33 @@ func (ff *fileFs) Delete(ctx context.Context, url *urlz.Url) error {
 type fileLsPaginator struct {
 	dir     *os.File
 	dirPath string
+	opened  bool
 }
 
 func (p *fileLsPaginator) Close() error {
-	return p.dir.Close()
+	if p.dir != nil {
+		return p.dir.Close()
+	}
+	return nil
 }
 
 func (p *fileLsPaginator) Paginate(ctx context.Context, max int) ([]*FileStat, error) {
+	if !p.opened {
+		dir, err := os.Open(p.dirPath)
+		if err != nil {
+			if os.IsNotExist(err) {
+				return nil, nil // Empty page for non-existent dir
+			}
+			return nil, fmt.Errorf("failed to open directory %s: %w", p.dirPath, err)
+		}
+		p.dir = dir
+		p.opened = true
+	}
+
+	if p.dir == nil {
+		return nil, nil
+	}
+
 	entries, err := p.dir.Readdir(max)
 	if err == io.EOF {
 		return nil, nil
@@ -107,11 +127,7 @@ func (p *fileLsPaginator) Paginate(ctx context.Context, max int) ([]*FileStat, e
 
 func (ff *fileFs) Ls(ctx context.Context, prefix *urlz.Url) (Paginator, error) {
 	dirPath := prefix.Path.String()
-	dir, err := os.Open(dirPath)
-	if err != nil {
-		return nil, err
-	}
-	return &fileLsPaginator{dir: dir, dirPath: dirPath}, nil
+	return &fileLsPaginator{dirPath: dirPath}, nil
 }
 
 type filePaginatorItem struct {
@@ -187,7 +203,10 @@ func (ff *fileFs) Find(ctx context.Context, prefix *urlz.Url) (Paginator, error)
 			return nil
 		})
 		if err != nil {
-			ch <- &filePaginatorItem{err: err}
+			if os.IsNotExist(err) {
+				return // Gracefully exit, resulting in an empty paginator
+			}
+			ch <- &filePaginatorItem{err: fmt.Errorf("failed to walk directory %s: %w", dirPath, err)}
 		}
 	}()
 
@@ -233,4 +252,25 @@ func (ff *fileFs) Copy(ctx context.Context, src *urlz.Url, dest *urlz.Url) error
 	}
 
 	return nil
+}
+
+func (ff *fileFs) RmTree(ctx context.Context, url *urlz.Url) error {
+	p := url.Path.String()
+	return os.RemoveAll(p)
+}
+
+func (ff *fileFs) Move(ctx context.Context, src *urlz.Url, dest *urlz.Url) error {
+	srcPath := src.Path.String()
+	destPath := dest.Path.String()
+
+	srcInfo, err := os.Stat(srcPath)
+	if err != nil {
+		return fmt.Errorf("failed to stat source %s: %w", srcPath, err)
+	}
+
+	if srcInfo.IsDir() {
+		return fmt.Errorf("cannot move directory %s: Move is only for files", srcPath)
+	}
+
+	return os.Rename(srcPath, destPath)
 }

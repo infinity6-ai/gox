@@ -62,7 +62,7 @@ func (me *MessageStore) Shutdown() {
 		me.lock.Lock()
 		defer me.lock.Unlock()
 		if me.temp && me.basedir != nil {
-			errorz.Check(filez.RmTree(me.basedir.Path.String()))
+			errorz.Check(fsz.RmTree(context.Background(), me.basedir))
 		}
 	})
 }
@@ -85,19 +85,12 @@ func (me *MessageStore) Publish(ctx context.Context, topic string, msgs *msgz.Me
 	}
 }
 
-// func parseSub(sub string) (string, string) {
-// 	parts := strings.SplitN(sub, "-", 1)
-// 	return parts[0], parts[1]
-// }
-
 func (me *MessageStore) Pull(ctx context.Context, sub string, limit int, opts msgz.PullOptions) *msgz.ManagedMessages {
 	me.lock.Lock()
 	defer me.lock.Unlock()
 
 	srcDir := me.basedir.MustJoinPathString("created", "topic", sub)
 	dstDir := me.basedir.MustJoinPathString("fetched", "topic", sub)
-	// filez.CreateParentDirs(path.Join(srcDir, "file"))
-	// files := filez.DirListLimited(srcDir, ".*", limit)
 	ls, err := fsz.Ls(ctx, srcDir)
 	errorz.Check(err)
 	defer ls.Close()
@@ -110,9 +103,7 @@ func (me *MessageStore) Pull(ctx context.Context, sub string, limit int, opts ms
 		srcPath := file.Url
 		dstPath := dstDir.MustJoinPathString(file.Url.Path.Base())
 
-		// filez.Move(srcPath, dstPath)
-		errorz.Check(fsz.Copy(ctx, srcPath, dstPath))
-		errorz.Check(fsz.Delete(ctx, srcPath))
+		errorz.Check(fsz.Move(ctx, srcPath, dstPath))
 
 		mm := readFile(ctx, dstPath)
 		messages = append(messages, mm)
@@ -170,9 +161,7 @@ func (me *MessageStore) internalNack(ctx context.Context, ids *msgz.Ids) {
 		topic, uid := parseAckId(id)
 		src := me.basedir.MustJoinPathString("fetched", "topic", topic, fmt.Sprintf("%s.json.gz", uid))
 		dst := me.basedir.MustJoinPathString("created", "topic", topic, fmt.Sprintf("%s.json.gz", uid))
-		// filez.Move(src, dst)
-		errorz.Check(fsz.Copy(ctx, src, dst))
-		errorz.Check(fsz.Delete(ctx, src))
+		errorz.Check(fsz.Move(ctx, src, dst))
 	}
 }
 
@@ -186,7 +175,6 @@ func (me *MessageStore) NackAll(ctx context.Context, topic string) {
 	defer p.Close()
 
 	for {
-		// srcs := filez.DirListLimited(srcDir, ".*", 1000)
 		srcs, err := p.Paginate(ctx, 1000)
 		errorz.Check(err)
 		if len(srcs) == 0 {

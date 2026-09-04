@@ -42,4 +42,7 @@ type FsProvider interface {
 	SignGet(ctx context.Context, url *urlz.Url, duration time.Duration) (string, error)
 	SignPut(ctx context.Context, url *urlz.Url, duration time.Duration) (string, error)
 	SignDelete(ctx context.Context, url *urlz.Url, duration time.Duration) (string, error)
+
+	RmTree(ctx context.Context, url *urlz.Url) error
+	Move(ctx context.Context, src *urlz.Url, dest *urlz.Url) error
 }
