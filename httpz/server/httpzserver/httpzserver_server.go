@@ -11,10 +11,15 @@ import (
 	"github.com/infinity6-ai/gox/commonz/constraintz"
 	"github.com/infinity6-ai/gox/commonz/deferz"
 	"github.com/infinity6-ai/gox/commonz/errorz"
+	"github.com/infinity6-ai/gox/commonz/logz"
 	"github.com/infinity6-ai/gox/commonz/pathz"
 	"github.com/infinity6-ai/gox/commonz/syncz/promise"
 	"github.com/infinity6-ai/gox/commonz/urlz"
 )
+
+type tlogger logz.Type
+
+var logger = logz.Create(tlogger(true))
 
 type Options struct {
 	LocalAddress string
@@ -144,6 +149,7 @@ func (s *Server) Serve() {
 		panic("not configured")
 	}
 	s.startServer()
+	logger.Info(s.Context, "Server Started", map[string]any{"addr": s.listener.Addr().String()})
 	s.internalServe()
 }
 
