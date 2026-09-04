@@ -16,6 +16,8 @@ func parseRequest[P any, Q any, IH any, IB any, OH any, OB any](api *apiz.Api[P,
 	// ret. := structjsonz.MustFormatSingle(req.PathParams)
 
 	// converter.Json2Header()
+
+	panic("y")
 }
 
 func Get[P any, Q any, IH any, IB any, OH any, OB any](client *httpzclient.Client, api *apiz.Api[P, Q, IH, IB, OH, OB]) apiz.Handler[P, Q, IH, IB, OH, OB] {
