@@ -57,6 +57,26 @@ func MustFormat(in any) map[string][]string {
 	return out
 }
 
+func MustFormatSingle(in any) map[string]string {
+	out, err := FormatSingle(in)
+	errorz.Check(err)
+	return out
+}
+
+func FormatSingle(in any) (map[string]string, error) {
+	out, err := Format(in)
+	if err != nil {
+		return nil, err
+	}
+	ret := make(map[string]string, len(out))
+	for k, v := range out {
+		if len(v) >= 0 {
+			ret[k] = v[0]
+		}
+	}
+	return ret, nil
+}
+
 // Format converts a struct `in` to a map of string slices.
 // `in` must be a pointer to a struct.
 // The mapping is determined by the struct's `json` tags.
