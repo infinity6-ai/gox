@@ -94,19 +94,3 @@ func Register[P any, Q any, IH any, IB any, OH any, OB any](s *httpzserver.Serve
 		})
 	}
 }
-
-// routez.Add(s, &routez.Api[ReqParams, ReqQuery, ReqHeaders, ReqBody, *RespHeaders, *RespBody]{
-// 		Schema: Api(),
-// 		Handler: func(ctx context.Context, req *routez.Req[ReqParams, ReqQuery, ReqHeaders, ReqBody]) (*routez.Resp[*RespHeaders, *RespBody], error) {
-// 			return &routez.Resp[*RespHeaders, *RespBody]{
-// 				Status: 201,
-// 				RespHeaders: &RespHeaders{
-// 					ReqId: "reason: " + req.ReqBody.Reason + ", trace: " + req.ReqHeaders.TraceId,
-// 				},
-// 				RespBody: &RespBody{
-// 					Display: fmt.Sprintf(fmt.Sprintf("%%.%df/%%.%df", int(req.QueryParams.Precision), int(req.QueryParams.Precision)), req.PathParams.Numerator, req.PathParams.Denumerator),
-// 					Result:  strconv.FormatFloat(req.PathParams.Numerator/req.PathParams.Denumerator, 'f', req.QueryParams.Precision, 64),
-// 				},
-// 			}, nil
-// 		},
-// 	})

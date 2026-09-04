@@ -82,8 +82,8 @@ func Schema() *schemaz.Api {
 	}
 }
 
-func Api() *routez.Api[ReqParams, ReqQuery, ReqHeaders, ReqBody, *RespHeaders, *RespBody] {
-	return &routez.Api[ReqParams, ReqQuery, ReqHeaders, ReqBody, *RespHeaders, *RespBody]{
+func Api() *routez.Endpoint[ReqParams, ReqQuery, ReqHeaders, ReqBody, *RespHeaders, *RespBody] {
+	return &routez.Endpoint[ReqParams, ReqQuery, ReqHeaders, ReqBody, *RespHeaders, *RespBody]{
 		Schema: Schema(),
 		Handler: func(ctx context.Context, req *routez.Req[ReqParams, ReqQuery, ReqHeaders, ReqBody]) (*routez.Resp[*RespHeaders, *RespBody], error) {
 			return &routez.Resp[*RespHeaders, *RespBody]{
