@@ -35,7 +35,7 @@ func TestUnitBasic(t *testing.T) {
 	resp, err := c.Do(ctx, req)
 	errorz.Check(err)
 	defer resp.Body.Close()
-	require.Equal(t, 200, resp.StatusCode)
+	require.Equal(t, 201, resp.StatusCode)
 	require.Equal(t, "application/json", resp.Headers.Get("content-type"))
 	require.Equal(t, "reason: myreason, trace: xx", resp.Headers.Get("Req-Id"))
 	respBody := jsonz.MustParseReader(resp.Body, &schemazsamplefraction.RespBody{})
@@ -45,6 +45,7 @@ func TestUnitBasic(t *testing.T) {
 	}, respBody)
 
 	ac := apiclientz.Get(c, schemazsamplefraction.Api())
+
 	acResp, err := ac(ctx, &apiz.Req[schemazsamplefraction.ReqParams, schemazsamplefraction.ReqQuery, schemazsamplefraction.ReqHeaders, schemazsamplefraction.ReqBody]{
 		PathParams: schemazsamplefraction.ReqParams{
 			Numerator:   10,
@@ -61,6 +62,7 @@ func TestUnitBasic(t *testing.T) {
 		},
 	})
 	errorz.Check(err)
+	require.Equal(t, 201, acResp.Status)
 	require.Equal(t, "reason: myreason, trace: xx", acResp.RespHeaders.ReqId)
 	require.Equal(t, schemazsamplefraction.RespBody{
 		Display: "10.000/3.000",
