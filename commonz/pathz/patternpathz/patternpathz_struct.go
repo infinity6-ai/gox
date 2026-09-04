@@ -12,22 +12,6 @@ func Parse(pattern *pathz.Path) (*PathPattern, error) {
 	panic("implement it")
 }
 
-func (p *PathPattern) Format(params map[string]string) (*pathz.Path, error) {
-	panic("implement it")
-}
-
-func (p *PathPattern) MustFormat(params map[string]string) *pathz.Path {
-	panic("implement it")
-}
-
-func (p *PathPattern) Match(path *pathz.Path) bool {
-	panic("implement it")
-}
-
-func (p *PathPattern) MustMatch(path *pathz.Path) bool {
-	panic("implement it")
-}
-
 func (p *PathPattern) String() string {
 	if p == nil {
 		return "<nil>"
