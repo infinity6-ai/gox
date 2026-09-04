@@ -69,31 +69,46 @@ func (ff *fileFs) Delete(ctx context.Context, url *urlz.Url) error {
 	return filez.Remove(p)
 }
 
-// Paginator for Ls (non-recursive, streaming)
+// Paginator for Ls (non-recursive, in-memory)
 type fileLsPaginator struct {
-	dir     *os.File
 	dirPath string
+	entries []os.DirEntry
+	offset  int
 }
 
 func (p *fileLsPaginator) Close() error {
-	return p.dir.Close()
+	// No-op as we are not holding any open resources
+	return nil
 }
 
 func (p *fileLsPaginator) Paginate(ctx context.Context, max int) ([]*FileStat, error) {
-	entries, err := p.dir.Readdir(max)
-	if err == io.EOF {
-		return nil, nil
-	}
-	if err != nil {
-		return nil, err
+	if p.offset >= len(p.entries) {
+		return nil, nil // End of pagination
 	}
 
+	end := p.offset + max
+	if end > len(p.entries) {
+		end = len(p.entries)
+	}
+	pageEntries := p.entries[p.offset:end]
+	p.offset = end
+
 	var results []*FileStat
-	for _, info := range entries {
-		path := filepath.Join(p.dirPath, info.Name())
+	for _, entry := range pageEntries {
+		path := filepath.Join(p.dirPath, entry.Name())
+		info, err := entry.Info()
+		if err != nil {
+			// If file was deleted between ReadDir and Info, we can get an error.
+			// It's probably safe to just skip it.
+			if os.IsNotExist(err) {
+				continue
+			}
+			return nil, fmt.Errorf("failed to get file info for %s: %w", path, err)
+		}
+
 		u, err := urlz.Parse("file://" + filepath.ToSlash(path))
 		if err != nil {
-			continue
+			continue // Should not happen if path is valid
 		}
 		results = append(results, &FileStat{
 			Url:       u,
@@ -107,11 +122,17 @@ func (p *fileLsPaginator) Paginate(ctx context.Context, max int) ([]*FileStat, e
 
 func (ff *fileFs) Ls(ctx context.Context, prefix *urlz.Url) (Paginator, error) {
 	dirPath := prefix.Path.String()
-	dir, err := os.Open(dirPath)
+	entries, err := os.ReadDir(dirPath)
 	if err != nil {
-		return nil, err
+		if os.IsNotExist(err) {
+			// Return an empty paginator if dir doesn't exist
+			return &fileLsPaginator{dirPath: dirPath, entries: []os.DirEntry{}}, nil
+		}
+		return nil, fmt.Errorf("failed to read directory %s: %w", dirPath, err)
 	}
-	return &fileLsPaginator{dir: dir, dirPath: dirPath}, nil
+
+	// os.ReadDir already returns entries sorted by filename.
+	return &fileLsPaginator{dirPath: dirPath, entries: entries, offset: 0}, nil
 }
 
 type filePaginatorItem struct {
@@ -187,7 +208,10 @@ func (ff *fileFs) Find(ctx context.Context, prefix *urlz.Url) (Paginator, error)
 			return nil
 		})
 		if err != nil {
-			ch <- &filePaginatorItem{err: err}
+			if os.IsNotExist(err) {
+				return // Gracefully exit, resulting in an empty paginator
+			}
+			ch <- &filePaginatorItem{err: fmt.Errorf("failed to walk directory %s: %w", dirPath, err)}
 		}
 	}()
 
@@ -233,4 +257,29 @@ func (ff *fileFs) Copy(ctx context.Context, src *urlz.Url, dest *urlz.Url) error
 	}
 
 	return nil
+}
+
+func (ff *fileFs) RmTree(ctx context.Context, url *urlz.Url) error {
+	p := url.Path.String()
+	return os.RemoveAll(p)
+}
+
+func (ff *fileFs) Move(ctx context.Context, src *urlz.Url, dest *urlz.Url) error {
+	srcPath := src.Path.String()
+	destPath := dest.Path.String()
+
+	srcInfo, err := os.Stat(srcPath)
+	if err != nil {
+		return fmt.Errorf("failed to stat source %s: %w", srcPath, err)
+	}
+
+	if srcInfo.IsDir() {
+		return fmt.Errorf("cannot move directory %s: Move is only for files", srcPath)
+	}
+
+	if err := filez.CreateParentDirs(destPath); err != nil {
+		return fmt.Errorf("failed to create parent directories for destination %s: %w", destPath, err)
+	}
+
+	return os.Rename(srcPath, destPath)
 }

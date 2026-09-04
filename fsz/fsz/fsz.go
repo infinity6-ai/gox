@@ -133,3 +133,23 @@ func SignDelete(ctx context.Context, url *urlz.Url, duration time.Duration) (str
 	}
 	return prv.SignDelete(ctx, url, duration)
 }
+
+func RmTree(ctx context.Context, url *urlz.Url) error {
+	p, err := getProvider(url.Scheme)
+	if err != nil {
+		return err
+	}
+	return p.RmTree(ctx, url)
+}
+
+func Move(ctx context.Context, src *urlz.Url, dest *urlz.Url) error {
+	if src.Scheme != dest.Scheme {
+		return fmt.Errorf("move between different schemes is not supported (%s -> %s)", src.Scheme, dest.Scheme)
+	}
+	p, err := getProvider(src.Scheme)
+	if err != nil {
+		return err
+	}
+	return p.Move(ctx, src, dest)
+}
+

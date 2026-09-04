@@ -5,6 +5,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"io/ioutil" // Added
 	"net/http"
 	"os"
 	"path/filepath"
@@ -309,4 +310,137 @@ func TestUnitFszFind(t *testing.T) {
 	}
 
 	require.Equal(t, len(files), foundFiles)
+}
+
+func TestUnitFileFsLsNonExistentDir(t *testing.T) {
+	// Create a path that is guaranteed not to exist
+	nonExistentDirPath := filepath.Join(t.TempDir(), "non-existent-dir")
+	nonExistentDirUrl := urlz.MustParse("file://" + filepath.ToSlash(nonExistentDirPath))
+
+	paginator, err := fsz.Ls(context.Background(), nonExistentDirUrl)
+
+	require.NoError(t, err)
+	require.NotNil(t, paginator)
+
+	stats, paginateErr := paginator.Paginate(context.Background(), 10)
+	require.NoError(t, paginateErr)
+	require.Empty(t, stats)
+	require.NoError(t, paginator.Close())
+}
+
+func TestUnitFileFsFindNonExistentDir(t *testing.T) {
+	// Create a path that is guaranteed not to exist
+	nonExistentDirPath := filepath.Join(t.TempDir(), "non-existent-dir")
+	nonExistentDirUrl := urlz.MustParse("file://" + filepath.ToSlash(nonExistentDirPath))
+
+	paginator, err := fsz.Find(context.Background(), nonExistentDirUrl)
+
+	require.NoError(t, err)   // Should not return an error
+	require.NotNil(t, paginator) // Should return a non-nil paginator (fileFindPaginator)
+
+	// Ensure it returns no results and no error on Paginate
+	stats, paginateErr := paginator.Paginate(context.Background(), 10)
+	require.NoError(t, paginateErr)
+	require.Empty(t, stats)
+	require.NoError(t, paginator.Close())
+}
+
+func TestUnitFileFsLsEmptyDir(t *testing.T) {
+	// Create an empty directory
+	emptyDirPath := t.TempDir()
+	emptyDirUrl := urlz.MustParse("file://" + filepath.ToSlash(emptyDirPath))
+
+	paginator, err := fsz.Ls(context.Background(), emptyDirUrl)
+
+	require.NoError(t, err)
+	require.NotNil(t, paginator)
+
+	stats, paginateErr := paginator.Paginate(context.Background(), 10)
+	require.NoError(t, paginateErr)
+	require.Empty(t, stats)
+	require.NoError(t, paginator.Close())
+}
+
+func TestUnitFileFsFindEmptyDir(t *testing.T) {
+	// Create an empty directory
+	emptyDirPath := t.TempDir()
+	emptyDirUrl := urlz.MustParse("file://" + filepath.ToSlash(emptyDirPath))
+
+	paginator, err := fsz.Find(context.Background(), emptyDirUrl)
+
+	require.NoError(t, err)
+	require.NotNil(t, paginator)
+
+	stats, paginateErr := paginator.Paginate(context.Background(), 10)
+	require.NoError(t, paginateErr)
+	require.Empty(t, stats)
+	require.NoError(t, paginator.Close())
+}
+
+func TestUnitFileFsRmTree(t *testing.T) {
+	tmpDir := t.TempDir()
+
+	// Create a directory with content
+	dirToRemove := filepath.Join(tmpDir, "dir-to-remove")
+	require.NoError(t, os.Mkdir(dirToRemove, 0755))
+	require.NoError(t, ioutil.WriteFile(filepath.Join(dirToRemove, "file1.txt"), []byte("content"), 0644))
+	subDir := filepath.Join(dirToRemove, "subdir")
+	require.NoError(t, os.Mkdir(subDir, 0755))
+	require.NoError(t, ioutil.WriteFile(filepath.Join(subDir, "file2.txt"), []byte("content"), 0644))
+
+	dirUrl := urlz.MustParse("file://" + filepath.ToSlash(dirToRemove))
+
+	err := fsz.RmTree(context.Background(), dirUrl)
+	require.NoError(t, err)
+
+	_, err = os.Stat(dirToRemove)
+	require.True(t, os.IsNotExist(err), "directory should not exist after RmTree")
+}
+
+
+func TestUnitFileFsMoveFile(t *testing.T) {
+	tmpDir := t.TempDir()
+
+	// Create a source file
+	srcPath := filepath.Join(tmpDir, "src.txt")
+	require.NoError(t, ioutil.WriteFile(srcPath, []byte("content"), 0644))
+
+	destPath := filepath.Join(tmpDir, "dest.txt")
+	srcUrl := urlz.MustParse("file://" + filepath.ToSlash(srcPath))
+	destUrl := urlz.MustParse("file://" + filepath.ToSlash(destPath))
+
+	err := fsz.Move(context.Background(), srcUrl, destUrl)
+	require.NoError(t, err)
+
+	_, err = os.Stat(srcPath)
+	require.True(t, os.IsNotExist(err), "source file should not exist after move")
+
+	_, err = os.Stat(destPath)
+	require.NoError(t, err, "destination file should exist after move")
+
+	content, err := ioutil.ReadFile(destPath)
+	require.NoError(t, err)
+	require.Equal(t, "content", string(content))
+}
+
+
+func TestUnitFileFsMoveDirFails(t *testing.T) {
+	tmpDir := t.TempDir()
+
+	// Create a source directory with content
+	srcDirPath := filepath.Join(tmpDir, "src-dir")
+	require.NoError(t, os.Mkdir(srcDirPath, 0755))
+	require.NoError(t, ioutil.WriteFile(filepath.Join(srcDirPath, "file.txt"), []byte("content"), 0644))
+
+	destDirPath := filepath.Join(tmpDir, "dest-dir")
+	srcUrl := urlz.MustParse("file://" + filepath.ToSlash(srcDirPath))
+	destUrl := urlz.MustParse("file://" + filepath.ToSlash(destDirPath))
+
+	err := fsz.Move(context.Background(), srcUrl, destUrl)
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "Move is only for files")
+
+	// Assert source directory still exists
+	_, err = os.Stat(srcDirPath)
+	require.NoError(t, err, "source directory should still exist after failed move")
 }

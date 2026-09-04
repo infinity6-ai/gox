@@ -245,3 +245,11 @@ func (gf *gsFs) Copy(ctx context.Context, src *urlz.Url, dest *urlz.Url) error {
 
 	return nil
 }
+
+func (gf *gsFs) RmTree(ctx context.Context, url *urlz.Url) error {
+	return ErrUnsupportedOperation
+}
+
+func (gf *gsFs) Move(ctx context.Context, src *urlz.Url, dest *urlz.Url) error {
+	return ErrUnsupportedOperation
+}

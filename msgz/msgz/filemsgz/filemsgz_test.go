@@ -2,7 +2,6 @@ package filemsgz_test
 
 import (
 	"context"
-	"path/filepath"
 	"strconv"
 	"testing"
 	"time"
@@ -33,10 +32,10 @@ func TestUnitPublishAndPull(t *testing.T) {
 	require.Equal(t, 0, len(pulled.Messages))
 
 	store.Publish(ctx, topic, &msgz.Messages{Messages: []*msgz.Message{msg1}})
-	time.Sleep(1 * time.Millisecond)
+	time.Sleep(10 * time.Millisecond)
 	store.Publish(ctx, topic, &msgz.Messages{Messages: []*msgz.Message{msg2}})
 
-	files := filez.DirListLimited(filepath.Join(store.Basedir(), "created", "topic", topic), ".*", 10)
+	files := filez.DirListLimited(store.Basedir().MustJoinString("created", "topic", topic).String(), ".*", 10)
 	require.Len(t, files, 2)
 
 	pulled = store.Pull(ctx, topic, 2, msgz.PullOptions{})
@@ -53,7 +52,7 @@ func TestUnitPublishAndPull(t *testing.T) {
 	require.Len(t, pulled.Messages, 2)
 
 	// Should have moved files to "fetched"
-	fetchedFiles := filez.DirListLimited(filepath.Join(store.Basedir(), "fetched", "topic", topic), ".*", 10)
+	fetchedFiles := filez.DirListLimited(store.Basedir().MustJoinString("fetched", "topic", topic).String(), ".*", 10)
 	require.Len(t, fetchedFiles, 2)
 }
 
@@ -70,12 +69,12 @@ func TestUnitAck(t *testing.T) {
 	require.Len(t, pulled.Messages, 1)
 
 	id := pulled.Messages[0].Message.Id
-	fetchedPath := filepath.Join(store.Basedir(), "fetched", "topic", topic, id+".json.gz")
-	require.FileExists(t, fetchedPath)
+	fetchedPath := store.Basedir().MustJoinString("fetched", "topic", topic, id+".json.gz")
+	require.FileExists(t, fetchedPath.String())
 
 	store.Ack(ctx, &msgz.Ids{Ids: []string{pulled.Messages[0].AckId}})
 
-	require.NoFileExists(t, fetchedPath)
+	require.NoFileExists(t, fetchedPath.String())
 }
 
 func TestUnitNack(t *testing.T) {
@@ -91,15 +90,15 @@ func TestUnitNack(t *testing.T) {
 	require.Len(t, pulled.Messages, 1)
 
 	id := pulled.Messages[0].Message.Id
-	fetchedPath := filepath.Join(store.Basedir(), "fetched", "topic", topic, id+".json.gz")
-	createdPath := filepath.Join(store.Basedir(), "created", "topic", topic, id+".json.gz")
+	fetchedPath := store.Basedir().MustJoinString("fetched", "topic", topic, id+".json.gz")
+	createdPath := store.Basedir().MustJoinString("created", "topic", topic, id+".json.gz")
 
-	require.FileExists(t, fetchedPath)
+	require.FileExists(t, fetchedPath.String())
 
 	store.Nack(ctx, &msgz.Ids{Ids: []string{pulled.Messages[0].AckId}})
 
-	require.FileExists(t, createdPath)
-	require.NoFileExists(t, fetchedPath)
+	require.FileExists(t, createdPath.String())
+	require.NoFileExists(t, fetchedPath.String())
 }
 
 func TestUnitNackAll(t *testing.T) {
@@ -114,12 +113,12 @@ func TestUnitNackAll(t *testing.T) {
 	}
 	store.Pull(ctx, topic, 3, msgz.PullOptions{})
 
-	fetchedPath := filepath.Join(store.Basedir(), "fetched", "topic", topic)
-	require.Len(t, filez.DirListLimited(fetchedPath, ".*", 10), 3)
+	fetchedPath := store.Basedir().MustJoinString("fetched", "topic", topic)
+	require.Len(t, filez.DirListLimited(fetchedPath.String(), ".*", 10), 3)
 
 	store.NackAll(ctx, topic)
 
-	createdPath := filepath.Join(store.Basedir(), "created", "topic", topic)
-	require.Len(t, filez.DirListLimited(createdPath, ".*", 10), 3)
-	require.Len(t, filez.DirListLimited(fetchedPath, ".*", 10), 0)
+	createdPath := store.Basedir().MustJoinString("created", "topic", topic)
+	require.Len(t, filez.DirListLimited(createdPath.String(), ".*", 10), 3)
+	require.Len(t, filez.DirListLimited(fetchedPath.String(), ".*", 10), 0)
 }
