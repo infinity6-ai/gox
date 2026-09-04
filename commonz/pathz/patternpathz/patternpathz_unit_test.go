@@ -223,12 +223,13 @@ func TestUnitMustFormat(t *testing.T) {
 
 func TestUnitParsePath(t *testing.T) {
 	type testScenario struct {
-		name          string
-		patternStr    string
-		pathToParse   string
-		expectErr     bool
-		errMsg        string
+		name           string
+		patternStr     string
+		pathToParse    string
+		expectErr      bool
+		errMsg         string
 		expectedParams map[string]string
+		expectedSuffix *pathz.Path // Add this field to the struct
 	}
 
 	check := func(t *testing.T, s testScenario) {
@@ -241,7 +242,7 @@ func TestUnitParsePath(t *testing.T) {
 		targetPath, err := pathz.Parse(s.pathToParse)
 		require.NoError(t, err)
 
-		params, err := pp.Parse(targetPath)
+		params, suffix, err := pp.Parse(targetPath) // Get suffix
 
 		if s.expectErr {
 			require.Error(t, err, "Expected an error for scenario: %s", s.name)
@@ -249,6 +250,7 @@ func TestUnitParsePath(t *testing.T) {
 		} else {
 			require.NoError(t, err, "Did not expect an error for scenario: %s", s.name)
 			require.Equal(t, s.expectedParams, params, "Parsed parameters mismatch for scenario: %s", s.name)
+			require.Equal(t, s.expectedSuffix, suffix, "Parsed suffix mismatch for scenario: %s", s.name) // Assert suffix
 		}
 	}
 
@@ -259,6 +261,7 @@ func TestUnitParsePath(t *testing.T) {
 			pathToParse:   "a/value1/b/value2/c",
 			expectErr:     false,
 			expectedParams: map[string]string{"p1": "value1", "p2": "value2"},
+			expectedSuffix: nil, // No suffix expected
 		})
 	})
 
@@ -269,6 +272,7 @@ func TestUnitParsePath(t *testing.T) {
 			pathToParse: "a/value1/b", // Missing leading slash
 			expectErr:   true,
 			errMsg:      "path parents mismatch, pattern: /a/{p1}/b, path: a/value1/b",
+			expectedSuffix: nil,
 		})
 	})
 
@@ -279,16 +283,18 @@ func TestUnitParsePath(t *testing.T) {
 			pathToParse: "a/value1/b",
 			expectErr:   true,
 			errMsg:      "path length mismatch, pattern: a/{p1}/b/c, path: a/value1/b",
+			expectedSuffix: nil,
 		})
 	})
 
 	t.Run("Parse with path length mismatch (path longer)", func(t *testing.T) {
 		check(t, testScenario{
-			name:        "Path length mismatch (path longer)",
-			patternStr:  "a/{p1}/b",
-			pathToParse: "a/value1/b/c",
-			expectErr:   false, // Should still parse as long as pattern matches prefix
+			name:           "Path length mismatch (path longer)",
+			patternStr:     "a/{p1}/b",
+			pathToParse:    "a/value1/b/c",
+			expectErr:      false, // Should still parse as long as pattern matches prefix
 			expectedParams: map[string]string{"p1": "value1"},
+			expectedSuffix: pathz.MustParse("c"), // Expect 'c' as suffix
 		})
 	})
 
@@ -299,6 +305,7 @@ func TestUnitParsePath(t *testing.T) {
 			pathToParse: "a/value1/d", // 'b' vs 'd'
 			expectErr:   true,
 			errMsg:      "path mismatch at segment 2: expected 'b', got 'd'",
+			expectedSuffix: nil,
 		})
 	})
 
@@ -309,16 +316,18 @@ func TestUnitParsePath(t *testing.T) {
 			pathToParse: "a/b",
 			expectErr:   true,
 			errMsg:      "ending slash mismatch, pattern: a/b/, path: a/b",
+			expectedSuffix: nil,
 		})
 	})
 
 	t.Run("Parse with ending slash mismatch (path has, pattern not)", func(t *testing.T) {
 		check(t, testScenario{
-			name:        "Ending slash mismatch (path has)",
-			patternStr:  "a/b",
-			pathToParse: "a/b/",
-			expectErr:   false, // Path can have trailing slash even if pattern doesn't
+			name:           "Ending slash mismatch (path has)",
+			patternStr:     "a/b",
+			pathToParse:    "a/b/",
+			expectErr:      false, // Path can have trailing slash even if pattern doesn't
 			expectedParams: map[string]string{},
+			expectedSuffix: nil, // No suffix expected
 		})
 	})
 
@@ -329,6 +338,7 @@ func TestUnitParsePath(t *testing.T) {
 			pathToParse:   "a/b/c",
 			expectErr:     false,
 			expectedParams: map[string]string{},
+			expectedSuffix: nil,
 		})
 	})
 
@@ -339,6 +349,7 @@ func TestUnitParsePath(t *testing.T) {
 			pathToParse:   "value1",
 			expectErr:     false,
 			expectedParams: map[string]string{"p1": "value1"},
+			expectedSuffix: nil,
 		})
 	})
 
@@ -349,16 +360,40 @@ func TestUnitParsePath(t *testing.T) {
 			pathToParse:   "/users/123/posts/456/comments",
 			expectErr:     false,
 			expectedParams: map[string]string{"id": "123", "post_id": "456"},
+			expectedSuffix: nil,
 		})
 	})
 
 	t.Run("Parse path longer than pattern, but still matching", func(t *testing.T) {
 		check(t, testScenario{
-			name:          "Path longer than pattern, but still matching",
-			patternStr:    "a/{p1}",
-			pathToParse:   "a/value1/b/c",
-			expectErr:     false,
+			name:           "Path longer than pattern, but still matching",
+			patternStr:     "a/{p1}",
+			pathToParse:    "a/value1/b/c",
+			expectErr:      false,
 			expectedParams: map[string]string{"p1": "value1"},
+			expectedSuffix: pathz.MustParse("b/c"), // Expect "b/c" as suffix
+		})
+	})
+
+	t.Run("Parse with path longer than pattern and trailing slash", func(t *testing.T) {
+		check(t, testScenario{
+			name:           "Path longer than pattern and trailing slash",
+			patternStr:     "a/{p1}/",
+			pathToParse:    "a/value1/b/c/",
+			expectErr:      false,
+			expectedParams: map[string]string{"p1": "value1"},
+			expectedSuffix: pathz.MustParse("b/c/"),
+		})
+	})
+
+	t.Run("Parse with no suffix", func(t *testing.T) {
+		check(t, testScenario{
+			name:           "No suffix",
+			patternStr:     "a/b/c",
+			pathToParse:    "a/b/c",
+			expectErr:      false,
+			expectedParams: map[string]string{},
+			expectedSuffix: nil,
 		})
 	})
 }
@@ -373,8 +408,23 @@ func TestUnitMustParse(t *testing.T) {
 		targetPath, err := pathz.Parse("a/test/b")
 		require.NoError(t, err)
 
-		params := pp.MustParse(targetPath)
+		params, suffix := pp.MustParse(targetPath) // Get suffix
 		require.Equal(t, map[string]string{"p1": "test"}, params)
+		require.Nil(t, suffix) // No suffix expected
+	})
+
+	t.Run("MustParse with path longer than pattern", func(t *testing.T) {
+		patternPath, err := pathz.Parse("a/{p1}")
+		require.NoError(t, err)
+		pp, err := Parse(patternPath)
+		require.NoError(t, err)
+
+		targetPath, err := pathz.Parse("a/value1/b/c")
+		require.NoError(t, err)
+
+		params, suffix := pp.MustParse(targetPath) // Get suffix
+		require.Equal(t, map[string]string{"p1": "value1"}, params)
+		require.Equal(t, pathz.MustParse("b/c"), suffix) // Expect "b/c" as suffix
 	})
 
 	t.Run("MustParse with non-matching path panics", func(t *testing.T) {
