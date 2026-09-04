@@ -8,6 +8,8 @@ import (
 	"github.com/infinity6-ai/gox/commonz/jsonz"
 	"github.com/infinity6-ai/gox/httpz/client/httpzclient"
 	"github.com/infinity6-ai/gox/httpz/server/httpzserver"
+	"github.com/infinity6-ai/gox/routez/apiclientz"
+	"github.com/infinity6-ai/gox/routez/apiz"
 	"github.com/infinity6-ai/gox/routez/routez"
 	"github.com/infinity6-ai/gox/routez/sampleroutez/schemazsamplefraction"
 	"github.com/stretchr/testify/require"
@@ -42,17 +44,27 @@ func TestUnitBasic(t *testing.T) {
 		Result:  "3.333",
 	}, respBody)
 
-	// ac := apiclientz.Get(c, schemazsamplefraction.Api())
-	// ac(ctx, &apiz.Req[schemazsamplefraction.ReqParams, schemazsamplefraction.ReqQuery, schemazsamplefraction.ReqHeaders, schemazsamplefraction.ReqBody]{
-	// 	PathParams: schemazsamplefraction.ReqParams{
-	// 		Numerator:   10,
-	// 		Denumerator: 3,
-	// 	},
-	// 	QueryParams: schemazsamplefraction.ReqQuery{
-	// 		Precision: 3,
-	// 	},
-	// 	ReqHeaders: schemazsamplefraction.ReqHeaders{
-	// 		TraceId: "xx",
-	// 	},
-	// })
+	ac := apiclientz.Get(c, schemazsamplefraction.Api())
+	acResp, err := ac(ctx, &apiz.Req[schemazsamplefraction.ReqParams, schemazsamplefraction.ReqQuery, schemazsamplefraction.ReqHeaders, schemazsamplefraction.ReqBody]{
+		PathParams: schemazsamplefraction.ReqParams{
+			Numerator:   10,
+			Denumerator: 3,
+		},
+		QueryParams: schemazsamplefraction.ReqQuery{
+			Precision: 3,
+		},
+		ReqHeaders: schemazsamplefraction.ReqHeaders{
+			TraceId: "xx",
+		},
+		ReqBody: schemazsamplefraction.ReqBody{
+			Reason: "myreason",
+		},
+	})
+	errorz.Check(err)
+	require.Equal(t, "reason: myreason, trace: xx", acResp.RespHeaders.ReqId)
+	require.Equal(t, &schemazsamplefraction.RespBody{
+		Display: "10.000/3.000",
+		Result:  "3.333",
+	}, acResp.RespBody)
+
 }
