@@ -1,4 +1,4 @@
-module github.com/infinity6-ai/gox/msgz
+module github.com/infinity6-ai/gox/bla
 
 go 1.26.1
 
