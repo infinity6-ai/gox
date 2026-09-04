@@ -69,51 +69,46 @@ func (ff *fileFs) Delete(ctx context.Context, url *urlz.Url) error {
 	return filez.Remove(p)
 }
 
-// Paginator for Ls (non-recursive, streaming)
+// Paginator for Ls (non-recursive, in-memory)
 type fileLsPaginator struct {
-	dir     *os.File
 	dirPath string
-	opened  bool
+	entries []os.DirEntry
+	offset  int
 }
 
 func (p *fileLsPaginator) Close() error {
-	if p.dir != nil {
-		return p.dir.Close()
-	}
+	// No-op as we are not holding any open resources
 	return nil
 }
 
 func (p *fileLsPaginator) Paginate(ctx context.Context, max int) ([]*FileStat, error) {
-	if !p.opened {
-		dir, err := os.Open(p.dirPath)
-		if err != nil {
-			if os.IsNotExist(err) {
-				return nil, nil // Empty page for non-existent dir
-			}
-			return nil, fmt.Errorf("failed to open directory %s: %w", p.dirPath, err)
-		}
-		p.dir = dir
-		p.opened = true
+	if p.offset >= len(p.entries) {
+		return nil, nil // End of pagination
 	}
 
-	if p.dir == nil {
-		return nil, nil
+	end := p.offset + max
+	if end > len(p.entries) {
+		end = len(p.entries)
 	}
-
-	entries, err := p.dir.Readdir(max)
-	if err == io.EOF {
-		return nil, nil
-	}
-	if err != nil {
-		return nil, err
-	}
+	pageEntries := p.entries[p.offset:end]
+	p.offset = end
 
 	var results []*FileStat
-	for _, info := range entries {
-		path := filepath.Join(p.dirPath, info.Name())
+	for _, entry := range pageEntries {
+		path := filepath.Join(p.dirPath, entry.Name())
+		info, err := entry.Info()
+		if err != nil {
+			// If file was deleted between ReadDir and Info, we can get an error.
+			// It's probably safe to just skip it.
+			if os.IsNotExist(err) {
+				continue
+			}
+			return nil, fmt.Errorf("failed to get file info for %s: %w", path, err)
+		}
+
 		u, err := urlz.Parse("file://" + filepath.ToSlash(path))
 		if err != nil {
-			continue
+			continue // Should not happen if path is valid
 		}
 		results = append(results, &FileStat{
 			Url:       u,
@@ -127,7 +122,17 @@ func (p *fileLsPaginator) Paginate(ctx context.Context, max int) ([]*FileStat, e
 
 func (ff *fileFs) Ls(ctx context.Context, prefix *urlz.Url) (Paginator, error) {
 	dirPath := prefix.Path.String()
-	return &fileLsPaginator{dirPath: dirPath}, nil
+	entries, err := os.ReadDir(dirPath)
+	if err != nil {
+		if os.IsNotExist(err) {
+			// Return an empty paginator if dir doesn't exist
+			return &fileLsPaginator{dirPath: dirPath, entries: []os.DirEntry{}}, nil
+		}
+		return nil, fmt.Errorf("failed to read directory %s: %w", dirPath, err)
+	}
+
+	// os.ReadDir already returns entries sorted by filename.
+	return &fileLsPaginator{dirPath: dirPath, entries: entries, offset: 0}, nil
 }
 
 type filePaginatorItem struct {
