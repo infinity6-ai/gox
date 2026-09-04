@@ -97,36 +97,6 @@ func Handlers(s *httpzserver.Server) {
 					Result:  strconv.FormatFloat(req.PathParams.Numerator/req.PathParams.Denumerator, 'f', req.QueryParams.Precision, 64),
 				},
 			}, nil
-			// return &RespHeaders{
-			// 		ReqId: fmt.Sprintf("reason: %s, trace: %s", req.ReqBody.Reason, req.ReqHeaders.TraceId),
-			// 	},
-			// 	&RespBody{
-			// 		Display: fmt.Sprintf(fmt.Sprintf("%%.%df/%%.%df", int(req.QueryParams.Precision), int(req.QueryParams.Precision)), req.PathParams.Numerator, req.PathParams.Denumerator),
-			// 		Result:  strconv.FormatFloat(req.PathParams.Numerator/req.PathParams.Denumerator, 'f', req.QueryParams.Precision, 64),
-			// 	},
-			// 	nil
 		},
 	})
 }
-
-// type Req[P any, Q any, IH any, IB any] struct {
-// 	PathParams  P
-// 	QueryParams Q
-// 	ReqHeaders  IH
-// 	ReqBody     IB
-// }
-
-// type Resp[OH any, OB any] struct {
-// 	RespHeaders OH
-// 	RespBody    OB
-// }
-
-// func AddHandler[P any, Q any, IH any, IB any, OH any, OB any](s *httpzserver.Server, api schemaz.Api[IB, OB], handler func(ctx context.Context, req *Req[I, O], resp *Resp[I, O])) {
-
-// 	s.AddHandler(api.Method, api.Path, func(ctx context.Context, resp httpzserver.Resp, req *httpzserver.Req, params map[string]string) {
-// 		if api.ReqBody != nil {
-// 			// reqBody := jsonz.NewReader[I](req.Body).MustReadItem()
-// 		}
-
-// 	})
-// }
