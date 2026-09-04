@@ -20,7 +20,13 @@ type Req[P any, Q any, IH any, IB any] struct {
 	ReqBody     IB
 }
 
-type Handler[P any, Q any, IH any, IB any, OH any, OB any] func(ctx context.Context, req *Req[P, Q, IH, IB]) (OH, OB, error)
+type Resp[OH any, OB any] struct {
+	Status      int
+	RespHeaders OH
+	RespBody    OB
+}
+
+type Handler[P any, Q any, IH any, IB any, OH any, OB any] func(ctx context.Context, req *Req[P, Q, IH, IB]) (*Resp[OH, OB], error)
 
 type Api[P any, Q any, IH any, IB any, OH any, OB any] struct {
 	Schema  *schemaz.Api
@@ -76,13 +82,13 @@ func (a *Api[P, Q, IH, IB, OH, OB]) ParseRequest(ctx context.Context, req *httpz
 func Add[P any, Q any, IH any, IB any, OH any, OB any](s *httpzserver.Server, api *Api[P, Q, IH, IB, OH, OB]) {
 	s.AddHandler(api.Schema.Method, api.Schema.Path, func(ctx context.Context, resp httpzserver.Resp, req *httpzserver.Req, params map[string]string) {
 		parsedReq := api.ParseRequest(ctx, req, params)
-		respHedaers, respBody, err := api.Handler(ctx, parsedReq)
+		parsedResp, err := api.Handler(ctx, parsedReq)
 		errorz.Check(err)
 		formattedHeaders := make(http.Header)
 		formattedHeaders.Set("Content-Type", "application/json")
-		mapRespHedaers := structjsonz.MustFormat(respHedaers)
+		mapRespHedaers := structjsonz.MustFormat(parsedResp.RespHeaders)
 		json2header(mapRespHedaers, formattedHeaders)
 		w := resp(200, formattedHeaders)
-		jsonz.FormatWriter(w, respBody)
+		jsonz.FormatWriter(w, parsedResp.RespBody)
 	})
 }
