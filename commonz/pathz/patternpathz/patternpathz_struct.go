@@ -6,7 +6,7 @@ import (
 	"github.com/infinity6-ai/gox/commonz/pathz"
 )
 
-var paramValidator = regexp.MustCompile("^[a-zA-Z][a-zA-Z0-9]*$")
+var paramValidator = regexp.MustCompile("^{[a-zA-Z][a-zA-Z0-9]*}$")
 
 type PathPattern struct {
 	originalPattern *pathz.Path    // a/{p1}/b/{p2}
