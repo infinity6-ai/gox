@@ -47,8 +47,12 @@ func (p *Path) Parent() (parent *Path, base string, hasEndingSlash bool) {
 			// For "../a", parent is ".." represented as New(p.parents, []string{}, false)
 			return New(p.parents, []string{}, false), base, hasEndingSlash
 		}
-		// For "a" or "/a"
-		return nil, base, hasEndingSlash
+		if p.IsAbsolute() {
+			// For "/a"
+			return New(-1, []string{}, false), base, hasEndingSlash
+		}
+		// For "a"
+		return New(0, []string{}, false), base, hasEndingSlash
 	}
 
 	parentPartsSlice := p.parts[:len(p.parts)-1]

@@ -187,7 +187,7 @@ func TestUnitPathGetters(t *testing.T) {
 			isEscaped:      false,
 			partSlice:      []string{"a"},
 			base:           "a",
-			parent:         nil,
+			parent:         New(0, []string{}, false),
 			hasEndingSlash: false,
 		})
 	})
@@ -243,7 +243,7 @@ func TestUnitPathGetters(t *testing.T) {
 			isEscaped:      false,
 			partSlice:      []string{"bla"},
 			base:           "bla",
-			parent:         nil,
+			parent:         New(0, []string{}, false),
 			hasEndingSlash: false,
 		})
 	})
@@ -311,7 +311,7 @@ func TestUnitParentMethod(t *testing.T) {
 		check(t, testScenario{
 			path:           New(0, []string{"a"}, false),
 			pathStr:        "a",
-			expectedParent: nil,
+			expectedParent: New(0, []string{}, false),
 			parentBase:     "a",
 			hasEndingSlash: false,
 		})
@@ -341,7 +341,7 @@ func TestUnitParentMethod(t *testing.T) {
 		check(t, testScenario{
 			path:           New(-1, []string{"a"}, false),
 			pathStr:        "/a",
-			expectedParent: nil,
+			expectedParent: New(-1, []string{}, false),
 			parentBase:     "a",
 			hasEndingSlash: false,
 		})
@@ -397,13 +397,13 @@ func TestUnitParentMethod(t *testing.T) {
 		})
 	})
 
-	// t.Run("path /*", func(t *testing.T) {
-	// 	check(t, testScenario{
-	// 		path:           New(-1, []string{"*"}, false),
-	// 		pathStr:        "/*",
-	// 		expectedParent: New(-1, nil, false),
-	// 		parentBase:     "*",
-	// 		hasEndingSlash: false,
-	// 	})
-	// })
+	t.Run("path /*", func(t *testing.T) {
+		check(t, testScenario{
+			path:           New(-1, []string{"*"}, false),
+			pathStr:        "/*",
+			expectedParent: New(-1, []string{}, false),
+			parentBase:     "*",
+			hasEndingSlash: false,
+		})
+	})
 }
