@@ -32,7 +32,7 @@ func TestUnitPublishAndPull(t *testing.T) {
 	require.Equal(t, 0, len(pulled.Messages))
 
 	store.Publish(ctx, topic, &msgz.Messages{Messages: []*msgz.Message{msg1}})
-	time.Sleep(1 * time.Millisecond)
+	time.Sleep(10 * time.Millisecond)
 	store.Publish(ctx, topic, &msgz.Messages{Messages: []*msgz.Message{msg2}})
 
 	files := filez.DirListLimited(store.Basedir().MustJoinString("created", "topic", topic).String(), ".*", 10)

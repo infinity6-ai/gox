@@ -272,5 +272,9 @@ func (ff *fileFs) Move(ctx context.Context, src *urlz.Url, dest *urlz.Url) error
 		return fmt.Errorf("cannot move directory %s: Move is only for files", srcPath)
 	}
 
+	if err := filez.CreateParentDirs(destPath); err != nil {
+		return fmt.Errorf("failed to create parent directories for destination %s: %w", destPath, err)
+	}
+
 	return os.Rename(srcPath, destPath)
 }
