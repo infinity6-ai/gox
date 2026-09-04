@@ -38,17 +38,17 @@ func TestUnitClientWithServer(t *testing.T) {
 	s.Start()
 
 	// 2. Setup client
-	client := httpzclient.New(ctx, httpzclient.Options{BaseUrl: s.Base()})
+	client := httpzclient.New(httpzclient.Options{BaseUrl: s.Base()})
 
 	// Add a filter to the client
-	client.AddFilter(func(req *httpzclient.Req, next httpzclient.Handler) (*httpzclient.Resp, error) {
+	client.AddFilter(func(ctx context.Context, req *httpzclient.Req, next httpzclient.Handler) (*httpzclient.Resp, error) {
 		// Modify request
 		req.AddHeader("X-Client-Filter", "client-filter-value")
 		originalBody := req.Body
 		req.Body = io.MultiReader(strings.NewReader("filter-prefix-"), originalBody)
 
 		// Call next handler
-		resp, err := next(req)
+		resp, err := next(ctx, req)
 		require.NoError(t, err)
 
 		// Modify response
@@ -60,7 +60,7 @@ func TestUnitClientWithServer(t *testing.T) {
 	req := httpzclient.NewReq("POST", "/test").
 		SetBody(strings.NewReader("original-body"))
 
-	resp, err := client.Do(req)
+	resp, err := client.Do(ctx, req)
 	require.NoError(t, err)
 	defer resp.Body.Close()
 

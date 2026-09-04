@@ -21,28 +21,26 @@ var defaultHttpClient = &http.Client{
 
 type Options struct {
 	BaseUrl   *urlz.Url
-	GetClient func(ctx context.Context) *http.Client
+	GetClient func() *http.Client
 }
 
 func (o *Options) fix() {
 }
 
 type Client struct {
-	Context context.Context
 	Options Options
 	filters []Filter
 	client  *http.Client
 }
 
-func New(ctx context.Context, opts Options) *Client {
+func New(opts Options) *Client {
 	opts.fix()
 	ret := &Client{
-		Context: ctx,
 		Options: opts,
 		client:  defaultHttpClient,
 	}
 	if opts.GetClient != nil {
-		ret.client = opts.GetClient(ctx)
+		ret.client = opts.GetClient()
 	}
 	return ret
 }
@@ -51,20 +49,20 @@ func (c *Client) AddFilter(filter Filter) {
 	c.filters = append(c.filters, filter)
 }
 
-func (c *Client) Do(req *Req) (*Resp, error) {
+func (c *Client) Do(ctx context.Context, req *Req) (*Resp, error) {
 	var h Handler = c.send
 	for i := len(c.filters) - 1; i >= 0; i-- {
 		filter := c.filters[i]
 		next := h
-		h = func(req *Req) (*Resp, error) {
-			return filter(req, next)
+		h = func(ctx context.Context, req *Req) (*Resp, error) {
+			return filter(ctx, req, next)
 		}
 	}
-	return h(req)
+	return h(ctx, req)
 }
 
-func (c *Client) send(req *Req) (*Resp, error) {
-	dfz := deferz.New(c.Context)
+func (c *Client) send(ctx context.Context, req *Req) (*Resp, error) {
+	dfz := deferz.New(ctx)
 	defer dfz.Close()
 
 	urlString, err := c.buildURL(req)
@@ -72,7 +70,7 @@ func (c *Client) send(req *Req) (*Resp, error) {
 		return nil, fmt.Errorf("failed to build URL: %w", err)
 	}
 
-	httpReq, err := http.NewRequestWithContext(c.Context, req.Method, urlString, req.Body)
+	httpReq, err := http.NewRequestWithContext(ctx, req.Method, urlString, req.Body)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create request: %w", err)
 	}

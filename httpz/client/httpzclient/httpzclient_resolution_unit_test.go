@@ -28,9 +28,9 @@ func TestUnitClientPathResolution(t *testing.T) {
 	s.Start()
 
 	t.Run("with path prefix and trailing slash", func(t *testing.T) {
-		client := httpzclient.New(ctx, httpzclient.Options{BaseUrl: s.Base().MustJoinPathString("/api/v1/")})
+		client := httpzclient.New(httpzclient.Options{BaseUrl: s.Base().MustJoinPathString("/api/v1/")})
 		req := httpzclient.NewReq("GET", "test")
-		resp, err := client.Do(req)
+		resp, err := client.Do(ctx, req)
 		require.NoError(t, err)
 		defer resp.Body.Close()
 
@@ -41,9 +41,9 @@ func TestUnitClientPathResolution(t *testing.T) {
 	})
 
 	t.Run("with path prefix and no trailing slash", func(t *testing.T) {
-		client := httpzclient.New(ctx, httpzclient.Options{BaseUrl: s.Base().MustJoinPathString("/api/v1")})
+		client := httpzclient.New(httpzclient.Options{BaseUrl: s.Base().MustJoinPathString("/api/v1")})
 		req := httpzclient.NewReq("GET", "/test")
-		_, err := client.Do(req)
+		_, err := client.Do(ctx, req)
 		require.Error(t, err)
 		require.Contains(t, err.Error(), "path escaped error")
 	})
@@ -55,9 +55,9 @@ func TestUnitClientPathResolution(t *testing.T) {
 			require.NoError(t, err)
 		})
 
-		client := httpzclient.New(ctx, httpzclient.Options{BaseUrl: s.Base()})
+		client := httpzclient.New(httpzclient.Options{BaseUrl: s.Base()})
 		req := httpzclient.NewReq("GET", "/test")
-		resp, err := client.Do(req)
+		resp, err := client.Do(ctx, req)
 		require.NoError(t, err)
 		defer resp.Body.Close()
 
@@ -105,7 +105,7 @@ func TestUnitClientUrlResolution(t *testing.T) {
 			clientOpts.BaseUrl = scenario.clientBaseUrl
 		}
 
-		client := httpzclient.New(ctx, clientOpts)
+		client := httpzclient.New(clientOpts)
 		req := &httpzclient.Req{
 			Method: "GET",
 		}
@@ -119,12 +119,12 @@ func TestUnitClientUrlResolution(t *testing.T) {
 		if scenario.skipServerReq {
 			// Test cases that are expected to panic before making a server request
 			require.Panics(t, func() {
-				_, _ = client.Do(req)
+				_, _ = client.Do(ctx, req)
 			})
 			return
 		}
 
-		resp, err := client.Do(req)
+		resp, err := client.Do(ctx, req)
 
 		if scenario.expectedError != "" {
 			require.Error(t, err)

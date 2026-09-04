@@ -46,9 +46,9 @@ func Get[P any, Q any, IH any, IB any, OH any, OB any](client *httpzclient.Clien
 		if err != nil {
 			return nil, err
 		}
-		nResp, err := client.Do(nReq)
+		nResp, err := client.Do(ctx, nReq)
 		if err != nil {
-			return nil, fmt.Errorf("%w: error calling server")
+			return nil, fmt.Errorf("%w: error calling server", err)
 		}
 		defer nResp.Body.Close()
 		ret := &apiz.Resp[OH, OB]{

@@ -24,7 +24,7 @@ func TestUnitBasic(t *testing.T) {
 
 	routez.Register(s, schemazsamplefraction.Api())
 
-	c := httpzclient.New(ctx, httpzclient.Options{
+	c := httpzclient.New(httpzclient.Options{
 		BaseUrl: s.Base(),
 	})
 
@@ -32,7 +32,7 @@ func TestUnitBasic(t *testing.T) {
 		SetQuery("precision", "3").
 		SetHeader("Trace-Id", "xx").
 		SetBody(strings.NewReader("{\"reason\":\"myreason\"}"))
-	resp, err := c.Do(req)
+	resp, err := c.Do(ctx, req)
 	errorz.Check(err)
 	defer resp.Body.Close()
 	require.Equal(t, 200, resp.StatusCode)
