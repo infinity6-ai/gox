@@ -5,8 +5,7 @@ import (
 	"fmt"
 	"strconv"
 
-	"github.com/infinity6-ai/gox/httpz/server/httpzserver"
-	"github.com/infinity6-ai/gox/routez/routez"
+	"github.com/infinity6-ai/gox/routez/apiz"
 	"github.com/infinity6-ai/gox/schemaz/schemaz"
 )
 
@@ -36,7 +35,7 @@ type RespBody struct {
 	Result  string `json:"result"`
 }
 
-func Api() *schemaz.Api {
+func Schema() *schemaz.Api {
 	return &schemaz.Api{
 		Id: "samplefraction",
 
@@ -83,11 +82,11 @@ func Api() *schemaz.Api {
 	}
 }
 
-func Handlers(s *httpzserver.Server) {
-	routez.Add(s, &routez.Api[ReqParams, ReqQuery, ReqHeaders, ReqBody, *RespHeaders, *RespBody]{
-		Schema: Api(),
-		Handler: func(ctx context.Context, req *routez.Req[ReqParams, ReqQuery, ReqHeaders, ReqBody]) (*routez.Resp[*RespHeaders, *RespBody], error) {
-			return &routez.Resp[*RespHeaders, *RespBody]{
+func Api() *apiz.Api[ReqParams, ReqQuery, ReqHeaders, ReqBody, *RespHeaders, *RespBody] {
+	return &apiz.Api[ReqParams, ReqQuery, ReqHeaders, ReqBody, *RespHeaders, *RespBody]{
+		Schema: Schema(),
+		Handler: func(ctx context.Context, req *apiz.Req[ReqParams, ReqQuery, ReqHeaders, ReqBody]) (*apiz.Resp[*RespHeaders, *RespBody], error) {
+			return &apiz.Resp[*RespHeaders, *RespBody]{
 				Status: 201,
 				RespHeaders: &RespHeaders{
 					ReqId: "reason: " + req.ReqBody.Reason + ", trace: " + req.ReqHeaders.TraceId,
@@ -98,5 +97,5 @@ func Handlers(s *httpzserver.Server) {
 				},
 			}, nil
 		},
-	})
+	}
 }

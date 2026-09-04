@@ -8,6 +8,7 @@ import (
 	"github.com/infinity6-ai/gox/commonz/jsonz"
 	"github.com/infinity6-ai/gox/httpz/client/httpzclient"
 	"github.com/infinity6-ai/gox/httpz/server/httpzserver"
+	"github.com/infinity6-ai/gox/routez/routez"
 	"github.com/infinity6-ai/gox/routez/sampleroutez/schemazsamplefraction"
 	"github.com/stretchr/testify/require"
 )
@@ -19,11 +20,12 @@ func TestUnitBasic(t *testing.T) {
 	s.Listen()
 	s.Start()
 
-	schemazsamplefraction.Handlers(s)
+	routez.Register(s, schemazsamplefraction.Api())
 
 	c := httpzclient.New(ctx, httpzclient.Options{
 		BaseUrl: s.Base(),
 	})
+
 	req := httpzclient.NewReq("POST", "/api/gox/dataschema/sample/fraction/10/3").
 		SetQuery("precision", "3").
 		SetHeader("Trace-Id", "xx").
@@ -39,4 +41,18 @@ func TestUnitBasic(t *testing.T) {
 		Display: "10.000/3.000",
 		Result:  "3.333",
 	}, respBody)
+
+	// ac := apiclientz.Get(c, schemazsamplefraction.Api())
+	// ac(ctx, &apiz.Req[schemazsamplefraction.ReqParams, schemazsamplefraction.ReqQuery, schemazsamplefraction.ReqHeaders, schemazsamplefraction.ReqBody]{
+	// 	PathParams: schemazsamplefraction.ReqParams{
+	// 		Numerator:   10,
+	// 		Denumerator: 3,
+	// 	},
+	// 	QueryParams: schemazsamplefraction.ReqQuery{
+	// 		Precision: 3,
+	// 	},
+	// 	ReqHeaders: schemazsamplefraction.ReqHeaders{
+	// 		TraceId: "xx",
+	// 	},
+	// })
 }
