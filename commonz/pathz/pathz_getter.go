@@ -30,7 +30,7 @@ func (p *Path) Parent() (parent *Path, base string, hasEndingSlash bool) {
 			// This is an escaped path like "..", "../.."
 			if p.parents == 1 {
 				// For ".."
-				return nil, "", hasEndingSlash
+				return nil, "", false
 			}
 			// For "../.." etc.
 			return New(p.parents-1, []string{}, false), "", hasEndingSlash
