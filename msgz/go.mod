@@ -4,7 +4,7 @@ go 1.26.1
 
 require (
 	cloud.google.com/go/pubsub v1.51.1
-	github.com/infinity6-ai/gox/commonz v0.0.0-20260903192535-16d3d3b691a2
+	github.com/infinity6-ai/gox/commonz v0.0.0-20260904121015-ffd2a6ec1b96
 	github.com/stretchr/testify v1.12.1
 	google.golang.org/api v0.297.0
 )
@@ -24,6 +24,7 @@ require (
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/googleapis/enterprise-certificate-proxy v0.3.20 // indirect
 	github.com/googleapis/gax-go/v2 v2.24.0 // indirect
+	github.com/infinity6-ai/gox/cryptz v0.0.0-20260902200903-56e0229457cf // indirect
 	go.opencensus.io v0.24.0 // indirect
 	go.opentelemetry.io/auto/sdk v1.2.1 // indirect
 	go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc v0.67.0 // indirect

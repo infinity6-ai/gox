@@ -76,8 +76,10 @@ github.com/googleapis/enterprise-certificate-proxy v0.3.20 h1:t/xL64VUoN69MuMRQu
 github.com/googleapis/enterprise-certificate-proxy v0.3.20/go.mod h1:L3D/IQExI6LqEjBdXcZQ1WluSgigQmSwBboFstVPM4w=
 github.com/googleapis/gax-go/v2 v2.24.0 h1:myMaPYyF9MecEmvQqMqomIwn9t/4KCZN9qnwsS76wlg=
 github.com/googleapis/gax-go/v2 v2.24.0/go.mod h1:IaTHBDd7NHxSCiu0vEs8pQZu4dGZrWwuSoxCnk16OFM=
-github.com/infinity6-ai/gox/commonz v0.0.0-20260903192535-16d3d3b691a2 h1:Ucax6VOOf6AUVl9Dj90pdDXndAgEAR5slEYHZqfA9HU=
-github.com/infinity6-ai/gox/commonz v0.0.0-20260903192535-16d3d3b691a2/go.mod h1:DVerByD4MmZwbAa67FflMOtwm6Qqf/3VbSS4lC1Q/g8=
+github.com/infinity6-ai/gox/commonz v0.0.0-20260904121015-ffd2a6ec1b96 h1:Oe96i5u4H9Ik9p95InMViOICXbtH4uMUAT8BKB32K+A=
+github.com/infinity6-ai/gox/commonz v0.0.0-20260904121015-ffd2a6ec1b96/go.mod h1:WHBkErhMYuZUbuENRlOyNuzL9MYG2kYSybMNXuaEyCk=
+github.com/infinity6-ai/gox/cryptz v0.0.0-20260902200903-56e0229457cf h1:jJUxrbjtSy4nlzBRYnClxeYSv7BD1ykxuOn1F0kvmNw=
+github.com/infinity6-ai/gox/cryptz v0.0.0-20260902200903-56e0229457cf/go.mod h1:pRriLJB7nzcPlaSsvbAfpFJHxuRu6kYg6Uhy8/FXZsE=
 github.com/planetscale/vtprotobuf v0.6.1-0.20240319094008-0393e58bdf10 h1:GFCKgmp0tecUJ0sJuv4pzYCqS9+RGSn52M3FUwPs+uo=
 github.com/planetscale/vtprotobuf v0.6.1-0.20240319094008-0393e58bdf10/go.mod h1:t/avpk3KcrXxUnYOhZhMXJlSEyie6gQbtLq5NM3loB8=
 github.com/pmezard/go-difflib v1.0.0/go.mod h1:iKH77koFhYxTK1pcRnkKkqfTogsbg7gZNVY4sRDYZ/4=
