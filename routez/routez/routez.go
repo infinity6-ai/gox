@@ -1,5 +1,7 @@
 package routez
 
+import "github.com/infinity6-ai/gox/bla/rulez"
+
 // type Req[P any, Q any, IH any, IB any] struct {
 // 	PathParams  P
 // 	QueryParams Q
@@ -79,3 +81,8 @@ package routez
 // 		jsonz.FormatWriter(w, parsedResp.RespBody)
 // 	})
 // }
+
+func Bla() {
+	var x rulez.Rule
+	println(x)
+}
