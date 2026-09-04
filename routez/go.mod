@@ -16,4 +16,3 @@ require (
 	golang.org/x/term v0.45.0 // indirect
 )
 
-replace github.com/infinity6-ai/gox/schemaz => ../schemaz
