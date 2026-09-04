@@ -49,30 +49,29 @@ func (s *Server) AddFilter(filter Filter) {
 
 type PatternHandler struct {
 	Method  string
-	Pattern *pathz.Path
+	Pattern *patternpathz.PathPattern
 	Prefix  bool
 	Handler HandlerPattern
 }
 
 func (s *Server) AddHandler(method string, pattern string, handler HandlerPattern) {
 	checker.OneOf(allowedMethods, method, "unknown method")
+	ph := &PatternHandler{}
 	p := pathz.MustParse(pattern)
 	p.Check(pathz.ValidateOptions{
 		Absolute:    new(true),
 		Wildchar:    true,
 		EndingSlash: new(false),
 	})
-	ph := &PatternHandler{
-		Method:  method,
-		Pattern: p,
-		Prefix:  false,
-		Handler: handler,
-	}
 	dir, base, _ := p.Parent()
 	if base == "*" {
-		ph.Pattern = dir
+		p = dir
 		ph.Prefix = true
 	}
+	pt := patternpathz.MustParse(p)
+	ph.Method = method
+	ph.Pattern = pt
+	ph.Handler = handler
 	s.patternHandlers = append(s.patternHandlers, *ph)
 }
 
@@ -92,8 +91,7 @@ func (s *Server) route(ctx context.Context, resp Resp, req *Req) {
 	errorz.Check(err)
 }
 
-func match(patternPath *pathz.Path, p *pathz.Path, prefix bool) (map[string]string, bool) {
-	pattern := patternpathz.MustParse(patternPath)
+func match(pattern *patternpathz.PathPattern, p *pathz.Path, prefix bool) (map[string]string, bool) {
 	params, suffix, err := pattern.Parse(p)
 	if err != nil {
 		if errors.Is(err, patternpathz.ErrMismatch) {
