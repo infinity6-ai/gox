@@ -41,8 +41,8 @@ func (p *PathPattern) Parse(pt *pathz.Path) (map[string]string, *pathz.Path, err
 	return params, nil, nil
 }
 
-func (p *PathPattern) MustParse(pt *pathz.Path) map[string]string {
-	params, err := p.Parse(pt)
+func (p *PathPattern) MustParse(pt *pathz.Path) (map[string]string, *pathz.Path) {
+	params, suffix, err := p.Parse(pt)
 	errorz.Check(err)
-	return params
+	return params, suffix
 }
