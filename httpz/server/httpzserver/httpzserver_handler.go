@@ -107,30 +107,3 @@ func match(patternPath *pathz.Path, p *pathz.Path, prefix bool) (map[string]stri
 	return params, true
 
 }
-
-// func match(patternParts, actualParts []string, prefix bool) (map[string]string, bool) {
-// 	if !prefix && len(patternParts) != len(actualParts) {
-// 		return nil, false
-// 	}
-// 	if prefix && len(actualParts) < len(patternParts) {
-// 		return nil, false
-// 	}
-
-// 	params := make(map[string]string)
-// 	for i, patternPart := range patternParts {
-// 		actualPart := actualParts[i]
-
-// 		if strings.HasPrefix(patternPart, "{") && strings.HasSuffix(patternPart, "}") {
-// 			paramName := patternPart[1 : len(patternPart)-1]
-// 			params[paramName] = actualPart
-// 		} else if patternPart != actualPart {
-// 			return nil, false
-// 		}
-// 	}
-
-// 	if !prefix && len(patternParts) != len(actualParts) {
-// 		return nil, false
-// 	}
-
-// 	return params, true
-// }
