@@ -9,28 +9,26 @@ import (
 
 func (p *PathPattern) Parse(pt *pathz.Path) (map[string]string, error) {
 	if p.original.Parents() != pt.Parents() {
-		return nil, fmt.Errorf("path parents mismatch")
+		return nil, fmt.Errorf("path parents mismatch, pattern: %s, path: %s", p, pt)
 	}
 
 	pParts := p.original.Parts()
 	ptParts := pt.Parts()
 
-	if len(pParts) != len(ptParts) {
-		return nil, fmt.Errorf("path length mismatch")
+	if len(pParts) > len(ptParts) {
+		return nil, fmt.Errorf("path length mismatch, pattern: %s, path: %s", p, pt)
 	}
 
-	if p.original.HasEndingSlash() != pt.HasEndingSlash() {
-		return nil, fmt.Errorf("path ending slash mismatch")
+	if len(pParts) == len(ptParts) && p.original.HasEndingSlash() && !pt.HasEndingSlash() {
+		return nil, fmt.Errorf("ending slash mismatch, pattern: %s, path: %s", p, pt)
 	}
 
 	params := make(map[string]string)
 	for i, name := range p.segments {
 		if name != "" {
 			params[name] = ptParts[i]
-		} else {
-			if pParts[i] != ptParts[i] {
-				return nil, fmt.Errorf("path mismatch at segment %d: expected '%s', got '%s'", i, pParts[i], ptParts[i])
-			}
+		} else if pParts[i] != ptParts[i] {
+			return nil, fmt.Errorf("path mismatch at segment %d: expected '%s', got '%s'", i, pParts[i], ptParts[i])
 		}
 	}
 
