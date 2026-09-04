@@ -386,4 +386,24 @@ func TestUnitParentMethod(t *testing.T) {
 			hasEndingSlash: false,
 		})
 	})
+
+	t.Run("path /x/*", func(t *testing.T) {
+		check(t, testScenario{
+			path:           New(-1, []string{"x", "*"}, false),
+			pathStr:        "/x/*",
+			expectedParent: New(-1, []string{"x"}, false),
+			parentBase:     "*",
+			hasEndingSlash: false,
+		})
+	})
+
+	// t.Run("path /*", func(t *testing.T) {
+	// 	check(t, testScenario{
+	// 		path:           New(-1, []string{"*"}, false),
+	// 		pathStr:        "/*",
+	// 		expectedParent: New(-1, nil, false),
+	// 		parentBase:     "*",
+	// 		hasEndingSlash: false,
+	// 	})
+	// })
 }
