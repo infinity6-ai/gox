@@ -23,7 +23,7 @@ type Req struct {
 
 func FormatReq(method string, path string, params map[string]string) (*Req, error) {
 	p := pathz.MustParse(path)
-	if params != nil {
+	if len(params) > 0 {
 		pattern, err := patternpathz.Parse(p)
 		if err != nil {
 			return nil, fmt.Errorf("invalid path: %w", err)
