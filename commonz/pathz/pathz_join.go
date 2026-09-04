@@ -3,6 +3,8 @@ package pathz
 import (
 	"errors"
 	"fmt"
+
+	"github.com/infinity6-ai/gox/commonz/errorz"
 )
 
 var ErrEscaped = errors.New("path escaped error")
@@ -68,4 +70,24 @@ func (p *Path) Join(others ...*Path) (*Path, error) {
 	// }
 
 	// return resultPath, nil
+}
+
+func (p *Path) JoinString(others ...string) (*Path, error) {
+	paths := make([]*Path, len(others))
+	for i, other := range others {
+		paths[i] = MustParse(other)
+	}
+	return p.Join(paths...)
+}
+
+func (p *Path) MustJoinString(others ...string) *Path {
+	ret, err := p.JoinString(others...)
+	errorz.Check(err)
+	return ret
+}
+
+func (p *Path) MustJoin(others ...*Path) *Path {
+	ret, err := p.Join(others...)
+	errorz.Check(err)
+	return ret
 }

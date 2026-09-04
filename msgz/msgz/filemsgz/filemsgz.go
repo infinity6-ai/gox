@@ -1,24 +1,30 @@
 package filemsgz
 
 import (
+	"bytes"
 	"context"
 	"fmt"
-	"path"
+	"io"
+	"net/http"
 	"strings"
 	"sync"
 
+	"github.com/infinity6-ai/gox/commonz/constraintz/blobz"
 	"github.com/infinity6-ai/gox/commonz/datez"
 	"github.com/infinity6-ai/gox/commonz/errorz"
 	"github.com/infinity6-ai/gox/commonz/filez"
 	"github.com/infinity6-ai/gox/commonz/idgen"
 	"github.com/infinity6-ai/gox/commonz/jsonz"
+	"github.com/infinity6-ai/gox/commonz/pathz"
+	"github.com/infinity6-ai/gox/commonz/urlz"
 	"github.com/infinity6-ai/gox/commonz/validation/checker"
 	"github.com/infinity6-ai/gox/commonz/zipz/gzipz"
+	"github.com/infinity6-ai/gox/fsz/fsz"
 	"github.com/infinity6-ai/gox/msgz/msgz"
 )
 
 type MessageStore struct {
-	basedir string
+	basedir *urlz.Url
 	temp    bool
 
 	lock         sync.Mutex
@@ -31,30 +37,32 @@ func (me *MessageStore) Close() error {
 }
 
 func NewTemporaryMessageStore(ctx context.Context) *MessageStore {
+	basedir := urlz.MustParse("file://" + filez.CreateTempDir("filemsgz"))
 	return &MessageStore{
-		basedir: filez.CreateTempDir("filemsgz"),
+		basedir: basedir,
 		temp:    true,
 	}
 }
 
-func NewMessageStore(ctx context.Context, basedir string) *MessageStore {
-	checker.StrNotEmpty(basedir, "basedir")
+func NewMessageStore(ctx context.Context, basedir *pathz.Path) *MessageStore {
+	checker.NotNil(basedir, "basedir")
+	b := urlz.MustParse("file://" + basedir.String())
 	return &MessageStore{
-		basedir: basedir,
+		basedir: b,
 		temp:    false,
 	}
 }
 
-func (me *MessageStore) Basedir() string {
-	return me.basedir
+func (me *MessageStore) Basedir() *pathz.Path {
+	return me.basedir.Path
 }
 
 func (me *MessageStore) Shutdown() {
 	me.shutdownOnce.Do(func() {
 		me.lock.Lock()
 		defer me.lock.Unlock()
-		if me.temp && me.basedir != "" {
-			errorz.Check(filez.RmTree(me.basedir))
+		if me.temp && me.basedir != nil {
+			errorz.Check(filez.RmTree(me.basedir.Path.String()))
 		}
 	})
 }
@@ -62,7 +70,7 @@ func (me *MessageStore) Shutdown() {
 func (me *MessageStore) Publish(ctx context.Context, topic string, msgs *msgz.Messages) {
 	me.lock.Lock()
 	defer me.lock.Unlock()
-	checker.StrNotEmpty(me.basedir, "basedir")
+	checker.NotNil(me.basedir, "basedir")
 	for _, msg := range msgs.Messages {
 		checker.StrEmpty(msg.Id, "msg.ID")
 		checker.NotEmpty(msg.Payload, "payload")
@@ -72,8 +80,8 @@ func (me *MessageStore) Publish(ctx context.Context, topic string, msgs *msgz.Me
 			AckId:   fmt.Sprintf("fileackid-%s", msg.Id),
 			Message: msg,
 		}
-		dst := path.Join(me.basedir, "created", "topic", topic, fmt.Sprintf("%s.json.gz", msg.Id))
-		filez.WriteFile(dst, gzipz.MustGzip(jsonz.MustFormat(mm).Bytes()))
+		dst := me.basedir.MustJoinPathString("created", "topic", topic, fmt.Sprintf("%s.json.gz", msg.Id))
+		fsz.Upload(ctx, dst, nil, bytes.NewReader(gzipz.MustGzip(jsonz.MustFormat(mm).Bytes())))
 	}
 }
 
@@ -86,25 +94,42 @@ func (me *MessageStore) Pull(ctx context.Context, sub string, limit int, opts ms
 	me.lock.Lock()
 	defer me.lock.Unlock()
 
-	srcDir := path.Join(me.basedir, "created", "topic", sub)
-	dstDir := path.Join(me.basedir, "fetched", "topic", sub)
-	filez.CreateParentDirs(path.Join(srcDir, "file"))
-	files := filez.DirListLimited(srcDir, ".*", limit)
-	messages := []*msgz.ManagedMessage{}
-	for _, file := range files {
-		srcPath := path.Join(srcDir, file)
-		dstPath := path.Join(dstDir, file)
+	srcDir := me.basedir.MustJoinPathString("created", "topic", sub)
+	dstDir := me.basedir.MustJoinPathString("fetched", "topic", sub)
+	// filez.CreateParentDirs(path.Join(srcDir, "file"))
+	// files := filez.DirListLimited(srcDir, ".*", limit)
+	ls, err := fsz.Ls(ctx, srcDir)
+	errorz.Check(err)
+	defer ls.Close()
 
-		filez.Move(srcPath, dstPath)
-		mm := readFile(dstPath)
+	messages := []*msgz.ManagedMessage{}
+	page, err := ls.Paginate(ctx, limit)
+	errorz.Check(err)
+
+	for _, file := range page {
+		srcPath := file.Url
+		dstPath := dstDir.MustJoinPathString(file.Url.Path.Base())
+
+		// filez.Move(srcPath, dstPath)
+		errorz.Check(fsz.Copy(ctx, srcPath, dstPath))
+		errorz.Check(fsz.Delete(ctx, srcPath))
+
+		mm := readFile(ctx, dstPath)
 		messages = append(messages, mm)
 	}
 
 	return &msgz.ManagedMessages{Messages: messages}
 }
 
-func readFile(p string) *msgz.ManagedMessage {
-	data := filez.ReadFile(p, 4096)
+func readFile(ctx context.Context, f *urlz.Url) *msgz.ManagedMessage {
+	var data blobz.Blob
+	err := fsz.Download(ctx, f, func(found bool, headers http.Header, reader io.Reader) error {
+		if found {
+			data = filez.ReadAllLimited(reader, 4096)
+		}
+		return nil
+	})
+	errorz.Check(err)
 	data = gzipz.MustGunzip(data.Bytes())
 	mm := jsonz.MustParse(data.Bytes(), &msgz.ManagedMessage{})
 	return mm
@@ -129,41 +154,49 @@ func (me *MessageStore) Ack(ctx context.Context, ids *msgz.Ids) {
 	defer me.lock.Unlock()
 	for _, id := range ids.Ids {
 		topic, uid := parseAckId(id)
-		dst := path.Join(me.basedir, "fetched", "topic", topic, fmt.Sprintf("%s.json.gz", uid))
-		errorz.Check(filez.Remove(dst))
+		dst := me.basedir.MustJoinPathString("fetched", "topic", topic, fmt.Sprintf("%s.json.gz", uid))
+		errorz.Check(fsz.Delete(ctx, dst))
 	}
 }
 
 func (me *MessageStore) Nack(ctx context.Context, ids *msgz.Ids) {
 	me.lock.Lock()
 	defer me.lock.Unlock()
-	me.internalNack(ids)
+	me.internalNack(ctx, ids)
 }
 
-func (me *MessageStore) internalNack(ids *msgz.Ids) {
+func (me *MessageStore) internalNack(ctx context.Context, ids *msgz.Ids) {
 	for _, id := range ids.Ids {
 		topic, uid := parseAckId(id)
-		src := path.Join(me.basedir, "fetched", "topic", topic, fmt.Sprintf("%s.json.gz", uid))
-		dst := path.Join(me.basedir, "created", "topic", topic, fmt.Sprintf("%s.json.gz", uid))
-		filez.Move(src, dst)
+		src := me.basedir.MustJoinPathString("fetched", "topic", topic, fmt.Sprintf("%s.json.gz", uid))
+		dst := me.basedir.MustJoinPathString("created", "topic", topic, fmt.Sprintf("%s.json.gz", uid))
+		// filez.Move(src, dst)
+		errorz.Check(fsz.Copy(ctx, src, dst))
+		errorz.Check(fsz.Delete(ctx, src))
 	}
 }
 
 func (me *MessageStore) NackAll(ctx context.Context, topic string) {
 	me.lock.Lock()
 	defer me.lock.Unlock()
-	srcDir := path.Join(me.basedir, "fetched", "topic", topic)
+	srcDir := me.basedir.MustJoinPathString("fetched", "topic", topic)
+
+	p, err := fsz.Ls(ctx, srcDir)
+	errorz.Check(err)
+	defer p.Close()
+
 	for {
-		srcs := filez.DirListLimited(srcDir, ".*", 1000)
+		// srcs := filez.DirListLimited(srcDir, ".*", 1000)
+		srcs, err := p.Paginate(ctx, 1000)
+		errorz.Check(err)
 		if len(srcs) == 0 {
 			return
 		}
 		ids := &msgz.Ids{}
 		for _, name := range srcs {
-			src := path.Join(srcDir, name)
-			msg := readFile(src)
+			msg := readFile(ctx, name.Url)
 			ids.Ids = append(ids.Ids, msg.AckId)
 		}
-		me.internalNack(ids)
+		me.internalNack(ctx, ids)
 	}
 }
