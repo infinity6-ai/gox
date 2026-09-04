@@ -1,8 +1,6 @@
-github.com/infinity6-ai/gox/bla v0.0.0-20260904124639-f4c78ac4783f h1:c/02DWq97Afndh0MKYg2v+l8MFRQFULan5QAlSj4ccM=
-github.com/infinity6-ai/gox/bla v0.0.0-20260904124639-f4c78ac4783f/go.mod h1:2Itzb5P2IOyeknJF6cVmCNuwRJT6lPYc/K9PfI/S/vU=
-github.com/infinity6-ai/gox/bla v0.0.0-20260904125602-d12f69cade4e h1:BlMt71E0aiVwGM2n3lt+PFRM5Mztp5uGswbZFdgvhog=
-github.com/infinity6-ai/gox/bla v0.0.0-20260904125602-d12f69cade4e/go.mod h1:LaKJsSZ+j1AKL3qiQVstnythcMzzPpVZR3bJBb7Ho1Q=
-github.com/infinity6-ai/gox/commonz v0.0.0-20260904121015-ffd2a6ec1b96 h1:Oe96i5u4H9Ik9p95InMViOICXbtH4uMUAT8BKB32K+A=
-github.com/infinity6-ai/gox/commonz v0.0.0-20260904121015-ffd2a6ec1b96/go.mod h1:WHBkErhMYuZUbuENRlOyNuzL9MYG2kYSybMNXuaEyCk=
-github.com/infinity6-ai/gox/commonz v0.0.0-20260904123318-490ac4a7cad8 h1:phqdDaOYwRaQxQn/sd53Tf3r6oTJTXFb6mHdkkv09ds=
-github.com/infinity6-ai/gox/commonz v0.0.0-20260904123318-490ac4a7cad8/go.mod h1:HGkl9WfDSBMzEf90X/xVxmpvBl45pMh3L1vq4qJTEuU=
+github.com/infinity6-ai/gox/schemaz v0.0.0-20260904125743-50ffbf9dd11a h1:i0xeHNMpRhrmSy52Oh3880eTNud1fUy3QrCxjJN6wj0=
+github.com/infinity6-ai/gox/schemaz v0.0.0-20260904125743-50ffbf9dd11a/go.mod h1:9DIkGuM+D81t/2x86wAWNzoTASXleVdOomSSI06I5Uo=
+github.com/stretchr/testify v1.12.1 h1:EuwCh5fleGS7H32xRwO3wRGT7DxrDhLAT6FF8MpWDWE=
+github.com/stretchr/testify v1.12.1/go.mod h1:MDEgiDPPsNp5cuIrHPPCyornHKgEVbtFUmoNlxoYthg=
+go.yaml.in/yaml/v3 v3.0.5 h1:N6y/pJk8buWs9NY5ERU2HSMfm+IuD/OtfdAnq6kESPw=
+go.yaml.in/yaml/v3 v3.0.5/go.mod h1:HVTZu1O7/Vkt2N+BFy8Zza+lnLsABggaTM2ZpNIGuKg=
