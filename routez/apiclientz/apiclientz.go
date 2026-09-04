@@ -1,32 +1,64 @@
 package apiclientz
 
 import (
+	"bytes"
 	"context"
+	"fmt"
 
+	"github.com/infinity6-ai/gox/commonz/jsonz"
+	"github.com/infinity6-ai/gox/commonz/jsonz/structjsonz"
 	"github.com/infinity6-ai/gox/httpz/client/httpzclient"
 	"github.com/infinity6-ai/gox/routez/apiz"
 )
 
-func parseRequest[P any, Q any, IH any, IB any, OH any, OB any](api *apiz.Api[P, Q, IH, IB, OH, OB], req *apiz.Req[P, Q, IH, IB]) *httpzclient.Client {
-	// structjsonz.MustParseSingle(params, &p)
-	// structjsonz.MustParse(req.Query, &q)
-	// structjsonz.MustParse(converter.Header2Json(req.Headers), &reqHeaders)
+func parseRequest[P any, Q any, IH any, IB any, OH any, OB any](api *apiz.Api[P, Q, IH, IB, OH, OB], req *apiz.Req[P, Q, IH, IB]) (*httpzclient.Req, error) {
+	p, err := structjsonz.FormatSingle(req.PathParams)
+	if err != nil {
+		return nil, fmt.Errorf("%w: error formatting path params", err)
+	}
+	q, err := structjsonz.Format(req.QueryParams)
+	if err != nil {
+		return nil, fmt.Errorf("%w: error formatting req query", err)
+	}
+	h, err := structjsonz.Format(req.ReqHeaders)
+	if err != nil {
+		return nil, fmt.Errorf("%w: error formatting req headers", err)
+	}
 
-	// ret := httpzclient.NewReq(api.Schema.Method, api.Schema.Path)
-	// ret. := structjsonz.MustFormatSingle(req.PathParams)
-
-	// converter.Json2Header()
-
-	panic("y")
+	ret, err := httpzclient.FormatReq(api.Schema.Method, api.Schema.Path, p)
+	if err != nil {
+		return nil, fmt.Errorf("%w: error formatting request", err)
+	}
+	ret.Query = q
+	ret.Headers = h
+	fBody, err := jsonz.Format(req.ReqBody)
+	if err != nil {
+		return nil, fmt.Errorf("%w: error formatting request body", err)
+	}
+	ret.Body = bytes.NewReader(fBody.Bytes())
+	return ret, nil
 }
 
 func Get[P any, Q any, IH any, IB any, OH any, OB any](client *httpzclient.Client, api *apiz.Api[P, Q, IH, IB, OH, OB]) apiz.Handler[P, Q, IH, IB, OH, OB] {
 	return func(ctx context.Context, req *apiz.Req[P, Q, IH, IB]) (*apiz.Resp[OH, OB], error) {
 
-		parseRequest(api, req)
-
-		// client.Do()
-		panic("X")
-
+		nReq, err := parseRequest(api, req)
+		if err != nil {
+			return nil, err
+		}
+		nResp, err := client.Do(nReq)
+		if err != nil {
+			return nil, fmt.Errorf("%w: error calling server")
+		}
+		defer nResp.Body.Close()
+		ret := &apiz.Resp[OH, OB]{
+			Status: nResp.StatusCode,
+		}
+		structjsonz.Parse(nResp.Headers, &ret.RespHeaders)
+		_, err = jsonz.ParseReader(nResp.Body, &ret.RespBody)
+		if err != nil {
+			return nil, fmt.Errorf("%w: error parsing response body", err)
+		}
+		return ret, nil
 	}
 }
