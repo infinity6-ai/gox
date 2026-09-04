@@ -221,4 +221,30 @@ func TestUnitParse(t *testing.T) {
 			expectedError: "path contains illegal component 1: \"...\"",
 		})
 	})
+
+	t.Run("path /", func(t *testing.T) {
+		check(t, testScenario{
+			input:                  "/",
+			expectedHasEndingSlash: false,
+			expectedParents:        -1,
+		})
+	})
+
+	t.Run("path /x/*", func(t *testing.T) {
+		check(t, testScenario{
+			input:                  "/x/*",
+			expectedParts:          []string{"x", "*"},
+			expectedHasEndingSlash: false,
+			expectedParents:        -1,
+		})
+	})
+
+	t.Run("path /*", func(t *testing.T) {
+		check(t, testScenario{
+			input:                  "/*",
+			expectedParts:          []string{"*"},
+			expectedHasEndingSlash: false,
+			expectedParents:        -1,
+		})
+	})
 }
