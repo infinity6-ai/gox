@@ -216,7 +216,7 @@ func TestUnitPathGetters(t *testing.T) {
 			partSlice:      []string{},
 			base:           "",
 			parent:         nil,
-			hasEndingSlash: true,
+			hasEndingSlash: false,
 		})
 	})
 

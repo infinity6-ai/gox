@@ -36,7 +36,7 @@ func (p *Path) Parent() (parent *Path, base string, hasEndingSlash bool) {
 			return New(p.parents-1, []string{}, false), "", hasEndingSlash
 		}
 		// For "", "." or "/"
-		return nil, "", hasEndingSlash
+		return nil, "", false
 	}
 
 	base = p.parts[len(p.parts)-1]
