@@ -163,10 +163,10 @@ func (ps *pubsubStrategy) Publish(ctx context.Context, topic string, msgs *msgz.
 	}
 }
 
-func NewPublisher(projectId string) msgz.Publisher {
+func NewPublisher(ctx context.Context, projectId string) msgz.Publisher {
 	return &pubsubStrategy{projectId: projectId}
 }
 
-func NewPuller(projectId string) msgz.Puller {
+func NewPuller(ctx context.Context, projectId string) msgz.Puller {
 	return &pubsubStrategy{projectId: projectId}
 }
