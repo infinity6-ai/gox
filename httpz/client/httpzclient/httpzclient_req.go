@@ -6,7 +6,9 @@ import (
 	"net/http"
 	"net/url"
 
+	"github.com/infinity6-ai/gox/commonz/errorz"
 	"github.com/infinity6-ai/gox/commonz/pathz"
+	"github.com/infinity6-ai/gox/commonz/pathz/patternpathz"
 	"github.com/infinity6-ai/gox/commonz/urlz"
 )
 
@@ -17,6 +19,32 @@ type Req struct {
 	Query   url.Values
 	Headers http.Header
 	Body    io.Reader
+}
+
+func FormatReq(method string, path string, params map[string]string) (*Req, error) {
+	p := pathz.MustParse(path)
+	if params != nil {
+		pattern, err := patternpathz.Parse(p)
+		if err != nil {
+			return nil, fmt.Errorf("invalid path: %w", err)
+		}
+		p, err = pattern.Format(params)
+		if err != nil {
+			return nil, fmt.Errorf("failed to format path: %w", err)
+		}
+	}
+	return &Req{
+		Method:  method,
+		Path:    p,
+		Query:   url.Values{},
+		Headers: http.Header{},
+	}, nil
+}
+
+func MustFormatReq(method string, path string, params map[string]string) *Req {
+	req, err := FormatReq(method, path, params)
+	errorz.Check(err)
+	return req
 }
 
 func NewReq(method string, path string) *Req {
