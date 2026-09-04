@@ -8,7 +8,7 @@ import (
 	"github.com/infinity6-ai/gox/commonz/jsonz"
 	"github.com/infinity6-ai/gox/httpz/client/httpzclient"
 	"github.com/infinity6-ai/gox/httpz/server/httpzserver"
-	"github.com/infinity6-ai/gox/schemaz/schemazsamplefraction"
+	"github.com/infinity6-ai/gox/routez/sampleroutez/schemazsamplefraction"
 	"github.com/stretchr/testify/require"
 )
 
