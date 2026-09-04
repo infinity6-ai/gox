@@ -79,16 +79,34 @@ func (a *Api[P, Q, IH, IB, OH, OB]) ParseRequest(ctx context.Context, req *httpz
 	}
 }
 
-func Add[P any, Q any, IH any, IB any, OH any, OB any](s *httpzserver.Server, api *Api[P, Q, IH, IB, OH, OB]) {
-	s.AddHandler(api.Schema.Method, api.Schema.Path, func(ctx context.Context, resp httpzserver.Resp, req *httpzserver.Req, params map[string]string) {
-		parsedReq := api.ParseRequest(ctx, req, params)
-		parsedResp, err := api.Handler(ctx, parsedReq)
-		errorz.Check(err)
-		formattedHeaders := make(http.Header)
-		formattedHeaders.Set("Content-Type", "application/json")
-		mapRespHedaers := structjsonz.MustFormat(parsedResp.RespHeaders)
-		json2header(mapRespHedaers, formattedHeaders)
-		w := resp(200, formattedHeaders)
-		jsonz.FormatWriter(w, parsedResp.RespBody)
-	})
+func Register[P any, Q any, IH any, IB any, OH any, OB any](s *httpzserver.Server, apis ...*Api[P, Q, IH, IB, OH, OB]) {
+	for _, api := range apis {
+		s.AddHandler(api.Schema.Method, api.Schema.Path, func(ctx context.Context, resp httpzserver.Resp, req *httpzserver.Req, params map[string]string) {
+			parsedReq := api.ParseRequest(ctx, req, params)
+			parsedResp, err := api.Handler(ctx, parsedReq)
+			errorz.Check(err)
+			formattedHeaders := make(http.Header)
+			formattedHeaders.Set("Content-Type", "application/json")
+			mapRespHedaers := structjsonz.MustFormat(parsedResp.RespHeaders)
+			json2header(mapRespHedaers, formattedHeaders)
+			w := resp(200, formattedHeaders)
+			jsonz.FormatWriter(w, parsedResp.RespBody)
+		})
+	}
 }
+
+// routez.Add(s, &routez.Api[ReqParams, ReqQuery, ReqHeaders, ReqBody, *RespHeaders, *RespBody]{
+// 		Schema: Api(),
+// 		Handler: func(ctx context.Context, req *routez.Req[ReqParams, ReqQuery, ReqHeaders, ReqBody]) (*routez.Resp[*RespHeaders, *RespBody], error) {
+// 			return &routez.Resp[*RespHeaders, *RespBody]{
+// 				Status: 201,
+// 				RespHeaders: &RespHeaders{
+// 					ReqId: "reason: " + req.ReqBody.Reason + ", trace: " + req.ReqHeaders.TraceId,
+// 				},
+// 				RespBody: &RespBody{
+// 					Display: fmt.Sprintf(fmt.Sprintf("%%.%df/%%.%df", int(req.QueryParams.Precision), int(req.QueryParams.Precision)), req.PathParams.Numerator, req.PathParams.Denumerator),
+// 					Result:  strconv.FormatFloat(req.PathParams.Numerator/req.PathParams.Denumerator, 'f', req.QueryParams.Precision, 64),
+// 				},
+// 			}, nil
+// 		},
+// 	})
