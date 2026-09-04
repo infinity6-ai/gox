@@ -24,7 +24,7 @@ func TestUnitBasic(t *testing.T) {
 
 	routez.Register(s, schemazsamplefraction.Api())
 
-	c := httpzclient.New(httpzclient.Options{
+	c := httpzclient.New(ctx, httpzclient.Options{
 		BaseUrl: s.Base(),
 	})
 

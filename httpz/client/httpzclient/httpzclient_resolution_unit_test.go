@@ -28,7 +28,7 @@ func TestUnitClientPathResolution(t *testing.T) {
 	s.Start()
 
 	t.Run("with path prefix and trailing slash", func(t *testing.T) {
-		client := httpzclient.New(httpzclient.Options{BaseUrl: s.Base().MustJoinPathString("/api/v1/")})
+		client := httpzclient.New(ctx, httpzclient.Options{BaseUrl: s.Base().MustJoinPathString("/api/v1/")})
 		req := httpzclient.NewReq("GET", "test")
 		resp, err := client.Do(ctx, req)
 		require.NoError(t, err)
@@ -41,7 +41,7 @@ func TestUnitClientPathResolution(t *testing.T) {
 	})
 
 	t.Run("with path prefix and no trailing slash", func(t *testing.T) {
-		client := httpzclient.New(httpzclient.Options{BaseUrl: s.Base().MustJoinPathString("/api/v1")})
+		client := httpzclient.New(ctx, httpzclient.Options{BaseUrl: s.Base().MustJoinPathString("/api/v1")})
 		req := httpzclient.NewReq("GET", "/test")
 		_, err := client.Do(ctx, req)
 		require.Error(t, err)
@@ -55,7 +55,7 @@ func TestUnitClientPathResolution(t *testing.T) {
 			require.NoError(t, err)
 		})
 
-		client := httpzclient.New(httpzclient.Options{BaseUrl: s.Base()})
+		client := httpzclient.New(ctx, httpzclient.Options{BaseUrl: s.Base()})
 		req := httpzclient.NewReq("GET", "/test")
 		resp, err := client.Do(ctx, req)
 		require.NoError(t, err)
@@ -105,7 +105,7 @@ func TestUnitClientUrlResolution(t *testing.T) {
 			clientOpts.BaseUrl = scenario.clientBaseUrl
 		}
 
-		client := httpzclient.New(clientOpts)
+		client := httpzclient.New(ctx, clientOpts)
 		req := &httpzclient.Req{
 			Method: "GET",
 		}

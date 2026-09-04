@@ -21,7 +21,7 @@ var defaultHttpClient = &http.Client{
 
 type Options struct {
 	BaseUrl   *urlz.Url
-	GetClient func() *http.Client
+	GetClient func(ctx context.Context) *http.Client
 }
 
 func (o *Options) fix() {
@@ -33,14 +33,14 @@ type Client struct {
 	client  *http.Client
 }
 
-func New(opts Options) *Client {
+func New(ctx context.Context, opts Options) *Client {
 	opts.fix()
 	ret := &Client{
 		Options: opts,
 		client:  defaultHttpClient,
 	}
 	if opts.GetClient != nil {
-		ret.client = opts.GetClient()
+		ret.client = opts.GetClient(ctx)
 	}
 	return ret
 }
