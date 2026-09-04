@@ -10,13 +10,13 @@ import (
 
 var ErrMismatch = fmt.Errorf("mismatch")
 
-func (p *PathPattern) MustParse(pt *pathz.Path) (map[string]string, *pathz.Path) {
+func (p *Pattern) MustParse(pt *pathz.Path) (map[string]string, *pathz.Path) {
 	ret, suffix, err := p.Parse(pt)
 	errorz.Check(err)
 	return ret, suffix
 }
 
-func (p *PathPattern) Parse(pt *pathz.Path) (map[string]string, *pathz.Path, error) {
+func (p *Pattern) Parse(pt *pathz.Path) (map[string]string, *pathz.Path, error) {
 	if p.original.Parents() != pt.Parents() {
 		return nil, nil, fmt.Errorf("%w: path parents mismatch, pattern: %s, path: %s", ErrMismatch, p, pt)
 	}

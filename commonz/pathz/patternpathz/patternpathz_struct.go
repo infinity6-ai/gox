@@ -8,21 +8,21 @@ import (
 	"github.com/infinity6-ai/gox/commonz/pathz"
 )
 
-type PathPattern struct {
+type Pattern struct {
 	original *pathz.Path    // a/{p1}/b/{p2}
 	segments []string       // not empty on path param positions
 	names    map[string]int // set of parameter names to its position
 }
 
-func MustParse(pattern *pathz.Path) *PathPattern {
+func MustParse(pattern *pathz.Path) *Pattern {
 	pp, err := Parse(pattern)
 	errorz.Check(err)
 	return pp
 }
 
-func Parse(pattern *pathz.Path) (*PathPattern, error) {
+func Parse(pattern *pathz.Path) (*Pattern, error) {
 	parts := pattern.Parts()
-	p := &PathPattern{
+	p := &Pattern{
 		original: pattern,
 		segments: make([]string, len(parts)),
 		names:    make(map[string]int),
@@ -45,7 +45,7 @@ func Parse(pattern *pathz.Path) (*PathPattern, error) {
 	return p, nil
 }
 
-func (p *PathPattern) String() string {
+func (p *Pattern) String() string {
 	if p == nil {
 		return "<nil>"
 	}

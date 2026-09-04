@@ -49,7 +49,7 @@ func (s *Server) AddFilter(filter Filter) {
 
 type PatternHandler struct {
 	Method  string
-	Pattern *patternpathz.PathPattern
+	Pattern *patternpathz.Pattern
 	Prefix  bool
 	Handler HandlerPattern
 }
@@ -91,7 +91,7 @@ func (s *Server) route(ctx context.Context, resp Resp, req *Req) {
 	errorz.Check(err)
 }
 
-func match(pattern *patternpathz.PathPattern, p *pathz.Path, prefix bool) (map[string]string, bool) {
+func match(pattern *patternpathz.Pattern, p *pathz.Path, prefix bool) (map[string]string, bool) {
 	params, suffix, err := pattern.Parse(p)
 	if err != nil {
 		if errors.Is(err, patternpathz.ErrMismatch) {

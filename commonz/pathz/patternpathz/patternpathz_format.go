@@ -7,7 +7,7 @@ import (
 	"github.com/infinity6-ai/gox/commonz/pathz"
 )
 
-func (p *PathPattern) Format(params map[string]string) (*pathz.Path, error) {
+func (p *Pattern) Format(params map[string]string) (*pathz.Path, error) {
 	originalParts := p.original.Parts()
 	newParts := make([]string, len(originalParts))
 
@@ -29,7 +29,7 @@ func (p *PathPattern) Format(params map[string]string) (*pathz.Path, error) {
 	return pathz.New(p.original.Parents(), newParts, p.original.HasEndingSlash()), nil
 }
 
-func (p *PathPattern) MustFormat(params map[string]string) *pathz.Path {
+func (p *Pattern) MustFormat(params map[string]string) *pathz.Path {
 	path, err := p.Format(params)
 	errorz.Check(err)
 	return path
