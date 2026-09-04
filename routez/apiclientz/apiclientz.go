@@ -9,6 +9,7 @@ import (
 	"github.com/infinity6-ai/gox/commonz/jsonz/structjsonz"
 	"github.com/infinity6-ai/gox/httpz/client/httpzclient"
 	"github.com/infinity6-ai/gox/routez/apiz"
+	"github.com/infinity6-ai/gox/routez/internal/converter"
 )
 
 func parseRequest[P any, Q any, IH any, IB any, OH any, OB any](api *apiz.Api[P, Q, IH, IB, OH, OB], req *apiz.Req[P, Q, IH, IB]) (*httpzclient.Req, error) {
@@ -30,7 +31,7 @@ func parseRequest[P any, Q any, IH any, IB any, OH any, OB any](api *apiz.Api[P,
 		return nil, fmt.Errorf("%w: error formatting request", err)
 	}
 	ret.Query = q
-	ret.Headers = h
+	converter.Json2Header(h, ret.Headers)
 	fBody, err := jsonz.Format(req.ReqBody)
 	if err != nil {
 		return nil, fmt.Errorf("%w: error formatting request body", err)
@@ -54,7 +55,8 @@ func Get[P any, Q any, IH any, IB any, OH any, OB any](client *httpzclient.Clien
 		ret := &apiz.Resp[OH, OB]{
 			Status: nResp.StatusCode,
 		}
-		structjsonz.Parse(nResp.Headers, &ret.RespHeaders)
+		convertedHeaders := converter.Header2Json(nResp.Headers)
+		structjsonz.Parse(convertedHeaders, &ret.RespHeaders)
 		_, err = jsonz.ParseReader(nResp.Body, &ret.RespBody)
 		if err != nil {
 			return nil, fmt.Errorf("%w: error parsing response body", err)

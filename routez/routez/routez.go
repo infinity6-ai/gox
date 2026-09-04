@@ -34,7 +34,7 @@ func Register[P any, Q any, IH any, IB any, OH any, OB any](s *httpzserver.Serve
 			errorz.Check(err)
 			formattedHeaders := make(http.Header)
 			formattedHeaders.Set("Content-Type", "application/json")
-			mapRespHedaers := structjsonz.MustFormat(parsedResp.RespHeaders)
+			mapRespHedaers := structjsonz.MustFormat(&parsedResp.RespHeaders)
 			converter.Json2Header(mapRespHedaers, formattedHeaders)
 			w := resp(200, formattedHeaders)
 			jsonz.FormatWriter(w, parsedResp.RespBody)

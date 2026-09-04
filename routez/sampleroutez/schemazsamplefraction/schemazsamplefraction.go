@@ -82,16 +82,16 @@ func Schema() *schemaz.Api {
 	}
 }
 
-func Api() *apiz.Api[ReqParams, ReqQuery, ReqHeaders, ReqBody, *RespHeaders, *RespBody] {
-	return &apiz.Api[ReqParams, ReqQuery, ReqHeaders, ReqBody, *RespHeaders, *RespBody]{
+func Api() *apiz.Api[ReqParams, ReqQuery, ReqHeaders, ReqBody, RespHeaders, RespBody] {
+	return &apiz.Api[ReqParams, ReqQuery, ReqHeaders, ReqBody, RespHeaders, RespBody]{
 		Schema: Schema(),
-		Handler: func(ctx context.Context, req *apiz.Req[ReqParams, ReqQuery, ReqHeaders, ReqBody]) (*apiz.Resp[*RespHeaders, *RespBody], error) {
-			return &apiz.Resp[*RespHeaders, *RespBody]{
+		Handler: func(ctx context.Context, req *apiz.Req[ReqParams, ReqQuery, ReqHeaders, ReqBody]) (*apiz.Resp[RespHeaders, RespBody], error) {
+			return &apiz.Resp[RespHeaders, RespBody]{
 				Status: 201,
-				RespHeaders: &RespHeaders{
+				RespHeaders: RespHeaders{
 					ReqId: "reason: " + req.ReqBody.Reason + ", trace: " + req.ReqHeaders.TraceId,
 				},
-				RespBody: &RespBody{
+				RespBody: RespBody{
 					Display: fmt.Sprintf(fmt.Sprintf("%%.%df/%%.%df", int(req.QueryParams.Precision), int(req.QueryParams.Precision)), req.PathParams.Numerator, req.PathParams.Denumerator),
 					Result:  strconv.FormatFloat(req.PathParams.Numerator/req.PathParams.Denumerator, 'f', req.QueryParams.Precision, 64),
 				},

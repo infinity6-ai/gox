@@ -62,7 +62,7 @@ func TestUnitBasic(t *testing.T) {
 	})
 	errorz.Check(err)
 	require.Equal(t, "reason: myreason, trace: xx", acResp.RespHeaders.ReqId)
-	require.Equal(t, &schemazsamplefraction.RespBody{
+	require.Equal(t, schemazsamplefraction.RespBody{
 		Display: "10.000/3.000",
 		Result:  "3.333",
 	}, acResp.RespBody)
