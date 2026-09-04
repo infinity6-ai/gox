@@ -12,15 +12,15 @@ import (
 )
 
 func parseRequest[P any, Q any, IH any, IB any, OH any, OB any](api *apiz.Api[P, Q, IH, IB, OH, OB], req *apiz.Req[P, Q, IH, IB]) (*httpzclient.Req, error) {
-	p, err := structjsonz.FormatSingle(req.PathParams)
+	p, err := structjsonz.FormatSingle(&req.PathParams)
 	if err != nil {
 		return nil, fmt.Errorf("%w: error formatting path params", err)
 	}
-	q, err := structjsonz.Format(req.QueryParams)
+	q, err := structjsonz.Format(&req.QueryParams)
 	if err != nil {
 		return nil, fmt.Errorf("%w: error formatting req query", err)
 	}
-	h, err := structjsonz.Format(req.ReqHeaders)
+	h, err := structjsonz.Format(&req.ReqHeaders)
 	if err != nil {
 		return nil, fmt.Errorf("%w: error formatting req headers", err)
 	}
