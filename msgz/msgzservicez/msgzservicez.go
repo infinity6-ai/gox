@@ -38,7 +38,7 @@ func NewPublisher(ctx context.Context, strategy string, projectId string) (msgz.
 	return ret.NewPublisher(ctx, projectId), nil
 }
 
-func RegisterMsgzService(name string, service *MsgzService) io.Closer {
+func RegisterMsgz(name string, service *MsgzService) io.Closer {
 	old := msgzservices[name]
 	closer := func() {
 		msgzservices[name] = old
