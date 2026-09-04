@@ -1,5 +1,9 @@
-github.com/infinity6-ai/gox/commonz v0.0.0-20260901192202-6f6ae1c53619 h1:hUeqQPyEa6UjvQxwRBkWLAZfTlgybeoKkTpc13I9aR8=
-github.com/infinity6-ai/gox/commonz v0.0.0-20260901192202-6f6ae1c53619/go.mod h1:LiEmtJZSK+nLJRUJSjn9tDQ/EVwK5+f5DTeumofryM0=
+github.com/infinity6-ai/gox/commonz v0.0.0-20260904123318-490ac4a7cad8 h1:phqdDaOYwRaQxQn/sd53Tf3r6oTJTXFb6mHdkkv09ds=
+github.com/infinity6-ai/gox/commonz v0.0.0-20260904123318-490ac4a7cad8/go.mod h1:HGkl9WfDSBMzEf90X/xVxmpvBl45pMh3L1vq4qJTEuU=
+github.com/infinity6-ai/gox/httpz v0.0.0-20260904123711-8b63403400b9 h1:ZZqhUh0E4Nn20jTwAsN8derbDSm3vDlkoHnK58MXIWs=
+github.com/infinity6-ai/gox/httpz v0.0.0-20260904123711-8b63403400b9/go.mod h1:UAirWYNxkcoygcrRhYvdUlKpR/lNmniGysFCYjv0Q5s=
+github.com/infinity6-ai/gox/schemaz v0.0.0-20260904125743-50ffbf9dd11a h1:i0xeHNMpRhrmSy52Oh3880eTNud1fUy3QrCxjJN6wj0=
+github.com/infinity6-ai/gox/schemaz v0.0.0-20260904125743-50ffbf9dd11a/go.mod h1:9DIkGuM+D81t/2x86wAWNzoTASXleVdOomSSI06I5Uo=
 github.com/stretchr/testify v1.12.1 h1:EuwCh5fleGS7H32xRwO3wRGT7DxrDhLAT6FF8MpWDWE=
 github.com/stretchr/testify v1.12.1/go.mod h1:MDEgiDPPsNp5cuIrHPPCyornHKgEVbtFUmoNlxoYthg=
 go.yaml.in/yaml/v3 v3.0.5 h1:N6y/pJk8buWs9NY5ERU2HSMfm+IuD/OtfdAnq6kESPw=

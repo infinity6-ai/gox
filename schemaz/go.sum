@@ -1,14 +1,6 @@
-github.com/infinity6-ai/gox/commonz v0.0.0-20260903192535-16d3d3b691a2 h1:Ucax6VOOf6AUVl9Dj90pdDXndAgEAR5slEYHZqfA9HU=
-github.com/infinity6-ai/gox/commonz v0.0.0-20260903192535-16d3d3b691a2/go.mod h1:DVerByD4MmZwbAa67FflMOtwm6Qqf/3VbSS4lC1Q/g8=
-github.com/infinity6-ai/gox/httpz v0.0.0-20260903174430-aad09a8670d6 h1:uhtM5teILL1X+Jwh0kX8tj3LZdM7IArL2Gb4N8mGpQ0=
-github.com/infinity6-ai/gox/httpz v0.0.0-20260903174430-aad09a8670d6/go.mod h1:/j0bYH8vgzQvJbvTwBwZErkKdhdX/O32iFmXFz12SCA=
+github.com/infinity6-ai/gox/commonz v0.0.0-20260904123318-490ac4a7cad8 h1:phqdDaOYwRaQxQn/sd53Tf3r6oTJTXFb6mHdkkv09ds=
+github.com/infinity6-ai/gox/commonz v0.0.0-20260904123318-490ac4a7cad8/go.mod h1:HGkl9WfDSBMzEf90X/xVxmpvBl45pMh3L1vq4qJTEuU=
 github.com/stretchr/testify v1.12.1 h1:EuwCh5fleGS7H32xRwO3wRGT7DxrDhLAT6FF8MpWDWE=
 github.com/stretchr/testify v1.12.1/go.mod h1:MDEgiDPPsNp5cuIrHPPCyornHKgEVbtFUmoNlxoYthg=
 go.yaml.in/yaml/v3 v3.0.5 h1:N6y/pJk8buWs9NY5ERU2HSMfm+IuD/OtfdAnq6kESPw=
 go.yaml.in/yaml/v3 v3.0.5/go.mod h1:HVTZu1O7/Vkt2N+BFy8Zza+lnLsABggaTM2ZpNIGuKg=
-golang.org/x/exp v0.0.0-20260824195058-e88cd73687aa h1:QSyA8ishJCyT21kER9KwNt0b7BM3iRK4x9QXhjN5Fdk=
-golang.org/x/exp v0.0.0-20260824195058-e88cd73687aa/go.mod h1:zeBbvyFKDaLwa7CH/zI8KXt7gTl14SF7sO08Pl5jBCM=
-golang.org/x/sys v0.47.0 h1:o7XGOvZQCADBQQ4Y7VNq2dRWQR7JmOUW8Kxx4ZsNgWs=
-golang.org/x/sys v0.47.0/go.mod h1:4GL1E5IUh+htKOUEOaiffhrAeqysfVGipDYzABqnCmw=
-golang.org/x/term v0.45.0 h1:NwWyBmoJCbfTHpxrWoZ9C6/VxOf7ic219I8xZZFdrf0=
-golang.org/x/term v0.45.0/go.mod h1:9aqxs0blBcrm/n0L9QW0aRVD+ktan8ssZromtqJC43w=

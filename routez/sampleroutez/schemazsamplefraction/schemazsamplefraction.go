@@ -6,7 +6,7 @@ import (
 	"strconv"
 
 	"github.com/infinity6-ai/gox/httpz/server/httpzserver"
-	"github.com/infinity6-ai/gox/schemaz/schemahttpz"
+	"github.com/infinity6-ai/gox/routez/routez"
 	"github.com/infinity6-ai/gox/schemaz/schemaz"
 )
 
@@ -84,39 +84,19 @@ func Api() *schemaz.Api {
 }
 
 func Handlers(s *httpzserver.Server) {
-	schemahttpz.Add(s, &schemahttpz.Api[ReqParams, ReqQuery, ReqHeaders, ReqBody, *RespHeaders, *RespBody]{
+	routez.Add(s, &routez.Api[ReqParams, ReqQuery, ReqHeaders, ReqBody, *RespHeaders, *RespBody]{
 		Schema: Api(),
-		Handler: func(ctx context.Context, req *schemahttpz.Req[ReqParams, ReqQuery, ReqHeaders, ReqBody]) (*RespHeaders, *RespBody, error) {
-			return &RespHeaders{
-					ReqId: fmt.Sprintf("reason: %s, trace: %s", req.ReqBody.Reason, req.ReqHeaders.TraceId),
+		Handler: func(ctx context.Context, req *routez.Req[ReqParams, ReqQuery, ReqHeaders, ReqBody]) (*routez.Resp[*RespHeaders, *RespBody], error) {
+			return &routez.Resp[*RespHeaders, *RespBody]{
+				Status: 201,
+				RespHeaders: &RespHeaders{
+					ReqId: "reason: " + req.ReqBody.Reason + ", trace: " + req.ReqHeaders.TraceId,
 				},
-				&RespBody{
+				RespBody: &RespBody{
 					Display: fmt.Sprintf(fmt.Sprintf("%%.%df/%%.%df", int(req.QueryParams.Precision), int(req.QueryParams.Precision)), req.PathParams.Numerator, req.PathParams.Denumerator),
 					Result:  strconv.FormatFloat(req.PathParams.Numerator/req.PathParams.Denumerator, 'f', req.QueryParams.Precision, 64),
 				},
-				nil
+			}, nil
 		},
 	})
 }
-
-// type Req[P any, Q any, IH any, IB any] struct {
-// 	PathParams  P
-// 	QueryParams Q
-// 	ReqHeaders  IH
-// 	ReqBody     IB
-// }
-
-// type Resp[OH any, OB any] struct {
-// 	RespHeaders OH
-// 	RespBody    OB
-// }
-
-// func AddHandler[P any, Q any, IH any, IB any, OH any, OB any](s *httpzserver.Server, api schemaz.Api[IB, OB], handler func(ctx context.Context, req *Req[I, O], resp *Resp[I, O])) {
-
-// 	s.AddHandler(api.Method, api.Path, func(ctx context.Context, resp httpzserver.Resp, req *httpzserver.Req, params map[string]string) {
-// 		if api.ReqBody != nil {
-// 			// reqBody := jsonz.NewReader[I](req.Body).MustReadItem()
-// 		}
-
-// 	})
-// }
