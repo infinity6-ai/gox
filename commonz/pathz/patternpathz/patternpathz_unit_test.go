@@ -9,12 +9,12 @@ import (
 
 func TestUnitParse(t *testing.T) {
 	type testScenario struct {
-		name       string
-		patternStr string
-		expectErr  bool
-		errMsg     string
+		name             string
+		patternStr       string
+		expectErr        bool
+		errMsg           string
 		expectedSegments []string
-		expectedNames map[string]int
+		expectedNames    map[string]int
 	}
 
 	check := func(t *testing.T, s testScenario) {
@@ -38,21 +38,21 @@ func TestUnitParse(t *testing.T) {
 
 	t.Run("Valid pattern with parameters", func(t *testing.T) {
 		check(t, testScenario{
-			name:       "Valid pattern with parameters",
-			patternStr: "a/{p1}/b/{p2}/c",
-			expectErr:  false,
+			name:             "Valid pattern with parameters",
+			patternStr:       "a/{p1}/b/{p2}/c",
+			expectErr:        false,
 			expectedSegments: []string{"", "p1", "", "p2", ""},
-			expectedNames: map[string]int{"p1": 1, "p2": 3},
+			expectedNames:    map[string]int{"p1": 1, "p2": 3},
 		})
 	})
 
 	t.Run("Valid pattern without parameters", func(t *testing.T) {
 		check(t, testScenario{
-			name:       "Valid pattern without parameters",
-			patternStr: "a/b/c",
-			expectErr:  false,
+			name:             "Valid pattern without parameters",
+			patternStr:       "a/b/c",
+			expectErr:        false,
 			expectedSegments: []string{"", "", ""},
-			expectedNames: map[string]int{},
+			expectedNames:    map[string]int{},
 		})
 	})
 
@@ -76,31 +76,31 @@ func TestUnitParse(t *testing.T) {
 
 	t.Run("Pattern with trailing slash", func(t *testing.T) {
 		check(t, testScenario{
-			name:       "Pattern with trailing slash",
-			patternStr: "a/{p1}/",
-			expectErr:  false,
+			name:             "Pattern with trailing slash",
+			patternStr:       "a/{p1}/",
+			expectErr:        false,
 			expectedSegments: []string{"", "p1"},
-			expectedNames: map[string]int{"p1": 1},
+			expectedNames:    map[string]int{"p1": 1},
 		})
 	})
 
 	t.Run("Pattern with only parameter", func(t *testing.T) {
 		check(t, testScenario{
-			name:       "Pattern with only parameter",
-			patternStr: "{p1}",
-			expectErr:  false,
+			name:             "Pattern with only parameter",
+			patternStr:       "{p1}",
+			expectErr:        false,
 			expectedSegments: []string{"p1"},
-			expectedNames: map[string]int{"p1": 0},
+			expectedNames:    map[string]int{"p1": 0},
 		})
 	})
 
 	t.Run("Complex valid pattern", func(t *testing.T) {
 		check(t, testScenario{
-			name:       "Complex valid pattern",
-			patternStr: "/users/{id}/posts/{post_id}/comments",
-			expectErr:  false,
+			name:             "Complex valid pattern",
+			patternStr:       "/users/{id}/posts/{post_id}/comments",
+			expectErr:        false,
 			expectedSegments: []string{"", "id", "", "post_id", ""},
-			expectedNames: map[string]int{"id": 1, "post_id": 3},
+			expectedNames:    map[string]int{"id": 1, "post_id": 3},
 		})
 	})
 }
@@ -247,6 +247,7 @@ func TestUnitParsePath(t *testing.T) {
 		if s.expectErr {
 			require.Error(t, err, "Expected an error for scenario: %s", s.name)
 			require.Contains(t, err.Error(), s.errMsg, "Error message mismatch for scenario: %s", s.name)
+			require.ErrorIs(t, err, ErrMismatch, "Error message mismatch for scenario: %s", s.name)
 		} else {
 			require.NoError(t, err, "Did not expect an error for scenario: %s", s.name)
 			require.Equal(t, s.expectedParams, params, "Parsed parameters mismatch for scenario: %s", s.name)
@@ -256,10 +257,10 @@ func TestUnitParsePath(t *testing.T) {
 
 	t.Run("Parse with matching path and parameters", func(t *testing.T) {
 		check(t, testScenario{
-			name:          "Matching path",
-			patternStr:    "a/{p1}/b/{p2}/c",
-			pathToParse:   "a/value1/b/value2/c",
-			expectErr:     false,
+			name:           "Matching path",
+			patternStr:     "a/{p1}/b/{p2}/c",
+			pathToParse:    "a/value1/b/value2/c",
+			expectErr:      false,
 			expectedParams: map[string]string{"p1": "value1", "p2": "value2"},
 			expectedSuffix: nil, // No suffix expected
 		})
@@ -267,22 +268,22 @@ func TestUnitParsePath(t *testing.T) {
 
 	t.Run("Parse with path parents mismatch", func(t *testing.T) {
 		check(t, testScenario{
-			name:        "Path parents mismatch",
-			patternStr:  "/a/{p1}/b",
-			pathToParse: "a/value1/b", // Missing leading slash
-			expectErr:   true,
-			errMsg:      "path parents mismatch, pattern: /a/{p1}/b, path: a/value1/b",
+			name:           "Path parents mismatch",
+			patternStr:     "/a/{p1}/b",
+			pathToParse:    "a/value1/b", // Missing leading slash
+			expectErr:      true,
+			errMsg:         "path parents mismatch, pattern: /a/{p1}/b, path: a/value1/b",
 			expectedSuffix: nil,
 		})
 	})
 
 	t.Run("Parse with path length mismatch (pattern longer)", func(t *testing.T) {
 		check(t, testScenario{
-			name:        "Path length mismatch (pattern longer)",
-			patternStr:  "a/{p1}/b/c",
-			pathToParse: "a/value1/b",
-			expectErr:   true,
-			errMsg:      "path length mismatch, pattern: a/{p1}/b/c, path: a/value1/b",
+			name:           "Path length mismatch (pattern longer)",
+			patternStr:     "a/{p1}/b/c",
+			pathToParse:    "a/value1/b",
+			expectErr:      true,
+			errMsg:         "path length mismatch, pattern: a/{p1}/b/c, path: a/value1/b",
 			expectedSuffix: nil,
 		})
 	})
@@ -300,22 +301,22 @@ func TestUnitParsePath(t *testing.T) {
 
 	t.Run("Parse with static segment mismatch", func(t *testing.T) {
 		check(t, testScenario{
-			name:        "Static segment mismatch",
-			patternStr:  "a/{p1}/b",
-			pathToParse: "a/value1/d", // 'b' vs 'd'
-			expectErr:   true,
-			errMsg:      "path mismatch at segment 2: expected 'b', got 'd'",
+			name:           "Static segment mismatch",
+			patternStr:     "a/{p1}/b",
+			pathToParse:    "a/value1/d", // 'b' vs 'd'
+			expectErr:      true,
+			errMsg:         "path mismatch at segment 2: expected 'b', got 'd'",
 			expectedSuffix: nil,
 		})
 	})
 
 	t.Run("Parse with ending slash mismatch (pattern has, path not)", func(t *testing.T) {
 		check(t, testScenario{
-			name:        "Ending slash mismatch (pattern has)",
-			patternStr:  "a/b/",
-			pathToParse: "a/b",
-			expectErr:   true,
-			errMsg:      "ending slash mismatch, pattern: a/b/, path: a/b",
+			name:           "Ending slash mismatch (pattern has)",
+			patternStr:     "a/b/",
+			pathToParse:    "a/b",
+			expectErr:      true,
+			errMsg:         "ending slash mismatch, pattern: a/b/, path: a/b",
 			expectedSuffix: nil,
 		})
 	})
@@ -333,10 +334,10 @@ func TestUnitParsePath(t *testing.T) {
 
 	t.Run("Parse with no parameters", func(t *testing.T) {
 		check(t, testScenario{
-			name:          "No parameters",
-			patternStr:    "a/b/c",
-			pathToParse:   "a/b/c",
-			expectErr:     false,
+			name:           "No parameters",
+			patternStr:     "a/b/c",
+			pathToParse:    "a/b/c",
+			expectErr:      false,
 			expectedParams: map[string]string{},
 			expectedSuffix: nil,
 		})
@@ -344,10 +345,10 @@ func TestUnitParsePath(t *testing.T) {
 
 	t.Run("Parse with only parameter", func(t *testing.T) {
 		check(t, testScenario{
-			name:          "Only parameter",
-			patternStr:    "{p1}",
-			pathToParse:   "value1",
-			expectErr:     false,
+			name:           "Only parameter",
+			patternStr:     "{p1}",
+			pathToParse:    "value1",
+			expectErr:      false,
 			expectedParams: map[string]string{"p1": "value1"},
 			expectedSuffix: nil,
 		})
@@ -355,10 +356,10 @@ func TestUnitParsePath(t *testing.T) {
 
 	t.Run("Parse with complex valid path", func(t *testing.T) {
 		check(t, testScenario{
-			name:          "Complex valid path",
-			patternStr:    "/users/{id}/posts/{post_id}/comments",
-			pathToParse:   "/users/123/posts/456/comments",
-			expectErr:     false,
+			name:           "Complex valid path",
+			patternStr:     "/users/{id}/posts/{post_id}/comments",
+			pathToParse:    "/users/123/posts/456/comments",
+			expectErr:      false,
 			expectedParams: map[string]string{"id": "123", "post_id": "456"},
 			expectedSuffix: nil,
 		})
