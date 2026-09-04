@@ -52,24 +52,6 @@ func (p *Path) Join(others ...*Path) (*Path, error) {
 		return ret, fmt.Errorf("%w: joining '%s' to '%s' results in '%s' which is outside the base", ErrEscaped, p, others, ret)
 	}
 	return ret, nil
-
-	// otherStrs := make([]string, len(others))
-	// for i, o := range others {
-	// 	otherStrs[i] = o.String()
-	// }
-
-	// resultPathStr := path.Join(append([]string{p.String()}, otherStrs...)...)
-
-	// resultPath, err := Parse(resultPathStr)
-	// if err != nil {
-	// 	return nil, fmt.Errorf("cannot parse joined path: %w", err)
-	// }
-
-	// if !p.IsBaseOf(resultPath) {
-	// 	return resultPath, fmt.Errorf("%w: joining '%s' to '%s' results in '%s' which is outside the base", ErrEscaped, strings.Join(otherStrs, "/"), p, resultPath)
-	// }
-
-	// return resultPath, nil
 }
 
 func (p *Path) JoinString(others ...string) (*Path, error) {
