@@ -30,13 +30,13 @@ func (p *Path) Parent() (parent *Path, base string, hasEndingSlash bool) {
 			// This is an escaped path like "..", "../.."
 			if p.parents == 1 {
 				// For ".."
-				return nil, "", false
+				return nil, "", hasEndingSlash
 			}
 			// For "../.." etc.
 			return New(p.parents-1, []string{}, false), "", hasEndingSlash
 		}
 		// For "", "." or "/"
-		return nil, "", false
+		return nil, "", hasEndingSlash
 	}
 
 	base = p.parts[len(p.parts)-1]
@@ -48,7 +48,7 @@ func (p *Path) Parent() (parent *Path, base string, hasEndingSlash bool) {
 			return New(p.parents, []string{}, false), base, hasEndingSlash
 		}
 		// For "a" or "/a"
-		return nil, base, false
+		return nil, base, hasEndingSlash
 	}
 
 	parentPartsSlice := p.parts[:len(p.parts)-1]
