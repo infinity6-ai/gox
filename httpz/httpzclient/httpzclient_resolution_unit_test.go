@@ -20,7 +20,7 @@ func TestUnitClientPathResolution(t *testing.T) {
 	s := httpzserver.New(ctx, httpzserver.Options{LocalAddress: "localhost:0"})
 	defer s.Close()
 
-	s.AddHandler("GET", "/api/v1/test", func(ctx context.Context, resp httpzserver.Resp, req *httpzserver.Req, params map[string]string) {
+	s.AddHandler("GET", "/api/v1/test", func(ctx context.Context, resp httpzserver.Resp, req *httpzrequest.Req, params map[string]string) {
 		w := resp(http.StatusOK, http.Header{})
 		_, err := w.Write([]byte("path-prefix-test"))
 		require.NoError(t, err)
@@ -50,7 +50,7 @@ func TestUnitClientPathResolution(t *testing.T) {
 	})
 
 	t.Run("without path prefix", func(t *testing.T) {
-		s.AddHandler("GET", "/test", func(ctx context.Context, resp httpzserver.Resp, req *httpzserver.Req, params map[string]string) {
+		s.AddHandler("GET", "/test", func(ctx context.Context, resp httpzserver.Resp, req *httpzrequest.Req, params map[string]string) {
 			w := resp(http.StatusOK, http.Header{})
 			_, err := w.Write([]byte("no-prefix-test"))
 			require.NoError(t, err)
@@ -74,13 +74,13 @@ func TestUnitClientUrlResolution(t *testing.T) {
 	s := httpzserver.New(ctx, httpzserver.Options{LocalAddress: "localhost:0"})
 	defer s.Close()
 
-	s.AddHandler("GET", "/absolute-url-test", func(ctx context.Context, resp httpzserver.Resp, req *httpzserver.Req, params map[string]string) {
+	s.AddHandler("GET", "/absolute-url-test", func(ctx context.Context, resp httpzserver.Resp, req *httpzrequest.Req, params map[string]string) {
 		w := resp(http.StatusOK, http.Header{})
 		_, err := w.Write([]byte("absolute-url-response"))
 		require.NoError(t, err)
 	})
 
-	s.AddHandler("GET", "/relative-url-test", func(ctx context.Context, resp httpzserver.Resp, req *httpzserver.Req, params map[string]string) {
+	s.AddHandler("GET", "/relative-url-test", func(ctx context.Context, resp httpzserver.Resp, req *httpzrequest.Req, params map[string]string) {
 		w := resp(http.StatusOK, http.Header{})
 		_, err := w.Write([]byte("relative-url-response"))
 		require.NoError(t, err)

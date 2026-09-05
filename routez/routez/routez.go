@@ -7,12 +7,13 @@ import (
 	"github.com/infinity6-ai/gox/commonz/errorz"
 	"github.com/infinity6-ai/gox/commonz/jsonz"
 	"github.com/infinity6-ai/gox/commonz/jsonz/structjsonz"
+	"github.com/infinity6-ai/gox/httpz/httpzrequest"
 	"github.com/infinity6-ai/gox/httpz/httpzserver"
 	"github.com/infinity6-ai/gox/routez/apiz"
 	"github.com/infinity6-ai/gox/routez/internal/converter"
 )
 
-func parseRequest[P any, Q any, IH any, IB any, OH any, OB any](a *apiz.Api[P, Q, IH, IB, OH, OB], req *httpzserver.Req, params map[string]string) *apiz.Req[P, Q, IH, IB] {
+func parseRequest[P any, Q any, IH any, IB any, OH any, OB any](a *apiz.Api[P, Q, IH, IB, OH, OB], req *httpzrequest.Req, params map[string]string) *apiz.Req[P, Q, IH, IB] {
 	p, q, reqHeaders, reqBody := a.Zeros()
 	structjsonz.MustParseSingle(params, &p)
 	structjsonz.MustParse(req.Query, &q)
@@ -28,7 +29,7 @@ func parseRequest[P any, Q any, IH any, IB any, OH any, OB any](a *apiz.Api[P, Q
 
 func Register[P any, Q any, IH any, IB any, OH any, OB any](s *httpzserver.Server, apis ...*apiz.Api[P, Q, IH, IB, OH, OB]) {
 	for _, api := range apis {
-		s.AddHandler(api.Schema.Method, api.Schema.Path, func(ctx context.Context, resp httpzserver.Resp, req *httpzserver.Req, params map[string]string) {
+		s.AddHandler(api.Schema.Method, api.Schema.Path, func(ctx context.Context, resp httpzserver.Resp, req *httpzrequest.Req, params map[string]string) {
 			parsedReq := parseRequest(api, req, params)
 			parsedResp, err := api.Handler(ctx, parsedReq)
 			errorz.Check(err)

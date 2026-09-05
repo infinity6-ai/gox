@@ -10,6 +10,7 @@ import (
 	"testing"
 
 	"github.com/infinity6-ai/gox/commonz/errorz"
+	"github.com/infinity6-ai/gox/httpz/httpzrequest"
 	"github.com/infinity6-ai/gox/httpz/httpzserver"
 	"github.com/stretchr/testify/require"
 )
@@ -23,7 +24,7 @@ func TestUnitFilterAndHandlerInteraction(t *testing.T) {
 	s.Listen()
 
 	// First filter: wraps the request body and modifies response headers.
-	s.AddFilter(func(ctx context.Context, resp httpzserver.Resp, req *httpzserver.Req, next httpzserver.Handler) {
+	s.AddFilter(func(ctx context.Context, resp httpzserver.Resp, req *httpzrequest.Req, next httpzserver.Handler) {
 		preBody := strings.NewReader("reqpre-")
 		originalBody := req.Body
 		sufBody := strings.NewReader("-reqsuf")
@@ -38,7 +39,7 @@ func TestUnitFilterAndHandlerInteraction(t *testing.T) {
 	})
 
 	// Second filter: uses WrapResponse to modify headers and inject content around the handler's output.
-	s.AddFilter(func(ctx context.Context, resp httpzserver.Resp, req *httpzserver.Req, next httpzserver.Handler) {
+	s.AddFilter(func(ctx context.Context, resp httpzserver.Resp, req *httpzrequest.Req, next httpzserver.Handler) {
 		w := next.WrapResponse(ctx, resp, req, func(outStatus int, outHeaders http.Header) int {
 			outHeaders.Set("b", "x2") // Overrides header from filter 1
 			outHeaders.Set("c", "x2") // Set by filter 2
@@ -53,7 +54,7 @@ func TestUnitFilterAndHandlerInteraction(t *testing.T) {
 	})
 
 	// Handler for the specific route being tested.
-	s.AddHandler("POST", "/bla/{p1}/b/{p2}/c/*", func(ctx context.Context, resp httpzserver.Resp, req *httpzserver.Req, params map[string]string) {
+	s.AddHandler("POST", "/bla/{p1}/b/{p2}/c/*", func(ctx context.Context, resp httpzserver.Resp, req *httpzrequest.Req, params map[string]string) {
 		reqBody, err := io.ReadAll(req.Body)
 		errorz.Check(err)
 

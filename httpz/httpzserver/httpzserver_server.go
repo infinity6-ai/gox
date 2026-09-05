@@ -15,6 +15,8 @@ import (
 	"github.com/infinity6-ai/gox/commonz/pathz"
 	"github.com/infinity6-ai/gox/commonz/syncz/promise"
 	"github.com/infinity6-ai/gox/commonz/urlz"
+	"github.com/infinity6-ai/gox/httpz/httpzrequest"
+	"github.com/infinity6-ai/gox/httpz/internal/httpzhelper"
 )
 
 type tlogger logz.Type
@@ -114,15 +116,15 @@ func (s *Server) startServer() {
 	for i := len(s.filters) - 1; i >= 0; i-- {
 		filter := s.filters[i]
 		next := h
-		h = func(ctx context.Context, resp Resp, req *Req) {
+		h = func(ctx context.Context, resp Resp, req *httpzrequest.Req) {
 			filter(ctx, resp, req, next)
 		}
 	}
 
 	s.httpServer = &http.Server{
 		Handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			req := &Req{}
-			req.fromHttpRequest(r)
+			req := &httpzrequest.Req{}
+			httpzhelper.FromHttpRequest(r, req)
 			resp := func(status int, headers http.Header) io.Writer {
 				for k, v := range headers {
 					w.Header()[k] = v

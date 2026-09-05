@@ -19,7 +19,7 @@ func TestUnitClientWithServer(t *testing.T) {
 	s := httpzserver.New(ctx, httpzserver.Options{LocalAddress: "localhost:0"})
 	defer s.Close()
 
-	s.AddHandler("POST", "/test", func(ctx context.Context, resp httpzserver.Resp, req *httpzserver.Req, params map[string]string) {
+	s.AddHandler("POST", "/test", func(ctx context.Context, resp httpzserver.Resp, req *httpzrequest.Req, params map[string]string) {
 		body, err := io.ReadAll(req.Body)
 		require.NoError(t, err)
 

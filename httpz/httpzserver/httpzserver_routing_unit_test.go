@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"testing"
 
+	"github.com/infinity6-ai/gox/httpz/httpzrequest"
 	"github.com/infinity6-ai/gox/httpz/httpzserver"
 	"github.com/stretchr/testify/require"
 )
@@ -31,7 +32,7 @@ func TestUnitRouting(t *testing.T) {
 		srv.Listen()
 
 		handlerCalled := false
-		srv.AddHandler(s.registeredMethod, s.registeredPath, func(ctx context.Context, resp httpzserver.Resp, req *httpzserver.Req, params map[string]string) {
+		srv.AddHandler(s.registeredMethod, s.registeredPath, func(ctx context.Context, resp httpzserver.Resp, req *httpzrequest.Req, params map[string]string) {
 			handlerCalled = true
 			require.Equal(t, s.expectedParams, params)
 			w := resp(s.expectedStatus, nil)

@@ -10,6 +10,7 @@ import (
 	"github.com/infinity6-ai/gox/commonz/pathz"
 	"github.com/infinity6-ai/gox/commonz/pathz/patternpathz"
 	"github.com/infinity6-ai/gox/commonz/validation/checker"
+	"github.com/infinity6-ai/gox/httpz/httpzrequest"
 )
 
 var allowedMethods = []string{
@@ -25,9 +26,9 @@ var allowedMethods = []string{
 	"*",
 }
 
-type Handler func(ctx context.Context, resp Resp, req *Req)
+type Handler func(ctx context.Context, resp Resp, req *httpzrequest.Req)
 
-func (h Handler) WrapResponse(ctx context.Context, resp Resp, req *Req, fixHeaders func(outStatus int, outHeaders http.Header) int, fixWriter func(outWriter io.Writer) io.Writer) io.Writer {
+func (h Handler) WrapResponse(ctx context.Context, resp Resp, req *httpzrequest.Req, fixHeaders func(outStatus int, outHeaders http.Header) int, fixWriter func(outWriter io.Writer) io.Writer) io.Writer {
 	var rWriter io.Writer
 	nResp := func(nStatus int, nHeaders http.Header) io.Writer {
 		status := fixHeaders(nStatus, nHeaders)
@@ -39,9 +40,9 @@ func (h Handler) WrapResponse(ctx context.Context, resp Resp, req *Req, fixHeade
 	return rWriter
 }
 
-type HandlerPattern func(ctx context.Context, resp Resp, req *Req, params map[string]string)
+type HandlerPattern func(ctx context.Context, resp Resp, req *httpzrequest.Req, params map[string]string)
 
-type Filter func(ctx context.Context, resp Resp, req *Req, next Handler)
+type Filter func(ctx context.Context, resp Resp, req *httpzrequest.Req, next Handler)
 
 func (s *Server) AddFilter(filter Filter) {
 	s.filters = append(s.filters, filter)
@@ -75,7 +76,7 @@ func (s *Server) AddHandler(method string, pattern string, handler HandlerPatter
 	s.patternHandlers = append(s.patternHandlers, *ph)
 }
 
-func (s *Server) route(ctx context.Context, resp Resp, req *Req) {
+func (s *Server) route(ctx context.Context, resp Resp, req *httpzrequest.Req) {
 	for _, ph := range s.patternHandlers {
 		if ph.Method != "*" && ph.Method != req.Method {
 			continue
