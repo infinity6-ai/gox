@@ -8,6 +8,7 @@ import (
 
 	"github.com/infinity6-ai/gox/commonz/deferz"
 	"github.com/infinity6-ai/gox/commonz/urlz"
+	"github.com/infinity6-ai/gox/httpz/httpzrequest"
 )
 
 var defaultHttpClient = &http.Client{
@@ -49,19 +50,19 @@ func (c *Client) AddFilter(filter Filter) {
 	c.filters = append(c.filters, filter)
 }
 
-func (c *Client) Do(ctx context.Context, req *Req) (*Resp, error) {
+func (c *Client) Do(ctx context.Context, req *httpzrequest.Req) (*Resp, error) {
 	var h Handler = c.send
 	for i := len(c.filters) - 1; i >= 0; i-- {
 		filter := c.filters[i]
 		next := h
-		h = func(ctx context.Context, req *Req) (*Resp, error) {
+		h = func(ctx context.Context, req *httpzrequest.Req) (*Resp, error) {
 			return filter(ctx, req, next)
 		}
 	}
 	return h(ctx, req)
 }
 
-func (c *Client) send(ctx context.Context, req *Req) (*Resp, error) {
+func (c *Client) send(ctx context.Context, req *httpzrequest.Req) (*Resp, error) {
 	dfz := deferz.New(ctx)
 	defer dfz.Close()
 
@@ -91,7 +92,7 @@ func (c *Client) send(ctx context.Context, req *Req) (*Resp, error) {
 	return resp, nil
 }
 
-func (c *Client) buildURL(req *Req) (string, error) {
+func (c *Client) buildURL(req *httpzrequest.Req) (string, error) {
 	u, err := req.ResolveUrl(c.Options.BaseUrl)
 	// u, err := url.Parse(c.Options.BaseUrl)
 	if err != nil {

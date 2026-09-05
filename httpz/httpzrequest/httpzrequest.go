@@ -1,4 +1,4 @@
-package httpzclient
+package httpzrequest
 
 import (
 	"fmt"

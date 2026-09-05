@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/infinity6-ai/gox/httpz/httpzclient"
+	"github.com/infinity6-ai/gox/httpz/httpzrequest"
 	"github.com/infinity6-ai/gox/httpz/httpzserver"
 	"github.com/stretchr/testify/require"
 )
@@ -21,7 +22,7 @@ func TestUnitClientErrorHandling(t *testing.T) {
 	t.Run("Request execution fails", func(t *testing.T) {
 		// Using a non-routable IP address to simulate a network error
 		client := httpzclient.New(ctx, httpzclient.Options{BaseUrl: s.Base()})
-		req := httpzclient.NewReq("GET", "/")
+		req := httpzrequest.NewReq("GET", "/")
 		_, err := client.Do(ctx, req)
 		require.Error(t, err)
 		require.Contains(t, err.Error(), "failed to execute request")

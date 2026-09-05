@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/infinity6-ai/gox/httpz/httpzclient"
+	"github.com/infinity6-ai/gox/httpz/httpzrequest"
 	"github.com/infinity6-ai/gox/httpz/httpzserver"
 	"github.com/stretchr/testify/require"
 )
@@ -41,7 +42,7 @@ func TestUnitClientWithServer(t *testing.T) {
 	client := httpzclient.New(ctx, httpzclient.Options{BaseUrl: s.Base()})
 
 	// Add a filter to the client
-	client.AddFilter(func(ctx context.Context, req *httpzclient.Req, next httpzclient.Handler) (*httpzclient.Resp, error) {
+	client.AddFilter(func(ctx context.Context, req *httpzrequest.Req, next httpzclient.Handler) (*httpzclient.Resp, error) {
 		// Modify request
 		req.AddHeader("X-Client-Filter", "client-filter-value")
 		originalBody := req.Body
@@ -57,7 +58,7 @@ func TestUnitClientWithServer(t *testing.T) {
 	})
 
 	// 3. Make request
-	req := httpzclient.NewReq("POST", "/test").
+	req := httpzrequest.NewReq("POST", "/test").
 		SetBody(strings.NewReader("original-body"))
 
 	resp, err := client.Do(ctx, req)

@@ -8,11 +8,12 @@ import (
 	"github.com/infinity6-ai/gox/commonz/jsonz"
 	"github.com/infinity6-ai/gox/commonz/jsonz/structjsonz"
 	"github.com/infinity6-ai/gox/httpz/httpzclient"
+	"github.com/infinity6-ai/gox/httpz/httpzrequest"
 	"github.com/infinity6-ai/gox/routez/apiz"
 	"github.com/infinity6-ai/gox/routez/internal/converter"
 )
 
-func parseRequest[P any, Q any, IH any, IB any, OH any, OB any](api *apiz.Api[P, Q, IH, IB, OH, OB], req *apiz.Req[P, Q, IH, IB]) (*httpzclient.Req, error) {
+func parseRequest[P any, Q any, IH any, IB any, OH any, OB any](api *apiz.Api[P, Q, IH, IB, OH, OB], req *apiz.Req[P, Q, IH, IB]) (*httpzrequest.Req, error) {
 	p, err := structjsonz.FormatSingle(&req.PathParams)
 	if err != nil {
 		return nil, fmt.Errorf("%w: error formatting path params", err)
@@ -26,7 +27,7 @@ func parseRequest[P any, Q any, IH any, IB any, OH any, OB any](api *apiz.Api[P,
 		return nil, fmt.Errorf("%w: error formatting req headers", err)
 	}
 
-	ret, err := httpzclient.FormatReq(api.Schema.Method, api.Schema.Path, p)
+	ret, err := httpzrequest.FormatReq(api.Schema.Method, api.Schema.Path, p)
 	if err != nil {
 		return nil, fmt.Errorf("%w: error formatting request", err)
 	}

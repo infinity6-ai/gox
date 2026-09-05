@@ -5,12 +5,12 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/infinity6-ai/gox/httpz/httpzclient"
+	"github.com/infinity6-ai/gox/httpz/httpzrequest"
 	"github.com/stretchr/testify/require"
 )
 
 func TestUnitClientRequestBuilding(t *testing.T) {
-	req := httpzclient.NewReq("GET", "/path")
+	req := httpzrequest.NewReq("GET", "/path")
 	require.NotNil(t, req)
 	require.Equal(t, "GET", req.Method)
 	require.Equal(t, "/path", req.Path.String())

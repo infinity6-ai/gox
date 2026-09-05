@@ -7,6 +7,7 @@ import (
 	"github.com/infinity6-ai/gox/commonz/errorz"
 	"github.com/infinity6-ai/gox/commonz/jsonz"
 	"github.com/infinity6-ai/gox/httpz/httpzclient"
+	"github.com/infinity6-ai/gox/httpz/httpzrequest"
 	"github.com/infinity6-ai/gox/httpz/httpzserver"
 	"github.com/infinity6-ai/gox/routez/apiclientz"
 	"github.com/infinity6-ai/gox/routez/apiz"
@@ -28,7 +29,7 @@ func TestUnitBasic(t *testing.T) {
 		BaseUrl: s.Base(),
 	})
 
-	req := httpzclient.NewReq("POST", "/api/gox/dataschema/sample/fraction/10/3").
+	req := httpzrequest.NewReq("POST", "/api/gox/dataschema/sample/fraction/10/3").
 		SetQuery("precision", "3").
 		SetHeader("Trace-Id", "xx").
 		SetBody(strings.NewReader("{\"reason\":\"myreason\"}"))
