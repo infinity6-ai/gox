@@ -9,28 +9,28 @@ import (
 	"github.com/infinity6-ai/gox/schemaz/schemaz"
 )
 
-type ReqParams struct {
+type Fraction struct {
 	Numerator   float64 `json:"numerator"`
 	Denumerator float64 `json:"denumerator"`
 }
 
-type ReqQuery struct {
+type Precision struct {
 	Precision int `json:"precision"`
 }
 
-type ReqHeaders struct {
+type Options struct {
 	TraceId string `json:"trace_id"`
 }
 
-type ReqBody struct {
+type Reason struct {
 	Reason string `json:"reason"`
 }
 
-type RespHeaders struct {
+type Meta struct {
 	ReqId string `json:"req_id"`
 }
 
-type RespBody struct {
+type Result struct {
 	Display string `json:"display"`
 	Result  string `json:"result"`
 }
@@ -82,16 +82,16 @@ func Schema() *schemaz.Api {
 	}
 }
 
-func Api() *apiz.Api[ReqParams, ReqQuery, ReqHeaders, ReqBody, RespHeaders, RespBody] {
-	return &apiz.Api[ReqParams, ReqQuery, ReqHeaders, ReqBody, RespHeaders, RespBody]{
+func Api() *apiz.Api[Fraction, Precision, Options, Reason, Meta, Result] {
+	return &apiz.Api[Fraction, Precision, Options, Reason, Meta, Result]{
 		Schema: Schema(),
-		Handler: func(ctx context.Context, req *apiz.Req[ReqParams, ReqQuery, ReqHeaders, ReqBody]) (*apiz.Resp[RespHeaders, RespBody], error) {
-			return &apiz.Resp[RespHeaders, RespBody]{
+		Handler: func(ctx context.Context, req *apiz.Req[Fraction, Precision, Options, Reason]) (*apiz.Resp[Meta, Result], error) {
+			return &apiz.Resp[Meta, Result]{
 				Status: 201,
-				RespHeaders: RespHeaders{
+				RespHeaders: Meta{
 					ReqId: "reason: " + req.ReqBody.Reason + ", trace: " + req.ReqHeaders.TraceId,
 				},
-				RespBody: RespBody{
+				RespBody: Result{
 					Display: fmt.Sprintf(fmt.Sprintf("%%.%df/%%.%df", int(req.QueryParams.Precision), int(req.QueryParams.Precision)), req.PathParams.Numerator, req.PathParams.Denumerator),
 					Result:  strconv.FormatFloat(req.PathParams.Numerator/req.PathParams.Denumerator, 'f', req.QueryParams.Precision, 64),
 				},

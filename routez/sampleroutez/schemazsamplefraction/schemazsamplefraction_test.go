@@ -39,33 +39,33 @@ func TestUnitBasic(t *testing.T) {
 	require.Equal(t, 201, resp.StatusCode)
 	require.Equal(t, "application/json", resp.Headers.Get("content-type"))
 	require.Equal(t, "reason: myreason, trace: xx", resp.Headers.Get("Req-Id"))
-	respBody := jsonz.MustParseReader(resp.Body, &schemazsamplefraction.RespBody{})
-	require.Equal(t, &schemazsamplefraction.RespBody{
+	respBody := jsonz.MustParseReader(resp.Body, &schemazsamplefraction.Result{})
+	require.Equal(t, &schemazsamplefraction.Result{
 		Display: "10.000/3.000",
 		Result:  "3.333",
 	}, respBody)
 
 	ac := apiclientz.Get(c, schemazsamplefraction.Api())
 
-	acResp, err := ac(ctx, &apiz.Req[schemazsamplefraction.ReqParams, schemazsamplefraction.ReqQuery, schemazsamplefraction.ReqHeaders, schemazsamplefraction.ReqBody]{
-		PathParams: schemazsamplefraction.ReqParams{
+	acResp, err := ac(ctx, &apiz.Req[schemazsamplefraction.Fraction, schemazsamplefraction.Precision, schemazsamplefraction.Options, schemazsamplefraction.Reason]{
+		PathParams: schemazsamplefraction.Fraction{
 			Numerator:   10,
 			Denumerator: 3,
 		},
-		QueryParams: schemazsamplefraction.ReqQuery{
+		QueryParams: schemazsamplefraction.Precision{
 			Precision: 3,
 		},
-		ReqHeaders: schemazsamplefraction.ReqHeaders{
+		ReqHeaders: schemazsamplefraction.Options{
 			TraceId: "xx",
 		},
-		ReqBody: schemazsamplefraction.ReqBody{
+		ReqBody: schemazsamplefraction.Reason{
 			Reason: "myreason",
 		},
 	})
 	errorz.Check(err)
 	require.Equal(t, 201, acResp.Status)
 	require.Equal(t, "reason: myreason, trace: xx", acResp.RespHeaders.ReqId)
-	require.Equal(t, schemazsamplefraction.RespBody{
+	require.Equal(t, schemazsamplefraction.Result{
 		Display: "10.000/3.000",
 		Result:  "3.333",
 	}, acResp.RespBody)
