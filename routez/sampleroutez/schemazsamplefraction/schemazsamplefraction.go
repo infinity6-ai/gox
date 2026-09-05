@@ -99,3 +99,35 @@ func Api() *apiz.Api[Fraction, Precision, Options, Reason, Meta, Result] {
 		},
 	}
 }
+
+type FractionReqResp struct {
+	Fraction  *Fraction
+	Precision *Precision
+	Options   *Options
+	Reason    *Reason
+	Meta      *Meta
+	Result    *Result
+}
+
+func (f *FractionReqResp) GetDataRefs() *apiz.DataRefs {
+	return &apiz.DataRefs{
+		PathParams:  f.Fraction,
+		QueryParams: f.Precision,
+		ReqHeaders:  f.Options,
+		ReqBody:     f.Reason,
+		RespHeaders: f.Meta,
+		RespBody:    f.Result,
+	}
+}
+
+func ApiV2() *apiz.ApiV2[*FractionReqResp] {
+	return &apiz.ApiV2[*FractionReqResp]{
+		Schema: Schema(),
+		HandlerV2: func(ctx context.Context, reqResp *FractionReqResp) (int, error) {
+			reqResp.Meta.ReqId = "reason: " + reqResp.Reason.Reason + ", trace: " + reqResp.Options.TraceId
+			reqResp.Result.Display = fmt.Sprintf(fmt.Sprintf("%%.%df/%%.%df", int(reqResp.Precision.Precision), int(reqResp.Precision.Precision)), reqResp.Fraction.Numerator, reqResp.Fraction.Denumerator)
+			reqResp.Result.Result = strconv.FormatFloat(reqResp.Fraction.Numerator/reqResp.Fraction.Denumerator, 'f', reqResp.Precision.Precision, 64)
+			return 201, nil
+		},
+	}
+}
