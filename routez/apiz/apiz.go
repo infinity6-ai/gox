@@ -2,7 +2,9 @@ package apiz
 
 import (
 	"context"
+	"reflect"
 
+	"github.com/infinity6-ai/gox/commonz/validation/checker"
 	"github.com/infinity6-ai/gox/schemaz/schemaz"
 )
 
@@ -16,10 +18,25 @@ type DataRefs struct {
 }
 
 type ReqResp interface {
+	NewDataRefs()
 	GetDataRefs() *DataRefs
 }
 
 type HandlerV2[T ReqResp] func(ctx context.Context, reqResp T) (int, error)
+
+type ApiV2[T ReqResp] struct {
+	Schema    *schemaz.Api
+	HandlerV2 HandlerV2[T]
+}
+
+func (a *ApiV2[T]) MewReqResp() T {
+	var v T
+	t := reflect.TypeOf(&v).Elem()
+	checker.Equal(reflect.Ptr, t.Kind(), "it must be a pointer: %T %T", v, t)
+	ret := reflect.New(t.Elem()).Interface().(T)
+	ret.NewDataRefs()
+	return ret
+}
 
 type Req[P any, Q any, IH any, IB any] struct {
 	PathParams  P
@@ -47,13 +64,4 @@ func (a *Api[P, Q, IH, IB, OH, OB]) Zeros() (P, Q, IH, IB) {
 	var reqHeaders IH
 	var reqBody IB
 	return p, q, reqHeaders, reqBody
-}
-
-type ApiV2[T ReqResp] struct {
-	Schema    *schemaz.Api
-	HandlerV2 HandlerV2[T]
-}
-
-func (a *ApiV2[T]) MewReqResp() T {
-	return *new(T)
 }

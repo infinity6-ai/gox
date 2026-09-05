@@ -109,6 +109,15 @@ type FractionReqResp struct {
 	Result    *Result
 }
 
+func (f *FractionReqResp) NewDataRefs() {
+	f.Fraction = &Fraction{}
+	f.Precision = &Precision{}
+	f.Options = &Options{}
+	f.Reason = &Reason{}
+	f.Meta = &Meta{}
+	f.Result = &Result{}
+}
+
 func (f *FractionReqResp) GetDataRefs() *apiz.DataRefs {
 	return &apiz.DataRefs{
 		PathParams:  f.Fraction,

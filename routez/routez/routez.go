@@ -53,7 +53,7 @@ func parseRequestV2[T apiz.ReqResp](a *apiz.ApiV2[T], req *httpzrequest.Req, par
 	return reqResp
 }
 
-func writeResponse[T apiz.ReqResp](api *apiz.ApiV2[T], status int, resp httpzserver.Resp, reqResp T, formattedHeaders http.Header) {
+func writeResponse[T apiz.ReqResp](status int, resp httpzserver.Resp, reqResp T, formattedHeaders http.Header) {
 	refs := reqResp.GetDataRefs()
 	mapRespHedaers := structjsonz.MustFormat(refs.RespHeaders)
 	converter.Json2Header(mapRespHedaers, formattedHeaders)
@@ -69,7 +69,7 @@ func RegisterV2[T apiz.ReqResp](s *httpzserver.Server, apis ...*apiz.ApiV2[T]) {
 			errorz.Check(err)
 			formattedHeaders := make(http.Header)
 			formattedHeaders.Set("Content-Type", "application/json")
-			writeResponse(api, status, resp, reqResp, formattedHeaders)
+			writeResponse(status, resp, reqResp, formattedHeaders)
 		})
 	}
 }

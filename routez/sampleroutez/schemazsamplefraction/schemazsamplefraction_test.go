@@ -23,7 +23,8 @@ func TestUnitBasic(t *testing.T) {
 	s.Listen()
 	s.Start()
 
-	routez.Register(s, schemazsamplefraction.Api())
+	// routez.Register(s, schemazsamplefraction.Api())
+	routez.RegisterV2(s, schemazsamplefraction.ApiV2())
 
 	c := httpzclient.New(ctx, httpzclient.Options{
 		BaseUrl: s.Base(),
