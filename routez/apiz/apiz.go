@@ -6,6 +6,21 @@ import (
 	"github.com/infinity6-ai/gox/schemaz/schemaz"
 )
 
+type ReqV2 interface {
+	GetPathParams() any
+	GetQueryParams() any
+	GetReqHeaders() any
+	GetReqBody() any
+}
+
+type RespV2 interface {
+	SetStatus(status int)
+	GetRespHeaders() any
+	GetRespBody() any
+}
+
+type HandlerV2 func(ctx context.Context, resp RespV2, req ReqV2) error
+
 type Req[P any, Q any, IH any, IB any] struct {
 	PathParams  P
 	QueryParams Q
@@ -22,8 +37,9 @@ type Resp[OH any, OB any] struct {
 type Handler[P any, Q any, IH any, IB any, OH any, OB any] func(ctx context.Context, req *Req[P, Q, IH, IB]) (*Resp[OH, OB], error)
 
 type Api[P any, Q any, IH any, IB any, OH any, OB any] struct {
-	Schema  *schemaz.Api
-	Handler Handler[P, Q, IH, IB, OH, OB]
+	Schema    *schemaz.Api
+	Handler   Handler[P, Q, IH, IB, OH, OB]
+	HandlerV2 HandlerV2
 }
 
 func (a *Api[P, Q, IH, IB, OH, OB]) Zeros() (P, Q, IH, IB) {
