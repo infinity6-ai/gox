@@ -82,24 +82,6 @@ func Schema() *schemaz.Api {
 	}
 }
 
-func Api() *apiz.Api[Fraction, Precision, Options, Reason, Meta, Result] {
-	return &apiz.Api[Fraction, Precision, Options, Reason, Meta, Result]{
-		Schema: Schema(),
-		Handler: func(ctx context.Context, req *apiz.Req[Fraction, Precision, Options, Reason]) (*apiz.Resp[Meta, Result], error) {
-			return &apiz.Resp[Meta, Result]{
-				Status: 201,
-				RespHeaders: Meta{
-					ReqId: "reason: " + req.ReqBody.Reason + ", trace: " + req.ReqHeaders.TraceId,
-				},
-				RespBody: Result{
-					Display: fmt.Sprintf(fmt.Sprintf("%%.%df/%%.%df", int(req.QueryParams.Precision), int(req.QueryParams.Precision)), req.PathParams.Numerator, req.PathParams.Denumerator),
-					Result:  strconv.FormatFloat(req.PathParams.Numerator/req.PathParams.Denumerator, 'f', req.QueryParams.Precision, 64),
-				},
-			}, nil
-		},
-	}
-}
-
 type FractionReqResp struct {
 	Fraction  *Fraction
 	Precision *Precision
