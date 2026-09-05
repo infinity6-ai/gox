@@ -30,7 +30,7 @@ func TestUnitClientPathResolution(t *testing.T) {
 
 	t.Run("with path prefix and trailing slash", func(t *testing.T) {
 		client := httpzclient.New(ctx, httpzclient.Options{BaseUrl: s.Base().MustJoinPathString("/api/v1/")})
-		req := httpzrequest.NewReq("GET", "test")
+		req := httpzrequest.New("GET", "test")
 		resp, err := client.Do(ctx, req)
 		require.NoError(t, err)
 		defer resp.Body.Close()
@@ -43,7 +43,7 @@ func TestUnitClientPathResolution(t *testing.T) {
 
 	t.Run("with path prefix and no trailing slash", func(t *testing.T) {
 		client := httpzclient.New(ctx, httpzclient.Options{BaseUrl: s.Base().MustJoinPathString("/api/v1")})
-		req := httpzrequest.NewReq("GET", "/test")
+		req := httpzrequest.New("GET", "/test")
 		_, err := client.Do(ctx, req)
 		require.Error(t, err)
 		require.Contains(t, err.Error(), "path escaped error")
@@ -57,7 +57,7 @@ func TestUnitClientPathResolution(t *testing.T) {
 		})
 
 		client := httpzclient.New(ctx, httpzclient.Options{BaseUrl: s.Base()})
-		req := httpzrequest.NewReq("GET", "/test")
+		req := httpzrequest.New("GET", "/test")
 		resp, err := client.Do(ctx, req)
 		require.NoError(t, err)
 		defer resp.Body.Close()

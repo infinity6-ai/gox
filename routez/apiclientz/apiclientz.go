@@ -27,7 +27,7 @@ func parseRequest[P any, Q any, IH any, IB any, OH any, OB any](api *apiz.Api[P,
 		return nil, fmt.Errorf("%w: error formatting req headers", err)
 	}
 
-	ret, err := httpzrequest.FormatReq(api.Schema.Method, api.Schema.Path, p)
+	ret, err := httpzrequest.Format(api.Schema.Method, api.Schema.Path, p)
 	if err != nil {
 		return nil, fmt.Errorf("%w: error formatting request", err)
 	}

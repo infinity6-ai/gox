@@ -21,7 +21,7 @@ type Req struct {
 	Body    io.Reader
 }
 
-func FormatReq(method string, path string, params map[string]string) (*Req, error) {
+func Format(method string, path string, params map[string]string) (*Req, error) {
 	p := pathz.MustParse(path)
 	if len(params) > 0 {
 		pattern, err := patternpathz.Parse(p)
@@ -41,13 +41,13 @@ func FormatReq(method string, path string, params map[string]string) (*Req, erro
 	}, nil
 }
 
-func MustFormatReq(method string, path string, params map[string]string) *Req {
-	req, err := FormatReq(method, path, params)
+func MustFormat(method string, path string, params map[string]string) *Req {
+	req, err := Format(method, path, params)
 	errorz.Check(err)
 	return req
 }
 
-func NewReq(method string, path string) *Req {
+func New(method string, path string) *Req {
 	return &Req{
 		Method:  method,
 		Path:    pathz.MustParse(path),

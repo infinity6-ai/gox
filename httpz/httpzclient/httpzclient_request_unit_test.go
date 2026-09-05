@@ -10,7 +10,7 @@ import (
 )
 
 func TestUnitClientRequestBuilding(t *testing.T) {
-	req := httpzrequest.NewReq("GET", "/path")
+	req := httpzrequest.New("GET", "/path")
 	require.NotNil(t, req)
 	require.Equal(t, "GET", req.Method)
 	require.Equal(t, "/path", req.Path.String())

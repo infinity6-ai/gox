@@ -22,7 +22,7 @@ func TestUnitClientErrorHandling(t *testing.T) {
 	t.Run("Request execution fails", func(t *testing.T) {
 		// Using a non-routable IP address to simulate a network error
 		client := httpzclient.New(ctx, httpzclient.Options{BaseUrl: s.Base()})
-		req := httpzrequest.NewReq("GET", "/")
+		req := httpzrequest.New("GET", "/")
 		_, err := client.Do(ctx, req)
 		require.Error(t, err)
 		require.Contains(t, err.Error(), "failed to execute request")

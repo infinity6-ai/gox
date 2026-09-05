@@ -58,7 +58,7 @@ func TestUnitClientWithServer(t *testing.T) {
 	})
 
 	// 3. Make request
-	req := httpzrequest.NewReq("POST", "/test").
+	req := httpzrequest.New("POST", "/test").
 		SetBody(strings.NewReader("original-body"))
 
 	resp, err := client.Do(ctx, req)
