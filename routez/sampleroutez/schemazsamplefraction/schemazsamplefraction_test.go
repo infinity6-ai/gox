@@ -87,8 +87,6 @@ func TestUnitBasic(t *testing.T) {
 		Reason: &schemazsamplefraction.Reason{
 			Reason: "myreason",
 		},
-		Meta:   &schemazsamplefraction.Meta{},
-		Result: &schemazsamplefraction.Result{},
 	}
 	acV2Resp, err := acV2(ctx, reqResp)
 	errorz.Check(err)

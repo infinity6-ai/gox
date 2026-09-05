@@ -109,16 +109,25 @@ type FractionReqResp struct {
 	Result    *Result
 }
 
-func (f *FractionReqResp) NewDataRefs() {
-	f.Fraction = &Fraction{}
-	f.Precision = &Precision{}
-	f.Options = &Options{}
-	f.Reason = &Reason{}
-	f.Meta = &Meta{}
-	f.Result = &Result{}
-}
-
 func (f *FractionReqResp) GetDataRefs() *apiz.DataRefs {
+	if f.Fraction == nil {
+		f.Fraction = &Fraction{}
+	}
+	if f.Precision == nil {
+		f.Precision = &Precision{}
+	}
+	if f.Options == nil {
+		f.Options = &Options{}
+	}
+	if f.Reason == nil {
+		f.Reason = &Reason{}
+	}
+	if f.Meta == nil {
+		f.Meta = &Meta{}
+	}
+	if f.Result == nil {
+		f.Result = &Result{}
+	}
 	return &apiz.DataRefs{
 		PathParams:  f.Fraction,
 		QueryParams: f.Precision,

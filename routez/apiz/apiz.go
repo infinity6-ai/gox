@@ -18,7 +18,6 @@ type DataRefs struct {
 }
 
 type ReqResp interface {
-	NewDataRefs()
 	GetDataRefs() *DataRefs
 }
 
@@ -34,7 +33,6 @@ func (a *ApiV2[T]) MewReqResp() T {
 	t := reflect.TypeOf(&v).Elem()
 	checker.Equal(reflect.Ptr, t.Kind(), "it must be a pointer: %T %T", v, t)
 	ret := reflect.New(t.Elem()).Interface().(T)
-	ret.NewDataRefs()
 	return ret
 }
 
