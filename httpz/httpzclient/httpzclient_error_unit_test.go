@@ -3,8 +3,8 @@ package httpzclient_test
 import (
 	"testing"
 
-	"github.com/infinity6-ai/gox/httpz/client/httpzclient"
-	"github.com/infinity6-ai/gox/httpz/server/httpzserver"
+	"github.com/infinity6-ai/gox/httpz/httpzclient"
+	"github.com/infinity6-ai/gox/httpz/httpzserver"
 	"github.com/stretchr/testify/require"
 )
 

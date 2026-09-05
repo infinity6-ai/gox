@@ -5,7 +5,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/infinity6-ai/gox/httpz/client/httpzclient"
+	"github.com/infinity6-ai/gox/httpz/httpzclient"
 	"github.com/stretchr/testify/require"
 )
 
