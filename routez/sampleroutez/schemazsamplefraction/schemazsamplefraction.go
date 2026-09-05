@@ -123,7 +123,7 @@ func (f *FractionReqResp) GetDataRefs() *apiz.DataRefs {
 func Api() *apiz.Api[*FractionReqResp] {
 	return &apiz.Api[*FractionReqResp]{
 		Schema: Schema(),
-		HandlerV2: func(ctx context.Context, reqResp *FractionReqResp) (int, error) {
+		Handler: func(ctx context.Context, reqResp *FractionReqResp) (int, error) {
 			reqResp.Meta.ReqId = "reason: " + reqResp.Reason.Reason + ", trace: " + reqResp.Options.TraceId
 			reqResp.Result.Display = fmt.Sprintf(fmt.Sprintf("%%.%df/%%.%df", int(reqResp.Precision.Precision), int(reqResp.Precision.Precision)), reqResp.Fraction.Numerator, reqResp.Fraction.Denumerator)
 			reqResp.Result.Result = strconv.FormatFloat(reqResp.Fraction.Numerator/reqResp.Fraction.Denumerator, 'f', reqResp.Precision.Precision, 64)

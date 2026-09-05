@@ -43,7 +43,7 @@ func parseRequest[T apiz.ReqResp](api *apiz.Api[T], reqResp T) (*httpzrequest.Re
 	return ret, nil
 }
 
-func GetV2[T apiz.ReqResp](client *httpzclient.Client, api *apiz.Api[T]) apiz.HandlerV2[T] {
+func Get[T apiz.ReqResp](client *httpzclient.Client, api *apiz.Api[T]) apiz.Handler[T] {
 	return func(ctx context.Context, reqResp T) (int, error) {
 		nReq, err := parseRequest(api, reqResp)
 		if err != nil {

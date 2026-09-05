@@ -21,11 +21,11 @@ type ReqResp interface {
 	GetDataRefs() *DataRefs
 }
 
-type HandlerV2[T ReqResp] func(ctx context.Context, reqResp T) (int, error)
+type Handler[T ReqResp] func(ctx context.Context, reqResp T) (int, error)
 
 type Api[T ReqResp] struct {
-	Schema    *schemaz.Api
-	HandlerV2 HandlerV2[T]
+	Schema  *schemaz.Api
+	Handler Handler[T]
 }
 
 func (a *Api[T]) MewReqResp() T {
