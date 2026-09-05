@@ -71,4 +71,32 @@ func TestUnitBasic(t *testing.T) {
 		Result:  "3.333",
 	}, acResp.RespBody)
 
+	acV2 := apiclientz.GetV2(c, schemazsamplefraction.ApiV2())
+
+	reqResp := &schemazsamplefraction.FractionReqResp{
+		Fraction: &schemazsamplefraction.Fraction{
+			Numerator:   10,
+			Denumerator: 3,
+		},
+		Precision: &schemazsamplefraction.Precision{
+			Precision: 3,
+		},
+		Options: &schemazsamplefraction.Options{
+			TraceId: "xx",
+		},
+		Reason: &schemazsamplefraction.Reason{
+			Reason: "myreason",
+		},
+		Meta:   &schemazsamplefraction.Meta{},
+		Result: &schemazsamplefraction.Result{},
+	}
+	acV2Resp, err := acV2(ctx, reqResp)
+	errorz.Check(err)
+	require.Equal(t, 201, acV2Resp)
+	require.Equal(t, "reason: myreason, trace: xx", reqResp.Meta.ReqId)
+	require.Equal(t, &schemazsamplefraction.Result{
+		Display: "10.000/3.000",
+		Result:  "3.333",
+	}, reqResp.Result)
+
 }
