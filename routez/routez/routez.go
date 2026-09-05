@@ -13,7 +13,7 @@ import (
 	"github.com/infinity6-ai/gox/routez/internal/converter"
 )
 
-func parseRequestV2[T apiz.ReqResp](a *apiz.ApiV2[T], req *httpzrequest.Req, params map[string]string) T {
+func parseRequestV2[T apiz.ReqResp](a *apiz.Api[T], req *httpzrequest.Req, params map[string]string) T {
 	reqResp := a.MewReqResp()
 	refs := reqResp.GetDataRefs()
 	structjsonz.MustParseSingle(params, refs.PathParams)
@@ -31,7 +31,7 @@ func writeResponse[T apiz.ReqResp](status int, resp httpzserver.Resp, reqResp T,
 	jsonz.FormatWriter(w, refs.RespBody)
 }
 
-func RegisterV2[T apiz.ReqResp](s *httpzserver.Server, apis ...*apiz.ApiV2[T]) {
+func RegisterV2[T apiz.ReqResp](s *httpzserver.Server, apis ...*apiz.Api[T]) {
 	for _, api := range apis {
 		s.AddHandler(api.Schema.Method, api.Schema.Path, func(ctx context.Context, resp httpzserver.Resp, req *httpzrequest.Req, params map[string]string) {
 			reqResp := parseRequestV2(api, req, params)

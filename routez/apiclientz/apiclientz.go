@@ -14,7 +14,7 @@ import (
 	"github.com/infinity6-ai/gox/routez/internal/converter"
 )
 
-func parseRequestV2[T apiz.ReqResp](api *apiz.ApiV2[T], reqResp T) (*httpzrequest.Req, error) {
+func parseRequest[T apiz.ReqResp](api *apiz.Api[T], reqResp T) (*httpzrequest.Req, error) {
 	refs := reqResp.GetDataRefs()
 	p, err := structjsonz.FormatSingle(refs.PathParams)
 	if err != nil {
@@ -43,9 +43,9 @@ func parseRequestV2[T apiz.ReqResp](api *apiz.ApiV2[T], reqResp T) (*httpzreques
 	return ret, nil
 }
 
-func GetV2[T apiz.ReqResp](client *httpzclient.Client, api *apiz.ApiV2[T]) apiz.HandlerV2[T] {
+func GetV2[T apiz.ReqResp](client *httpzclient.Client, api *apiz.Api[T]) apiz.HandlerV2[T] {
 	return func(ctx context.Context, reqResp T) (int, error) {
-		nReq, err := parseRequestV2(api, reqResp)
+		nReq, err := parseRequest(api, reqResp)
 		if err != nil {
 			return 0, err
 		}

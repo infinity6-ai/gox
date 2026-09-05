@@ -22,7 +22,7 @@ func TestUnitBasic(t *testing.T) {
 	s.Listen()
 	s.Start()
 
-	routez.RegisterV2(s, schemazsamplefraction.ApiV2())
+	routez.RegisterV2(s, schemazsamplefraction.Api())
 
 	c := httpzclient.New(ctx, httpzclient.Options{
 		BaseUrl: s.Base(),
@@ -44,7 +44,7 @@ func TestUnitBasic(t *testing.T) {
 		Result:  "3.333",
 	}, respBody)
 
-	acV2 := apiclientz.GetV2(c, schemazsamplefraction.ApiV2())
+	acV2 := apiclientz.GetV2(c, schemazsamplefraction.Api())
 
 	reqResp := &schemazsamplefraction.FractionReqResp{
 		Fraction: &schemazsamplefraction.Fraction{

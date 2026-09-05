@@ -120,8 +120,8 @@ func (f *FractionReqResp) GetDataRefs() *apiz.DataRefs {
 	}
 }
 
-func ApiV2() *apiz.ApiV2[*FractionReqResp] {
-	return &apiz.ApiV2[*FractionReqResp]{
+func Api() *apiz.Api[*FractionReqResp] {
+	return &apiz.Api[*FractionReqResp]{
 		Schema: Schema(),
 		HandlerV2: func(ctx context.Context, reqResp *FractionReqResp) (int, error) {
 			reqResp.Meta.ReqId = "reason: " + reqResp.Reason.Reason + ", trace: " + reqResp.Options.TraceId

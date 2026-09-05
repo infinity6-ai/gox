@@ -23,12 +23,12 @@ type ReqResp interface {
 
 type HandlerV2[T ReqResp] func(ctx context.Context, reqResp T) (int, error)
 
-type ApiV2[T ReqResp] struct {
+type Api[T ReqResp] struct {
 	Schema    *schemaz.Api
 	HandlerV2 HandlerV2[T]
 }
 
-func (a *ApiV2[T]) MewReqResp() T {
+func (a *Api[T]) MewReqResp() T {
 	var v T
 	t := reflect.TypeOf(&v).Elem()
 	checker.Equal(reflect.Ptr, t.Kind(), "it must be a pointer: %T %T", v, t)
