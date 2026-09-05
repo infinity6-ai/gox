@@ -1,4 +1,4 @@
-package schemazsamplefraction_test
+package routezsamplefraction_test
 
 import (
 	"strings"
@@ -11,7 +11,7 @@ import (
 	"github.com/infinity6-ai/gox/httpz/httpzserver"
 	"github.com/infinity6-ai/gox/routez/apiclientz"
 	"github.com/infinity6-ai/gox/routez/routez"
-	"github.com/infinity6-ai/gox/routez/sampleroutez/schemazsamplefraction"
+	"github.com/infinity6-ai/gox/routez/sampleroutez/routezsamplefraction"
 	"github.com/stretchr/testify/require"
 )
 
@@ -22,7 +22,7 @@ func TestUnitBasic(t *testing.T) {
 	s.Listen()
 	s.Start()
 
-	routez.Register(s, schemazsamplefraction.Api())
+	routez.Register(s, routezsamplefraction.Api())
 
 	c := httpzclient.New(ctx, httpzclient.Options{
 		BaseUrl: s.Base(),
@@ -38,26 +38,26 @@ func TestUnitBasic(t *testing.T) {
 	require.Equal(t, 201, resp.StatusCode)
 	require.Equal(t, "application/json", resp.Headers.Get("content-type"))
 	require.Equal(t, "reason: myreason, trace: xx", resp.Headers.Get("Req-Id"))
-	respBody := jsonz.MustParseReader(resp.Body, &schemazsamplefraction.Result{})
-	require.Equal(t, &schemazsamplefraction.Result{
+	respBody := jsonz.MustParseReader(resp.Body, &routezsamplefraction.Result{})
+	require.Equal(t, &routezsamplefraction.Result{
 		Display: "10.000/3.000",
 		Result:  "3.333",
 	}, respBody)
 
-	ac := apiclientz.Get(c, schemazsamplefraction.Api())
+	ac := apiclientz.Get(c, routezsamplefraction.Api())
 
-	reqResp := &schemazsamplefraction.FractionReqResp{
-		Fraction: &schemazsamplefraction.Fraction{
+	reqResp := &routezsamplefraction.FractionReqResp{
+		Fraction: &routezsamplefraction.Fraction{
 			Numerator:   10,
 			Denumerator: 3,
 		},
-		Precision: &schemazsamplefraction.Precision{
+		Precision: &routezsamplefraction.Precision{
 			Precision: 3,
 		},
-		Options: &schemazsamplefraction.Options{
+		Options: &routezsamplefraction.Options{
 			TraceId: "xx",
 		},
-		Reason: &schemazsamplefraction.Reason{
+		Reason: &routezsamplefraction.Reason{
 			Reason: "myreason",
 		},
 	}
@@ -65,7 +65,7 @@ func TestUnitBasic(t *testing.T) {
 	errorz.Check(err)
 	require.Equal(t, 201, acV2Resp)
 	require.Equal(t, "reason: myreason, trace: xx", reqResp.Meta.ReqId)
-	require.Equal(t, &schemazsamplefraction.Result{
+	require.Equal(t, &routezsamplefraction.Result{
 		Display: "10.000/3.000",
 		Result:  "3.333",
 	}, reqResp.Result)

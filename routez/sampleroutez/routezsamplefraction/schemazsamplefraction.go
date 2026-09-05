@@ -1,4 +1,4 @@
-package schemazsamplefraction
+package routezsamplefraction
 
 import (
 	"context"
