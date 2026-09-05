@@ -46,7 +46,7 @@ func Schema() *schemaz.Api {
 		},
 
 		Method: "POST",
-		Path:   "/api/gox/dataschema/sample/fraction/{numerator}/{denumerator}",
+		Path:   "/api/gox/routez/sample/fraction/{numerator}/{denumerator}",
 
 		ReqParams: []schemaz.Field{
 			{Name: "numerator", Desc: schemaz.Desc{Summary: "numerator"}, Spec: schemaz.Spec{Type: schemaz.TypeNumber}},
