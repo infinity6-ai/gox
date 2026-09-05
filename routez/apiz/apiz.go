@@ -53,3 +53,7 @@ type ApiV2[T ReqResp] struct {
 	Schema    *schemaz.Api
 	HandlerV2 HandlerV2[T]
 }
+
+func (a *ApiV2[T]) MewReqResp() T {
+	return *new(T)
+}
