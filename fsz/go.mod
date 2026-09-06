@@ -3,8 +3,7 @@ module github.com/infinity6-ai/gox/fsz
 go 1.26.1
 
 require (
-	cloud.google.com/go/storage v1.66.0
-	github.com/infinity6-ai/gox/commonz v0.0.0-20260902181412-9a992eac462b
+	cloud.google.com/go/storage v1.59.2
 	github.com/stretchr/testify v1.12.1
 	google.golang.org/api v0.297.0
 )
