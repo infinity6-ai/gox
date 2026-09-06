@@ -15,7 +15,6 @@ require (
 	github.com/parquet-go/parquet-go v0.30.1
 	github.com/spf13/cobra v1.10.1
 	github.com/stretchr/testify v1.11.1
-	go.code.infinity6.ai/backend v1.2.88
 	go.opentelemetry.io/otel v1.43.0
 	go.opentelemetry.io/otel/sdk v1.43.0
 	go.opentelemetry.io/otel/sdk/metric v1.43.0
