@@ -47,7 +47,7 @@ func prepareGenerateCmd(ctx context.Context, parent *cobra.Command) {
 			w := os.Stdout
 			if out != "-" {
 				out = errorz.Check2(filepath.Abs(out))
-				logger.Info(ctx, "stfiles generation", map[string]any{"out": out})
+				logger.Info(ctx, "stfiles generation", map[string]any{"out": out, "size": buf.Len()})
 				os.MkdirAll(filepath.Dir(out), os.ModePerm)
 				w = errorz.Check2(os.Create(out))
 			}
