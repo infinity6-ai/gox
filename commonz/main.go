@@ -1,3 +1,4 @@
+//go:generate go run github.com/infinity6-ai/gox/commonz generate
 package main
 
 import (
