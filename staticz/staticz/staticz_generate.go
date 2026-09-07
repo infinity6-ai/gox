@@ -2,8 +2,10 @@ package staticz
 
 import (
 	"archive/tar"
+	"bufio"
 	"compress/gzip"
 	"context"
+	"encoding/base64"
 	"io"
 	"os"
 	"path/filepath"
@@ -14,7 +16,20 @@ import (
 type GenerateOptions struct {
 	Imp  string
 	Code string
+	Dir  string
 	Out  io.Writer
+}
+
+func (g *GenerateOptions) fix() {
+	if g.Imp == "" {
+		panic("imp is required")
+	}
+	if g.Code == "" {
+		panic("code is required")
+	}
+	if g.Out == nil {
+		g.Out = os.Stdout
+	}
 }
 
 func CreateTarGz(srcDir string, out io.Writer) {
@@ -62,5 +77,43 @@ func CreateTarGz(srcDir string, out io.Writer) {
 }
 
 func Generate(ctx context.Context, opts GenerateOptions) {
+	opts.fix()
+
+	w := bufio.NewWriter(opts.Out)
+
+	/*
+			7 09:23:08 i6dev [cmd_go-platform_static] echo 'package stfiles'
+		2026-09-07 09:23:08 i6dev [cmd_go-platform_static] echo 'import "go.code.infinity6.ai/platform/httpz/statichandler"'
+		2026-09-07 09:23:08 i6dev [cmd_go-platform_static] echo 'func init() {'
+		2026-09-07 09:23:08 i6dev [cmd_go-platform_static] echo '    statichandler.Instance().SetCode(pack, func() string {'
+		2026-09-07 09:23:08 i6dev [cmd_go-platform_static] echo '        return `'
+		2026-09-07 09:23:08 i6dev [cmd_go-platform_static] base64
+		2026-09-07 09:23:08 i6dev [cmd_go-platform_static] tar czf - -C . static
+		2026-09-07 09:23:08 i6dev [cmd_go-platform_static] echo '        `'
+		2026-09-07 09:23:08 i6dev [cmd_go-platform_static] echo '   })'
+		2026-09-07 09:23:08 i6dev [cmd_go-platform_static] echo '}'
+	*/
+
+	w.WriteString("package stfiles\n")
+	w.WriteString("import \"")
+	w.WriteString(opts.Imp)
+	w.WriteString("\"\n")
+	w.WriteString("func init() {\n")
+	w.WriteString("    ")
+	w.WriteString(opts.Code)
+	w.WriteString(" {\n")
+	w.WriteString("        return `")
+
+	enc := base64.StdEncoding
+	b64 := base64.NewEncoder(enc, w)
+	CreateTarGz("staticz", b64)
+	b64.Close()
+
+	CreateTarGz(opts.Code, w)
+	w.WriteString("        `\n")
+	w.WriteString("   })\n")
+	w.WriteString("}\n")
+
+	w.Flush()
 
 }
