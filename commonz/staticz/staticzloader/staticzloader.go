@@ -14,6 +14,7 @@ import (
 	"github.com/infinity6-ai/gox/commonz/encz/enczb64"
 	"github.com/infinity6-ai/gox/commonz/errorz"
 	"github.com/infinity6-ai/gox/commonz/filez"
+	"github.com/infinity6-ai/gox/commonz/staticz/staticzentry"
 )
 
 type Codes struct {
@@ -43,6 +44,53 @@ func GetCode(name any) []byte {
 	codes.mu.RLock()
 	defer codes.mu.RUnlock()
 	return codes.codes[name]
+}
+
+func WalkV2(ctx context.Context, name any, callback func(entry staticzentry.Entry) error) error {
+	code := GetCode(name)
+	if code == nil {
+		return fmt.Errorf("code not found: %s (%T)", name, name)
+	}
+
+	gzReader, err := gzip.NewReader(bytes.NewBuffer(code))
+	if err != nil {
+		return fmt.Errorf("failed to create gzip reader: %w", err)
+	}
+	defer gzReader.Close()
+
+	tarReader := tar.NewReader(gzReader)
+
+	for {
+		header, err := tarReader.Next()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			return fmt.Errorf("error reading from tar archive: %w", err)
+		}
+
+		fileInfo := header.FileInfo()
+		if fileInfo.IsDir() {
+			continue
+		}
+
+		d := staticzentry.NewEntry(header.Name, fileInfo.Size(), func() (io.ReadCloser, error) {
+			data, err := io.ReadAll(tarReader)
+			if err != nil {
+				return nil, fmt.Errorf("error reading file data: %w", err)
+			}
+			return io.NopCloser(bytes.NewBuffer(data)), nil
+		})
+
+		err = callback(d)
+		if err != nil {
+			if err == fs.SkipAll {
+				return nil
+			}
+			return err
+		}
+	}
+	return nil
 }
 
 func Walk(ctx context.Context, name any, callback func(entry filez.WalkLoaderEntry) error) error {
