@@ -77,6 +77,7 @@ function cmd_release() {
 
 function cmd_version-inc() {
   ./comp.sh versionz run inc
+  ./comp.sh versionz run version
 }
 
 cd "$(dirname "$0")"; _cmd="${1?"cmd is required"}"; shift; "cmd_${_cmd}" "$@"
