@@ -104,9 +104,7 @@ func Generate(ctx context.Context, opts GenerateOptions) {
 	w.WriteString("func init() {\n")
 	w.WriteString("    ")
 	w.WriteString(opts.Code)
-	w.WriteString("(")
-	w.WriteString(opts.Name)
-	w.WriteString(", func() string {\n")
+	w.WriteString("(name, func() string {\n")
 	w.WriteString("        return `\n")
 
 	enc := base64.StdEncoding
