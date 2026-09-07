@@ -55,9 +55,10 @@ function cmd_release() {
     cut -d' ' -f1 | while read _go_dep_mod; do
     go mod edit -require="${_go_dep_mod}@${_version}"
   done
+  go mod tidy
+  go run . version
   # git tag "$_tag"
   # git push origin "$_tag"
-
 }
 
 function _go_base_path() {
