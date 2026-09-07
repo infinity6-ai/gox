@@ -14,6 +14,13 @@ function cmd_comps_list() {
   echo "fsz" 
 }
 
+function cmd_comps_exec() {
+  local _k=""
+  cmd_comps_list | while read _k; do
+    (cd "$_k" && "$@")
+  done
+}
+
 function cmd_comps_run() {
   local _k=""
   cmd_comps_list | while read _k; do
