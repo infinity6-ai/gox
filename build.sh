@@ -4,6 +4,7 @@
 
 function cmd_comps_list() {
   # find . -maxdepth 2 -name go.mod | cut -d'/' -f2
+  echo "version"
   echo "commonz"
   echo "cryptz"
   echo "schemaz"
