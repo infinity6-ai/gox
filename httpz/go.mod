@@ -3,8 +3,8 @@ module github.com/infinity6-ai/gox/httpz
 go 1.26.1
 
 require (
-	github.com/infinity6-ai/gox/commonz v0.0.0-20260904150931-a9764193e595
-	github.com/infinity6-ai/gox/versionz v0.0.0-20260907201209-2dbfd605c128
+	github.com/infinity6-ai/gox/commonz v0.0.5
+	github.com/infinity6-ai/gox/versionz v0.0.5
 	github.com/spf13/cobra v1.10.2
 	github.com/stretchr/testify v1.12.1
 )
