@@ -8,8 +8,8 @@ import (
 	"maps"
 	"os"
 
+	"github.com/infinity6-ai/gox/commonz/encz/enczb64"
 	"github.com/infinity6-ai/gox/commonz/errorz"
-	"github.com/infinity6-ai/gox/cryptz/cryptzb64"
 )
 
 var ErrNotConfigured = errors.New("unknown config")
@@ -40,7 +40,7 @@ func Create(name Prop, defval string) Prop {
 }
 
 func CreateEncoded(name Prop, defval string) Prop {
-	return Create(name, cryptzb64.UrlEncode(defval).String())
+	return Create(name, enczb64.UrlEncode(defval).String())
 }
 
 func (p Prop) Get(ctx context.Context) (string, error) {
@@ -57,7 +57,7 @@ func (p Prop) Decoded(ctx context.Context) (string, error) {
 		return "", err
 	}
 	if ret != "" {
-		dec, err := cryptzb64.UrlDecode(ret)
+		dec, err := enczb64.UrlDecode(ret)
 		if err != nil {
 			return "", err
 		}
@@ -89,7 +89,7 @@ func (p Prop) Set(ctx context.Context, value string, values ...any) (io.Closer, 
 }
 
 func (p Prop) SetEncoded(ctx context.Context, value string, values ...any) (io.Closer, error) {
-	encoded := cryptzb64.UrlEncode(fmt.Sprintf(value, values...)).String()
+	encoded := enczb64.UrlEncode(fmt.Sprintf(value, values...)).String()
 	return p.Set(ctx, "%s", encoded)
 }
 
