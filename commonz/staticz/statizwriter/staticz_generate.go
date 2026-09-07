@@ -7,7 +7,6 @@ import (
 	"context"
 	"encoding/base64"
 	"io"
-	"log"
 	"os"
 	"path/filepath"
 
@@ -45,7 +44,6 @@ func CreateTarGz(srcDir string, out io.Writer) {
 	defer tw.Close()
 
 	srcDir = filepath.Clean(srcDir)
-	log.Printf("src: %s", srcDir)
 
 	err := filepath.Walk(srcDir, func(path string, info os.FileInfo, err error) error {
 		errorz.Check(err)

@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"log"
 	"os"
 	"path/filepath"
 
@@ -42,6 +43,7 @@ func prepareGenerateCmd(ctx context.Context, parent *cobra.Command) {
 			w := os.Stdout
 			if out != "-" {
 				out = errorz.Check2(filepath.Abs(out))
+				log.Printf("src: %s", out)
 				os.MkdirAll(filepath.Dir(out), os.ModePerm)
 				w = errorz.Check2(os.Create(out))
 			}
