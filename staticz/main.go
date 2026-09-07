@@ -37,8 +37,7 @@ func prepareGenerateCmd(ctx context.Context, parent *cobra.Command) {
 	}
 	cmd.PersistentFlags().String("imp", "github.com/infinity6-ai/gox/commonz/staticz", "import module")
 	cmd.PersistentFlags().String("code", "staticz.Instance().SetCode", "code")
-	cmd.PersistentFlags().String("dir", "dir", "")
-	cmd.MarkPersistentFlagRequired("dir")
+	cmd.PersistentFlags().String("dir", "dir", "stzfiles")
 
 	parent.AddCommand(cmd)
 }
