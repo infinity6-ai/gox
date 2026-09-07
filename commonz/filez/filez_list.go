@@ -1,6 +1,7 @@
 package filez
 
 import (
+	"fmt"
 	"io"
 	"io/fs"
 	"os"
@@ -87,15 +88,23 @@ func DirListLimited(dir string, regex string, limit int) []string {
 
 type WalkLoaderEntry struct {
 	Path     string
-	Entry    fs.DirEntry
+	Name     string
+	IsDir    func() bool
+	Size     func() int64
 	WalkLoad func() (io.ReadCloser, error)
 }
 
 func WalkLoader(base string, callback func(entry WalkLoaderEntry) error) error {
 	return Walk(base, func(path string, f fs.DirEntry) error {
+		info, err := f.Info()
+		if err != nil {
+			return fmt.Errorf("error getting info for %s: %w", err, path)
+		}
 		return callback(WalkLoaderEntry{
 			Path:     path,
-			Entry:    f,
+			Name:     f.Name(),
+			IsDir:    f.IsDir,
+			Size:     info.Size,
 			WalkLoad: func() (io.ReadCloser, error) { return os.Open(path) },
 		})
 	})
