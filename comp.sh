@@ -50,7 +50,7 @@ function cmd_set_version() {
   GOWORK=off go list -mod=readonly -m "$_go_base_path/..." | \
     grep "^$_go_base_path/.*\ v" | \
     cut -d' ' -f1 | while read _go_dep_mod; do
-    echo go mod edit -require="${_go_dep_mod}@${_version}"
+    go mod edit -require="${_go_dep_mod}@${_version}"
   done
 
 }
