@@ -6,12 +6,15 @@ import (
 	"compress/gzip"
 	"context"
 	"encoding/base64"
+	"fmt"
 	"io"
 	"os"
 	"path/filepath"
 
 	"github.com/infinity6-ai/gox/commonz/errorz"
 )
+
+var max int64 = 1 * 2024 * 1024
 
 type GenerateOptions struct {
 	Imp  string
@@ -47,6 +50,10 @@ func CreateTarGz(srcDir string, out io.Writer) {
 
 	err := filepath.Walk(srcDir, func(path string, info os.FileInfo, err error) error {
 		errorz.Check(err)
+
+		if info.Size() > max {
+			panic(fmt.Sprintf("stzfile too large %s: max: %d, actual: %d", path, max, info.Size()))
+		}
 
 		header, err := tar.FileInfoHeader(info, info.Name())
 		errorz.Check(err)
