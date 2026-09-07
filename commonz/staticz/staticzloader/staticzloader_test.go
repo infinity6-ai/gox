@@ -6,7 +6,6 @@ import (
 	"io/fs"
 	"testing"
 
-	"github.com/infinity6-ai/gox/commonz/filez"
 	"github.com/infinity6-ai/gox/commonz/internal/stzfiles"
 	"github.com/infinity6-ai/gox/commonz/staticz/staticzentry"
 	"github.com/infinity6-ai/gox/commonz/staticz/staticzloader"
@@ -44,19 +43,17 @@ func TestUnitWalk(t *testing.T) {
 		require.Equal(t, len(expectedFiles), count, "files count")
 	})
 
-	t.Run("SkipDir", func(t *testing.T) {
+	t.Run("SkipAll", func(t *testing.T) {
 		var count int
-		var f string
-		err := staticzloader.Walk(ctx, stzfiles.Name, func(entry filez.WalkLoaderEntry) error {
+		var name string
+		err := staticzloader.Walk(ctx, stzfiles.Name, func(entry staticzentry.Entry) error {
 			count++
-			if entry.Path() == "commonz" {
-				return fs.SkipDir
-			}
-			f = entry.Name()
-			return nil
+			name = entry.Name()
+			return fs.SkipAll
 		})
 		require.NoError(t, err)
-		require.Equal(t, "stzfiles.txt", f)
-		require.Equal(t, 2, count, "files count")
+		require.NotEmpty(t, name)
+		require.NotEmpty(t, expectedFiles[name])
+		require.Equal(t, 1, count, "files count")
 	})
 }
