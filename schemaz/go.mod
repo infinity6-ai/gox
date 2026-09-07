@@ -7,4 +7,7 @@ require (
 	github.com/stretchr/testify v1.12.1
 )
 
-require go.yaml.in/yaml/v3 v3.0.5 // indirect
+require (
+	github.com/infinity6-ai/gox/versionz v0.0.0-20260907201209-2dbfd605c128 // indirect
+	go.yaml.in/yaml/v3 v3.0.5 // indirect
+)

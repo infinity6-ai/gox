@@ -4,6 +4,8 @@ github.com/infinity6-ai/gox/httpz v0.0.0-20260905114104-037c39b2d1b4 h1:ybB3u+Cu
 github.com/infinity6-ai/gox/httpz v0.0.0-20260905114104-037c39b2d1b4/go.mod h1:liLgEG8DktyHMFmnlzCfljCZD3/VJo3s/l1vI6iUg5Q=
 github.com/infinity6-ai/gox/schemaz v0.0.0-20260904125743-50ffbf9dd11a h1:i0xeHNMpRhrmSy52Oh3880eTNud1fUy3QrCxjJN6wj0=
 github.com/infinity6-ai/gox/schemaz v0.0.0-20260904125743-50ffbf9dd11a/go.mod h1:9DIkGuM+D81t/2x86wAWNzoTASXleVdOomSSI06I5Uo=
+github.com/infinity6-ai/gox/versionz v0.0.0-20260907201209-2dbfd605c128 h1:nAiayf1hWWj8xECgUtq22/ZhasajCobPZ91xunjNpdM=
+github.com/infinity6-ai/gox/versionz v0.0.0-20260907201209-2dbfd605c128/go.mod h1:odtOp2rCEka+qJ8/rWBKiBzm+fyB93+lwJl2fllGaTg=
 github.com/stretchr/testify v1.12.1 h1:EuwCh5fleGS7H32xRwO3wRGT7DxrDhLAT6FF8MpWDWE=
 github.com/stretchr/testify v1.12.1/go.mod h1:MDEgiDPPsNp5cuIrHPPCyornHKgEVbtFUmoNlxoYthg=
 go.yaml.in/yaml/v3 v3.0.5 h1:N6y/pJk8buWs9NY5ERU2HSMfm+IuD/OtfdAnq6kESPw=
