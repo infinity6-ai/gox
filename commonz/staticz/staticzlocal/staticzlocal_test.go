@@ -9,6 +9,7 @@ import (
 
 	"github.com/infinity6-ai/gox/commonz/filez"
 	"github.com/infinity6-ai/gox/commonz/internal/stzfiles"
+	"github.com/infinity6-ai/gox/commonz/pathz"
 	"github.com/infinity6-ai/gox/commonz/staticz/staticzentry"
 	"github.com/infinity6-ai/gox/commonz/staticz/staticzlocal"
 	"github.com/stretchr/testify/require"
@@ -21,7 +22,7 @@ func TestUnitBasic(t *testing.T) {
 	require.Equal(t, "commonz sample\n", filez.MustReadFile(filepath.Join(dir.String(), "commonz", "commonz-sample.txt"), 256).String())
 }
 
-func TestUnitWalk(t *testing.T) {
+func TestUnitWalkAndLookup(t *testing.T) {
 	ctx := context.Background()
 
 	expectedFiles := map[string]string{
@@ -59,5 +60,18 @@ func TestUnitWalk(t *testing.T) {
 		require.NotEmpty(t, name)
 		require.NotEmpty(t, expectedFiles[name])
 		require.Equal(t, 1, count, "files count")
+	})
+
+	t.Run("Lookup found", func(t *testing.T) {
+		entry, err := staticzlocal.Lookup(ctx, stzfiles.Name, pathz.MustParse("commonz/commonz-sample.txt"))
+		require.NoError(t, err)
+		require.NotNil(t, entry)
+		require.Equal(t, "commonz sample\n", expectedFiles[entry.Name().String()])
+	})
+
+	t.Run("Lookup not found", func(t *testing.T) {
+		entry, err := staticzlocal.Lookup(ctx, stzfiles.Name, pathz.MustParse("commonz/notfound.txt"))
+		require.NoError(t, err)
+		require.Nil(t, entry)
 	})
 }
