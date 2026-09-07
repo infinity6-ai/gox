@@ -16,17 +16,27 @@ import (
 func parseRequest[T apiz.ReqResp](a *apiz.Api[T], req *httpzrequest.Req, params map[string]string) T {
 	reqResp := a.MewReqResp()
 	refs := reqResp.GetDataRefs()
-	structjsonz.MustParseSingle(params, refs.PathParams)
-	structjsonz.MustParse(req.Query, refs.QueryParams)
-	structjsonz.MustParse(converter.Header2Json(req.Headers), refs.ReqHeaders)
-	jsonz.MustParseReader(req.Body, refs.ReqBody)
+	if refs.PathParams != nil {
+		structjsonz.MustParseSingle(params, refs.PathParams)
+	}
+	if refs.QueryParams != nil {
+		structjsonz.MustParse(req.Query, refs.QueryParams)
+	}
+	if refs.ReqHeaders != nil {
+		structjsonz.MustParse(converter.Header2Json(req.Headers), refs.ReqHeaders)
+	}
+	if refs.ReqBody != nil {
+		jsonz.MustParseReader(req.Body, refs.ReqBody)
+	}
 	return reqResp
 }
 
 func writeResponse[T apiz.ReqResp](status int, resp httpzserver.Resp, reqResp T, formattedHeaders http.Header) {
 	refs := reqResp.GetDataRefs()
-	mapRespHedaers := structjsonz.MustFormat(refs.RespHeaders)
-	converter.Json2Header(mapRespHedaers, formattedHeaders)
+	if refs.RespHeaders != nil {
+		mapRespHedaers := structjsonz.MustFormat(refs.RespHeaders)
+		converter.Json2Header(mapRespHedaers, formattedHeaders)
+	}
 	w := resp(status, formattedHeaders)
 	jsonz.FormatWriter(w, refs.RespBody)
 }

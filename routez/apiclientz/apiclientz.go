@@ -16,30 +16,40 @@ import (
 
 func parseRequest[T apiz.ReqResp](api *apiz.Api[T], reqResp T) (*httpzrequest.Req, error) {
 	refs := reqResp.GetDataRefs()
-	p, err := structjsonz.FormatSingle(refs.PathParams)
-	if err != nil {
-		return nil, fmt.Errorf("%w: error formatting path params", err)
+	var p map[string]string
+	var q, h map[string][]string
+	var err error
+	if refs.PathParams != nil {
+		p, err = structjsonz.FormatSingle(refs.PathParams)
+		if err != nil {
+			return nil, fmt.Errorf("%w: error formatting path params", err)
+		}
 	}
-	q, err := structjsonz.Format(refs.QueryParams)
-	if err != nil {
-		return nil, fmt.Errorf("%w: error formatting req query", err)
+	if refs.QueryParams != nil {
+		q, err = structjsonz.Format(refs.QueryParams)
+		if err != nil {
+			return nil, fmt.Errorf("%w: error formatting req query", err)
+		}
 	}
-	h, err := structjsonz.Format(refs.ReqHeaders)
-	if err != nil {
-		return nil, fmt.Errorf("%w: error formatting req headers", err)
+	if refs.ReqHeaders != nil {
+		h, err = structjsonz.Format(refs.ReqHeaders)
+		if err != nil {
+			return nil, fmt.Errorf("%w: error formatting req headers", err)
+		}
 	}
-
 	ret, err := httpzrequest.Format(api.Schema.Method, api.Schema.Path, p)
 	if err != nil {
 		return nil, fmt.Errorf("%w: error formatting request", err)
 	}
 	ret.Query = q
 	converter.Json2Header(h, ret.Headers)
-	fBody, err := jsonz.Format(refs.ReqBody)
-	if err != nil {
-		return nil, fmt.Errorf("%w: error formatting request body", err)
+	if refs.ReqBody != nil {
+		fBody, err := jsonz.Format(refs.ReqBody)
+		if err != nil {
+			return nil, fmt.Errorf("%w: error formatting request body", err)
+		}
+		ret.Body = bytes.NewReader(fBody.Bytes())
 	}
-	ret.Body = bytes.NewReader(fBody.Bytes())
 	return ret, nil
 }
 
@@ -61,8 +71,12 @@ func Get[T apiz.ReqResp](client *httpzclient.Client, api *apiz.Api[T]) apiz.Hand
 
 func writeResponse[T apiz.ReqResp](nResp *httpzclient.Resp, reqResp T) {
 	refs := reqResp.GetDataRefs()
-	convertedHeaders := converter.Header2Json(nResp.Headers)
-	structjsonz.Parse(convertedHeaders, refs.RespHeaders)
-	_, err := jsonz.ParseReader(nResp.Body, refs.RespBody)
-	errorz.Check(err)
+	if refs.RespHeaders != nil {
+		convertedHeaders := converter.Header2Json(nResp.Headers)
+		structjsonz.MustParse(convertedHeaders, refs.RespHeaders)
+	}
+	if refs.RespBody != nil {
+		_, err := jsonz.ParseReader(nResp.Body, refs.RespBody)
+		errorz.Check(err)
+	}
 }
