@@ -13,12 +13,7 @@ import (
 
 	"github.com/infinity6-ai/gox/commonz/encz/enczb64"
 	"github.com/infinity6-ai/gox/commonz/errorz"
-	"github.com/infinity6-ai/gox/commonz/logz"
 )
-
-type tlogger logz.Type
-
-var logger = logz.Create(tlogger(true))
 
 type Codes struct {
 	codes map[any][]byte
