@@ -5,7 +5,7 @@ go 1.26.1
 require (
 	cloud.google.com/go/pubsub v1.51.1
 	github.com/infinity6-ai/gox/commonz v0.0.8
-	github.com/infinity6-ai/gox/fsz v0.0.0-20260907213128-e679003b0c75
+	github.com/infinity6-ai/gox/fsz v0.0.8
 	github.com/infinity6-ai/gox/versionz v0.0.8
 	github.com/spf13/cobra v1.10.2
 	github.com/stretchr/testify v1.12.1

@@ -106,8 +106,8 @@ github.com/inconshreveable/mousetrap v1.1.0 h1:wN+x4NVGpMsO7ErUn/mUI3vEoE6Jt13X2
 github.com/inconshreveable/mousetrap v1.1.0/go.mod h1:vpF70FUmC8bwa3OWnCshd2FqLfsEA9PFc4w1p2J65bw=
 github.com/infinity6-ai/gox/commonz v0.0.8 h1:Bz7tQYdLV1Byw9+RJ0zkxT5LVuenpTG1g8A7F1WKx/M=
 github.com/infinity6-ai/gox/commonz v0.0.8/go.mod h1:gewchlqcnAjf+hE1suVYlTaw3z27Bc+eqwuDm0ght5M=
-github.com/infinity6-ai/gox/fsz v0.0.0-20260907213128-e679003b0c75 h1:F9muJggPuvoFQ/giTXrYbFQigfFzk8zSG0ajjanfcWQ=
-github.com/infinity6-ai/gox/fsz v0.0.0-20260907213128-e679003b0c75/go.mod h1:LbgiKE54mLio+p63CHpc14/A5ECUkQXk2saYljziNCQ=
+github.com/infinity6-ai/gox/fsz v0.0.8 h1:RgkpFtXOAknFG3D9ogB+K/Kp7P4V+j9MGaf68SIm9k4=
+github.com/infinity6-ai/gox/fsz v0.0.8/go.mod h1:/jq8ZQv7WMfku3SbO/ioTxGMUpDtMCCatvTgbSk90U4=
 github.com/infinity6-ai/gox/versionz v0.0.8 h1:NLQGdi6Myd9V2N/dlLMgT2uL9Mv/vg81e4Ar0Jad2qo=
 github.com/infinity6-ai/gox/versionz v0.0.8/go.mod h1:odtOp2rCEka+qJ8/rWBKiBzm+fyB93+lwJl2fllGaTg=
 github.com/planetscale/vtprotobuf v0.6.1-0.20240319094008-0393e58bdf10 h1:GFCKgmp0tecUJ0sJuv4pzYCqS9+RGSn52M3FUwPs+uo=
