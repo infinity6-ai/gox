@@ -31,7 +31,7 @@ func SetCode(name any, tgz func() string) {
 func decode(tgz func() string) []byte {
 	encoded := tgz()
 	b, err := enczb64.StdDecode(encoded)
-	errorz.Check(fmt.Errorf("%w: error decoding", err))
+	errorz.Checkf(err, "error decoding")
 	return b.Bytes()
 }
 

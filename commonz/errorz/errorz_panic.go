@@ -2,6 +2,7 @@ package errorz
 
 import (
 	"errors"
+	"fmt"
 )
 
 // Panic panics with a StructuredError.
@@ -20,6 +21,12 @@ func Panic(err error) {
 func Check(err error) {
 	if err != nil {
 		Panic(err)
+	}
+}
+
+func Checkf(err error, msg string, args ...any) {
+	if err != nil {
+		Panic(fmt.Errorf("%w: "+msg, append(append(make([]any, 0, len(args)+1), err), args...)...))
 	}
 }
 
