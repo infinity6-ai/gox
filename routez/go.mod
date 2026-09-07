@@ -3,10 +3,10 @@ module github.com/infinity6-ai/gox/routez
 go 1.26.1
 
 require (
-	github.com/infinity6-ai/gox/commonz v0.0.7
-	github.com/infinity6-ai/gox/httpz v0.0.7
-	github.com/infinity6-ai/gox/schemaz v0.0.7
-	github.com/infinity6-ai/gox/versionz v0.0.7
+	github.com/infinity6-ai/gox/commonz v0.0.8
+	github.com/infinity6-ai/gox/httpz v0.0.8
+	github.com/infinity6-ai/gox/schemaz v0.0.8
+	github.com/infinity6-ai/gox/versionz v0.0.8
 	github.com/spf13/cobra v1.10.2
 	github.com/stretchr/testify v1.12.1
 )
