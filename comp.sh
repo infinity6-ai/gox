@@ -54,6 +54,12 @@ function cmd_set_version() {
   done
 }
 
+function cmd_internal_update() {
+  local _go_base_path="$(_go_base_path)"
+  go get -u "$_go_base_path/..."
+  go mod tidy
+}
+
 _comp="${1?"comp is required"}"; shift; 
 _cmd="${1?"cmd is required"}"; shift; 
 cd "$(dirname "$0")/$_comp"; 
