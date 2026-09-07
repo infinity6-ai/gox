@@ -12,6 +12,7 @@ import (
 
 	"github.com/infinity6-ai/gox/commonz/encz/enczb64"
 	"github.com/infinity6-ai/gox/commonz/errorz"
+	"github.com/infinity6-ai/gox/commonz/pathz"
 	"github.com/infinity6-ai/gox/commonz/staticz/staticzentry"
 )
 
@@ -72,7 +73,11 @@ func Walk(ctx context.Context, name any, callback func(entry staticzentry.Entry)
 			continue
 		}
 
-		d := staticzentry.NewEntry(header.Name, fileInfo.Size(), func() (io.ReadCloser, error) {
+		pz, err := pathz.Parse(header.Name)
+		if err != nil {
+			return fmt.Errorf("error parsing path: %w", err)
+		}
+		d := staticzentry.NewEntry(pz, fileInfo.Size(), func() (io.ReadCloser, error) {
 			data, err := io.ReadAll(tarReader)
 			if err != nil {
 				return nil, fmt.Errorf("error reading file data: %w", err)

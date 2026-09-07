@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/infinity6-ai/gox/commonz/filez"
+	"github.com/infinity6-ai/gox/commonz/pathz"
 	"github.com/infinity6-ai/gox/commonz/staticz/staticzentry"
 )
 
@@ -53,7 +54,11 @@ func Walk(ctx context.Context, name any, callback func(entry staticzentry.Entry)
 		if err != nil {
 			return fmt.Errorf("error extracting relative path: %s (%s)", entry.Path(), dir)
 		}
-		nEntry := staticzentry.NewEntry(p, entry.Size(), entry.Open)
+		pz, err := pathz.Parse(p)
+		if err != nil {
+			return fmt.Errorf("error parsing path: %w", err)
+		}
+		nEntry := staticzentry.NewEntry(pz, entry.Size(), entry.Open)
 		return callback(nEntry)
 	})
 }

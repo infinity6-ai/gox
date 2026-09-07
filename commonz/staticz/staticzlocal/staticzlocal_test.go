@@ -34,7 +34,7 @@ func TestUnitWalk(t *testing.T) {
 		var count int
 		err := staticzlocal.Walk(ctx, stzfiles.Name, func(entry staticzentry.Entry) error {
 			count++
-			f := expectedFiles[entry.Name()]
+			f := expectedFiles[entry.Name().String()]
 			r, err := entry.Open()
 			require.NoError(t, err)
 			data, err := io.ReadAll(r)
@@ -52,7 +52,7 @@ func TestUnitWalk(t *testing.T) {
 		var name string
 		err := staticzlocal.Walk(ctx, stzfiles.Name, func(entry staticzentry.Entry) error {
 			count++
-			name = entry.Name()
+			name = entry.Name().String()
 			return fs.SkipAll
 		})
 		require.NoError(t, err)

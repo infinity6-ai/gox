@@ -1,20 +1,31 @@
 package staticzentry
 
-import "io"
+import (
+	"io"
+
+	"github.com/infinity6-ai/gox/commonz/pathz"
+)
 
 type Entry interface {
-	Name() string
+	Name() *pathz.Path
 	Size() int64
 	Open() (io.ReadCloser, error)
 }
 
 type entry struct {
-	name string
+	name *pathz.Path
 	size int64
 	open func() (io.ReadCloser, error)
 }
 
-func NewEntry(name string, size int64, open func() (io.ReadCloser, error)) Entry {
+func NewEntry(name *pathz.Path, size int64, open func() (io.ReadCloser, error)) Entry {
+	name.Check(pathz.ValidateOptions{
+		Absolute:    new(false),
+		MaxParents:  new(0),
+		Wildchar:    false,
+		EndingSlash: new(false),
+		Empty:       new(false),
+	})
 	return &entry{
 		name: name,
 		size: size,
@@ -26,7 +37,7 @@ func (e *entry) Size() int64 {
 	return e.size
 }
 
-func (e *entry) Name() string {
+func (e *entry) Name() *pathz.Path {
 	return e.name
 }
 
