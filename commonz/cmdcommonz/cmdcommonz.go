@@ -6,22 +6,23 @@ import (
 	"os"
 
 	"github.com/infinity6-ai/gox/commonz/cmdcommonz/internal/cmdstaticz"
+	"github.com/infinity6-ai/gox/versionz/version"
 	"github.com/spf13/cobra"
 )
 
 func Prepare(ctx context.Context) *cobra.Command {
 	var rootCmd = &cobra.Command{
-		Version: "dev",
+		Version: version.Version(),
 		Use:     "commonz",
 		Short:   "commonz",
 	}
 
-	// rootCmd.AddCommand(&cobra.Command{
-	// 	Use: "version",
-	// 	Run: func(cmd *cobra.Command, args []string) {
-	// 		// fmt.Printf("%s\n", version.Version())
-	// 	},
-	// })
+	rootCmd.AddCommand(&cobra.Command{
+		Use: "version",
+		Run: func(cmd *cobra.Command, args []string) {
+			fmt.Println(version.Version())
+		},
+	})
 
 	cmdstaticz.Prepare(ctx, rootCmd)
 
