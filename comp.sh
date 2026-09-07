@@ -39,8 +39,8 @@ function cmd_fmt() {
 }
 
 function cmd_release() {
-  # [ -z "$(git status -s "$@")" ]
-  # [ "x0" == "x$(git rev-list --count @{u}..HEAD)" ]
+  [ -z "$(git status -s "$@")" ]
+  [ "x0" == "x$(git rev-list --count @{u}..HEAD)" ]
   local _version="$(cmd_run version)"
   [ ! -z "$_version" ]
   local _tag="$_comp/$_version"
@@ -48,8 +48,8 @@ function cmd_release() {
     echo "tag already exists: $_tag" 1>&2
     false
   fi
-
-  false blablabl
+  git tag "$_tag"
+  git push --tags "$_tag" 
 }
 
 # function _go_base_path() {

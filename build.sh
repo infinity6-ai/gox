@@ -55,8 +55,8 @@ function cmd_fmt() {
 }
 
 function cmd_release() {
-  # [ -z "$(git status -s "$@")" ]
-  # [ "x0" == "x$(git rev-list --count @{u}..HEAD)" ]
+  [ -z "$(git status -s "$@")" ]
+  [ "x0" == "x$(git rev-list --count @{u}..HEAD)" ]
   GOWORK=off cmd_comps_run release
 }
 
