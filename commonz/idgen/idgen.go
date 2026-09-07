@@ -6,7 +6,6 @@ import (
 	"encoding/hex"
 
 	"github.com/google/uuid"
-	"github.com/infinity6-ai/gox/cryptz/cryptzb32"
 )
 
 func Bytes() []byte {
@@ -24,10 +23,6 @@ func FromString(str string) string {
 
 func B64() string {
 	return base64.URLEncoding.WithPadding(base64.NoPadding).EncodeToString(Bytes())
-}
-
-func B32() string {
-	return cryptzb32.Encode(Bytes()).String()
 }
 
 func Hex() string {
