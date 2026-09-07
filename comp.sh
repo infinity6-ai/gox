@@ -49,7 +49,7 @@ function cmd_release() {
     false
   fi
   git tag "$_tag"
-  git push --tags "$_tag" 
+  git push origin "$_tag" 
 }
 
 # function _go_base_path() {
