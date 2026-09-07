@@ -1,4 +1,4 @@
-package staticz
+package statizwriter
 
 import "io"
 
