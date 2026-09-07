@@ -48,7 +48,7 @@ function cmd_uphead() {
   GOWORK=off go list -mod=readonly -m "$_go_base_path/..." | \
     grep "^$_go_base_path/.*\ v" | \
     cut -d' ' -f1 | while read _go_dep_mod; do
-    go get"${_go_dep_mod}@main"
+    go get "${_go_dep_mod}@main"
   done
 }
 
