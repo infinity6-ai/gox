@@ -3,7 +3,14 @@
 [ "$I6DEV_DEBUG" != "true" ] || eval "$(i6dev meta debug i6gox-build I6DEV_DEBUG)"
 
 function cmd_comps_list() {
-  find . -maxdepth 2 -name go.mod | cut -d'/' -f2
+  # find . -maxdepth 2 -name go.mod | cut -d'/' -f2
+  echo "commonz"
+  echo "cryptz"
+  echo "schemaz"
+  echo "httpz"
+  echo "routez"
+  echo "msgz"
+  echo "fsz" 
 }
 
 function cmd_comps_run() {
