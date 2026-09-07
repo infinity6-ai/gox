@@ -17,6 +17,7 @@ import (
 type GenerateOptions struct {
 	Imp  string
 	Code string
+	Name string
 	Dir  string
 	Out  io.Writer
 }
