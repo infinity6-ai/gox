@@ -37,7 +37,7 @@ func TestUnitWalk(t *testing.T) {
 			f := expectedFiles[entry.Path()]
 			require.Equal(t, f.Dir, entry.IsDir())
 			if !entry.IsDir() {
-				r, err := entry.WalkLoad()
+				r, err := entry.Open()
 				require.NoError(t, err)
 				data, err := io.ReadAll(r)
 				require.NoError(t, err)

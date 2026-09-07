@@ -2,11 +2,11 @@ package filez_test
 
 import (
 	"fmt"
+	"io"
 	"io/fs"
 	"os"
 	"path/filepath"
 	"testing"
-	"io"
 
 	"github.com/infinity6-ai/gox/commonz/filez"
 	"github.com/stretchr/testify/assert"
@@ -164,24 +164,24 @@ func TestUnitWalkLoader(t *testing.T) {
 			if relPath == "." {
 				key = filepath.ToSlash(baseDir)
 			}
-			
+
 			var content string
 			if !entry.IsDir() {
-				rc, openErr := entry.WalkLoad()
+				rc, openErr := entry.Open()
 				require.NoError(t, openErr)
 				defer rc.Close()
-				
+
 				byteContent, readErr := io.ReadAll(rc)
 				require.NoError(t, readErr)
 				content = string(byteContent)
 			}
-			
+
 			actualEntries[key] = struct {
 				filez.WalkLoaderEntry
 				Content string
 			}{
 				WalkLoaderEntry: entry,
-				Content: content,
+				Content:         content,
 			}
 			return nil
 		})
@@ -200,16 +200,16 @@ func TestUnitWalkLoader(t *testing.T) {
 				if expectedKey == filepath.ToSlash(baseDir) {
 					expectedName = filepath.Base(baseDir)
 				}
-				
+
 				require.Equal(t, expectedName, actualVal.Name(), "Name mismatch for %s", expectedKey)
 				require.Equal(t, expectedVal.IsDir, actualVal.IsDir(), "IsDir mismatch for %s", expectedKey)
-				
+
 				if !expectedVal.IsDir {
 					require.Equal(t, expectedVal.Size, actualVal.Size(), "Size mismatch for file %s", expectedKey)
 					require.Equal(t, expectedVal.Content, actualVal.Content, "Content mismatch for file %s", expectedKey)
 				} else {
 					// Verify that WalkLoad for directories returns an error (cannot open a directory)
-					_, err := actualVal.WalkLoad()
+					_, err := actualVal.Open()
 					require.Error(t, err, "WalkLoad for directory %s should return an error", expectedKey)
 				}
 			})

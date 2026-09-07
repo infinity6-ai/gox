@@ -87,11 +87,11 @@ func DirListLimited(dir string, regex string, limit int) []string {
 }
 
 type WalkLoaderEntry struct {
-	Path     func() string
-	Name     func() string
-	IsDir    func() bool
-	Size     func() int64
-	WalkLoad func() (io.ReadCloser, error)
+	Path  func() string
+	Name  func() string
+	IsDir func() bool
+	Size  func() int64
+	Open  func() (io.ReadCloser, error)
 }
 
 func WalkLoader(base string, callback func(entry WalkLoaderEntry) error) error {
@@ -101,11 +101,11 @@ func WalkLoader(base string, callback func(entry WalkLoaderEntry) error) error {
 			return fmt.Errorf("error getting info for %s: %w", path, err)
 		}
 		return callback(WalkLoaderEntry{
-			Path:     func() string { return path },
-			Name:     f.Name,
-			IsDir:    f.IsDir,
-			Size:     info.Size,
-			WalkLoad: func() (io.ReadCloser, error) {
+			Path:  func() string { return path },
+			Name:  f.Name,
+			IsDir: f.IsDir,
+			Size:  info.Size,
+			Open: func() (io.ReadCloser, error) {
 				if f.IsDir() {
 					return nil, fmt.Errorf("cannot WalkLoad a directory: %s", path)
 				}

@@ -146,7 +146,7 @@ func WalkLoader(ctx context.Context, name any, callback func(entry filez.WalkLoa
 			Name:  func() string { return fileInfo.Name() },
 			IsDir: func() bool { return fileInfo.IsDir() },
 			Size:  func() int64 { return fileInfo.Size() },
-			WalkLoad: func() (io.ReadCloser, error) {
+			Open: func() (io.ReadCloser, error) {
 				if fileInfo.IsDir() {
 					return nil, fmt.Errorf("cannot WalkLoad a directory: %s", header.Name)
 				}
