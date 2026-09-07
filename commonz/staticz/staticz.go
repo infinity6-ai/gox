@@ -11,8 +11,6 @@ import (
 	"github.com/infinity6-ai/gox/commonz/staticz/staticzlocal"
 )
 
-const max = 1 * 1024 * 1024
-
 func Walk(ctx context.Context, name any, callback func(entry staticzentry.Entry) error) error {
 	err := staticzlocal.Walk(ctx, name, callback)
 	if !errors.Is(err, staticzlocal.ErrNotFound) {
