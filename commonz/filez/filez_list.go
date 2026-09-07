@@ -98,7 +98,7 @@ func WalkLoader(base string, callback func(entry WalkLoaderEntry) error) error {
 	return Walk(base, func(path string, f fs.DirEntry) error {
 		info, err := f.Info()
 		if err != nil {
-			return fmt.Errorf("error getting info for %s: %w", err, path)
+			return fmt.Errorf("error getting info for %s: %w", path, err)
 		}
 		return callback(WalkLoaderEntry{
 			Path:     path,
