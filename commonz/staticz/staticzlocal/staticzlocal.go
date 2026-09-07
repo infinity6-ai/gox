@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/infinity6-ai/gox/commonz/filez"
+	"github.com/infinity6-ai/gox/commonz/staticz/staticzentry"
 )
 
 func LookupCurrentDir(name any) (string, error) {
@@ -39,16 +40,20 @@ func LookupCurrentDir(name any) (string, error) {
 	}
 }
 
-func Walk(ctx context.Context, name any, callback func(entry filez.WalkLoaderEntry) error) error {
+func Walk(ctx context.Context, name any, callback func(entry staticzentry.Entry) error) error {
 	dir, err := LookupCurrentDir(name)
 	if err != nil {
 		return err
 	}
 	return filez.WalkLoader(dir, func(entry filez.WalkLoaderEntry) error {
-		cPath := filepath.Clean(entry.Path())
-		if cPath == dir {
+		if entry.IsDir() {
 			return nil
 		}
-		return callback(entry)
+		p, err := filepath.Rel(dir, entry.Path())
+		if err != nil {
+			return fmt.Errorf("error extracting relative path: %s (%s)", entry.Path(), dir)
+		}
+		nEntry := staticzentry.NewEntry(p, entry.Size(), entry.Open)
+		return callback(nEntry)
 	})
 }
