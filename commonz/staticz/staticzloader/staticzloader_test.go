@@ -3,6 +3,7 @@ package staticzloader_test
 import (
 	"context"
 	"io"
+	"io/fs"
 	"testing"
 
 	"github.com/infinity6-ai/gox/commonz/filez"
@@ -23,7 +24,7 @@ func TestUnitWalk(t *testing.T) {
 		Dir     bool
 		Content string
 	}
-	expectedFiles := map[string]F{
+	expectedFiles := map[string]*F{
 		"stzfiles.txt":               {Content: "commonz\n"},
 		"commonz":                    {Dir: true},
 		"commonz/commonz-sample.txt": {Content: "commonz sample\n"},
@@ -47,5 +48,34 @@ func TestUnitWalk(t *testing.T) {
 		})
 		require.NoError(t, err)
 		require.Equal(t, len(expectedFiles), count, "files count")
+	})
+
+	t.Run("SkipAll", func(t *testing.T) {
+		var count int
+		var f *F
+		err := staticzloader.WalkLoader(ctx, stzfiles.Name, func(entry filez.WalkLoaderEntry) error {
+			count++
+			f = expectedFiles[entry.Path()]
+			return fs.SkipAll
+		})
+		require.NoError(t, err)
+		require.NotNil(t, f)
+		require.Equal(t, 1, count, "files count")
+	})
+
+	t.Run("SkipDir", func(t *testing.T) {
+		var count int
+		var f string
+		err := staticzloader.WalkLoader(ctx, stzfiles.Name, func(entry filez.WalkLoaderEntry) error {
+			count++
+			if entry.Path() == "commonz" {
+				return fs.SkipDir
+			}
+			f = entry.Name()
+			return nil
+		})
+		require.NoError(t, err)
+		require.Equal(t, "stzfiles.txt", f)
+		require.Equal(t, 2, count, "files count")
 	})
 }
