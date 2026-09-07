@@ -1,5 +1,5 @@
 package staticzloader
 
-func SetCode(name string, tgz string) {
+func SetCode(name any, tgz func() string) {
 
 }
