@@ -9,8 +9,9 @@ import (
 )
 
 func TestUnitBasic(t *testing.T) {
+	ctx := t.Context()
 	code := staticzloader.GetCode(stzfiles.Name)
 	require.NotEmpty(t, code)
 
-	staticzloader.Walk(stzfiles.Name)
+	staticzloader.Walk(ctx, stzfiles.Name)
 }

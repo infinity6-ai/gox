@@ -4,13 +4,19 @@ import (
 	"archive/tar"
 	"bytes"
 	"compress/gzip"
+	"context"
 	"fmt"
 	"io"
 	"sync"
 
 	"github.com/infinity6-ai/gox/commonz/encz/enczb64"
 	"github.com/infinity6-ai/gox/commonz/errorz"
+	"github.com/infinity6-ai/gox/commonz/logz"
 )
+
+type tlogger logz.Type
+
+var logger = logz.Create(tlogger(true))
 
 type Codes struct {
 	codes map[any][]byte
@@ -41,7 +47,7 @@ func GetCode(name any) []byte {
 	return codes.codes[name]
 }
 
-func Walk(name any) {
+func Walk(ctx context.Context, name any) {
 	code := GetCode(name)
 	if code == nil {
 		panic(fmt.Sprintf("code not find: %s (%T)", name, name))
@@ -70,13 +76,13 @@ func Walk(name any) {
 		// Check the type of the entry
 		switch header.Typeflag {
 		case tar.TypeDir:
-			fmt.Printf("Directory: %s\n", header.Name)
+			// directory, ignore it
 		case tar.TypeReg:
-			fmt.Printf("File: %s (%d bytes)\n", header.Name, header.Size)
+			logger.Info(ctx, "File", map[string]any{"name": header.Name, "size": header.Size})
 			// Optional: Read the file content without writing to disk
 			// content, _ := io.ReadAll(tarReader)
 		default:
-			fmt.Printf("Other entry: %s (Type: %c)\n", header.Name, header.Typeflag)
+			panic(fmt.Sprintf("unsupported type %s (%T) %s: %v", name, name, header.Name, header.Typeflag))
 		}
 	}
 }
