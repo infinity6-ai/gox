@@ -13,6 +13,8 @@ import (
 	"github.com/infinity6-ai/gox/commonz/staticz/staticzentry"
 )
 
+var ErrNotFound = errors.New("not found")
+
 func LookupCurrentDir(name any) (string, error) {
 	original, err := filepath.Abs(".")
 	if err != nil {
@@ -26,7 +28,7 @@ func LookupCurrentDir(name any) (string, error) {
 			if errors.Is(err, fs.ErrNotExist) {
 				ncurrent := filepath.Dir(current)
 				if ncurrent == "" || ncurrent == current {
-					return "", fmt.Errorf("%w: not found %s", err, original)
+					return "", fmt.Errorf("%w: not found %s", ErrNotFound, original)
 				}
 				current = ncurrent
 				continue
