@@ -86,6 +86,7 @@ func DirListLimited(dir string, regex string, limit int) []string {
 }
 
 type WalkLoaderEntry struct {
+	Path     string
 	Entry    fs.DirEntry
 	WalkLoad func() (io.ReadCloser, error)
 }
@@ -93,6 +94,7 @@ type WalkLoaderEntry struct {
 func WalkLoader(base string, callback func(entry WalkLoaderEntry) error) error {
 	return Walk(base, func(path string, f fs.DirEntry) error {
 		return callback(WalkLoaderEntry{
+			Path:     path,
 			Entry:    f,
 			WalkLoad: func() (io.ReadCloser, error) { return os.Open(path) },
 		})
