@@ -38,6 +38,10 @@ function cmd_clean() {
   cmd_comps_run clean "$@"
 }
 
+function cmd_go() {
+  cmd_comps_run go "$@"
+}
+
 function cmd_update() {
   cmd_comps_run update "$@"
 }
