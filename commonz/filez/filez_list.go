@@ -1,6 +1,7 @@
 package filez
 
 import (
+	"io"
 	"io/fs"
 	"os"
 	"path/filepath"
@@ -84,10 +85,21 @@ func DirListLimited(dir string, regex string, limit int) []string {
 	return ret
 }
 
-type WalkLoaderEntry interface {
-	Entry() fs.DirEntry
-	WalkLoad() ([]byte, error)
+type WalkLoaderEntry struct {
+	Entry    fs.DirEntry
+	WalkLoad func() (io.ReadCloser, error)
 }
 
-// func WalkLoader(base string, callback func(entry WalkLoaderEntry) bool) error {
-// }
+func WalkLoader(base string, callback func(entry WalkLoaderEntry) bool) error {
+	return Walk(base, func(path string, f fs.DirEntry) error {
+		if callback(WalkLoaderEntry{
+			Entry: f,
+			WalkLoad: func() (io.ReadCloser, error) {
+				return os.Open(path)
+			},
+		}) {
+			return fs.SkipDir
+		}
+		return nil
+	})
+}
