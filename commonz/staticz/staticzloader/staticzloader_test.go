@@ -24,6 +24,7 @@ func TestUnitWalk(t *testing.T) {
 	expectedFiles := map[string]string{
 		"stzfiles.txt":               "commonz\n",
 		"commonz/commonz-sample.txt": "commonz sample\n",
+		"commonz/commonz-s2.txt":     "commonz s2\n",
 	}
 
 	t.Run("FindAll", func(t *testing.T) {
