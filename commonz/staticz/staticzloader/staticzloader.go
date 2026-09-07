@@ -30,3 +30,9 @@ func decode(tgz func() string) []byte {
 	errorz.Check(fmt.Errorf("%w: error decoding", err))
 	return b.Bytes()
 }
+
+func GetCode(name any) []byte {
+	codes.mu.RLock()
+	defer codes.mu.RUnlock()
+	return codes.codes[name]
+}
