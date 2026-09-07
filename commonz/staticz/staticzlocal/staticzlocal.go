@@ -35,7 +35,7 @@ func LookupCurrentDir(name any) (string, error) {
 		if strContent != fmt.Sprintf("%s", name) {
 			return "", fmt.Errorf("wrong name, expected: %s, but was: %s", name, strContent)
 		}
-		return filepath.Join(current, "stzfiles"), nil
+		return filepath.Clean(filepath.Join(current, "stzfiles")), nil
 	}
 }
 
@@ -45,6 +45,10 @@ func Walk(ctx context.Context, name any, callback func(entry filez.WalkLoaderEnt
 		return err
 	}
 	return filez.WalkLoader(dir, func(entry filez.WalkLoaderEntry) error {
+		cPath := filepath.Clean(entry.Path())
+		if cPath == dir {
+			return nil
+		}
 		return callback(entry)
 	})
 }
