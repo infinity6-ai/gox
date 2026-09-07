@@ -84,19 +84,6 @@ func Generate(ctx context.Context, opts GenerateOptions) {
 
 	w := bufio.NewWriter(opts.Out)
 
-	/*
-			7 09:23:08 i6dev [cmd_go-platform_static] echo 'package stfiles'
-		2026-09-07 09:23:08 i6dev [cmd_go-platform_static] echo 'import "go.code.infinity6.ai/platform/httpz/statichandler"'
-		2026-09-07 09:23:08 i6dev [cmd_go-platform_static] echo 'func init() {'
-		2026-09-07 09:23:08 i6dev [cmd_go-platform_static] echo '    statichandler.Instance().SetCode(pack, func() string {'
-		2026-09-07 09:23:08 i6dev [cmd_go-platform_static] echo '        return `'
-		2026-09-07 09:23:08 i6dev [cmd_go-platform_static] base64
-		2026-09-07 09:23:08 i6dev [cmd_go-platform_static] tar czf - -C . static
-		2026-09-07 09:23:08 i6dev [cmd_go-platform_static] echo '        `'
-		2026-09-07 09:23:08 i6dev [cmd_go-platform_static] echo '   })'
-		2026-09-07 09:23:08 i6dev [cmd_go-platform_static] echo '}'
-	*/
-
 	w.WriteString("package stzfiles\n")
 	w.WriteString("import \"")
 	w.WriteString(opts.Imp)
