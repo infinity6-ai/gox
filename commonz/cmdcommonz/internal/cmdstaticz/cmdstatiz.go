@@ -7,7 +7,7 @@ import (
 	"path/filepath"
 
 	"github.com/infinity6-ai/gox/commonz/errorz"
-	"github.com/infinity6-ai/gox/staticz/staticz"
+	"github.com/infinity6-ai/gox/commonz/staticz"
 	"github.com/spf13/cobra"
 )
 
