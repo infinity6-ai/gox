@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"path/filepath"
 
 	"github.com/infinity6-ai/gox/staticz/internal"
 	"github.com/infinity6-ai/gox/staticz/staticz"
@@ -33,7 +34,13 @@ func prepareGenerateCmd(ctx context.Context, parent *cobra.Command) {
 			opts.Code = internal.Check2(cmd.Flags().GetString("code"))
 			opts.Dir = internal.Check2(cmd.Flags().GetString("dir"))
 			out := internal.Check2(cmd.Flags().GetString("out"))
-			opts.Out = internal.Check2(os.Create(out))
+			if out == "-" {
+				opts.Out = os.Stdout
+			} else {
+				out = internal.Check2(filepath.Abs(out))
+				os.MkdirAll(filepath.Dir(out), os.ModePerm)
+				opts.Out = internal.Check2(os.Create(out))
+			}
 			staticz.Generate(ctx, opts)
 		},
 	}
