@@ -57,7 +57,7 @@ function cmd_set_version() {
 function cmd_internal_update() {
   local _version="${1?'_version'}"
   local _go_base_path="$(_go_base_path)"
-  go get -u "$_go_base_path/$_version"
+  go get -u "$_go_base_path/...@$_version"
   go mod tidy
 }
 
