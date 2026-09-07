@@ -66,7 +66,7 @@ func incrementVersion() error {
 
 	newContent := strings.Replace(string(content), oldVersionString, newVersionString, 1)
 
-	err = os.WriteFile(filePath, []byte(newContent), 0644)
+	err = os.WriteFile(filePath, []byte(newContent), os.ModePerm)
 	if err != nil {
 		return fmt.Errorf("could not write to file %s: %w", filePath, err)
 	}
