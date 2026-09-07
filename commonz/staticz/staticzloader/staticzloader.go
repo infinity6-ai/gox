@@ -141,24 +141,18 @@ func WalkLoader(ctx context.Context, name any, callback func(entry filez.WalkLoa
 		skipPrefix = ""
 
 		fileInfo := header.FileInfo()
-		d := &filez.WalkLoaderEntry{
-			Path:  func() string { return header.Name },
-			Name:  func() string { return fileInfo.Name() },
-			IsDir: func() bool { return fileInfo.IsDir() },
-			Size:  func() int64 { return fileInfo.Size() },
-			Open: func() (io.ReadCloser, error) {
-				if fileInfo.IsDir() {
-					return nil, fmt.Errorf("cannot WalkLoad a directory: %s", header.Name)
-				}
-				data, err := io.ReadAll(tarReader)
-				if err != nil {
-					return nil, fmt.Errorf("error reading file data: %w", err)
-				}
-				return io.NopCloser(bytes.NewBuffer(data)), nil
-			},
-		}
+		d := filez.NewWalkLoaderEntry(header.Name, fileInfo.Name(), fileInfo.IsDir(), fileInfo.Size(), func() (io.ReadCloser, error) {
+			if fileInfo.IsDir() {
+				return nil, fmt.Errorf("cannot WalkLoad a directory: %s", header.Name)
+			}
+			data, err := io.ReadAll(tarReader)
+			if err != nil {
+				return nil, fmt.Errorf("error reading file data: %w", err)
+			}
+			return io.NopCloser(bytes.NewBuffer(data)), nil
+		})
 
-		err = callback(*d)
+		err = callback(d)
 		if err != nil {
 			if err == fs.SkipDir && d.IsDir() {
 				skipPrefix = header.Name

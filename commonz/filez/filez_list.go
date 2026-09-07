@@ -86,12 +86,50 @@ func DirListLimited(dir string, regex string, limit int) []string {
 	return ret
 }
 
-type WalkLoaderEntry struct {
-	Path  func() string
-	Name  func() string
-	IsDir func() bool
-	Size  func() int64
-	Open  func() (io.ReadCloser, error)
+type WalkLoaderEntry interface {
+	Path() string
+	Name() string
+	IsDir() bool
+	Size() int64
+	Open() (io.ReadCloser, error)
+}
+
+type walkLoaderEntry struct {
+	path  string
+	name  string
+	isDir bool
+	size  int64
+	open  func() (io.ReadCloser, error)
+}
+
+func (e *walkLoaderEntry) Path() string {
+	return e.path
+}
+
+func (e *walkLoaderEntry) Name() string {
+	return e.name
+}
+
+func (e *walkLoaderEntry) IsDir() bool {
+	return e.isDir
+}
+
+func (e *walkLoaderEntry) Size() int64 {
+	return e.size
+}
+
+func (e *walkLoaderEntry) Open() (io.ReadCloser, error) {
+	return e.open()
+}
+
+func NewWalkLoaderEntry(path string, name string, isDir bool, size int64, open func() (io.ReadCloser, error)) WalkLoaderEntry {
+	return &walkLoaderEntry{
+		path:  path,
+		name:  name,
+		isDir: isDir,
+		size:  size,
+		open:  open,
+	}
 }
 
 func WalkLoader(base string, callback func(entry WalkLoaderEntry) error) error {
@@ -100,17 +138,13 @@ func WalkLoader(base string, callback func(entry WalkLoaderEntry) error) error {
 		if err != nil {
 			return fmt.Errorf("error getting info for %s: %w", path, err)
 		}
-		return callback(WalkLoaderEntry{
-			Path:  func() string { return path },
-			Name:  f.Name,
-			IsDir: f.IsDir,
-			Size:  info.Size,
-			Open: func() (io.ReadCloser, error) {
-				if f.IsDir() {
-					return nil, fmt.Errorf("cannot WalkLoad a directory: %s", path)
-				}
-				return os.Open(path)
-			},
+		isDir := f.IsDir()
+		entry := NewWalkLoaderEntry(path, f.Name(), f.IsDir(), info.Size(), func() (io.ReadCloser, error) {
+			if isDir {
+				return nil, fmt.Errorf("cannot WalkLoad a directory: %s", path)
+			}
+			return os.Open(path)
 		})
+		return callback(entry)
 	})
 }
