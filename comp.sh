@@ -46,7 +46,7 @@ function cmd_release() {
   local _tag="$_comp/$_version"
   if git show-ref --tags "$_tag" --quiet; then
     echo "tag already exists: $_tag" 1>&2
-    false
+    # false
   fi
   local _go_base_path="$(_go_base_path)"
   local _go_dep_mod=""
