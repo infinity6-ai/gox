@@ -43,10 +43,10 @@ function cmd_fmt() {
 }
 
 function cmd_release() {
+  local _version="${1?'_version'}"
+  [ ! -z "$_version" ]
   [ -z "$(git status -s "$@")" ]
   [ "x0" == "x$(git rev-list --count @{u}..HEAD)" ]
-  local _version="$(cmd_run version)"
-  [ ! -z "$_version" ]
   local _tag="$_comp/$_version"
   if git show-ref --tags "$_tag" --quiet; then
     echo "tag already exists: $_tag" 1>&2

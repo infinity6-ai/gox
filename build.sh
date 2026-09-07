@@ -74,7 +74,7 @@ function cmd_release() {
   [ "x0" == "x$(git rev-list --count @{u}..HEAD)" ]
   local _version="$(./comp.sh versionz run version)"
   [ ! -z "$_version" ]
-  # GOWORK=off cmd_comps_run release
+  GOWORK=off cmd_comps_run release "$_version"
 }
 
 function cmd_version-inc() {
