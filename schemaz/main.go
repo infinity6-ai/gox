@@ -1,7 +1,13 @@
 package main
 
-import "github.com/infinity6-ai/gox/commonz/errorz"
+import (
+	"context"
+
+	"github.com/infinity6-ai/gox/schemaz/cmdschemaz"
+)
 
 func main() {
-	errorz.Check(nil)
+	ctx := context.Background()
+	rootCmd := cmdschemaz.Prepare(ctx)
+	cmdschemaz.Execute(rootCmd)
 }
