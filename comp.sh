@@ -57,6 +57,7 @@ function cmd_release() {
   done
   go mod tidy
   [ "x$(go run . version)" == "x$_version" ]
+  git add . && git commit -m "release: $_tag" && git push
   git tag "$_tag"
   git push origin "$_tag"
 }
