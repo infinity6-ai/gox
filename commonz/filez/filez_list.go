@@ -90,16 +90,11 @@ type WalkLoaderEntry struct {
 	WalkLoad func() (io.ReadCloser, error)
 }
 
-func WalkLoader(base string, callback func(entry WalkLoaderEntry) bool) error {
+func WalkLoader(base string, callback func(entry WalkLoaderEntry) error) error {
 	return Walk(base, func(path string, f fs.DirEntry) error {
-		if callback(WalkLoaderEntry{
-			Entry: f,
-			WalkLoad: func() (io.ReadCloser, error) {
-				return os.Open(path)
-			},
-		}) {
-			return fs.SkipDir
-		}
-		return nil
+		return callback(WalkLoaderEntry{
+			Entry:    f,
+			WalkLoad: func() (io.ReadCloser, error) { return os.Open(path) },
+		})
 	})
 }
