@@ -4,6 +4,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io"
+	"os"
 
 	"github.com/infinity6-ai/gox/commonz/pathz"
 	"github.com/infinity6-ai/gox/commonz/staticz/staticzentry"
@@ -30,9 +32,20 @@ func Lookup(ctx context.Context, name any, p *pathz.Path) (staticzentry.Entry, e
 	return staticzloader.Lookup(ctx, name, p)
 }
 
-// func ExtractTo(ctx context.Context, name any, dest *pathz.Path) error {
-// 	return Walk(ctx, name, func(entry staticzentry.Entry) error {
-// 		destPath := dest.MustJoin(entry.Name())
-// 		entry.Open()
-// 	})
-// }
+func ExtractTo(ctx context.Context, name any, dest *pathz.Path) error {
+	return Walk(ctx, name, func(entry staticzentry.Entry) error {
+		destPath := dest.MustJoin(entry.Name())
+		r, err := entry.Open()
+		if err != nil {
+			return err
+		}
+		defer r.Close()
+		w, err := os.OpenFile(destPath.String(), os.O_WRONLY|os.O_TRUNC|os.O_CREATE, os.ModePerm)
+		if err != nil {
+			return err
+		}
+		defer w.Close()
+		_, err = io.Copy(w, r)
+		return err
+	})
+}
