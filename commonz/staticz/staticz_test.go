@@ -86,7 +86,7 @@ func TestUnitExtractTo(t *testing.T) {
 	destPath := pathz.MustParse(tempDir)
 
 	// Extract files
-	err = staticz.ExtractTo(ctx, stzfiles.Name, destPath)
+	err = staticz.ExtractTo(ctx, destPath, stzfiles.Name)
 	require.NoError(t, err)
 
 	// Verify extracted files
@@ -103,7 +103,7 @@ func TestUnitExtractTo(t *testing.T) {
 
 	// Verify that an attempt to extract to an invalid path fails
 	invalidDestPath := pathz.MustParse("/nonexistent/path/that/should/fail")
-	err = staticz.ExtractTo(ctx, stzfiles.Name, invalidDestPath)
+	err = staticz.ExtractTo(ctx, invalidDestPath, stzfiles.Name)
 	require.Error(t, err)
 }
 

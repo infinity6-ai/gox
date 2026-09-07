@@ -32,23 +32,31 @@ func Lookup(ctx context.Context, name any, p *pathz.Path) (staticzentry.Entry, e
 	return staticzloader.Lookup(ctx, name, p)
 }
 
-func ExtractTo(ctx context.Context, name any, dest *pathz.Path) error {
-	return Walk(ctx, name, func(entry staticzentry.Entry) error {
-		destPath := dest.MustJoin(entry.Name())
-		if err := os.MkdirAll(destPath.Dir().String(), os.ModePerm); err != nil {
-			return err
-		}
-		r, err := entry.Open()
+func ExtractTo(ctx context.Context, dest *pathz.Path, name ...any) error {
+	for _, n := range name {
+		err := Walk(ctx, n, func(entry staticzentry.Entry) error {
+			destPath := dest.MustJoin(entry.Name())
+			if err := os.MkdirAll(destPath.Dir().String(), os.ModePerm); err != nil {
+				return fmt.Errorf("failed to create directory for static entry %s at %s: %w", entry.Name(), destPath.Dir(), err)
+			}
+			r, err := entry.Open()
+			if err != nil {
+				return fmt.Errorf("failed to open staticz entry %s: %w", entry.Name(), err)
+			}
+			defer r.Close()
+			w, err := os.OpenFile(destPath.String(), os.O_WRONLY|os.O_TRUNC|os.O_CREATE, os.ModePerm)
+			if err != nil {
+				return fmt.Errorf("failed to create or open destination file %s for staticz entry %s: %w", destPath, entry.Name(), err)
+			}
+			defer w.Close()
+			if _, err := io.Copy(w, r); err != nil {
+				return fmt.Errorf("failed to copy content from staticz entry %s to %s: %w", entry.Name(), destPath, err)
+			}
+			return nil
+		})
 		if err != nil {
-			return err
+			return fmt.Errorf("failed to extract staticz for name %v: %w", n, err)
 		}
-		defer r.Close()
-		w, err := os.OpenFile(destPath.String(), os.O_WRONLY|os.O_TRUNC|os.O_CREATE, os.ModePerm)
-		if err != nil {
-			return err
-		}
-		defer w.Close()
-		_, err = io.Copy(w, r)
-		return err
-	})
+	}
+	return nil
 }
