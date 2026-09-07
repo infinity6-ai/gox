@@ -15,6 +15,7 @@ require (
 
 require (
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
+	github.com/infinity6-ai/gox/versionz v0.0.0-20260907201209-2dbfd605c128 // indirect
 	github.com/spf13/pflag v1.0.9 // indirect
 	go.yaml.in/yaml/v3 v3.0.5 // indirect
 )
