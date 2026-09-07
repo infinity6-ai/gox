@@ -32,7 +32,7 @@ func TestUnitWalk(t *testing.T) {
 
 	t.Run("FindAll", func(t *testing.T) {
 		var count int
-		err := staticzloader.WalkLoader(ctx, stzfiles.Name, func(entry filez.WalkLoaderEntry) error {
+		err := staticzloader.Walk(ctx, stzfiles.Name, func(entry filez.WalkLoaderEntry) error {
 			count++
 			f := expectedFiles[entry.Path()]
 			require.Equal(t, f.Dir, entry.IsDir())
@@ -53,7 +53,7 @@ func TestUnitWalk(t *testing.T) {
 	t.Run("SkipAll", func(t *testing.T) {
 		var count int
 		var f *F
-		err := staticzloader.WalkLoader(ctx, stzfiles.Name, func(entry filez.WalkLoaderEntry) error {
+		err := staticzloader.Walk(ctx, stzfiles.Name, func(entry filez.WalkLoaderEntry) error {
 			count++
 			f = expectedFiles[entry.Path()]
 			return fs.SkipAll
@@ -66,7 +66,7 @@ func TestUnitWalk(t *testing.T) {
 	t.Run("SkipDir", func(t *testing.T) {
 		var count int
 		var f string
-		err := staticzloader.WalkLoader(ctx, stzfiles.Name, func(entry filez.WalkLoaderEntry) error {
+		err := staticzloader.Walk(ctx, stzfiles.Name, func(entry filez.WalkLoaderEntry) error {
 			count++
 			if entry.Path() == "commonz" {
 				return fs.SkipDir
