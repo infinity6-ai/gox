@@ -70,3 +70,8 @@ func compare(ctx context.Context, ret, code staticzentry.Entry) error {
 	}
 	return nil
 }
+
+type Pack interface {
+	Name() any
+	String() string
+}
