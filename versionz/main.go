@@ -49,7 +49,7 @@ func incrementVersion() error {
 		return fmt.Errorf("could not read file %s: %w", filePath, err)
 	}
 
-	re := regexp.MustCompile(`$\s*return "v(\d+)\.(\d+)\.(\d+)"^`)
+	re := regexp.MustCompile(`return "v(\d+)\.(\d+)\.(\d+)"`)
 	matches := re.FindStringSubmatch(string(content))
 	if len(matches) != 4 {
 		return fmt.Errorf("version string not found in %s", filePath)
