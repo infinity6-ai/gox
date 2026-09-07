@@ -95,8 +95,8 @@ func Generate(ctx context.Context, opts GenerateOptions) {
 	w.WriteString("(Name, func() string {\n")
 	w.WriteString("        return `\n")
 
-	enc := base64.StdEncoding
 	wcols := &lineEncoder{w: w, limit: 80}
+	enc := base64.StdEncoding
 	b64 := base64.NewEncoder(enc, wcols)
 	CreateTarGz(opts.Dir, b64)
 	b64.Close()
