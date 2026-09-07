@@ -4,8 +4,8 @@ go 1.26.1
 
 require (
 	github.com/google/uuid v1.6.0
-	github.com/infinity6-ai/gox/commonz v0.0.0-20260907141854-b6a37e05e5a6
-	github.com/infinity6-ai/gox/versionz v0.0.0-20260907201209-2dbfd605c128
+	github.com/infinity6-ai/gox/commonz v0.0.3
+	github.com/infinity6-ai/gox/versionz v0.0.3
 	github.com/spf13/cobra v1.10.2
 	github.com/stretchr/testify v1.12.1
 	google.golang.org/protobuf v1.36.12
