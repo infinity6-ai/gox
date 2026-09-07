@@ -42,6 +42,16 @@ function cmd_fmt() {
   go fmt ./...
 }
 
+function cmd_uphead() {
+  local _go_base_path="$(_go_base_path)"
+  local _go_dep_mod=""
+  GOWORK=off go list -mod=readonly -m "$_go_base_path/..." | \
+    grep "^$_go_base_path/.*\ v" | \
+    cut -d' ' -f1 | while read _go_dep_mod; do
+    go get"${_go_dep_mod}@main"
+  done
+}
+
 function cmd_release() {
   local _version="${1?'_version'}"
   [ ! -z "$_version" ]

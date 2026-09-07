@@ -4,9 +4,9 @@ go 1.26.1
 
 require (
 	cloud.google.com/go/pubsub v1.51.0
-	github.com/infinity6-ai/gox/commonz v0.0.0-20260906210138-37283bc88355
-	github.com/infinity6-ai/gox/fsz v0.0.0-20260906205544-70081d3d437a
-	github.com/infinity6-ai/gox/versionz v0.0.0-20260907201209-2dbfd605c128
+	github.com/infinity6-ai/gox/commonz v0.0.6
+	github.com/infinity6-ai/gox/fsz v0.0.6
+	github.com/infinity6-ai/gox/versionz v0.0.6
 	github.com/spf13/cobra v1.10.2
 	github.com/stretchr/testify v1.12.1
 	google.golang.org/api v0.297.0
@@ -38,7 +38,7 @@ require (
 	github.com/googleapis/enterprise-certificate-proxy v0.3.20 // indirect
 	github.com/googleapis/gax-go/v2 v2.24.0 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
-	github.com/infinity6-ai/gox/cryptz v0.0.0-20260902200903-56e0229457cf // indirect
+	github.com/infinity6-ai/gox/cryptz v0.0.6 // indirect
 	github.com/planetscale/vtprotobuf v0.6.1-0.20240319094008-0393e58bdf10 // indirect
 	github.com/spf13/pflag v1.0.9 // indirect
 	github.com/spiffe/go-spiffe/v2 v2.7.0 // indirect

@@ -42,6 +42,10 @@ function cmd_go() {
   cmd_comps_run go "$@"
 }
 
+function cmd_uphead() {
+  cmd_comps_run uphead "$@"
+}
+
 function cmd_update() {
   cmd_comps_run update "$@"
 }
