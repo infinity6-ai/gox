@@ -5,6 +5,8 @@ go 1.26.1
 require (
 	cloud.google.com/go/storage v1.59.2
 	github.com/infinity6-ai/gox/commonz v0.0.0-20260906210138-37283bc88355
+	github.com/infinity6-ai/gox/versionz v0.0.0-20260907201209-2dbfd605c128
+	github.com/spf13/cobra v1.10.2
 	github.com/stretchr/testify v1.12.1
 	google.golang.org/api v0.276.0
 )
@@ -32,8 +34,9 @@ require (
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/googleapis/enterprise-certificate-proxy v0.3.14 // indirect
 	github.com/googleapis/gax-go/v2 v2.21.0 // indirect
-	github.com/infinity6-ai/gox/versionz v0.0.0-20260907201209-2dbfd605c128 // indirect
+	github.com/inconshreveable/mousetrap v1.1.0 // indirect
 	github.com/planetscale/vtprotobuf v0.6.1-0.20240319094008-0393e58bdf10 // indirect
+	github.com/spf13/pflag v1.0.9 // indirect
 	github.com/spiffe/go-spiffe/v2 v2.6.0 // indirect
 	go.opentelemetry.io/auto/sdk v1.2.1 // indirect
 	go.opentelemetry.io/contrib/detectors/gcp v1.39.0 // indirect
