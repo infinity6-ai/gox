@@ -2,9 +2,10 @@ package staticzloader_test
 
 import (
 	"context"
-	"io/fs"
+	"io"
 	"testing"
 
+	"github.com/infinity6-ai/gox/commonz/filez"
 	"github.com/infinity6-ai/gox/commonz/internal/stzfiles"
 	"github.com/infinity6-ai/gox/commonz/staticz/staticzloader"
 	"github.com/stretchr/testify/require"
@@ -30,14 +31,17 @@ func TestUnitWalk(t *testing.T) {
 
 	t.Run("FindAll", func(t *testing.T) {
 		var count int
-		err := staticzloader.Walk(ctx, stzfiles.Name, func(path string, d fs.DirEntry, err error) error {
+		err := staticzloader.WalkLoader(ctx, stzfiles.Name, func(entry filez.WalkLoaderEntry) error {
 			count++
-			f := expectedFiles[path]
-			require.Equal(t, f.Dir, d.IsDir())
-			if !d.IsDir() {
-				info, errInfo := d.Info()
-				require.NoError(t, errInfo)
-				require.Equal(t, int64(len(f.Content)), info.Size())
+			f := expectedFiles[entry.Path()]
+			require.Equal(t, f.Dir, entry.IsDir())
+			if !entry.IsDir() {
+				r, err := entry.WalkLoad()
+				require.NoError(t, err)
+				data, err := io.ReadAll(r)
+				require.NoError(t, err)
+				require.Equal(t, f.Content, string(data))
+				require.Equal(t, int64(len(f.Content)), entry.Size())
 			}
 			return nil
 		})
