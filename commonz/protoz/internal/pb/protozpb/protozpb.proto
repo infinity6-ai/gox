@@ -1,9 +1,9 @@
 syntax = "proto3";
 
-package i6.cryptz.cryptzrsa;
+package i6.commonz.protoz.protozsample.Dummy;
 
 // The full import path for Go
-option go_package = "github.com/infinity6-ai/gox/commonz/protoz/internal/pb/protozpb";
+option go_package = "github.com/infinity6-ai/gox/commonz/protoz/protozsample/internal/pb/protozpb";
 
 // A simple message for testing your protoz utility
 message Dummy {
