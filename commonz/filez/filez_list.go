@@ -16,19 +16,12 @@ import (
 // Walk traverses the directory tree starting from `base`, calling the provided
 // `callback` function for each file and directory. The callback returns `true`
 // to stop walking the current directory.
-func Walk(base string, callback func(path string, f fs.DirEntry) bool) error {
+func Walk(base string, callback func(path string, f fs.DirEntry) error) error {
 	return filepath.WalkDir(base, func(path string, d os.DirEntry, err error) error {
 		if err != nil {
-			if !os.IsNotExist(err) {
-				errorz.Check(err)
-			}
-			return nil
+			return err
 		}
-		stop := callback(path, d)
-		if stop {
-			return filepath.SkipDir
-		}
-		return nil
+		return callback(path, d)
 	})
 }
 
@@ -90,3 +83,11 @@ func DirListLimited(dir string, regex string, limit int) []string {
 	}
 	return ret
 }
+
+type WalkLoaderEntry interface {
+	Entry() fs.DirEntry
+	WalkLoad() ([]byte, error)
+}
+
+// func WalkLoader(base string, callback func(entry WalkLoaderEntry) bool) error {
+// }

@@ -17,9 +17,9 @@ func TestUnitWalk(t *testing.T) {
 	os.Create(filepath.Join(baseDir, "a", "b", "file2.txt"))
 
 	var paths []string
-	callback := func(path string, f fs.DirEntry) bool {
+	callback := func(path string, f fs.DirEntry) error {
 		paths = append(paths, path)
-		return false // continue walking
+		return nil
 	}
 
 	filez.Walk(baseDir, callback)
