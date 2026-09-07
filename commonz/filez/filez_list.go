@@ -105,7 +105,12 @@ func WalkLoader(base string, callback func(entry WalkLoaderEntry) error) error {
 			Name:     f.Name,
 			IsDir:    f.IsDir,
 			Size:     info.Size,
-			WalkLoad: func() (io.ReadCloser, error) { return os.Open(path) },
+			WalkLoad: func() (io.ReadCloser, error) {
+				if f.IsDir() {
+					return nil, fmt.Errorf("cannot WalkLoad a directory: %s", path)
+				}
+				return os.Open(path)
+			},
 		})
 	})
 }
