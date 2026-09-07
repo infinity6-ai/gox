@@ -18,7 +18,7 @@ func TestUnitBasic(t *testing.T) {
 	dir, err := staticzlocal.LookupCurrentDir(stzfiles.Name)
 	require.NoError(t, err)
 	require.NotEmpty(t, dir)
-	require.Equal(t, "commonz sample\n", filez.MustReadFile(filepath.Join(dir, "commonz", "commonz-sample.txt"), 256).String())
+	require.Equal(t, "commonz sample\n", filez.MustReadFile(filepath.Join(dir.String(), "commonz", "commonz-sample.txt"), 256).String())
 }
 
 func TestUnitWalk(t *testing.T) {

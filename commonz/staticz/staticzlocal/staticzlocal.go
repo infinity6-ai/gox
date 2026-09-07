@@ -15,10 +15,10 @@ import (
 
 var ErrNotFound = errors.New("not found")
 
-func LookupCurrentDir(name any) (string, error) {
+func LookupCurrentDir(name any) (*pathz.Path, error) {
 	original, err := filepath.Abs(".")
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 	current := original
 	for {
@@ -28,26 +28,28 @@ func LookupCurrentDir(name any) (string, error) {
 			if errors.Is(err, fs.ErrNotExist) {
 				ncurrent := filepath.Dir(current)
 				if ncurrent == "" || ncurrent == current {
-					return "", fmt.Errorf("%w: not found %s", ErrNotFound, original)
+					return nil, fmt.Errorf("%w: not found %s", ErrNotFound, original)
 				}
 				current = ncurrent
 				continue
 			}
-			return "", err
+			return nil, err
 		}
 		strContent := strings.TrimSpace(content.String())
 		if strContent != fmt.Sprintf("%s", name) {
-			return "", fmt.Errorf("wrong name, expected: %s, but was: %s", name, strContent)
+			return nil, fmt.Errorf("wrong name, expected: %s, but was: %s", name, strContent)
 		}
-		return filepath.Clean(filepath.Join(current, "stzfiles")), nil
+		ret, err := pathz.Parse(filepath.Join(current, "stzfiles"))
+		return ret, err
 	}
 }
 
 func Walk(ctx context.Context, name any, callback func(entry staticzentry.Entry) error) error {
-	dir, err := LookupCurrentDir(name)
+	dirPath, err := LookupCurrentDir(name)
 	if err != nil {
 		return err
 	}
+	dir := dirPath.String()
 	return filez.WalkLoader(dir, func(entry filez.WalkLoaderEntry) error {
 		if entry.IsDir() {
 			return nil
@@ -64,3 +66,20 @@ func Walk(ctx context.Context, name any, callback func(entry staticzentry.Entry)
 		return callback(nEntry)
 	})
 }
+
+// func Lookup(ctx context.Context, name any, p *pathz.Path) (staticzentry.Entry, error) {
+// 	dir, err := LookupCurrentDir(name)
+// 	if err != nil {
+// 		if errors.Is(err, ErrNotFound) {
+// 			return nil, nil
+// 		}
+// 		return nil, err
+// 	}
+// 	p = filepath.Join(dir, p)
+// 	fileInfo, err := os.Stat(p)
+// 	if err != nil {
+// 		return nil, fmt.Errorf("%w: error looking for file: %s", err, p)
+// 	}
+// 	staticzentry.NewEntry()
+
+// }
