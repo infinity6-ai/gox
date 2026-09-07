@@ -1,6 +1,7 @@
 package cmdstaticz
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"os"
@@ -33,14 +34,19 @@ func prepareGenerateCmd(ctx context.Context, parent *cobra.Command) {
 			opts.Code = errorz.Check2(cmd.Flags().GetString("code"))
 			opts.Dir = errorz.Check2(cmd.Flags().GetString("dir"))
 			out := errorz.Check2(cmd.Flags().GetString("out"))
-			if out == "-" {
-				opts.Out = os.Stdout
-			} else {
+
+			var buf bytes.Buffer
+			opts.Out = &buf
+			staticz.Generate(ctx, opts)
+
+			w := os.Stdout
+			if out != "-" {
 				out = errorz.Check2(filepath.Abs(out))
 				os.MkdirAll(filepath.Dir(out), os.ModePerm)
-				opts.Out = errorz.Check2(os.Create(out))
+				w = errorz.Check2(os.Create(out))
 			}
-			staticz.Generate(ctx, opts)
+			_, err := buf.WriteTo(w)
+			errorz.Check(err)
 		},
 	}
 	cmd.PersistentFlags().String("imp", "github.com/infinity6-ai/gox/commonz/staticz", "import module")

@@ -105,5 +105,4 @@ func Generate(ctx context.Context, opts GenerateOptions) {
 	w.WriteString("}\n")
 
 	w.Flush()
-
 }
