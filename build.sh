@@ -50,19 +50,19 @@ function cmd_release() {
   cmd_comps_run release
 }
 
-function cmd_set_version() {
-  local _version="${1?'_version'}"
-  # cmd_comps_run set_version "${_version}"
-  git tag "$_version"
-  git push origin "$_version"
-  cmd_comps_run internal_update "${_version}"
-}
+# function cmd_set_version() {
+#   local _version="${1?'_version'}"
+#   # cmd_comps_run set_version "${_version}"
+#   # git tag "$_version"
+#   # git push origin "$_version"
+#   cmd_comps_run set_version "${_version}"
+# }
 
-function cmd_force_delete_tag() {
-  local _version="${1?'_version'}"
-  git tag -d "$_version"
-  git push --delete origin "$_version"
-}
+# function cmd_force_delete_tag() {
+#   local _version="${1?'_version'}"
+#   git tag -d "$_version"
+#   git push --delete origin "$_version"
+# }
 
 cd "$(dirname "$0")"; _cmd="${1?"cmd is required"}"; shift; "cmd_${_cmd}" "$@"
 
