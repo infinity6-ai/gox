@@ -75,6 +75,8 @@ function cmd_release() {
   local _version="$(./comp.sh versionz run version)"
   [ ! -z "$_version" ]
   GOWORK=off cmd_comps_run release "$_version"
+  git tag "$_version"
+  git push origin "$_version"
 }
 
 function cmd_version-inc() {
