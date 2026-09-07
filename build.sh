@@ -54,6 +54,15 @@ function cmd_fmt() {
   cmd_comps_run fmt "$@"
 }
 
+function cmd_force_delete_version() {
+  local _version="${1?'_version'}"
+  [ ! -z "$_version" ]
+  cmd_comps_list | while read _k; do
+    git tag -d "$_k/$_version" || true
+    git push --delete origin "$_k/$_version" || true
+  done
+}
+
 function cmd_release() {
   [ -z "$(git status -s "$@")" ]
   [ "x0" == "x$(git rev-list --count @{u}..HEAD)" ]
