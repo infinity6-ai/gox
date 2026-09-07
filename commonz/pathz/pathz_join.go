@@ -57,7 +57,11 @@ func (p *Path) Join(others ...*Path) (*Path, error) {
 func (p *Path) JoinString(others ...string) (*Path, error) {
 	paths := make([]*Path, len(others))
 	for i, other := range others {
-		paths[i] = MustParse(other)
+		p, err := Parse(other)
+		if err != nil {
+			return nil, fmt.Errorf("%w: error parsing %d: %s", err, i, other)
+		}
+		paths[i] = p
 	}
 	return p.Join(paths...)
 }

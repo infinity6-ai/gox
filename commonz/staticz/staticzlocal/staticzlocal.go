@@ -4,7 +4,9 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io"
 	"io/fs"
+	"os"
 	"path/filepath"
 	"strings"
 
@@ -67,19 +69,36 @@ func Walk(ctx context.Context, name any, callback func(entry staticzentry.Entry)
 	})
 }
 
-// func Lookup(ctx context.Context, name any, p *pathz.Path) (staticzentry.Entry, error) {
-// 	dir, err := LookupCurrentDir(name)
-// 	if err != nil {
-// 		if errors.Is(err, ErrNotFound) {
-// 			return nil, nil
-// 		}
-// 		return nil, err
-// 	}
-// 	p = filepath.Join(dir, p)
-// 	fileInfo, err := os.Stat(p)
-// 	if err != nil {
-// 		return nil, fmt.Errorf("%w: error looking for file: %s", err, p)
-// 	}
-// 	staticzentry.NewEntry()
-
-// }
+func Lookup(ctx context.Context, name any, p *pathz.Path) (staticzentry.Entry, error) {
+	err := p.Validate(pathz.ValidateOptions{
+		MaxParents:  new(0),
+		EndingSlash: new(false),
+		Empty:       new(false),
+	})
+	if err != nil {
+		return nil, err
+	}
+	dir, err := LookupCurrentDir(name)
+	if err != nil {
+		if errors.Is(err, ErrNotFound) {
+			return nil, nil
+		}
+		return nil, err
+	}
+	np, err := dir.Join(p)
+	if err != nil {
+		return nil, err
+	}
+	pstr := np.String()
+	fileInfo, err := os.Stat(pstr)
+	if err != nil {
+		if errors.Is(err, fs.ErrNotExist) {
+			return nil, nil
+		}
+		return nil, fmt.Errorf("%w: error looking for file: %s", err, p)
+	}
+	ret := staticzentry.NewEntry(p, fileInfo.Size(), func() (io.ReadCloser, error) {
+		return os.Open(pstr)
+	})
+	return ret, nil
+}
