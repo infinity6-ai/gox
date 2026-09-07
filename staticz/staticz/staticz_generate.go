@@ -1,4 +1,4 @@
-package main
+package staticz
 
 import (
 	"archive/tar"
@@ -7,11 +7,14 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+
+	"github.com/infinity6-ai/gox/staticz/internal"
 )
 
 type GenerateOptions struct {
 	Imp  string
 	Code string
+	Out  io.Writer
 }
 
 func CreateTarGz(srcDir string, out io.Writer) {
@@ -24,13 +27,13 @@ func CreateTarGz(srcDir string, out io.Writer) {
 	srcDir = filepath.Clean(srcDir)
 
 	err := filepath.Walk(srcDir, func(path string, info os.FileInfo, err error) error {
-		check(err)
+		internal.Check(err)
 
 		header, err := tar.FileInfoHeader(info, info.Name())
-		check(err)
+		internal.Check(err)
 
 		relPath, err := filepath.Rel(srcDir, path)
-		check(err)
+		internal.Check(err)
 
 		if relPath == "." {
 			return nil
@@ -39,23 +42,23 @@ func CreateTarGz(srcDir string, out io.Writer) {
 		header.Name = filepath.ToSlash(relPath)
 
 		err = tw.WriteHeader(header)
-		check(err)
+		internal.Check(err)
 
 		if info.IsDir() {
 			return nil
 		}
 
 		file, err := os.Open(path)
-		check(err)
+		internal.Check(err)
 		defer file.Close()
 
 		_, err = io.Copy(tw, file)
-		check(err)
+		internal.Check(err)
 
 		return nil
 	})
 
-	check(err)
+	internal.Check(err)
 }
 
 func Generate(ctx context.Context, opts GenerateOptions) {

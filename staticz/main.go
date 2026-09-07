@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/infinity6-ai/gox/staticz/internal"
+	"github.com/infinity6-ai/gox/staticz/staticz"
 	"github.com/spf13/cobra"
 )
 
@@ -26,10 +28,10 @@ func prepareGenerateCmd(ctx context.Context, parent *cobra.Command) {
 	cmd := &cobra.Command{
 		Use: "generate",
 		Run: func(cmd *cobra.Command, args []string) {
-			opts := GenerateOptions{}
-			opts.Imp = check2(cmd.Flags().GetString("imp"))
-			opts.Code = check2(cmd.Flags().GetString("code"))
-			Generate(ctx, opts)
+			opts := staticz.GenerateOptions{}
+			opts.Imp = internal.Check2(cmd.Flags().GetString("imp"))
+			opts.Code = internal.Check2(cmd.Flags().GetString("code"))
+			staticz.Generate(ctx, opts)
 		},
 	}
 	cmd.PersistentFlags().String("imp", "import module", "")
@@ -38,13 +40,6 @@ func prepareGenerateCmd(ctx context.Context, parent *cobra.Command) {
 	cmd.MarkPersistentFlagRequired("code")
 
 	parent.AddCommand(cmd)
-}
-
-func check2[T any](s T, err error) T {
-	if err != nil {
-		panic(err)
-	}
-	return s
 }
 
 func Execute(rootCmd *cobra.Command) {
