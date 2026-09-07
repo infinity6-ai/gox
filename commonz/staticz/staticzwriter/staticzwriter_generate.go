@@ -101,8 +101,8 @@ func Generate(ctx context.Context, opts GenerateOptions) {
 	CreateTarGz(opts.Dir, b64)
 	b64.Close()
 
-	w.WriteString("\n        `\n")
-	w.WriteString("   })\n")
+	w.WriteString("\n`\n")
+	w.WriteString("    })\n")
 	w.WriteString("}\n")
 
 	w.Flush()
