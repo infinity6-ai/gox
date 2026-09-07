@@ -38,6 +38,11 @@ function cmd_fmt() {
   go fmt ./...
 }
 
+function cmd_release() {
+  [ -z "$(git status -s "$@")" ]
+  [ "x0" == "x$(git rev-list --count @{u}..HEAD)" ]
+}
+
 # function _go_base_path() {
 #   GOWORK=off go list -m | rev | cut -d'/' -f2- | rev
 # }

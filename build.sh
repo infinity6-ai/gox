@@ -48,7 +48,7 @@ function cmd_fmt() {
 }
 
 function cmd_release() {
-  cmd_comps_run release
+  GOWORK=off cmd_comps_run release
 }
 
 # function cmd_set_version() {
