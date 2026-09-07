@@ -6,12 +6,12 @@ function cmd_comps_list() {
   # find . -maxdepth 2 -name go.mod | cut -d'/' -f2
   echo "versionz"
   echo "commonz"
-  # echo "cryptz"
-  # echo "schemaz"
-  # echo "httpz"
-  # echo "routez"
-  # echo "msgz"
-  # echo "fsz" 
+  echo "cryptz"
+  echo "schemaz"
+  echo "httpz"
+  echo "routez"
+  echo "msgz"
+  echo "fsz" 
 }
 
 function cmd_comps_exec() {

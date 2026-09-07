@@ -9,6 +9,10 @@ function cmd_clean() {
   done
 }
 
+function cmd_go() {
+  go "$@"
+}
+
 function cmd_update() {
   go mod tidy
   cmd_codegen
