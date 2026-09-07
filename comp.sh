@@ -15,7 +15,7 @@ function cmd_update() {
 }
 
 function cmd_run() {
-  go run main.go "$@"
+  go run . "$@"
 }
 
 function cmd_codegen() {
