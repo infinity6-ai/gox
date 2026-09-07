@@ -1,6 +1,7 @@
 package staticzlocal
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"io/fs"
@@ -36,4 +37,14 @@ func LookupCurrentDir(name any) (string, error) {
 		}
 		return filepath.Join(current, "stzfiles"), nil
 	}
+}
+
+func Walk(ctx context.Context, name any, callback func(entry filez.WalkLoaderEntry) error) error {
+	dir, err := LookupCurrentDir(name)
+	if err != nil {
+		return err
+	}
+	return filez.WalkLoader(dir, func(entry filez.WalkLoaderEntry) error {
+		return callback(entry)
+	})
 }
