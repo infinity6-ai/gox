@@ -377,8 +377,8 @@ func ReadFile(file string, max int) blobz.Blob {
 // Walk traverses the directory tree starting from `base`, calling the provided
 // `callback` function for each file and directory. The callback returns `true`
 // to stop walking the current directory.
-func Walk(base string, callback func(path string, f fs.DirEntry) bool) {
-	filepath.WalkDir(base, func(path string, d os.DirEntry, err error) error {
+func Walk(base string, callback func(path string, f fs.DirEntry) bool) error {
+	return filepath.WalkDir(base, func(path string, d os.DirEntry, err error) error {
 		if err != nil {
 			if !os.IsNotExist(err) {
 				errorz.Check(err)
