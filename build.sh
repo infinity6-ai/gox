@@ -10,8 +10,8 @@ function cmd_comps_list() {
   echo "schemaz"
   echo "httpz"
   echo "routez"
-  echo "msgz"
   echo "fsz" 
+  echo "msgz"
 }
 
 function cmd_comps_exec() {
