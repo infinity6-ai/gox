@@ -127,6 +127,7 @@ func newEntry(ctx context.Context, packName any, base *pathz.Path, name *pathz.P
 		if err != nil {
 			return nil, err
 		}
+		defer codeReader.Close()
 		codeData, err := io.ReadAll(codeReader)
 		if err != nil {
 			return nil, err

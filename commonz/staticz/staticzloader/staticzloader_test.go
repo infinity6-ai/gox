@@ -34,6 +34,7 @@ func TestUnitWalk(t *testing.T) {
 			f := expectedFiles[entry.Name().String()]
 			r, err := entry.Open()
 			require.NoError(t, err)
+			defer r.Close()
 			data, err := io.ReadAll(r)
 			require.NoError(t, err)
 			require.Equal(t, f, string(data))

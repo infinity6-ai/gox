@@ -29,3 +29,10 @@ func Lookup(ctx context.Context, name any, p *pathz.Path) (staticzentry.Entry, e
 	}
 	return staticzloader.Lookup(ctx, name, p)
 }
+
+// func ExtractTo(ctx context.Context, name any, dest *pathz.Path) error {
+// 	return Walk(ctx, name, func(entry staticzentry.Entry) error {
+// 		destPath := dest.MustJoin(entry.Name())
+// 		entry.Open()
+// 	})
+// }
