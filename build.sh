@@ -61,6 +61,8 @@ function cmd_force_delete_version() {
     git tag -d "$_k/$_version" || true
     git push --delete origin "$_k/$_version" || true
   done
+  git tag -d "$_version" || true
+  git push --delete origin "$_version" || true
 }
 
 function cmd_release() {
