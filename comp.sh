@@ -57,8 +57,8 @@ function cmd_release() {
   done
   go mod tidy
   [ "x$(go run . version)" == "x$_version" ]
-  # git tag "$_tag"
-  # git push origin "$_tag"
+  git tag "$_tag"
+  git push origin "$_tag"
 }
 
 function _go_base_path() {
