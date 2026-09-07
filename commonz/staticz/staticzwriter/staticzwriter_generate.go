@@ -1,4 +1,4 @@
-package statizwriter
+package staticzwriter
 
 import (
 	"archive/tar"

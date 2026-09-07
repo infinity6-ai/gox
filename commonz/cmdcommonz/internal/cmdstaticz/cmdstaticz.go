@@ -9,7 +9,7 @@ import (
 
 	"github.com/infinity6-ai/gox/commonz/errorz"
 	"github.com/infinity6-ai/gox/commonz/logz"
-	"github.com/infinity6-ai/gox/commonz/staticz/statizwriter"
+	"github.com/infinity6-ai/gox/commonz/staticz/staticzwriter"
 	"github.com/spf13/cobra"
 )
 
@@ -34,7 +34,7 @@ func prepareGenerateCmd(ctx context.Context, parent *cobra.Command) {
 	cmd := &cobra.Command{
 		Use: "generate",
 		Run: func(cmd *cobra.Command, args []string) {
-			opts := statizwriter.GenerateOptions{}
+			opts := staticzwriter.GenerateOptions{}
 			opts.Imp = errorz.Check2(cmd.Flags().GetString("imp"))
 			opts.Code = errorz.Check2(cmd.Flags().GetString("code"))
 			opts.Dir = errorz.Check2(cmd.Flags().GetString("dir"))
@@ -42,7 +42,7 @@ func prepareGenerateCmd(ctx context.Context, parent *cobra.Command) {
 
 			var buf bytes.Buffer
 			opts.Out = &buf
-			statizwriter.Generate(ctx, opts)
+			staticzwriter.Generate(ctx, opts)
 
 			w := os.Stdout
 			if out != "-" {
