@@ -35,6 +35,9 @@ func Lookup(ctx context.Context, name any, p *pathz.Path) (staticzentry.Entry, e
 func ExtractTo(ctx context.Context, name any, dest *pathz.Path) error {
 	return Walk(ctx, name, func(entry staticzentry.Entry) error {
 		destPath := dest.MustJoin(entry.Name())
+		if err := os.MkdirAll(destPath.Dir().String(), os.ModePerm); err != nil {
+			return err
+		}
 		r, err := entry.Open()
 		if err != nil {
 			return err

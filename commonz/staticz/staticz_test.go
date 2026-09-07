@@ -4,6 +4,7 @@ import (
 	"context"
 	"io"
 	"io/fs"
+	"os"
 	"testing"
 
 	"github.com/infinity6-ai/gox/commonz/internal/stzfiles"
@@ -67,3 +68,42 @@ func TestUnitWalkAndLookup(t *testing.T) {
 		require.Nil(t, entry)
 	})
 }
+
+func TestUnitExtractTo(t *testing.T) {
+	ctx := context.Background()
+
+	expectedFiles := map[string]string{
+		"stzfiles.txt":               "commonz\n",
+		"commonz/commonz-sample.txt": "commonz sample\n",
+		"commonz/commonz-s2.txt":     "commonz s2\n",
+	}
+
+	// Create a temporary directory
+	tempDir, err := os.MkdirTemp("", "staticz-extract-test")
+	require.NoError(t, err)
+	defer os.RemoveAll(tempDir) // Clean up after the test
+
+	destPath := pathz.MustParse(tempDir)
+
+	// Extract files
+	err = staticz.ExtractTo(ctx, stzfiles.Name, destPath)
+	require.NoError(t, err)
+
+	// Verify extracted files
+	for fileName, expectedContent := range expectedFiles {
+		filePath := destPath.MustJoin(pathz.MustParse(fileName))
+		fileContent, err := os.ReadFile(filePath.String())
+		require.NoError(t, err, "Failed to read extracted file: %s", filePath.String())
+		require.Equal(t, expectedContent, string(fileContent), "Content mismatch for file: %s", filePath.String())
+
+		fileInfo, err := os.Stat(filePath.String())
+		require.NoError(t, err)
+		require.Equal(t, int64(len(expectedContent)), fileInfo.Size(), "Size mismatch for file: %s", filePath.String())
+	}
+
+	// Verify that an attempt to extract to an invalid path fails
+	invalidDestPath := pathz.MustParse("/nonexistent/path/that/should/fail")
+	err = staticz.ExtractTo(ctx, stzfiles.Name, invalidDestPath)
+	require.Error(t, err)
+}
+
