@@ -56,7 +56,7 @@ function cmd_release() {
     go mod edit -require="${_go_dep_mod}@${_version}"
   done
   go mod tidy
-  go run . version
+  [ "x$(go run . version)" == "x$_version" ]
   # git tag "$_tag"
   # git push origin "$_tag"
 }
