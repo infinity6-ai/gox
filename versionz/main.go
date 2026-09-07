@@ -33,7 +33,7 @@ func main() {
 			fmt.Fprintf(os.Stderr, "error incrementing version: %v\n", err)
 			os.Exit(1)
 		}
-		fmt.Println("Version incremented successfully.")
+		fmt.Fprintln(os.Stderr, "Version incremented successfully.")
 	case "help", "-h", "--help":
 		fmt.Print(usage)
 	default:
