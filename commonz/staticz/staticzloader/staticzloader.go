@@ -95,3 +95,23 @@ func Walk(ctx context.Context, name any, callback func(entry staticzentry.Entry)
 	}
 	return nil
 }
+
+func Lookup(ctx context.Context, name any, p *pathz.Path) (staticzentry.Entry, error) {
+	err := p.Validate(pathz.ValidateOptions{
+		MaxParents:  new(0),
+		EndingSlash: new(false),
+		Empty:       new(false),
+	})
+	if err != nil {
+		return nil, err
+	}
+	var ret staticzentry.Entry
+	err = Walk(ctx, name, func(entry staticzentry.Entry) error {
+		if entry.Name().Equals(p) {
+			ret = entry
+			return fs.SkipAll
+		}
+		return nil
+	})
+	return ret, err
+}
