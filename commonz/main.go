@@ -1,5 +1,13 @@
 package main
 
+import (
+	"context"
+
+	"github.com/infinity6-ai/gox/commonz/cmdcommonz"
+)
+
 func main() {
-	println("i6commonz")
+	ctx := context.Background()
+	rootCmd := cmdcommonz.Prepare(ctx)
+	cmdcommonz.Execute(rootCmd)
 }

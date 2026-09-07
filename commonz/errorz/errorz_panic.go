@@ -23,6 +23,11 @@ func Check(err error) {
 	}
 }
 
+func Check2[T any](val T, err error) T {
+	Check(err)
+	return val
+}
+
 type PanicVal struct {
 	value any
 }
