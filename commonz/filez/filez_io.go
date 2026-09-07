@@ -138,12 +138,20 @@ func TailFile(file string, size int) []byte {
 	return buf
 }
 
-// ReadFile reads the content of a file up to a specified maximum number of bytes
+// MustReadFile reads the content of a file up to a specified maximum number of bytes
 // and returns it as a `blobz.Blob`. It panics if any error occurs during reading
 // or if the file size exceeds the limit.
-func ReadFile(file string, max int) blobz.Blob {
-	f, err := os.Open(file)
+func MustReadFile(file string, max int) blobz.Blob {
+	ret, err := ReadFile(file, max)
 	errorz.Check(err)
+	return ret
+}
+
+func ReadFile(file string, max int) (blobz.Blob, error) {
+	f, err := os.Open(file)
+	if err != nil {
+		return nil, err
+	}
 	defer f.Close()
-	return ReadAllLimited(f, max)
+	return ReadAllLimited(f, max), err
 }

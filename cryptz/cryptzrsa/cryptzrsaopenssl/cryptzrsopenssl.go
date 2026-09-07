@@ -35,7 +35,7 @@ func (s *RSAServiceOpenssl) PrivKeyCreate(bits int) *rsa.PrivateKey {
 	err := execz.New(s.ctx, "openssl", "genrsa", "-out", privKeyFilePath, fmt.Sprintf("%d", bits)).Run()
 	errorz.Check(err)
 
-	keyData := filez.ReadFile(privKeyFilePath, 4096) // Max size for 2048-bit RSA key PEM
+	keyData := filez.MustReadFile(privKeyFilePath, 4096) // Max size for 2048-bit RSA key PEM
 	return s.PrivKeyImport(keyData.String())
 }
 
@@ -72,7 +72,7 @@ func (s *RSAServiceOpenssl) Sign(privateKey *rsa.PrivateKey, message []byte) []b
 	err := execz.New(s.ctx, "openssl", "dgst", "-sha256", "-sign", privKeyFilePath, "-out", sigFilePath, msgFilePath).Run()
 	errorz.Check(err)
 
-	signature := filez.ReadFile(sigFilePath, 2048) // Max size for a 256-byte signature (RSA 2048-bit)
+	signature := filez.MustReadFile(sigFilePath, 2048) // Max size for a 256-byte signature (RSA 2048-bit)
 	return signature.Bytes()
 }
 
@@ -114,7 +114,7 @@ func (s *RSAServiceOpenssl) PubEncryptOEAP(publicKey *rsa.PublicKey, label []byt
 	err := execz.New(s.ctx, "openssl", args...).Run()
 	errorz.Check(err)
 
-	return filez.ReadFile(outFilePath, 4096).Bytes() // Max size for RSA 2048-bit encrypted data
+	return filez.MustReadFile(outFilePath, 4096).Bytes() // Max size for RSA 2048-bit encrypted data
 }
 
 func (s *RSAServiceOpenssl) PrivDecryptOEAP(privateKey *rsa.PrivateKey, label []byte, ciphertext []byte) []byte {
@@ -136,5 +136,5 @@ func (s *RSAServiceOpenssl) PrivDecryptOEAP(privateKey *rsa.PrivateKey, label []
 	err := execz.New(s.ctx, "openssl", args...).Run()
 	errorz.Check(err)
 
-	return filez.ReadFile(outFilePath, 4096).Bytes()
+	return filez.MustReadFile(outFilePath, 4096).Bytes()
 }
