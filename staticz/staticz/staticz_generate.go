@@ -7,6 +7,7 @@ import (
 	"context"
 	"encoding/base64"
 	"io"
+	"log"
 	"os"
 	"path/filepath"
 
@@ -40,6 +41,7 @@ func CreateTarGz(srcDir string, out io.Writer) {
 	defer tw.Close()
 
 	srcDir = filepath.Clean(srcDir)
+	log.Printf("src: %s", srcDir)
 
 	err := filepath.Walk(srcDir, func(path string, info os.FileInfo, err error) error {
 		internal.Check(err)
@@ -94,7 +96,7 @@ func Generate(ctx context.Context, opts GenerateOptions) {
 		2026-09-07 09:23:08 i6dev [cmd_go-platform_static] echo '}'
 	*/
 
-	w.WriteString("package stfiles\n")
+	w.WriteString("package stzfiles\n")
 	w.WriteString("import \"")
 	w.WriteString(opts.Imp)
 	w.WriteString("\"\n")
@@ -102,15 +104,15 @@ func Generate(ctx context.Context, opts GenerateOptions) {
 	w.WriteString("    ")
 	w.WriteString(opts.Code)
 	w.WriteString(" {\n")
-	w.WriteString("        return `")
+	w.WriteString("        return `\n")
 
 	enc := base64.StdEncoding
-	b64 := base64.NewEncoder(enc, w)
-	CreateTarGz("staticz", b64)
+	wcols := &lineEncoder{w: w, limit: 80}
+	b64 := base64.NewEncoder(enc, wcols)
+	CreateTarGz(opts.Dir, b64)
 	b64.Close()
 
-	CreateTarGz(opts.Code, w)
-	w.WriteString("        `\n")
+	w.WriteString("\n        `\n")
 	w.WriteString("   })\n")
 	w.WriteString("}\n")
 
