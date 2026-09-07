@@ -48,11 +48,11 @@ function cmd_release() {
     echo "tag already exists: $_tag" 1>&2
     false
   fi
-  git tag "$_tag"
-  git push origin "$_tag"
   local _go_base_path="$(_go_base_path)"
   local _go_dep_mod=""
   GOWORK=off go list -mod=readonly -m "$_go_base_path/..." # | \
+  # git tag "$_tag"
+  # git push origin "$_tag"
     # grep "^$_go_base_path/.*\ v" | \
     # cut -d' ' -f1 | while read _go_dep_mod; do
     # go mod edit -require="${_go_dep_mod}@${_version}"
