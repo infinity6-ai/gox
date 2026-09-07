@@ -1,4 +1,4 @@
-package staticz
+package main
 
 import (
 	"context"
@@ -16,7 +16,35 @@ func Prepare(ctx context.Context) *cobra.Command {
 		Use:     "staticz",
 		Short:   "staticz",
 	}
+
+	prepareGenerateCmd(ctx, rootCmd)
+
 	return rootCmd
+}
+
+func prepareGenerateCmd(ctx context.Context, parent *cobra.Command) {
+	cmd := &cobra.Command{
+		Use: "generate",
+		Run: func(cmd *cobra.Command, args []string) {
+			opts := GenerateOptions{}
+			opts.Imp = check2(cmd.Flags().GetString("imp"))
+			opts.Code = check2(cmd.Flags().GetString("code"))
+			Generate(ctx, opts)
+		},
+	}
+	cmd.PersistentFlags().String("imp", "import module", "")
+	cmd.PersistentFlags().String("code", "code", "")
+	cmd.MarkPersistentFlagRequired("imp")
+	cmd.MarkPersistentFlagRequired("code")
+
+	parent.AddCommand(cmd)
+}
+
+func check2[T any](s T, err error) T {
+	if err != nil {
+		panic(err)
+	}
+	return s
 }
 
 func Execute(rootCmd *cobra.Command) {
