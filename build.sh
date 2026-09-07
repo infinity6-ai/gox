@@ -72,7 +72,9 @@ function cmd_force_delete_version() {
 function cmd_release() {
   [ -z "$(git status -s "$@")" ]
   [ "x0" == "x$(git rev-list --count @{u}..HEAD)" ]
-  GOWORK=off cmd_comps_run release
+  local _version="$(./comp.sh versionz run version)"
+  [ ! -z "$_version" ]
+  # GOWORK=off cmd_comps_run release
 }
 
 function cmd_version-inc() {
