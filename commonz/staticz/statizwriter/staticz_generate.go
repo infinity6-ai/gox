@@ -24,10 +24,13 @@ type GenerateOptions struct {
 
 func (g *GenerateOptions) fix() {
 	if g.Imp == "" {
-		panic("imp is required")
+		g.Imp = "github.com/infinity6-ai/gox/commonz/staticz/staticzloader"
 	}
 	if g.Code == "" {
-		panic("code is required")
+		g.Code = "staticzloader.SetCode"
+	}
+	if g.Dir == "" {
+		g.Dir = "stzfiles"
 	}
 	if g.Out == nil {
 		g.Out = os.Stdout
