@@ -3,6 +3,7 @@ package staticzlocal_test
 import (
 	"context"
 	"io"
+	"io/fs"
 	"path/filepath"
 	"testing"
 
@@ -44,5 +45,19 @@ func TestUnitWalk(t *testing.T) {
 		})
 		require.NoError(t, err)
 		require.Equal(t, len(expectedFiles), count, "files count")
+	})
+
+	t.Run("SkipAll", func(t *testing.T) {
+		var count int
+		var name string
+		err := staticzlocal.Walk(ctx, stzfiles.Name, func(entry staticzentry.Entry) error {
+			count++
+			name = entry.Name()
+			return fs.SkipAll
+		})
+		require.NoError(t, err)
+		require.NotEmpty(t, name)
+		require.NotEmpty(t, expectedFiles[name])
+		require.Equal(t, 1, count, "files count")
 	})
 }
