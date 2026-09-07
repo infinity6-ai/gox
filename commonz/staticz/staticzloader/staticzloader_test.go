@@ -11,4 +11,6 @@ import (
 func TestUnitBasic(t *testing.T) {
 	code := staticzloader.GetCode(stzfiles.Name)
 	require.NotEmpty(t, code)
+
+	staticzloader.Walk(stzfiles.Name)
 }
