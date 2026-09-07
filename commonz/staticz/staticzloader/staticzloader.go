@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"io"
 	"io/fs"
+	"strings"
 	"sync"
 
 	"github.com/infinity6-ai/gox/commonz/encz/enczb64"
@@ -48,42 +49,67 @@ func GetCode(name any) []byte {
 	return codes.codes[name]
 }
 
-func Walk(ctx context.Context, name any, fn fs.WalkDirFunc) {
+// dirEntry implements fs.DirEntry for a fs.FileInfo.
+type dirEntry struct {
+	fs.FileInfo
+}
+
+// Type returns the file mode type of the file.
+func (d dirEntry) Type() fs.FileMode {
+	return d.Mode().Type()
+}
+
+// Info returns the fs.FileInfo for the file.
+func (d dirEntry) Info() (fs.FileInfo, error) {
+	return d.FileInfo, nil
+}
+
+func Walk(ctx context.Context, name any, fn fs.WalkDirFunc) error {
 	code := GetCode(name)
 	if code == nil {
-		panic(fmt.Sprintf("code not find: %s (%T)", name, name))
+		return fmt.Errorf("code not found: %s (%T)", name, name)
 	}
 
 	gzReader, err := gzip.NewReader(bytes.NewBuffer(code))
-	errorz.Check(err)
+	if err != nil {
+		return fmt.Errorf("failed to create gzip reader: %w", err)
+	}
 	defer gzReader.Close()
 
-	// 3. Create a tar reader wrapping the gzip reader
 	tarReader := tar.NewReader(gzReader)
 
-	// 4. Iterate over the files in the archive
+	var skipPrefix string
+
 	for {
 		header, err := tarReader.Next()
-
-		// io.EOF means we reached the end of the archive
 		if err == io.EOF {
 			break
 		}
 		if err != nil {
-			fmt.Printf("Error reading tar: %v\n", err)
-			return
+			return fmt.Errorf("error reading from tar archive: %w", err)
 		}
 
-		// Check the type of the entry
-		switch header.Typeflag {
-		case tar.TypeDir:
-			// directory, ignore it
-		case tar.TypeReg:
-			logger.Info(ctx, "File", map[string]any{"name": header.Name, "size": header.Size})
-			// Optional: Read the file content without writing to disk
-			// content, _ := io.ReadAll(tarReader)
-		default:
-			panic(fmt.Sprintf("unsupported type %s (%T) %s: %v", name, name, header.Name, header.Typeflag))
+		if skipPrefix != "" && strings.HasPrefix(header.Name, skipPrefix) {
+			continue
+		}
+		skipPrefix = ""
+
+		fileInfo := header.FileInfo()
+		d := dirEntry{fileInfo}
+		err = fn(header.Name, d, nil)
+		if err != nil {
+			if err == fs.SkipDir && d.IsDir() {
+				skipPrefix = header.Name
+				if !strings.HasSuffix(skipPrefix, "/") {
+					skipPrefix += "/"
+				}
+				continue
+			}
+			if err == fs.SkipAll {
+				return nil
+			}
+			return err
 		}
 	}
+	return nil
 }
