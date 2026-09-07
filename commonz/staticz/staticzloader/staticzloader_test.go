@@ -29,7 +29,7 @@ func TestUnitWalk(t *testing.T) {
 
 	t.Run("FindAll", func(t *testing.T) {
 		var count int
-		err := staticzloader.WalkV2(ctx, stzfiles.Name, func(entry staticzentry.Entry) error {
+		err := staticzloader.Walk(ctx, stzfiles.Name, func(entry staticzentry.Entry) error {
 			count++
 			f := expectedFiles[entry.Name()]
 			r, err := entry.Open()
