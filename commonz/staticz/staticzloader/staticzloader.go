@@ -7,6 +7,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"io/fs"
 	"sync"
 
 	"github.com/infinity6-ai/gox/commonz/encz/enczb64"
@@ -47,7 +48,7 @@ func GetCode(name any) []byte {
 	return codes.codes[name]
 }
 
-func Walk(ctx context.Context, name any) {
+func Walk(ctx context.Context, name any, fn fs.WalkDirFunc) {
 	code := GetCode(name)
 	if code == nil {
 		panic(fmt.Sprintf("code not find: %s (%T)", name, name))
