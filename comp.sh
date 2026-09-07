@@ -52,7 +52,6 @@ function cmd_set_version() {
     cut -d' ' -f1 | while read _go_dep_mod; do
     go mod edit -require="${_go_dep_mod}@${_version}"
   done
-
 }
 
 _comp="${1?"comp is required"}"; shift; 

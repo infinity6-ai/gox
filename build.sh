@@ -43,5 +43,10 @@ function cmd_release() {
   cmd_comps_run release
 }
 
+function cmd_set_version() {
+  local _version="${1?'_version'}"
+  cmd_comps_run set_version "${_version}"
+}
+
 cd "$(dirname "$0")"; _cmd="${1?"cmd is required"}"; shift; "cmd_${_cmd}" "$@"
 
