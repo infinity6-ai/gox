@@ -4,8 +4,10 @@ go 1.26.1
 
 require (
 	cloud.google.com/go/datastore v1.25.0
-	github.com/infinity6-ai/gox/commonz v0.0.11-0.20260908200650-c9dbcbb38099
-	github.com/infinity6-ai/gox/cryptz v0.0.10
+	github.com/infinity6-ai/gox/commonz v0.0.11
+	github.com/infinity6-ai/gox/cryptz v0.0.11
+	github.com/infinity6-ai/gox/versionz v0.0.11
+	github.com/spf13/cobra v1.10.2
 	github.com/stretchr/testify v1.12.1
 	golang.org/x/exp v0.0.0-20260824195058-e88cd73687aa
 	google.golang.org/api v0.297.0
@@ -24,6 +26,8 @@ require (
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/googleapis/enterprise-certificate-proxy v0.3.20 // indirect
 	github.com/googleapis/gax-go/v2 v2.24.0 // indirect
+	github.com/inconshreveable/mousetrap v1.1.0 // indirect
+	github.com/spf13/pflag v1.0.9 // indirect
 	go.opentelemetry.io/auto/sdk v1.2.1 // indirect
 	go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc v0.67.0 // indirect
 	go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.67.0 // indirect
