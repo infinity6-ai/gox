@@ -21,11 +21,11 @@ type tlogger logz.Type
 
 var logger = logz.Create(tlogger(true))
 
-type pubsubStrategy struct {
+type pubsubMsgz struct {
 	projectId string
 }
 
-func (ps *pubsubStrategy) NackAll(ctx context.Context, sub string) {
+func (ps *pubsubMsgz) NackAll(ctx context.Context, sub string) {
 	panic("unsupported")
 }
 
@@ -55,7 +55,7 @@ func parseAckId(fullId string) (string, string) {
 	return sub, ackId
 }
 
-func (ps *pubsubStrategy) Ack(ctx context.Context, ids *msgz.Ids) {
+func (ps *pubsubMsgz) Ack(ctx context.Context, ids *msgz.Ids) {
 	if len(ids.Ids) == 0 {
 		return
 	}
@@ -88,11 +88,11 @@ func (ps *pubsubStrategy) Ack(ctx context.Context, ids *msgz.Ids) {
 	errorz.Check(err)
 }
 
-func (ps *pubsubStrategy) Nack(ctx context.Context, ids *msgz.Ids) {
+func (ps *pubsubMsgz) Nack(ctx context.Context, ids *msgz.Ids) {
 	panic("unsupported")
 }
 
-func (ps *pubsubStrategy) Pull(ctx context.Context, sub string, limit int, opts msgz.PullOptions) *msgz.ManagedMessages {
+func (ps *pubsubMsgz) Pull(ctx context.Context, sub string, limit int, opts msgz.PullOptions) *msgz.ManagedMessages {
 	checker.Greater(limit, 0, "limit")
 	client, err := openSubscriberClient(ctx)
 	errorz.Check(err)
@@ -131,12 +131,12 @@ func (ps *pubsubStrategy) Pull(ctx context.Context, sub string, limit int, opts 
 	return ret
 }
 
-func (ps *pubsubStrategy) Close() error {
+func (ps *pubsubMsgz) Close() error {
 	return nil
 
 }
 
-func (ps *pubsubStrategy) Publish(ctx context.Context, topic string, msgs *msgz.Messages) {
+func (ps *pubsubMsgz) Publish(ctx context.Context, topic string, msgs *msgz.Messages) {
 	if len(msgs.Messages) == 0 {
 		return
 	}
@@ -164,9 +164,9 @@ func (ps *pubsubStrategy) Publish(ctx context.Context, topic string, msgs *msgz.
 }
 
 func NewPublisher(ctx context.Context, createOpts msgz.MsgzCreateOptions) msgz.Publisher {
-	return &pubsubStrategy{projectId: createOpts.ProjectId}
+	return &pubsubMsgz{projectId: createOpts.ProjectId}
 }
 
 func NewPuller(ctx context.Context, createOpts msgz.MsgzCreateOptions) msgz.Puller {
-	return &pubsubStrategy{projectId: createOpts.ProjectId}
+	return &pubsubMsgz{projectId: createOpts.ProjectId}
 }

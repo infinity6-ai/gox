@@ -23,7 +23,7 @@ import (
 	"github.com/infinity6-ai/gox/msgz/msgz"
 )
 
-type MessageStore struct {
+type fileMsgz struct {
 	basedir *pathz.Path
 	temp    bool
 
@@ -31,36 +31,36 @@ type MessageStore struct {
 	shutdownOnce sync.Once
 }
 
-func (me *MessageStore) Close() error {
+func (me *fileMsgz) Close() error {
 	me.Shutdown()
 	return nil
 }
 
-func NewTemporaryMessageStore(ctx context.Context) *MessageStore {
+func NewTemporaryMessageStore(ctx context.Context) *fileMsgz {
 	basedir := pathz.MustParse(filez.CreateTempDir("filemsgz"))
-	return &MessageStore{
+	return &fileMsgz{
 		basedir: basedir,
 		temp:    true,
 	}
 }
 
-func NewMessageStore(ctx context.Context, basedir *pathz.Path) *MessageStore {
+func NewMessageStore(ctx context.Context, basedir *pathz.Path) *fileMsgz {
 	checker.NotNil(basedir, "basedir")
-	return &MessageStore{
+	return &fileMsgz{
 		basedir: basedir,
 		temp:    false,
 	}
 }
 
-func (me *MessageStore) Basedir() *pathz.Path {
+func (me *fileMsgz) Basedir() *pathz.Path {
 	return me.basedir
 }
 
-func (ms *MessageStore) basedirUrl() *urlz.Url {
+func (ms *fileMsgz) basedirUrl() *urlz.Url {
 	return urlz.MustParse("file://" + ms.basedir.String())
 }
 
-func (me *MessageStore) Shutdown() {
+func (me *fileMsgz) Shutdown() {
 	me.shutdownOnce.Do(func() {
 		me.lock.Lock()
 		defer me.lock.Unlock()
@@ -70,7 +70,7 @@ func (me *MessageStore) Shutdown() {
 	})
 }
 
-func (me *MessageStore) Publish(ctx context.Context, topic string, msgs *msgz.Messages) {
+func (me *fileMsgz) Publish(ctx context.Context, topic string, msgs *msgz.Messages) {
 	me.lock.Lock()
 	defer me.lock.Unlock()
 	checker.NotNil(me.basedir, "basedir")
@@ -88,7 +88,7 @@ func (me *MessageStore) Publish(ctx context.Context, topic string, msgs *msgz.Me
 	}
 }
 
-func (me *MessageStore) Pull(ctx context.Context, sub string, limit int, opts msgz.PullOptions) *msgz.ManagedMessages {
+func (me *fileMsgz) Pull(ctx context.Context, sub string, limit int, opts msgz.PullOptions) *msgz.ManagedMessages {
 	me.lock.Lock()
 	defer me.lock.Unlock()
 
@@ -143,7 +143,7 @@ func parseAckId(id string) (string, string) {
 	return topic, id
 }
 
-func (me *MessageStore) Ack(ctx context.Context, ids *msgz.Ids) {
+func (me *fileMsgz) Ack(ctx context.Context, ids *msgz.Ids) {
 	me.lock.Lock()
 	defer me.lock.Unlock()
 	for _, id := range ids.Ids {
@@ -153,13 +153,13 @@ func (me *MessageStore) Ack(ctx context.Context, ids *msgz.Ids) {
 	}
 }
 
-func (me *MessageStore) Nack(ctx context.Context, ids *msgz.Ids) {
+func (me *fileMsgz) Nack(ctx context.Context, ids *msgz.Ids) {
 	me.lock.Lock()
 	defer me.lock.Unlock()
 	me.internalNack(ctx, ids)
 }
 
-func (me *MessageStore) internalNack(ctx context.Context, ids *msgz.Ids) {
+func (me *fileMsgz) internalNack(ctx context.Context, ids *msgz.Ids) {
 	for _, id := range ids.Ids {
 		topic, uid := parseAckId(id)
 		src := me.basedirUrl().MustJoinPathString("fetched", "topic", topic, fmt.Sprintf("%s.json.gz", uid))
@@ -168,7 +168,7 @@ func (me *MessageStore) internalNack(ctx context.Context, ids *msgz.Ids) {
 	}
 }
 
-func (me *MessageStore) NackAll(ctx context.Context, topic string) {
+func (me *fileMsgz) NackAll(ctx context.Context, topic string) {
 	me.lock.Lock()
 	defer me.lock.Unlock()
 	srcDir := me.basedirUrl().MustJoinPathString("fetched", "topic", topic)
@@ -192,7 +192,7 @@ func (me *MessageStore) NackAll(ctx context.Context, topic string) {
 	}
 }
 
-func New(ctx context.Context, createOpts msgz.MsgzCreateOptions) *MessageStore {
+func New(ctx context.Context, createOpts msgz.MsgzCreateOptions) *fileMsgz {
 	if createOpts.BaseDir == nil {
 		return NewTemporaryMessageStore(ctx)
 	}

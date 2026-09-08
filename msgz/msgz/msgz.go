@@ -73,7 +73,7 @@ type Puller interface {
 }
 
 type MsgzCreateOptions struct {
-	Strategy  string      `json:"strategy,omitempty"`
+	Strategy  string      `json:"strategy"`
 	ProjectId string      `json:"project_id,omitempty"`
 	BaseDir   *pathz.Path `json:"base_dir,omitempty"`
 }
