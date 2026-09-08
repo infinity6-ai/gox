@@ -2,7 +2,7 @@
 
     class LeoSdk {
 
-        async helloworld(msg) {
+        async hellworld(msg) {
             return new Promise(resolve => {
                 setTimeout(() => resolve(`reply by leosdk: ${msg}`), 2000)
             })
