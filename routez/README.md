@@ -1,0 +1,184 @@
+# `routez` API Implementation Example: Sample Fraction
+
+This document explains how to implement APIs using the `routez` package, demonstrated through the `sampleroutez/routezsamplefraction` example. The `routez` package simplifies API definition by allowing developers to declare API schemas and handlers in a structured way.
+
+## Core Concepts
+
+The `routez` implementation revolves around a few core components:
+
+1.  **The `*ReqResp` Struct**: A central struct that encapsulates all incoming request data (path parameters, query parameters, headers, body) and outgoing response data (headers, body).
+2.  **The `GetDataRefs()` Method**: A method on the `*ReqResp` struct that maps its fields to the `apiz.DataRefs` structure, which `routez` uses internally to bind HTTP request/response elements.
+3.  **The `Schema()` Function**: Defines the API's contract using `schemaz.Api`, specifying HTTP method, path, and detailed schemas for request and response elements.
+4.  **The `Api()` Function**: Combines the defined schema with the API's business logic (handler function) into a single `apiz.Api` object, ready for registration with an HTTP server.
+
+---
+
+## 1. The `*ReqResp` Struct (`FractionReqResp`)
+
+This struct acts as a single source of truth for all data related to a specific API call. It contains nested structs for organizing request and response components.
+
+```go
+type FractionReq struct {
+	Numerator   float64 `json:"numerator"`
+	Denumerator float64 `json:"denumerator"`
+	Precision   int     `json:"precision"`
+	TraceId     string  `json:"trace_id"`
+	Reason      string  `json:"reason"`
+}
+
+type FractionResp struct {
+	ReqId  string  `json:"req_id"`
+	Result *Result `json:"result"`
+}
+
+type FractionReqResp struct {
+	Req  *FractionReq
+	Resp *FractionResp
+}
+```
+
+## 2. The `GetDataRefs()` Method
+
+This method is crucial for `routez` to understand how to populate the `FractionReqResp` struct from an incoming HTTP request and extract data for the HTTP response. It returns an `apiz.DataRefs` object, where each field points to a specific part of the `FractionReqResp` struct.
+
+```go
+func (f *FractionReqResp) GetDataRefs() *apiz.DataRefs {
+	if f.Req == nil {
+		f.Req = &FractionReq{}
+	}
+	if f.Resp == nil {
+		f.Resp = &FractionResp{}
+	}
+	if f.Resp.Result == nil {
+		f.Resp.Result = &Result{}
+	}
+	return &apiz.DataRefs{
+		PathParams: &struct {
+			Numerator   *float64 `json:"numerator"`
+			Denumerator *float64 `json:"denumerator"`
+		}{
+			&f.Req.Numerator,
+			&f.Req.Denumerator,
+		},
+		QueryParams: &struct {
+			Precision *int `json:"precision"`
+		}{
+			&f.Req.Precision,
+		},
+		ReqHeaders: &struct {
+			TraceId *string `json:"trace_id"`
+		}{
+			&f.Req.TraceId,
+		},
+		ReqBody: &struct {
+			Reason *string `json:"reason"`
+		}{
+			&f.Req.Reason,
+		},
+		RespHeaders: &struct {
+			ReqId *string `json:"req_id"`
+		}{
+			&f.Resp.ReqId,
+		},
+		RespBody: f.Resp.Result,
+	}
+}
+```
+
+## 3. The `Schema()` Function
+
+This function defines the API's public contract. It specifies the HTTP method, the URL path (including path parameters), and the types and descriptions for all expected request and response elements.
+
+```go
+func Schema() *schemaz.Api {
+	return &schemaz.Api{
+		Id: "samplefraction",
+
+		Desc: schemaz.Desc{
+			Name:     "Sample Fraction",
+			Summary:  "That is a sample of how to use this",
+			Markdown: "# Sample Fraction",
+		},
+
+		Method: "POST",
+		Path:   "/api/gox/routez/sample/fraction/{numerator}/{denumerator}",
+
+		ReqParams: []schemaz.Field{
+			{Name: "numerator", Desc: schemaz.Desc{Summary: "numerator"}, Spec: schemaz.Spec{Type: schemaz.TypeNumber}},
+			{Name: "denumerator", Desc: schemaz.Desc{Summary: "denumerator"}, Spec: schemaz.Spec{Type: schemaz.TypeNumber}},
+		},
+
+		ReqQuery: []schemaz.Field{
+			{Name: "precision", Desc: schemaz.Desc{Summary: "precision"}, Spec: schemaz.Spec{Type: schemaz.TypeNumber}},
+		},
+
+		ReqHeaders: []schemaz.Field{
+			{Name: "trace_id", Desc: schemaz.Desc{Summary: "trace id"}, Spec: schemaz.Spec{Type: schemaz.TypeNumber}},
+		},
+
+		ReqBody: &schemaz.Spec{
+			Type: schemaz.TypeObject,
+			Fields: []schemaz.Field{
+				{Name: "reason", Desc: schemaz.Desc{Summary: "reason"}, Spec: schemaz.Spec{Type: schemaz.TypeString}},
+			},
+		},
+
+		RespHeaders: []schemaz.Field{
+			{Name: "req_id", Desc: schemaz.Desc{Summary: "request id"}, Spec: schemaz.Spec{Type: schemaz.TypeString}},
+		},
+
+		RespBody: &schemaz.Spec{
+			Type: schemaz.TypeObject,
+			Fields: []schemaz.Field{
+				{Name: "display", Desc: schemaz.Desc{Summary: "fraction display"}, Spec: schemaz.Spec{Type: schemaz.TypeString}},
+				{Name: "result", Desc: schemaz.Desc{Summary: "fraction result"}, Spec: schemaz.Spec{Type: schemaz.TypeNumber}},
+			},
+		},
+	}
+}
+```
+
+## 4. The `Api()` Function
+
+This is where the API comes to life. It takes the `schemaz.Api` definition and couples it with a `Handler` function that contains the actual business logic. The `Handler` receives the `FractionReqResp` struct, already populated with request data by `routez`, and is responsible for filling the response fields.
+
+```go
+func Api() *apiz.Api[*FractionReqResp] {
+	return &apiz.Api[*FractionReqResp]{
+		Schema: Schema(),
+		Handler: func(ctx context.Context, reqResp *FractionReqResp) (int, error) {
+			reqResp.Resp.ReqId = "reason: " + reqResp.Req.Reason + ", trace: " + reqResp.Req.TraceId
+			reqResp.Resp.Result.Display = fmt.Sprintf(fmt.Sprintf("%%.%df/%%.%df", int(reqResp.Req.Precision), int(reqResp.Req.Precision)), reqResp.Req.Numerator, reqResp.Req.Denumerator)
+			reqResp.Resp.Result.Result = strconv.FormatFloat(reqResp.Req.Numerator/reqResp.Req.Denumerator, 'f', reqResp.Req.Precision, 64)
+
+			return 201, nil
+		},
+	}
+}
+```
+
+## Registering and Using the API
+
+To make this API accessible, you would typically register it with an `httpzserver` instance. The `Api()` function returns an `apiz.Api` object that can be passed directly to `routez.Register()`.
+
+```go
+// Example usage (from a test file or main application setup)
+// Assuming 's' is an httpzserver.Server instance
+
+// Import necessary packages:
+// "github.com/infinity6-ai/gox/httpz/httpzserver"
+// "github.com/infinity6-ai/gox/routez/routez"
+// "github.com/infinity6-ai/gox/routez/sampleroutez/routezsamplefraction"
+
+// s := httpzserver.New(ctx, httpzserver.Options{})
+// defer s.Close()
+// s.Listen()
+// s.Start()
+
+// routez.Register(s, routezsamplefraction.Api())
+
+// The API is now available at the path defined in Schema():
+// POST /api/gox/routez/sample/fraction/{numerator}/{denumerator}
+```
+
+This structured approach ensures clear separation of concerns, robust type safety, and automatic handling of request/response binding, making API development efficient and maintainable.
