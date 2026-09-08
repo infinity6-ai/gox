@@ -7,6 +7,7 @@ import (
 
 	"cloud.google.com/go/pubsub"
 	"github.com/infinity6-ai/gox/commonz/errorz"
+	"github.com/infinity6-ai/gox/commonz/logz"
 	"github.com/infinity6-ai/gox/commonz/validation/checker"
 	"github.com/infinity6-ai/gox/msgz/msgz"
 
@@ -15,6 +16,10 @@ import (
 	pb "cloud.google.com/go/pubsub/apiv1"
 	"cloud.google.com/go/pubsub/apiv1/pubsubpb"
 )
+
+type tlogger logz.Type
+
+var logger = logz.Create(tlogger(true))
 
 type pubsubStrategy struct {
 	projectId string
