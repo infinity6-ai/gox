@@ -47,27 +47,21 @@ func TestUnitBasic(t *testing.T) {
 	ac := apiclientz.Get(c, routezsamplefraction.Api())
 
 	reqResp := &routezsamplefraction.FractionReqResp{
-		Fraction: &routezsamplefraction.Fraction{
+		Req: routezsamplefraction.FractionReq{
 			Numerator:   10,
 			Denumerator: 3,
-		},
-		Precision: &routezsamplefraction.Precision{
-			Precision: 3,
-		},
-		Options: &routezsamplefraction.Options{
-			TraceId: "xx",
-		},
-		Reason: &routezsamplefraction.Reason{
-			Reason: "myreason",
+			Precision:   3,
+			TraceId:     "xx",
+			Reason:      "myreason",
 		},
 	}
 	acV2Resp, err := ac(ctx, reqResp)
 	errorz.Check(err)
 	require.Equal(t, 201, acV2Resp)
-	require.Equal(t, "reason: myreason, trace: xx", reqResp.Meta.ReqId)
+	require.Equal(t, "reason: myreason, trace: xx", reqResp.Resp.ReqId)
 	require.Equal(t, &routezsamplefraction.Result{
 		Display: "10.000/3.000",
 		Result:  "3.333",
-	}, reqResp.Result)
+	}, reqResp.Resp.Result)
 
 }
