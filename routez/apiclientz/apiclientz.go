@@ -5,7 +5,6 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/infinity6-ai/gox/commonz/errorz"
 	"github.com/infinity6-ai/gox/commonz/jsonz"
 	"github.com/infinity6-ai/gox/commonz/jsonz/structjsonz"
 	"github.com/infinity6-ai/gox/httpz/httpzclient"
@@ -64,19 +63,25 @@ func Get[T apiz.ReqResp](client *httpzclient.Client, api *apiz.Api[T]) apiz.Hand
 			return 0, fmt.Errorf("%w: error calling server", err)
 		}
 		defer nResp.Body.Close()
-		writeResponse(nResp, reqResp)
-		return nResp.StatusCode, nil
+		err = writeResponse(nResp, reqResp)
+		return nResp.StatusCode, err
 	}
 }
 
-func writeResponse[T apiz.ReqResp](nResp *httpzclient.Resp, reqResp T) {
+func writeResponse[T apiz.ReqResp](nResp *httpzclient.Resp, reqResp T) error {
 	refs := reqResp.GetDataRefs()
 	if refs.RespHeaders != nil {
 		convertedHeaders := converter.Header2Json(nResp.Headers)
-		structjsonz.MustParse(convertedHeaders, refs.RespHeaders)
+		err := structjsonz.Parse(convertedHeaders, refs.RespHeaders)
+		if err != nil {
+			return fmt.Errorf("%w: error parsing resp headers", err)
+		}
 	}
 	if refs.RespBody != nil {
 		_, err := jsonz.ParseReader(nResp.Body, refs.RespBody)
-		errorz.Check(err)
+		if err != nil {
+			return fmt.Errorf("%w: error parsing resp body", err)
+		}
 	}
+	return nil
 }
