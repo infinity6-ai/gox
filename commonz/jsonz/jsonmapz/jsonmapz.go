@@ -21,8 +21,14 @@ func ParseMap(in map[string][]string, out map[string]any) error {
 		case string:
 			out[key] = values[0]
 			continue
+		case *string:
+			out[key] = &values[0]
+			continue
 		case []string:
 			out[key] = values
+			continue
+		case *[]string:
+			out[key] = &values
 			continue
 		}
 
@@ -71,8 +77,18 @@ func FormatMap(in map[string]any, out map[string][]string) error {
 		switch v := value.(type) {
 		case string:
 			out[key] = []string{v}
+		case *string:
+			if v == nil {
+				continue
+			}
+			out[key] = []string{*v}
 		case []string:
 			out[key] = v
+		case *[]string:
+			if v == nil {
+				continue
+			}
+			out[key] = *v
 		default:
 			val := reflect.ValueOf(value)
 			if val.Kind() == reflect.Slice {
