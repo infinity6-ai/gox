@@ -43,7 +43,7 @@ func NewPublisher(ctx context.Context, createOpts msgz.MsgzCreateOptions) (msgz.
 	return ret.NewPublisher(ctx, createOpts), nil
 }
 
-func RegisterMsgz(name string, service *MsgzService) io.Closer {
+func RegisterMsgz(ctx context.Context, name string, service *MsgzService) io.Closer {
 	old := msgzservices[name]
 	closer := func() {
 		msgzservices[name] = old
