@@ -233,11 +233,11 @@ reqResp := &routezsamplefraction.FractionReqResp{
 }
 
 // Call the generated client function with the reqResp struct
-acV2Resp, err := ac(ctx, reqResp)
+status, err := ac(ctx, reqResp)
 
 // After the call, reqResp.Resp will be populated with the response data
 // For example:
-// require.Equal(t, 201, acV2Resp)
+// require.Equal(t, 201, status)
 // require.Equal(t, "reason: myreason, trace: xx", reqResp.Resp.ReqId)
 // require.Equal(t, &routezsamplefraction.Result{
 // 	Display: "10.000/3.000",

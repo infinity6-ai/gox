@@ -55,9 +55,9 @@ func TestUnitBasic(t *testing.T) {
 			Reason:      "myreason",
 		},
 	}
-	acV2Resp, err := ac(ctx, reqResp)
+	status, err := ac(ctx, reqResp)
 	errorz.Check(err)
-	require.Equal(t, 201, acV2Resp)
+	require.Equal(t, 201, status)
 	require.Equal(t, "reason: myreason, trace: xx", reqResp.Resp.ReqId)
 	require.Equal(t, &routezsamplefraction.Result{
 		Display: "10.000/3.000",
