@@ -1,10 +1,12 @@
-# `routez` API Implementation Example: Sample Fraction
+# `routez` API Implementation and Client Generation
 
-This document explains how to implement APIs using the `routez` package, demonstrated through the `sampleroutez/routezsamplefraction` example. The `routez` package simplifies API definition by allowing developers to declare API schemas and handlers in a structured way.
+This document explains how to implement APIs using the `routez` package and how to generate type-safe clients for them using `apiclientz`, demonstrated through the `sampleroutez/routezsamplefraction` example.
 
-## Core Concepts
+## `routez` API Implementation
 
-The `routez` implementation revolves around a few core components:
+The `routez` package simplifies API definition by allowing developers to declare API schemas and handlers in a structured way.
+
+### Core Concepts for API Implementation
 
 1.  **The `*ReqResp` Struct**: A central struct that encapsulates all incoming request data (path parameters, query parameters, headers, body) and outgoing response data (headers, body).
 2.  **The `GetDataRefs()` Method**: A method on the `*ReqResp` struct that maps its fields to the `apiz.DataRefs` structure, which `routez` uses internally to bind HTTP request/response elements.
@@ -13,11 +15,16 @@ The `routez` implementation revolves around a few core components:
 
 ---
 
-## 1. The `*ReqResp` Struct (`FractionReqResp`)
+### Example: `FractionReqResp` Struct
 
 This struct acts as a single source of truth for all data related to a specific API call. It contains nested structs for organizing request and response components.
 
 ```go
+type Result struct {
+	Display string `json:"display"`
+	Result  string `json:"result"`
+}
+
 type FractionReq struct {
 	Numerator   float64 `json:"numerator"`
 	Denumerator float64 `json:"denumerator"`
@@ -37,7 +44,7 @@ type FractionReqResp struct {
 }
 ```
 
-## 2. The `GetDataRefs()` Method
+### Example: `GetDataRefs()` Method
 
 This method is crucial for `routez` to understand how to populate the `FractionReqResp` struct from an incoming HTTP request and extract data for the HTTP response. It returns an `apiz.DataRefs` object, where each field points to a specific part of the `FractionReqResp` struct.
 
@@ -85,7 +92,7 @@ func (f *FractionReqResp) GetDataRefs() *apiz.DataRefs {
 }
 ```
 
-## 3. The `Schema()` Function
+### Example: `Schema()` Function
 
 This function defines the API's public contract. It specifies the HTTP method, the URL path (including path parameters), and the types and descriptions for all expected request and response elements.
 
@@ -138,7 +145,7 @@ func Schema() *schemaz.Api {
 }
 ```
 
-## 4. The `Api()` Function
+### Example: `Api()` Function and Handler
 
 This is where the API comes to life. It takes the `schemaz.Api` definition and couples it with a `Handler` function that contains the actual business logic. The `Handler` receives the `FractionReqResp` struct, already populated with request data by `routez`, and is responsible for filling the response fields.
 
@@ -157,7 +164,7 @@ func Api() *apiz.Api[*FractionReqResp] {
 }
 ```
 
-## Registering and Using the API
+### Registering the API
 
 To make this API accessible, you would typically register it with an `httpzserver` instance. The `Api()` function returns an `apiz.Api` object that can be passed directly to `routez.Register()`.
 
@@ -181,4 +188,62 @@ To make this API accessible, you would typically register it with an `httpzserve
 // POST /api/gox/routez/sample/fraction/{numerator}/{denumerator}
 ```
 
-This structured approach ensures clear separation of concerns, robust type safety, and automatic handling of request/response binding, making API development efficient and maintainable.
+---
+
+## API Client Generation (`apiclientz`)
+
+The `apiclientz` package provides a way to generate type-safe client functions for your `routez` APIs, simplifying API consumption and ensuring consistency between server and client.
+
+### Core Concepts for Client Generation
+
+1.  **`apiclientz.Get()` Function**: This function takes an `httpzclient.Client` and an `apiz.Api` definition to return a client-side handler function. This handler takes the same `*ReqResp` struct as the server-side API handler, allowing for a consistent API interface.
+2.  **`parseRequest()`**: (Internal) Converts the `*ReqResp` struct into an `httpzrequest.Req` suitable for sending over HTTP. It uses the `GetDataRefs()` method of the `*ReqResp` struct to correctly map data to path parameters, query parameters, headers, and the request body.
+3.  **`writeResponse()`**: (Internal) Populates the `Resp` fields of the `*ReqResp` struct with data received from the HTTP response. It uses `GetDataRefs()` to correctly map response headers and the response body back into the `*ReqResp` struct.
+
+### Example: Using `apiclientz.Get()`
+
+Here's how you can use `apiclientz.Get()` to create and use an API client:
+
+```go
+// From schemazsamplefraction_test.go
+// Assuming 'c' is an httpzclient.Client instance configured to reach your server
+// and routezsamplefraction.Api() returns the apiz.Api definition for your endpoint.
+
+// Import necessary packages:
+// "github.com/infinity6-ai/gox/httpz/httpzclient"
+// "github.com/infinity6-ai/gox/routez/apiclientz"
+// "github.com/infinity6-ai/gox/routez/sampleroutez/routezsamplefraction"
+
+// c := httpzclient.New(ctx, httpzclient.Options{})
+// // Assume s.Base() is the base URL of the httpzserver
+// // c := httpzclient.New(ctx, httpzclient.Options{
+// // 	BaseUrl: s.Base(),
+// // })
+
+ac := apiclientz.Get(c, routezsamplefraction.Api())
+
+reqResp := &routezsamplefraction.FractionReqResp{
+	Req: &routezsamplefraction.FractionReq{
+		Numerator:   10,
+		Denumerator: 3,
+		Precision:   3,
+		TraceId:     "xx",
+		Reason:      "myreason",
+	},
+}
+
+// Call the generated client function with the reqResp struct
+acV2Resp, err := ac(ctx, reqResp)
+
+// After the call, reqResp.Resp will be populated with the response data
+// For example:
+// require.Equal(t, 201, acV2Resp)
+// require.Equal(t, "reason: myreason, trace: xx", reqResp.Resp.ReqId)
+// require.Equal(t, &routezsamplefraction.Result{
+// 	Display: "10.000/3.000",
+// 	Result:  "3.333",
+// }, reqResp.Resp.Result)
+
+```
+
+This comprehensive approach allows for efficient and type-safe development of both API servers and their corresponding clients in Go.
