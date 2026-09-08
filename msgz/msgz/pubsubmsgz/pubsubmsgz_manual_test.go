@@ -22,7 +22,7 @@ func printNow(msg string) {
 
 func TestManualPubsub(t *testing.T) {
 	ctx := context.Background()
-	publisher := pubsubmsgz.NewPublisher(ctx, projectID)
+	publisher := pubsubmsgz.NewPublisher(ctx, msgz.MsgzCreateOptions{ProjectId: projectID})
 	publisher.Publish(ctx, topicID, &msgz.Messages{
 		Messages: []*msgz.Message{
 			{
@@ -33,7 +33,7 @@ func TestManualPubsub(t *testing.T) {
 		},
 	})
 
-	puller := pubsubmsgz.NewPuller(ctx, projectID)
+	puller := pubsubmsgz.NewPuller(ctx, msgz.MsgzCreateOptions{ProjectId: projectID})
 	printNow("pulling")
 	messages := puller.Pull(ctx, subscriptionID, 10, msgz.PullOptions{
 		ReturnImmediately: true,

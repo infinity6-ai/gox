@@ -24,7 +24,7 @@ import (
 )
 
 type MessageStore struct {
-	basedir *urlz.Url
+	basedir *pathz.Path
 	temp    bool
 
 	lock         sync.Mutex
@@ -37,7 +37,7 @@ func (me *MessageStore) Close() error {
 }
 
 func NewTemporaryMessageStore(ctx context.Context) *MessageStore {
-	basedir := urlz.MustParse("file://" + filez.CreateTempDir("filemsgz"))
+	basedir := pathz.MustParse(filez.CreateTempDir("filemsgz"))
 	return &MessageStore{
 		basedir: basedir,
 		temp:    true,
@@ -46,15 +46,18 @@ func NewTemporaryMessageStore(ctx context.Context) *MessageStore {
 
 func NewMessageStore(ctx context.Context, basedir *pathz.Path) *MessageStore {
 	checker.NotNil(basedir, "basedir")
-	b := urlz.MustParse("file://" + basedir.String())
 	return &MessageStore{
-		basedir: b,
+		basedir: basedir,
 		temp:    false,
 	}
 }
 
 func (me *MessageStore) Basedir() *pathz.Path {
-	return me.basedir.Path
+	return me.basedir
+}
+
+func (ms *MessageStore) basedirUrl() *urlz.Url {
+	return urlz.MustParse("file://" + ms.basedir.String())
 }
 
 func (me *MessageStore) Shutdown() {
@@ -62,7 +65,7 @@ func (me *MessageStore) Shutdown() {
 		me.lock.Lock()
 		defer me.lock.Unlock()
 		if me.temp && me.basedir != nil {
-			errorz.Check(fsz.RmTree(context.Background(), me.basedir))
+			errorz.Check(fsz.RmTree(context.Background(), me.basedirUrl()))
 		}
 	})
 }
@@ -80,7 +83,7 @@ func (me *MessageStore) Publish(ctx context.Context, topic string, msgs *msgz.Me
 			AckId:   fmt.Sprintf("fileackid-%s", msg.Id),
 			Message: msg,
 		}
-		dst := me.basedir.MustJoinPathString("created", "topic", topic, fmt.Sprintf("%s.json.gz", msg.Id))
+		dst := me.basedirUrl().MustJoinPathString("created", "topic", topic, fmt.Sprintf("%s.json.gz", msg.Id))
 		fsz.Upload(ctx, dst, nil, bytes.NewReader(gzipz.MustGzip(jsonz.MustFormat(mm).Bytes())))
 	}
 }
@@ -89,8 +92,8 @@ func (me *MessageStore) Pull(ctx context.Context, sub string, limit int, opts ms
 	me.lock.Lock()
 	defer me.lock.Unlock()
 
-	srcDir := me.basedir.MustJoinPathString("created", "topic", sub)
-	dstDir := me.basedir.MustJoinPathString("fetched", "topic", sub)
+	srcDir := me.basedirUrl().MustJoinPathString("created", "topic", sub)
+	dstDir := me.basedirUrl().MustJoinPathString("fetched", "topic", sub)
 	ls, err := fsz.Ls(ctx, srcDir)
 	errorz.Check(err)
 	defer ls.Close()
@@ -145,7 +148,7 @@ func (me *MessageStore) Ack(ctx context.Context, ids *msgz.Ids) {
 	defer me.lock.Unlock()
 	for _, id := range ids.Ids {
 		topic, uid := parseAckId(id)
-		dst := me.basedir.MustJoinPathString("fetched", "topic", topic, fmt.Sprintf("%s.json.gz", uid))
+		dst := me.basedirUrl().MustJoinPathString("fetched", "topic", topic, fmt.Sprintf("%s.json.gz", uid))
 		errorz.Check(fsz.Delete(ctx, dst))
 	}
 }
@@ -159,8 +162,8 @@ func (me *MessageStore) Nack(ctx context.Context, ids *msgz.Ids) {
 func (me *MessageStore) internalNack(ctx context.Context, ids *msgz.Ids) {
 	for _, id := range ids.Ids {
 		topic, uid := parseAckId(id)
-		src := me.basedir.MustJoinPathString("fetched", "topic", topic, fmt.Sprintf("%s.json.gz", uid))
-		dst := me.basedir.MustJoinPathString("created", "topic", topic, fmt.Sprintf("%s.json.gz", uid))
+		src := me.basedirUrl().MustJoinPathString("fetched", "topic", topic, fmt.Sprintf("%s.json.gz", uid))
+		dst := me.basedirUrl().MustJoinPathString("created", "topic", topic, fmt.Sprintf("%s.json.gz", uid))
 		errorz.Check(fsz.Move(ctx, src, dst))
 	}
 }
@@ -168,7 +171,7 @@ func (me *MessageStore) internalNack(ctx context.Context, ids *msgz.Ids) {
 func (me *MessageStore) NackAll(ctx context.Context, topic string) {
 	me.lock.Lock()
 	defer me.lock.Unlock()
-	srcDir := me.basedir.MustJoinPathString("fetched", "topic", topic)
+	srcDir := me.basedirUrl().MustJoinPathString("fetched", "topic", topic)
 
 	p, err := fsz.Ls(ctx, srcDir)
 	errorz.Check(err)
@@ -187,4 +190,19 @@ func (me *MessageStore) NackAll(ctx context.Context, topic string) {
 		}
 		me.internalNack(ctx, ids)
 	}
+}
+
+func New(ctx context.Context, createOpts msgz.MsgzCreateOptions) *MessageStore {
+	if createOpts.BaseDir == nil {
+		return NewTemporaryMessageStore(ctx)
+	}
+	return NewMessageStore(ctx, createOpts.BaseDir)
+}
+
+func NewPublisher(ctx context.Context, createOpts msgz.MsgzCreateOptions) msgz.Publisher {
+	return New(ctx, createOpts)
+}
+
+func NewPuller(ctx context.Context, createOpts msgz.MsgzCreateOptions) msgz.Puller {
+	return New(ctx, createOpts)
 }

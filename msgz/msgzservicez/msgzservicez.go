@@ -7,12 +7,13 @@ import (
 
 	"github.com/infinity6-ai/gox/commonz/ioz"
 	"github.com/infinity6-ai/gox/msgz/msgz"
+	"github.com/infinity6-ai/gox/msgz/msgz/filemsgz"
 	"github.com/infinity6-ai/gox/msgz/msgz/pubsubmsgz"
 )
 
 type MsgzService struct {
-	NewPuller    func(ctx context.Context, projectId string) msgz.Puller
-	NewPublisher func(ctx context.Context, projectId string) msgz.Publisher
+	NewPuller    func(ctx context.Context, createOpts msgz.MsgzCreateOptions) msgz.Puller
+	NewPublisher func(ctx context.Context, createOpts msgz.MsgzCreateOptions) msgz.Publisher
 }
 
 var msgzservices = map[string]*MsgzService{
@@ -20,22 +21,26 @@ var msgzservices = map[string]*MsgzService{
 		NewPuller:    pubsubmsgz.NewPuller,
 		NewPublisher: pubsubmsgz.NewPublisher,
 	},
+	"file": {
+		NewPuller:    filemsgz.NewPuller,
+		NewPublisher: filemsgz.NewPublisher,
+	},
 }
 
-func NewPuller(ctx context.Context, strategy string, projectId string) (msgz.Puller, error) {
-	ret := msgzservices[strategy]
+func NewPuller(ctx context.Context, createOpts msgz.MsgzCreateOptions) (msgz.Puller, error) {
+	ret := msgzservices[createOpts.Strategy]
 	if ret == nil {
-		return nil, fmt.Errorf("unknown strategy %s", strategy)
+		return nil, fmt.Errorf("unknown strategy %s", createOpts.Strategy)
 	}
-	return ret.NewPuller(ctx, projectId), nil
+	return ret.NewPuller(ctx, createOpts), nil
 }
 
-func NewPublisher(ctx context.Context, strategy string, projectId string) (msgz.Publisher, error) {
-	ret := msgzservices[strategy]
+func NewPublisher(ctx context.Context, createOpts msgz.MsgzCreateOptions) (msgz.Publisher, error) {
+	ret := msgzservices[createOpts.Strategy]
 	if ret == nil {
-		return nil, fmt.Errorf("unknown strategy %s", strategy)
+		return nil, fmt.Errorf("unknown strategy %s", createOpts.Strategy)
 	}
-	return ret.NewPublisher(ctx, projectId), nil
+	return ret.NewPublisher(ctx, createOpts), nil
 }
 
 func RegisterMsgz(name string, service *MsgzService) io.Closer {

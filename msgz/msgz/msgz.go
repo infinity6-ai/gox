@@ -2,6 +2,8 @@ package msgz
 
 import (
 	"context"
+
+	"github.com/infinity6-ai/gox/commonz/pathz"
 )
 
 type PushedMessageBody struct {
@@ -68,4 +70,10 @@ type Puller interface {
 	Nack(ctx context.Context, ids *Ids)
 	NackAll(ctx context.Context, sub string)
 	Close() error
+}
+
+type MsgzCreateOptions struct {
+	Strategy  string      `json:"strategy,omitempty"`
+	ProjectId string      `json:"project_id,omitempty"`
+	BaseDir   *pathz.Path `json:"base_dir,omitempty"`
 }

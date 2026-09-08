@@ -7,7 +7,6 @@ import (
 
 	"cloud.google.com/go/pubsub"
 	"github.com/infinity6-ai/gox/commonz/errorz"
-	"github.com/infinity6-ai/gox/commonz/logz"
 	"github.com/infinity6-ai/gox/commonz/validation/checker"
 	"github.com/infinity6-ai/gox/msgz/msgz"
 
@@ -16,10 +15,6 @@ import (
 	pb "cloud.google.com/go/pubsub/apiv1"
 	"cloud.google.com/go/pubsub/apiv1/pubsubpb"
 )
-
-type tlogger logz.Type
-
-var logger = logz.Create(tlogger(true))
 
 type pubsubStrategy struct {
 	projectId string
@@ -163,10 +158,10 @@ func (ps *pubsubStrategy) Publish(ctx context.Context, topic string, msgs *msgz.
 	}
 }
 
-func NewPublisher(ctx context.Context, projectId string) msgz.Publisher {
-	return &pubsubStrategy{projectId: projectId}
+func NewPublisher(ctx context.Context, createOpts msgz.MsgzCreateOptions) msgz.Publisher {
+	return &pubsubStrategy{projectId: createOpts.ProjectId}
 }
 
-func NewPuller(ctx context.Context, projectId string) msgz.Puller {
-	return &pubsubStrategy{projectId: projectId}
+func NewPuller(ctx context.Context, createOpts msgz.MsgzCreateOptions) msgz.Puller {
+	return &pubsubStrategy{projectId: createOpts.ProjectId}
 }
