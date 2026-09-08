@@ -3,7 +3,7 @@ module github.com/infinity6-ai/gox/schemaz
 go 1.26.1
 
 require (
-	github.com/infinity6-ai/gox/versionz v0.0.11
+	github.com/infinity6-ai/gox/versionz v0.0.12
 	github.com/spf13/cobra v1.10.2
 	github.com/stretchr/testify v1.12.1
 )
