@@ -27,18 +27,22 @@ var msgzservices = map[string]*MsgzService{
 	},
 }
 
-func NewPuller(ctx context.Context, createOpts msgz.MsgzCreateOptions) (msgz.Puller, error) {
-	ret := msgzservices[createOpts.Strategy]
+func Get(strategy string) *MsgzService {
+	return msgzservices[strategy]
+}
+
+func NewPuller(ctx context.Context, strategy string, createOpts msgz.MsgzCreateOptions) (msgz.Puller, error) {
+	ret := Get(strategy)
 	if ret == nil {
-		return nil, fmt.Errorf("unknown strategy %s", createOpts.Strategy)
+		return nil, fmt.Errorf("unknown strategy %s", strategy)
 	}
 	return ret.NewPuller(ctx, createOpts), nil
 }
 
-func NewPublisher(ctx context.Context, createOpts msgz.MsgzCreateOptions) (msgz.Publisher, error) {
-	ret := msgzservices[createOpts.Strategy]
+func NewPublisher(ctx context.Context, strategy string, createOpts msgz.MsgzCreateOptions) (msgz.Publisher, error) {
+	ret := Get(strategy)
 	if ret == nil {
-		return nil, fmt.Errorf("unknown strategy %s", createOpts.Strategy)
+		return nil, fmt.Errorf("unknown strategy %s", strategy)
 	}
 	return ret.NewPublisher(ctx, createOpts), nil
 }
