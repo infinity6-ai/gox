@@ -28,11 +28,17 @@ type FractionResp struct {
 }
 
 type FractionReqResp struct {
-	Req  FractionReq
-	Resp FractionResp
+	Req  *FractionReq
+	Resp *FractionResp
 }
 
 func (f *FractionReqResp) GetDataRefs() *apiz.DataRefs {
+	if f.Req == nil {
+		f.Req = &FractionReq{}
+	}
+	if f.Resp == nil {
+		f.Resp = &FractionResp{}
+	}
 	if f.Resp.Result == nil {
 		f.Resp.Result = &Result{}
 	}
