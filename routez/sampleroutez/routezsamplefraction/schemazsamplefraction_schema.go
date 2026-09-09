@@ -27,7 +27,7 @@ func Schema() *schemaz.Api {
 		},
 
 		ReqHeaders: []schemaz.Field{
-			{Name: "trace_id", Desc: schemaz.Desc{Summary: "trace id"}, Spec: schemaz.Spec{Type: schemaz.TypeString}},
+			{Name: "x-i6-trace-id", Desc: schemaz.Desc{Summary: "trace id"}, Spec: schemaz.Spec{Type: schemaz.TypeString}},
 		},
 
 		ReqBody: &schemaz.Spec{
@@ -38,7 +38,7 @@ func Schema() *schemaz.Api {
 		},
 
 		RespHeaders: []schemaz.Field{
-			{Name: "req_id", Desc: schemaz.Desc{Summary: "request id"}, Spec: schemaz.Spec{Type: schemaz.TypeString}},
+			{Name: "x-i6-trace-message", Desc: schemaz.Desc{Summary: "request id"}, Spec: schemaz.Spec{Type: schemaz.TypeString}},
 		},
 
 		RespBody: &schemaz.Spec{

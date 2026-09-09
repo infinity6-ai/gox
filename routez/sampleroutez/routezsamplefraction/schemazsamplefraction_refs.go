@@ -28,7 +28,7 @@ func (f *FractionReqResp) GetDataRefs() *apiz.DataRefs {
 			&f.Req.Precision,
 		},
 		ReqHeaders: &struct {
-			TraceId *string `json:"trace_id"`
+			TraceId *string `json:"x_i6_trace_id"`
 		}{
 			&f.Req.TraceId,
 		},
@@ -38,9 +38,9 @@ func (f *FractionReqResp) GetDataRefs() *apiz.DataRefs {
 			&f.Req.Reason,
 		},
 		RespHeaders: &struct {
-			ReqId *string `json:"req_id"`
+			TraceMessage *string `json:"x_i6_trace_message"`
 		}{
-			&f.Resp.ReqId,
+			&f.Resp.TraceMessage,
 		},
 		RespBody: f.Resp.Result,
 	}

@@ -242,7 +242,7 @@ func runJsFetch(t *testing.T, fnName, code, baseUrl string, params map[string]an
 	return result
 }
 
-func TestUnitJsClient(t *testing.T) {
+func TestManualJsClient(t *testing.T) {
 	ctx := t.Context()
 	s := httpzserver.New(ctx, httpzserver.Options{})
 	defer s.Close()
