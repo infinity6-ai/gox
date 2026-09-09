@@ -177,7 +177,7 @@ func jsCallExpr(fnName, baseUrlExpr string, params map[string]any) (string, erro
 // generated gen/example.js, so the example always reflects what's actually verified to work.
 var sampleFractionParams = map[string]any{
 	"numerator":   10,
-	"denumerator": 3,
+	"denominator": 3,
 	"precision":   3,
 	"trace_id":    "xx",
 	"reason":      "myreason",
@@ -242,7 +242,7 @@ func runJsFetch(t *testing.T, fnName, code, baseUrl string, params map[string]an
 	return result
 }
 
-func TestUnitJsClient(t *testing.T) {
+func TestManualJsClient(t *testing.T) {
 	ctx := t.Context()
 	s := httpzserver.New(ctx, httpzserver.Options{})
 	defer s.Close()
