@@ -3,23 +3,14 @@ package storezdatastore
 import (
 	"context"
 	"fmt"
-	"io"
-	"os"
 
 	"cloud.google.com/go/datastore"
 	"github.com/infinity6-ai/gox/commonz/configz"
 	"github.com/infinity6-ai/gox/commonz/errorz"
-	"github.com/infinity6-ai/gox/commonz/idgen"
-	"github.com/infinity6-ai/gox/commonz/ioz"
-	"github.com/infinity6-ai/gox/commonz/logz"
 	"github.com/infinity6-ai/gox/commonz/strconvz"
 	"github.com/infinity6-ai/gox/storez/internal/storezoption"
 	"github.com/infinity6-ai/gox/storez/storez"
 )
-
-type tlogger logz.Type
-
-var logger = logz.Create(tlogger(true))
 
 var I6StorezTxMaxAttempts = configz.Create("I6_STOREZ_TX_MAX_ATTEMPTS", "")
 
@@ -29,28 +20,8 @@ type StorezStrategyDatastore struct {
 	client *datastore.Client
 }
 
-func Init(ctx context.Context) io.Closer {
-	return errorz.Check2(storez.I6StorezStrategyEncoded.SetEncoded(ctx, "datastore"))
-}
-
-func InitEmulator(ctx context.Context, projectId string) (string, io.Closer) {
-	if projectId == "" {
-		projectId = fmt.Sprintf("demo-%s", idgen.Hex())
-	}
-	host := "localhost:7005"
-	oldenv := os.Getenv(ENV_EMULATOR_HOST)
-	os.Setenv(ENV_EMULATOR_HOST, host)
-	logger.Info(ctx, "env changed", map[string]any{"key": ENV_EMULATOR_HOST, "value": host})
-	init := Init(ctx)
-	return projectId, ioz.CloserV(func() {
-		init.Close()
-		os.Setenv(ENV_EMULATOR_HOST, oldenv)
-		logger.Info(ctx, "env reverted", map[string]any{"key": ENV_EMULATOR_HOST, "value": oldenv})
-	})
-}
-
-func New(ctx context.Context, projectId string, db string, schema *storez.StorezSchema) storez.StorezStrategy {
-	return open(ctx, projectId, db)
+func New(ctx context.Context, opts storez.StorezOpenOptions) storez.StorezStrategy {
+	return open(ctx, opts.ProjectId, opts.Db)
 }
 
 func open(ctx context.Context, projectId string, db string) *StorezStrategyDatastore {

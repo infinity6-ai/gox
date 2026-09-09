@@ -44,7 +44,7 @@ func TestUnitShardService(t *testing.T) {
 	ctx := context.Background()
 	projectId, storeReverter := storezfile.InitEmulator(ctx, "")
 	defer storeReverter.Close()
-	client := Open(ctx, projectId, "mytest")
+	client := Open(ctx, "file", projectId, "mytest")
 	defer client.Close()
 
 	fragmentor := storezshardservice.CreateShardServiceWithResolver(
@@ -117,7 +117,7 @@ func TestUnitShardServiceSession(t *testing.T) {
 	ctx := context.Background()
 	projectId, storeReverter := storezfile.InitEmulator(ctx, "")
 	defer storeReverter.Close()
-	client := Open(ctx, projectId, "mytest")
+	client := Open(ctx, "file", projectId, "mytest")
 	defer client.Close()
 
 	fragmentor := storezshardservice.CreateShardServiceWithResolver(

@@ -31,19 +31,13 @@ func InitEmulator(ctx context.Context, projectId string) (string, io.Closer) {
 	tempDir := filez.CreateTempDir("i6-storez")
 	reverter, err := I6StorezFileBaseDirEncoded.SetEncoded(ctx, "%s", tempDir)
 	errorz.Check(err)
-	init := Init(ctx)
 	return projectId, ioz.CloserV(func() {
-		defer init.Close()
 		defer reverter.Close()
 	})
 }
 
-func Init(ctx context.Context) io.Closer {
-	return errorz.Check2(storez.I6StorezStrategyEncoded.SetEncoded(ctx, "file"))
-}
-
-func New(ctx context.Context, projectId string, db string, schema *storez.StorezSchema) storez.StorezStrategy {
-	return Open(ctx, projectId, db)
+func New(ctx context.Context, opts storez.StorezOpenOptions) storez.StorezStrategy {
+	return Open(ctx, opts.ProjectId, opts.Db)
 }
 
 func Open(ctx context.Context, projectId string, db string) *StorezStrategyFile {

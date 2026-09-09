@@ -16,10 +16,14 @@ type MyData struct {
 	Scores []int64 `json:"scores" datastore:"scores"`
 }
 
-func Open(ctx context.Context, projectId string, db string) *storez.StorezClient {
+func Open(ctx context.Context, strategy string, projectId string, db string) *storez.StorezClient {
 	schema := storez.CreateSchema()
 	schema.Index("t", "name", "scores")
-	return storezservice.Open(ctx, projectId, db, schema)
+	return storezservice.Open(ctx, strategy, storez.StorezOpenOptions{
+		ProjectId: projectId,
+		Db:        db,
+		Schema:    schema,
+	})
 }
 
 func CheckGetTableNames(t *testing.T, client *storez.StorezClient) {

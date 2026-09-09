@@ -3,12 +3,15 @@ package storez
 import (
 	"context"
 
-	"github.com/infinity6-ai/gox/commonz/configz"
 	"github.com/infinity6-ai/gox/storez/storezutil"
 	"github.com/infinity6-ai/gox/storez/storezutil/structz"
 )
 
-var I6StorezStrategyEncoded = configz.Create("I6_STOREZ_STRATEGY", "")
+type StorezOpenOptions struct {
+	ProjectId string        `json:"project_id,omitempty"`
+	Db        string        `json:"db,omitempty"`
+	Schema    *StorezSchema `json:"schema,omitempty"`
+}
 
 func Strategy(schema *StorezSchema, strategy StorezStrategy) *StorezClient {
 	return &StorezClient{schema: schema, strategy: strategy}

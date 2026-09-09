@@ -11,10 +11,8 @@ import (
 	"github.com/infinity6-ai/gox/storez/storezfile"
 )
 
-type NewStrategy func(ctx context.Context, projectId string, db string, schema *storez.StorezSchema) storez.StorezStrategy
-
 type StorezService struct {
-	New NewStrategy
+	New func(ctx context.Context, opts storez.StorezOpenOptions) storez.StorezStrategy
 }
 
 var storezServices = map[string]*StorezService{
@@ -30,14 +28,6 @@ func Get(strategy string) *StorezService {
 	return storezServices[strategy]
 }
 
-func New(ctx context.Context, strategy string, projectId string, db string, schema *storez.StorezSchema) (storez.StorezStrategy, error) {
-	ret := Get(strategy)
-	if ret == nil {
-		return nil, fmt.Errorf("unknown strategy %s", strategy)
-	}
-	return ret.New(ctx, projectId, db, schema), nil
-}
-
 func Register(name string, service *StorezService) io.Closer {
 	old := storezServices[name]
 	closer := func() {
@@ -47,15 +37,10 @@ func Register(name string, service *StorezService) io.Closer {
 	return ioz.CloserV(closer)
 }
 
-func Open(ctx context.Context, projectId string, db string, schema *storez.StorezSchema) *storez.StorezClient {
-	strategyName := storez.I6StorezStrategyEncoded.ReqDecoded(ctx)
-	if strategyName == "" {
-		strategyName = "datastore"
-	}
-	factory, found := storezServices[strategyName]
+func Open(ctx context.Context, strategy string, opts storez.StorezOpenOptions) *storez.StorezClient {
+	factory, found := storezServices[strategy]
 	if !found {
-		panic(fmt.Sprintf("unknown storez strategy %s", strategyName))
+		panic(fmt.Sprintf("unknown storez strategy %s", strategy))
 	}
-	strategy := factory.New(ctx, projectId, db, schema)
-	return storez.Strategy(schema, strategy)
+	return storez.Strategy(opts.Schema, factory.New(ctx, opts))
 }
