@@ -29,13 +29,13 @@ type FractionReq struct {
 	Numerator   float64 `json:"numerator"`
 	Denominator float64 `json:"denominator"`
 	Precision   int     `json:"precision"`
-	TraceId     string  `json:"trace_id"`
+	TraceId     string  `json:"x-i6-trace-id"`
 	Reason      string  `json:"reason"`
 }
 
 type FractionResp struct {
-	ReqId  string  `json:"req_id"`
-	Result *Result `json:"result"`
+	TraceMessage string  `json:"x-i6-trace-message"`
+	Result       *Result `json:"result"`
 }
 
 type FractionReqResp struct {
@@ -73,7 +73,7 @@ func (f *FractionReqResp) GetDataRefs() *apiz.DataRefs {
 			&f.Req.Precision,
 		},
 		ReqHeaders: &struct {
-			TraceId *string `json:"trace_id"`
+			TraceId *string `json:"x-i6-trace-id"`
 		}{
 			&f.Req.TraceId,
 		},
@@ -83,9 +83,9 @@ func (f *FractionReqResp) GetDataRefs() *apiz.DataRefs {
 			&f.Req.Reason,
 		},
 		RespHeaders: &struct {
-			ReqId *string `json:"req_id"`
+			TraceMessage *string `json:"x-i6-trace-message"`
 		}{
-			&f.Resp.ReqId,
+			&f.Resp.TraceMessage,
 		},
 		RespBody: f.Resp.Result,
 	}
@@ -103,8 +103,8 @@ func Schema() *schemaz.Api {
 
 		Desc: schemaz.Desc{
 			Name:     "Sample Fraction",
-			Summary:  "That is a sample of how to use this",
-			Markdown: "# Sample Fraction",
+			Summary:  "Calculates the result of a fraction with a given precision.",
+			Markdown: "# Sample Fraction API\n\nThis API demonstrates a simple fraction calculation. It accepts a numerator and a denominator as path parameters, a precision as a query parameter, and returns the result in a JSON object.",
 		},
 
 		Method: "POST",
@@ -120,7 +120,7 @@ func Schema() *schemaz.Api {
 		},
 
 		ReqHeaders: []schemaz.Field{
-			{Name: "trace_id", Desc: schemaz.Desc{Summary: "trace id"}, Spec: schemaz.Spec{Type: schemaz.TypeNumber}},
+			{Name: "x_i6_trace_id", Desc: schemaz.Desc{Summary: "trace id"}, Spec: schemaz.Spec{Type: schemaz.TypeString}},
 		},
 
 		ReqBody: &schemaz.Spec{
@@ -131,7 +131,7 @@ func Schema() *schemaz.Api {
 		},
 
 		RespHeaders: []schemaz.Field{
-			{Name: "req_id", Desc: schemaz.Desc{Summary: "request id"}, Spec: schemaz.Spec{Type: schemaz.TypeString}},
+			{Name: "x_i6_trace_message", Desc: schemaz.Desc{Summary: "trace message"}, Spec: schemaz.Spec{Type: schemaz.TypeString}},
 		},
 
 		RespBody: &schemaz.Spec{
@@ -154,7 +154,7 @@ func Api() *apiz.Api[*FractionReqResp] {
 	return &apiz.Api[*FractionReqResp]{
 		Schema: Schema(),
 		Handler: func(ctx context.Context, reqResp *FractionReqResp) (int, error) {
-			reqResp.Resp.ReqId = "reason: " + reqResp.Req.Reason + ", trace: " + reqResp.Req.TraceId
+			reqResp.Resp.TraceMessage = "reason: " + reqResp.Req.Reason + ", trace: " + reqResp.Req.TraceId
 			reqResp.Resp.Result.Display = fmt.Sprintf(fmt.Sprintf("%%.%df/%%.%df", int(reqResp.Req.Precision), int(reqResp.Req.Precision)), reqResp.Req.Numerator, reqResp.Req.Denominator)
 			reqResp.Resp.Result.Result = strconv.FormatFloat(reqResp.Req.Numerator/reqResp.Req.Denominator, 'f', reqResp.Req.Precision, 64)
 
@@ -237,13 +237,13 @@ status, err := ac(ctx, reqResp)
 
 // After the call, reqResp.Resp will be populated with the response data
 // For example:
-// require.Equal(t, 201, status)
-// require.Equal(t, "reason: myreason, trace: xx", reqResp.Resp.ReqId)
-// require.Equal(t, &routezsamplefraction.Result{
-// 	Display: "10.000/3.000",
-// 	Result:  "3.333",
-// }, reqResp.Resp.Result)
-
+//   require.Equal(t, 201, status)
+//   require.Equal(t, "reason: myreason, trace: xx", reqResp.Resp.TraceMessage)
+//   require.Equal(t, &routezsamplefraction.Result{
+//   	Display: "10.000/3.000",
+//   	Result:  "3.333",
+//   }, reqResp.Resp.Result)
+// 
 ```
 
 This comprehensive approach allows for efficient and type-safe development of both API servers and their corresponding clients in Go.
