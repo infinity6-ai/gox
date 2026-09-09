@@ -16,7 +16,7 @@ func setupTestClient(t *testing.T) (*storezfile.StorezStrategyFile, func()) {
 	tempDir, err := os.MkdirTemp("", "i6-storez-query-*")
 	errorz.Check(err)
 
-	reverter, err := storezfile.I6StorezFileBaseDirEncoded.SetEncoded(ctx, "%s", tempDir)
+	reverter, err := storezfile.StorezFileBaseDirEncoded.SetEncoded(ctx, "%s", tempDir)
 	errorz.Check(err)
 
 	client := storezfile.Open(ctx, "test-project", "test-db")
@@ -45,9 +45,9 @@ func TestUnitQuery(t *testing.T) {
 	client.PutAll(ctx, tableName, users)
 
 	type testScenario struct {
-		name          string
-		query         *storez.Query
-		expectedIds   []string
+		name           string
+		query          *storez.Query
+		expectedIds    []string
 		expectedCursor string
 	}
 
@@ -149,7 +149,7 @@ func TestUnitQuery(t *testing.T) {
 		}
 		require.Equal(t, []string{"3", "4"}, ids)
 		require.NotEmpty(t, cursor)
-		
+
 		// Get last page (should be empty)
 		query.StartCursor = cursor
 		_, result = client.Query(ctx, query)

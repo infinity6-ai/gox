@@ -12,7 +12,7 @@ import (
 	"github.com/infinity6-ai/gox/storez/storez"
 )
 
-var I6StorezTxMaxAttempts = configz.Create("I6_STOREZ_TX_MAX_ATTEMPTS", "")
+var StorezTxMaxAttempts = configz.Create("I6_GOX_STOREZ_TX_MAX_ATTEMPTS", "")
 
 const ENV_EMULATOR_HOST = "DATASTORE_EMULATOR_HOST"
 
@@ -49,7 +49,7 @@ func (me *StorezStrategyDatastore) Transaction(ctx context.Context, callback fun
 	}
 	dsOpts[len(opts)] = datastore.BeginLater
 	if !maxAttemptsSet {
-		maxAttempts, err := I6StorezTxMaxAttempts.Get(ctx)
+		maxAttempts, err := StorezTxMaxAttempts.Get(ctx)
 		errorz.Check(err)
 		if maxAttempts != "" {
 			dsOpts = append(dsOpts, datastore.MaxAttempts(strconvz.MustParseNumber[int](maxAttempts)))

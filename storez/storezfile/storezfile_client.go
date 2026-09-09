@@ -15,7 +15,7 @@ import (
 	"github.com/infinity6-ai/gox/storez/storez"
 )
 
-var I6StorezFileBaseDirEncoded = configz.Create("I6_STOREZ_FILE_BASE_DIR", "")
+var StorezFileBaseDirEncoded = configz.Create("I6_GOX_STOREZ_FILE_BASE_DIR", "")
 
 var mu sync.Mutex
 var mutexes = map[string]*sync.RWMutex{}
@@ -29,7 +29,7 @@ func InitEmulator(ctx context.Context, projectId string) (string, io.Closer) {
 		projectId = fmt.Sprintf("demo-%s", idgen.Hex())
 	}
 	tempDir := filez.CreateTempDir("i6-storez")
-	reverter, err := I6StorezFileBaseDirEncoded.SetEncoded(ctx, "%s", tempDir)
+	reverter, err := StorezFileBaseDirEncoded.SetEncoded(ctx, "%s", tempDir)
 	errorz.Check(err)
 	return projectId, ioz.CloserV(func() {
 		defer reverter.Close()
@@ -41,7 +41,7 @@ func New(ctx context.Context, opts storez.StorezOpenOptions) storez.StorezStrate
 }
 
 func Open(ctx context.Context, projectId string, db string) *StorezStrategyFile {
-	basedir := I6StorezFileBaseDirEncoded.ReqDecoded(ctx)
+	basedir := StorezFileBaseDirEncoded.ReqDecoded(ctx)
 	basedir = filepath.Join(basedir, projectId, db)
 
 	return &StorezStrategyFile{basedir: basedir}
