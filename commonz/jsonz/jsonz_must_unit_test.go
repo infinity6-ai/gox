@@ -2,6 +2,7 @@ package jsonz
 
 import (
 	"bytes"
+	"io"
 	"math"
 	"testing"
 
@@ -88,6 +89,28 @@ func TestUnitJsonzMustFormatWriter(t *testing.T) {
 		data := make(chan int)
 		require.Panics(t, func() {
 			MustFormatWriter(&buf, data)
+		})
+	})
+}
+
+func TestUnitJsonzMustFormatReader(t *testing.T) {
+	t.Run("success", func(t *testing.T) {
+		data := jsonzMustTestStruct{Name: "test", Value: 123}
+		var reader io.Reader
+		require.NotPanics(t, func() {
+			reader = MustFormatReader(data)
+		})
+		expectedJson := `{"name":"test","value":123}`
+		readBytes, err := io.ReadAll(reader)
+		require.NoError(t, err)
+		require.JSONEq(t, expectedJson, string(readBytes))
+	})
+
+	t.Run("panic on unmarshallable type", func(t *testing.T) {
+		// Channels are not marshallable to JSON
+		data := make(chan int)
+		require.Panics(t, func() {
+			_ = MustFormatReader(data)
 		})
 	})
 }
