@@ -41,7 +41,7 @@ func WriteFile(file string, data []byte) error {
 	if err := CreateParentDirs(file); err != nil {
 		return err
 	}
-	return os.WriteFile(file, data, os.ModePerm)
+	return os.WriteFile(file, data, 0644)
 }
 
 // WriteFromReader writes the content from the given `io.Reader` to a file at

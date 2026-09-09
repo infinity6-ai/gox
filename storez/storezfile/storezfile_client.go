@@ -4,12 +4,12 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"os"
 	"path/filepath"
 	"sync"
 
 	"github.com/infinity6-ai/gox/commonz/configz"
 	"github.com/infinity6-ai/gox/commonz/errorz"
+	"github.com/infinity6-ai/gox/commonz/filez"
 	"github.com/infinity6-ai/gox/commonz/idgen"
 	"github.com/infinity6-ai/gox/commonz/ioz"
 	"github.com/infinity6-ai/gox/storez/storez"
@@ -30,8 +30,7 @@ func InitEmulator(ctx context.Context, projectId string) (string, io.Closer) {
 	if projectId == "" {
 		projectId = fmt.Sprintf("demo-%s", idgen.Hex())
 	}
-	tempDir, err := os.MkdirTemp("", "i6-storez-*")
-	errorz.Check(err)
+	tempDir := filez.CreateTempDir("i6-storez")
 	reverter, err := I6StorezFileBaseDirEncoded.SetEncoded(ctx, "%s", tempDir)
 	errorz.Check(err)
 	init := Init(ctx)

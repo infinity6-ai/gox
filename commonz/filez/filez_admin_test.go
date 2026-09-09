@@ -27,6 +27,18 @@ func TestUnitRemove(t *testing.T) {
 	assert.NoError(t, filez.Remove(filepath.Join(os.TempDir(), "non-existent-file")), "Should not return error for non-existent file in existing dir")
 }
 
+func TestUnitMkdirAll(t *testing.T) {
+	tmpDir := t.TempDir()
+	newDirPath := filepath.Join(tmpDir, "new", "dir")
+
+	err := filez.MkdirAll(newDirPath)
+	assert.NoError(t, err)
+
+	info, err := os.Stat(newDirPath)
+	assert.NoError(t, err, "Directory should be created")
+	assert.True(t, info.IsDir(), "Created path should be a directory")
+}
+
 func TestUnitCreateParentDirs(t *testing.T) {
 	tmpDir := t.TempDir()
 	newFilePath := filepath.Join(tmpDir, "new", "dir", "file.txt")

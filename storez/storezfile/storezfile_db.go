@@ -2,8 +2,8 @@ package storezfile
 
 import (
 	"context"
+	"io/fs"
 	"maps"
-	"os"
 	"path/filepath"
 	"sync"
 
@@ -22,7 +22,7 @@ type DiskDB struct {
 func NewDiskDB(basePath, tableName string, mu *sync.RWMutex) *DiskDB {
 	storezvalidation.TableName(tableName)
 	tablePath := filepath.Join(basePath, tableName)
-	os.MkdirAll(tablePath, os.ModePerm)
+	errorz.Check(filez.MkdirAll(tablePath))
 	return &DiskDB{
 		tablePath: tablePath,
 		mu:        mu,
@@ -39,7 +39,7 @@ func (me *DiskDB) Upsert(original map[string]*storez.Value) {
 	defer me.mu.Unlock()
 
 	rowFile := filepath.Join(me.tablePath, id+".json")
-	errorz.Check(os.WriteFile(rowFile, jsonz.MustFormat(data).Bytes(), 0644))
+	errorz.Check(filez.WriteFile(rowFile, jsonz.MustFormat(data).Bytes()))
 }
 
 func (me *DiskDB) internalDelete(id string) {
@@ -59,12 +59,12 @@ func (me *DiskDB) internalGet(id string) map[string]*storez.Value {
 
 	rowFile := filepath.Join(me.tablePath, id+".json")
 	ret := map[string]*storez.Value{}
-	if _, err := os.Stat(rowFile); os.IsNotExist(err) {
+	if !filez.FileExists(rowFile) {
 		return nil
 	}
-	fileContent, err := os.ReadFile(rowFile)
+	fileContent, err := filez.ReadFile(rowFile, 10*1024*1024)
 	errorz.Check(err)
-	jsonz.MustParse(fileContent, &ret)
+	jsonz.MustParse(fileContent.Bytes(), &ret)
 	storez.FixRow(ret)
 	ret["id"] = &storez.Value{
 		Value:   id,
@@ -83,14 +83,13 @@ func (me *DiskDB) Walk(callback func(row map[string]*storez.Value)) {
 	me.mu.RLock()
 	defer me.mu.RUnlock()
 
-	files, err := os.ReadDir(me.tablePath)
-	errorz.Check(err)
-
-	for _, file := range files {
-		id := file.Name()[:len(file.Name())-len(".json")]
+	err := filez.Ls(me.tablePath, func(idx int, path string, f fs.DirEntry) (bool, error) {
+		id := f.Name()[:len(f.Name())-len(".json")]
 		data := me.internalGet(id)
 		callback(data)
-	}
+		return false, nil
+	})
+	errorz.Check(err)
 }
 
 func (me *DiskDB) List() []map[string]*storez.Value {
@@ -105,23 +104,21 @@ func (me *DiskDB) Drop() {
 	me.mu.Lock()
 	defer me.mu.Unlock()
 
-	files, err := os.ReadDir(me.tablePath)
+	err := filez.Ls(me.tablePath, func(idx int, path string, f fs.DirEntry) (bool, error) {
+		return false, filez.Remove(path)
+	})
 	errorz.Check(err)
-
-	for _, file := range files {
-		errorz.Check(os.Remove(filepath.Join(me.tablePath, file.Name())))
-	}
 }
 
 func GetTableNames(ctx context.Context, basedir string) []string {
-	dirs, err := os.ReadDir(basedir)
-	errorz.Check(err)
-
 	ret := []string{}
-	for _, dir := range dirs {
-		ret = append(ret, dir.Name())
-	}
-
+	err := filez.Ls(basedir, func(idx int, path string, f fs.DirEntry) (bool, error) {
+		if f.IsDir() {
+			ret = append(ret, f.Name())
+		}
+		return false, nil
+	})
+	errorz.Check(err)
 	return ret
 }
 

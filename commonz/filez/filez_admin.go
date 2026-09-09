@@ -19,6 +19,12 @@ func CreateParentDirs(file string) error {
 	return os.MkdirAll(dir, os.ModePerm)
 }
 
+// MkdirAll creates a directory path, along with any necessary parents.
+// It is a convenience wrapper around `os.MkdirAll` with default permissions.
+func MkdirAll(path string) error {
+	return os.MkdirAll(path, os.ModePerm)
+}
+
 // Remove deletes the file or directory at the given path. It returns `true` if
 // the path was successfully removed, and `false` if the path did not exist or
 // was not a directory. It panics for any other error.
