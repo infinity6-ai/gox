@@ -163,17 +163,75 @@ func buildJsFetch(api *schemaz.Api) (fnName string, code string) {
 	return fnName, code
 }
 
+// jsCallExpr renders a JS call to fnName, e.g. `samplefraction(baseUrl, {"numerator":10,...})`.
+// baseUrlExpr is inserted verbatim so callers can pass either a quoted literal or a bare identifier.
+func jsCallExpr(fnName, baseUrlExpr string, params map[string]any) (string, error) {
+	paramsJson, err := json.Marshal(params)
+	if err != nil {
+		return "", err
+	}
+	return fmt.Sprintf("%s(%s, %s)", fnName, baseUrlExpr, paramsJson), nil
+}
+
+// sampleFractionParams are the request values shared by the live round-trip test and the
+// generated gen/example.js, so the example always reflects what's actually verified to work.
+var sampleFractionParams = map[string]any{
+	"numerator":   10,
+	"denumerator": 3,
+	"precision":   3,
+	"trace_id":    "xx",
+	"reason":      "myreason",
+}
+
+// genPackageJson marks gen/ as an ES module so both Node and the IDE resolve
+// the generated import/export syntax; it has nothing to do with the schema, so it's hardcoded.
+const genPackageJson = `{
+  "type": "module",
+  "private": true,
+  "description": "Example SDK output for routezsamplefraction, generated from schemaz.Api for IDE autocomplete demos."
+}
+`
+
+// genExampleJsTemplate wraps the generated call expression in a runnable sample, kept alongside
+// the generated SDK so opening gen/ in an IDE demonstrates the JSDoc-driven autocomplete live.
+const genExampleJsTemplate = `// @ts-check
+import { %[1]s } from './samplefraction.js';
+
+const baseUrl = 'http://localhost:8080';
+
+const result = await %[2]s;
+
+console.log(result.status);
+console.log(result.headers.req_id);
+console.log(result.body.display, result.body.result);
+`
+
+// writeJsSdkExamples writes gen/: the SDK code generated from the schema plus a matching usage
+// example, so it can be opened in an IDE to see the generated JSDoc driving autocomplete.
+func writeJsSdkExamples(t *testing.T, fnName, code string, params map[string]any) {
+	t.Helper()
+	genDir := "gen"
+	require.NoError(t, os.MkdirAll(genDir, 0o755))
+	require.NoError(t, os.WriteFile(filepath.Join(genDir, "samplefraction.js"), []byte(code), 0o644))
+	require.NoError(t, os.WriteFile(filepath.Join(genDir, "package.json"), []byte(genPackageJson), 0o644))
+
+	call, err := jsCallExpr(fnName, "baseUrl", params)
+	require.NoError(t, err)
+	example := fmt.Sprintf(genExampleJsTemplate, fnName, call)
+	require.NoError(t, os.WriteFile(filepath.Join(genDir, "example.js"), []byte(example), 0o644))
+}
+
 // runJsFetch executes generated JS code with Node against a live server and returns the fetched result.
 func runJsFetch(t *testing.T, fnName, code, baseUrl string, params map[string]any) map[string]any {
 	t.Helper()
 	if _, err := exec.LookPath("node"); err != nil {
 		t.Skip("node is not installed")
 	}
-	paramsJson, err := json.Marshal(params)
+	call, err := jsCallExpr(fnName, fmt.Sprintf("%q", baseUrl), params)
 	require.NoError(t, err)
 
-	driver := fmt.Sprintf("%s\n%s(%q, %s).then(r => console.log(JSON.stringify(r))).catch(e => { console.error(e); process.exit(1); });\n",
-		code, fnName, baseUrl, paramsJson)
+	driver := fmt.Sprintf("%s\n%s.then(r => console.log(JSON.stringify(r))).catch(e => { console.error(e); process.exit(1); });\n",
+		code, call)
 	scriptPath := filepath.Join(t.TempDir(), "client.mjs")
 	require.NoError(t, os.WriteFile(scriptPath, []byte(driver), 0o644))
 
@@ -200,13 +258,9 @@ func TestUnitJsClient(t *testing.T) {
 	require.Contains(t, code, "@param {string} params.reason - reason")
 	require.Contains(t, code, "@returns {Promise<{status: number, headers: {req_id: string}, body: {display: string, result: number}}>}")
 
-	result := runJsFetch(t, fnName, code, s.Base().String(), map[string]any{
-		"numerator":   10,
-		"denumerator": 3,
-		"precision":   3,
-		"trace_id":    "xx",
-		"reason":      "myreason",
-	})
+	writeJsSdkExamples(t, fnName, code, sampleFractionParams)
+
+	result := runJsFetch(t, fnName, code, s.Base().String(), sampleFractionParams)
 
 	require.InDelta(t, 201, result["status"], 0)
 	require.Equal(t, "reason: myreason, trace: xx", result["headers"].(map[string]any)["req_id"])
