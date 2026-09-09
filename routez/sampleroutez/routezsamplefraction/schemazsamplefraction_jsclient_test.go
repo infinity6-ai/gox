@@ -4,12 +4,12 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
 	"testing"
 
+	"github.com/infinity6-ai/gox/commonz/filez"
 	"github.com/infinity6-ai/gox/httpz/httpzserver"
 	"github.com/infinity6-ai/gox/routez/routez"
 	"github.com/infinity6-ai/gox/routez/sampleroutez/routezsamplefraction"
@@ -211,14 +211,13 @@ console.log(result.body.display, result.body.result);
 func writeJsSdkExamples(t *testing.T, fnName, code string, params map[string]any) {
 	t.Helper()
 	genDir := "gen"
-	require.NoError(t, os.MkdirAll(genDir, 0o755))
-	require.NoError(t, os.WriteFile(filepath.Join(genDir, "samplefraction.js"), []byte(code), 0o644))
-	require.NoError(t, os.WriteFile(filepath.Join(genDir, "package.json"), []byte(genPackageJson), 0o644))
+	require.NoError(t, filez.WriteFile(filepath.Join(genDir, "samplefraction.js"), []byte(code)))
+	require.NoError(t, filez.WriteFile(filepath.Join(genDir, "package.json"), []byte(genPackageJson)))
 
 	call, err := jsCallExpr(fnName, "baseUrl", params)
 	require.NoError(t, err)
 	example := fmt.Sprintf(genExampleJsTemplate, fnName, call)
-	require.NoError(t, os.WriteFile(filepath.Join(genDir, "example.js"), []byte(example), 0o644))
+	require.NoError(t, filez.WriteFile(filepath.Join(genDir, "example.js"), []byte(example)))
 }
 
 // runJsFetch executes generated JS code with Node against a live server and returns the fetched result.
@@ -233,7 +232,7 @@ func runJsFetch(t *testing.T, fnName, code, baseUrl string, params map[string]an
 	driver := fmt.Sprintf("%s\n%s.then(r => console.log(JSON.stringify(r))).catch(e => { console.error(e); process.exit(1); });\n",
 		code, call)
 	scriptPath := filepath.Join(t.TempDir(), "client.mjs")
-	require.NoError(t, os.WriteFile(scriptPath, []byte(driver), 0o644))
+	require.NoError(t, filez.WriteFile(scriptPath, []byte(driver)))
 
 	out, err := exec.Command("node", scriptPath).CombinedOutput()
 	require.NoError(t, err, string(out))
