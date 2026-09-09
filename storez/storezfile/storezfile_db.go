@@ -39,7 +39,7 @@ func (me *DiskDB) Upsert(original map[string]*storez.Value) {
 	defer me.mu.Unlock()
 
 	rowFile := filepath.Join(me.tablePath, id+".json")
-	filez.Write(rowFile, jsonz.MustFormat(data).Bytes())
+	errorz.Check(os.WriteFile(rowFile, jsonz.MustFormat(data).Bytes(), 0644))
 }
 
 func (me *DiskDB) internalDelete(id string) {
@@ -59,10 +59,12 @@ func (me *DiskDB) internalGet(id string) map[string]*storez.Value {
 
 	rowFile := filepath.Join(me.tablePath, id+".json")
 	ret := map[string]*storez.Value{}
-	if !filez.FileExists(rowFile) {
+	if _, err := os.Stat(rowFile); os.IsNotExist(err) {
 		return nil
 	}
-	jsonz.MustParse(filez.MustReadFile(rowFile, 10*1024*1024).Bytes(), &ret)
+	fileContent, err := os.ReadFile(rowFile)
+	errorz.Check(err)
+	jsonz.MustParse(fileContent, &ret)
 	storez.FixRow(ret)
 	ret["id"] = &storez.Value{
 		Value:   id,
@@ -100,10 +102,15 @@ func (me *DiskDB) List() []map[string]*storez.Value {
 }
 
 func (me *DiskDB) Drop() {
-	me.Walk(func(row map[string]*storez.Value) {
-		id := row["id"].Value.(string)
-		me.internalDelete(id)
-	})
+	me.mu.Lock()
+	defer me.mu.Unlock()
+
+	files, err := os.ReadDir(me.tablePath)
+	errorz.Check(err)
+
+	for _, file := range files {
+		errorz.Check(os.Remove(filepath.Join(me.tablePath, file.Name())))
+	}
 }
 
 func GetTableNames(ctx context.Context, basedir string) []string {

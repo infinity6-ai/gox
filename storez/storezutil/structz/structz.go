@@ -1,8 +1,10 @@
 package structz
 
 import (
+	"encoding/json"
 	"reflect"
 
+	"github.com/infinity6-ai/gox/commonz/errorz"
 	"github.com/infinity6-ai/gox/commonz/jsonz"
 	"github.com/infinity6-ai/gox/commonz/validation/checker"
 )
@@ -15,6 +17,11 @@ func MapListToStructs[T any](data []map[string]any) []T {
 }
 
 func ToInt64(value interface{}) int64 {
+	if jn, ok := value.(json.Number); ok {
+		i, err := jn.Int64()
+		errorz.Check(err)
+		return i
+	}
 	v := reflect.ValueOf(value)
 
 	switch v.Kind() {
@@ -36,6 +43,10 @@ func StructsToMapList[T any](data []T) []map[string]any {
 	for i, row := range parsed {
 		ret[i] = map[string]any{}
 		for k, v := range row {
+			if jn, ok := v.(json.Number); ok {
+				ret[i][k] = ToInt64(jn)
+				continue
+			}
 			val := reflect.ValueOf(v)
 
 			switch val.Kind() {
@@ -48,12 +59,12 @@ func StructsToMapList[T any](data []T) []map[string]any {
 
 				result := make([]any, val.Len())
 
-				for i := 0; i < val.Len(); i++ {
-					switch val.Index(i).Interface().(type) {
+				for j := 0; j < val.Len(); j++ {
+					switch val.Index(j).Interface().(type) {
 					case string:
-						result[i] = val.Index(i).Interface().(string)
+						result[j] = val.Index(j).Interface().(string)
 					default:
-						result[i] = ToInt64(val.Index(i).Interface())
+						result[j] = ToInt64(val.Index(j).Interface())
 					}
 
 				}
