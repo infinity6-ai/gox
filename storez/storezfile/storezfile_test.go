@@ -8,7 +8,7 @@ import (
 	"github.com/infinity6-ai/gox/commonz/errorz"
 	"github.com/infinity6-ai/gox/storez/storez"
 	"github.com/infinity6-ai/gox/storez/storezfile"
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestUnitDB(t *testing.T) {
@@ -23,16 +23,16 @@ func TestUnitDB(t *testing.T) {
 	db.Upsert(row2)
 	db.Upsert(row3)
 
-	assert.Equal(t, row3, db.Get("1"))
+	require.Equal(t, row3, db.Get("1"))
 
-	assert.Nil(t, db.Get("notfound"))
+	require.Nil(t, db.Get("notfound"))
 
-	assert.Equal(t, []map[string]*storez.Value{row3, row2}, db.List())
+	require.Equal(t, []map[string]*storez.Value{row3, row2}, db.List())
 
 	db.Delete("2")
-	assert.Equal(t, []map[string]*storez.Value{row3}, db.List())
+	require.Equal(t, []map[string]*storez.Value{row3}, db.List())
 
 	db.Drop()
-	assert.Empty(t, db.List())
+	require.Empty(t, db.List())
 
 }
