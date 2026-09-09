@@ -97,7 +97,7 @@ func Schema() *schemaz.Api {
 		},
 
 		ReqHeaders: []schemaz.Field{
-			{Name: "trace_id", Desc: schemaz.Desc{Summary: "trace id"}, Spec: schemaz.Spec{Type: schemaz.TypeNumber}},
+			{Name: "trace_id", Desc: schemaz.Desc{Summary: "trace id"}, Spec: schemaz.Spec{Type: schemaz.TypeString}},
 		},
 
 		ReqBody: &schemaz.Spec{
@@ -115,7 +115,7 @@ func Schema() *schemaz.Api {
 			Type: schemaz.TypeObject,
 			Fields: []schemaz.Field{
 				{Name: "display", Desc: schemaz.Desc{Summary: "fraction display"}, Spec: schemaz.Spec{Type: schemaz.TypeString}},
-				{Name: "result", Desc: schemaz.Desc{Summary: "fraction result"}, Spec: schemaz.Spec{Type: schemaz.TypeNumber}},
+				{Name: "result", Desc: schemaz.Desc{Summary: "fraction result"}, Spec: schemaz.Spec{Type: schemaz.TypeString}},
 			},
 		},
 	}
