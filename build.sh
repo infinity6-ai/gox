@@ -12,6 +12,7 @@ function cmd_comps_list() {
   echo "routez"
   echo "fsz" 
   echo "msgz"
+  echo "storez"
 }
 
 function cmd_comps_exec() {
