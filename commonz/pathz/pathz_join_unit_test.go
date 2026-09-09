@@ -6,470 +6,169 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestUnitJoin(t *testing.T) {
+func TestUnitPathJoin(t *testing.T) {
 	type testScenario struct {
-		basePathStr   string
-		otherPathStrs []string
-		expectedPath  *Path
-		expectErr     bool
-		errContains   string
+		name   string
+		base   *Path
+		others []*Path
+		want   string
+		errMsg string
 	}
 
 	check := func(t *testing.T, s testScenario) {
 		t.Helper()
-
-		basePath, err := Parse(s.basePathStr)
-		require.NoError(t, err, "failed to parse base path %q", s.basePathStr)
-
-		others := make([]*Path, len(s.otherPathStrs))
-		for i, pStr := range s.otherPathStrs {
-			otherPath, err := Parse(pStr)
-			require.NoError(t, err, "failed to parse other path %q at index %d", pStr, i)
-			others[i] = otherPath
+		got, err := s.base.Join(s.others...)
+		if s.errMsg != "" {
+			require.Error(t, err)
+			require.Contains(t, err.Error(), s.errMsg)
+		} else {
+			require.NoError(t, err)
 		}
-
-		joinedPath, err := basePath.Join(others...)
-
-		if s.expectErr {
-			require.Error(t, err, "expected an error for scenario %q")
-			require.ErrorIs(t, err, ErrEscaped, "expected ErrEscaped for scenario %q")
-			require.Contains(t, err.Error(), s.errContains, "error message mismatch for scenario %q")
-			if s.expectedPath != nil {
-				require.Equal(t, s.expectedPath, joinedPath, "escaped path mismatch for scenario %q")
-			}
-			return
-		}
-
-		require.NoError(t, err, "did not expect an error for scenario %q")
-		require.NotNil(t, joinedPath, "joined path should not be nil for scenario %q")
-		require.Equal(t, s.expectedPath, joinedPath, "joined path mismatch for scenario %q")
+		require.Equal(t, s.want, got.String())
 	}
 
-	t.Run("simple join", func(t *testing.T) {
+	t.Run("join one", func(t *testing.T) {
 		check(t, testScenario{
-			basePathStr:   "a/b",
-			otherPathStrs: []string{"c"},
-			expectedPath:  New(0, []string{"a", "b", "c"}, false),
+			base:   MustParse("a/b"),
+			others: []*Path{MustParse("c")},
+			want:   "a/b/c",
 		})
 	})
 
-	t.Run("multiple simple joins", func(t *testing.T) {
+	t.Run("join multiple", func(t *testing.T) {
 		check(t, testScenario{
-			basePathStr:   "a/b",
-			otherPathStrs: []string{"c", "d"},
-			expectedPath:  New(0, []string{"a", "b", "c", "d"}, false),
+			base:   MustParse("a/b"),
+			others: []*Path{MustParse("c"), MustParse("d")},
+			want:   "a/b/c/d",
 		})
 	})
 
-	t.Run("join with parent directory navigation staying within base", func(t *testing.T) {
+	t.Run("join with parents", func(t *testing.T) {
 		check(t, testScenario{
-			basePathStr:   "a/b/c",
-			otherPathStrs: []string{"../d"},
-			expectedPath:  New(0, []string{"a", "b", "d"}, false),
-			expectErr:     true,
-			errContains:   "path escaped error: joining 'a/b/c' to '[../d]' results in 'a/b/d' which is outside the base",
+			base:   MustParse("a/b"),
+			others: []*Path{MustParse("../c")},
+			want:   "a/c",
+			errMsg: "path escaped error",
 		})
 	})
 
-	t.Run("join with multiple parent directory navigation staying within base", func(t *testing.T) {
+	t.Run("escape fails", func(t *testing.T) {
 		check(t, testScenario{
-			basePathStr:   "a/b/c/d",
-			otherPathStrs: []string{"../../e"},
-			expectedPath:  New(0, []string{"a", "b", "e"}, false),
-			expectErr:     true,
-			errContains:   "path escaped error: joining 'a/b/c/d' to '[../../e]' results in 'a/b/e' which is outside the base",
+			base:   MustParse("a/b"),
+			others: []*Path{MustParse("../../c")},
+			want:   "c",
+			errMsg: "path escaped error",
 		})
 	})
 
-	t.Run("join with parent directory navigation escaping base", func(t *testing.T) {
+	t.Run("escape fails too much", func(t *testing.T) {
 		check(t, testScenario{
-			basePathStr:   "a/b",
-			otherPathStrs: []string{"../../c"},
-			expectErr:     true,
-			errContains:   "path escaped error: joining 'a/b' to '[../../c]' results in 'c' which is outside the base",
-			expectedPath:  New(0, []string{"c"}, false), // The resulting path after cleaning
+			base:   MustParse("a/b"),
+			others: []*Path{MustParse("../../../c")},
+			want:   "../c",
+			errMsg: "path escaped error",
 		})
 	})
 
-	t.Run("join with absolute path as other (relative base)", func(t *testing.T) {
+	t.Run("absolute child", func(t *testing.T) {
 		check(t, testScenario{
-			basePathStr:   "a/b",
-			otherPathStrs: []string{"/c/d"},
-			expectErr:     true,
-			errContains:   "path escaped error: joining 'a/b' to '[/c/d]' results in '/c/d' which is outside the base",
-			expectedPath:  New(-1, []string{"c", "d"}, false),
+			base:   MustParse("a/b"),
+			others: []*Path{MustParse("/c")},
+			want:   "/c",
+			errMsg: "path escaped error",
 		})
 	})
-
-	t.Run("join with absolute path as other (absolute base but different root)", func(t *testing.T) {
-		check(t, testScenario{
-			basePathStr:   "/a/b",
-			otherPathStrs: []string{"/c/d"},
-			expectErr:     true,
-			errContains:   "path escaped error: joining '/a/b' to '[/c/d]' results in '/c/d' which is outside the base",
-			expectedPath:  New(-1, []string{"c", "d"}, false),
-		})
-	})
-
-	t.Run("join with absolute path as other (absolute base and valid descendant)", func(t *testing.T) {
-		check(t, testScenario{
-			basePathStr:   "/a/b",
-			otherPathStrs: []string{"/a/b/c/d"},
-			expectErr:     false,
-			expectedPath:  New(-1, []string{"a", "b", "c", "d"}, false),
-		})
-	})
-
-	t.Run("join with empty other path", func(t *testing.T) {
-		check(t, testScenario{
-			basePathStr:   "a/b",
-			otherPathStrs: []string{""},
-			expectedPath:  New(0, []string{"a", "b"}, false),
-		})
-	})
-
-	t.Run("join with current directory .", func(t *testing.T) {
-		check(t, testScenario{
-			basePathStr:   "a/b",
-			otherPathStrs: []string{"."},
-			expectedPath:  New(0, []string{"a", "b"}, false),
-		})
-	})
-
-	t.Run("join with current directory ./ and trailing slash", func(t *testing.T) {
-		check(t, testScenario{
-			basePathStr:   "a/b",
-			otherPathStrs: []string{"./"},
-			expectedPath:  New(0, []string{"a", "b"}, true),
-		})
-	})
-
-	t.Run("base path with trailing slash, simple join", func(t *testing.T) {
-		check(t, testScenario{
-			basePathStr:   "a/b/",
-			otherPathStrs: []string{"c"},
-			expectedPath:  New(0, []string{"a", "b", "c"}, false),
-		})
-	})
-
-	t.Run("base path with trailing slash, other path with trailing slash", func(t *testing.T) {
-		check(t, testScenario{
-			basePathStr:   "a/b/",
-			otherPathStrs: []string{"c/"},
-			expectedPath:  New(0, []string{"a", "b", "c"}, true),
-		})
-	})
-
-	t.Run("join with leading ../ (base is relative)", func(t *testing.T) {
-		check(t, testScenario{
-			basePathStr:   "b/c",
-			otherPathStrs: []string{"../../a"},
-			expectErr:     true,
-			errContains:   "path escaped error: joining 'b/c' to '[../../a]' results in 'a' which is outside the base",
-			expectedPath:  New(0, []string{"a"}, false),
-		})
-	})
-
-	t.Run("join with leading ../ (base is absolute)", func(t *testing.T) {
-		check(t, testScenario{
-			basePathStr:   "/b/c",
-			otherPathStrs: []string{"../../a"},
-			expectErr:     true,
-			errContains:   "path escaped error: joining '/b/c' to '[../../a]' results in '/a' which is outside the base",
-			expectedPath:  New(-1, []string{"a"}, false),
-		})
-	})
-
-	t.Run("join root with a relative path", func(t *testing.T) {
-		check(t, testScenario{
-			basePathStr:   "/",
-			otherPathStrs: []string{"a/b"},
-			expectedPath:  New(-1, []string{"a", "b"}, false),
-		})
-	})
-
-	t.Run("join root with an absolute path", func(t *testing.T) {
-		check(t, testScenario{
-			basePathStr:   "/",
-			otherPathStrs: []string{"/a/b"},
-			expectedPath:  New(-1, []string{"a", "b"}, false),
-		})
-	})
-
-	t.Run("join with no other paths", func(t *testing.T) {
-		check(t, testScenario{
-			basePathStr:   "a/b",
-			otherPathStrs: []string{},
-			expectedPath:  New(0, []string{"a", "b"}, false),
-		})
-	})
-
-	t.Run("path a/b/../c", func(t *testing.T) {
-		check(t, testScenario{
-			basePathStr:   "a",
-			otherPathStrs: []string{"b/../c"},
-			expectedPath:  New(0, []string{"a", "c"}, false),
-		})
-	})
-	t.Run("absolute path join with .. and ending slash", func(t *testing.T) {
-		check(t, testScenario{
-			basePathStr:   "/a/b",
-			otherPathStrs: []string{"../c/"},
-			expectErr:     true,
-			errContains:   "path escaped error: joining '/a/b' to '[../c/]' results in '/a/c/' which is outside the base",
-			expectedPath:  New(-1, []string{"a", "c"}, true),
-		})
-	})
-
-	t.Run("path ../a/b join with ../../c escaping", func(t *testing.T) {
-		check(t, testScenario{
-			basePathStr:   "../a/b",
-			otherPathStrs: []string{"../../c"},
-			expectErr:     true,
-			errContains:   "path escaped error: joining '../a/b' to '[../../c]' results in '../c' which is outside the base",
-			expectedPath:  New(1, []string{"c"}, false),
-		})
-	})
-
-	t.Run("join with parent directory navigation escaping base more levels than parts", func(t *testing.T) {
-		check(t, testScenario{
-			basePathStr:   "a",
-			otherPathStrs: []string{"../../b"},
-			expectErr:     true,
-			errContains:   "path escaped error: joining 'a' to '[../../b]' results in '../b' which is outside the base",
-			expectedPath:  New(1, []string{"b"}, false), // The resulting path after cleaning: ../b
-		})
-	})
-
 }
 
-func TestUnitJoinStr(t *testing.T) {
+func TestUnitPathJoinNames(t *testing.T) {
 	type testScenario struct {
-		basePathStr   string
-		otherPathStrs []string
-		expectedPath  *Path
-		expectErr     bool
-		errContains   string
+		name   string
+		base   string
+		others []string
+		want   string
+		errMsg string
 	}
 
 	check := func(t *testing.T, s testScenario) {
 		t.Helper()
+		p, err := Parse(s.base)
+		require.NoError(t, err)
+		got, err := p.JoinNamesString(s.others...)
+		if s.errMsg != "" {
+			require.Error(t, err)
+			require.Contains(t, err.Error(), s.errMsg)
 
-		basePath, err := Parse(s.basePathStr)
-		require.NoError(t, err, "failed to parse base path %q", s.basePathStr)
-
-		joinedPath, err := basePath.JoinString(s.otherPathStrs...)
-
-		if s.expectErr {
-			require.Error(t, err, "expected an error for scenario %q", s.basePathStr)
-			require.ErrorIs(t, err, ErrEscaped, "expected ErrEscaped for scenario %q", s.basePathStr)
-			require.Contains(t, err.Error(), s.errContains, "error message mismatch for scenario %q", s.basePathStr)
-			if s.expectedPath != nil {
-				require.Equal(t, s.expectedPath, joinedPath, "escaped path mismatch for scenario %q", s.basePathStr)
-			}
+			// Test Must* version
+			require.Panics(t, func() {
+				p, err := Parse(s.base)
+				require.NoError(t, err)
+				p.MustJoinNamesString(s.others...)
+			})
 			return
 		}
+		require.NoError(t, err)
+		require.Equal(t, s.want, got.String())
 
-		require.NoError(t, err, "did not expect an error for scenario %q", s.basePathStr)
-		require.NotNil(t, joinedPath, "joined path should not be nil for scenario %q", s.basePathStr)
-		require.Equal(t, s.expectedPath, joinedPath, "joined path mismatch for scenario %q", s.basePathStr)
+		// Test Must* version
+		p, err = Parse(s.base)
+		require.NoError(t, err)
+		mustGot := p.MustJoinNamesString(s.others...)
+		require.Equal(t, s.want, mustGot.String())
 	}
 
-	t.Run("simple join", func(t *testing.T) {
+	t.Run("valid names", func(t *testing.T) {
 		check(t, testScenario{
-			basePathStr:   "a/b",
-			otherPathStrs: []string{"c"},
-			expectedPath:  New(0, []string{"a", "b", "c"}, false),
+			base:   "a/b",
+			others: []string{"c", "d"},
+			want:   "a/b/c/d",
 		})
 	})
 
-	t.Run("multiple simple joins", func(t *testing.T) {
+	t.Run("empty name", func(t *testing.T) {
 		check(t, testScenario{
-			basePathStr:   "a/b",
-			otherPathStrs: []string{"c", "d"},
-			expectedPath:  New(0, []string{"a", "b", "c", "d"}, false),
+			base:   "a/b",
+			others: []string{""},
+			errMsg: "it is not a name:",
 		})
 	})
 
-	t.Run("join with parent directory navigation staying within base", func(t *testing.T) {
+	t.Run("multi-part name", func(t *testing.T) {
 		check(t, testScenario{
-			basePathStr:   "a/b/c",
-			otherPathStrs: []string{"../d"},
-			expectedPath:  New(0, []string{"a", "b", "d"}, false),
-			expectErr:     true,
-			errContains:   "path escaped error: joining 'a/b/c' to '[../d]' results in 'a/b/d' which is outside the base",
+			base:   "a/b",
+			others: []string{"c/d"},
+			errMsg: "it is not a name: c/d",
 		})
 	})
 
-	t.Run("join with multiple parent directory navigation staying within base", func(t *testing.T) {
+	t.Run("name with ..", func(t *testing.T) {
 		check(t, testScenario{
-			basePathStr:   "a/b/c/d",
-			otherPathStrs: []string{"../../e"},
-			expectedPath:  New(0, []string{"a", "b", "e"}, false),
-			expectErr:     true,
-			errContains:   "path escaped error: joining 'a/b/c/d' to '[../../e]' results in 'a/b/e' which is outside the base",
+			base:   "a/b",
+			others: []string{"../c"},
+			errMsg: "max parents allowed",
 		})
 	})
 
-	t.Run("join with parent directory navigation escaping base", func(t *testing.T) {
+	t.Run("absolute name", func(t *testing.T) {
 		check(t, testScenario{
-			basePathStr:   "a/b",
-			otherPathStrs: []string{"../../c"},
-			expectErr:     true,
-			errContains:   "path escaped error: joining 'a/b' to '[../../c]' results in 'c' which is outside the base",
-			expectedPath:  New(0, []string{"c"}, false), // The resulting path after cleaning
+			base:   "a/b",
+			others: []string{"/c"},
+			errMsg: "path absolute flag",
 		})
 	})
 
-	t.Run("join with absolute path as other (relative base)", func(t *testing.T) {
+	t.Run("wildcard in name", func(t *testing.T) {
 		check(t, testScenario{
-			basePathStr:   "a/b",
-			otherPathStrs: []string{"/c/d"},
-			expectErr:     true,
-			errContains:   "path escaped error: joining 'a/b' to '[/c/d]' results in '/c/d' which is outside the base",
-			expectedPath:  New(-1, []string{"c", "d"}, false),
+			base:   "a/b",
+			others: []string{"c*"},
+			errMsg: "wildcard characters when not allowed",
 		})
 	})
 
-	t.Run("join with absolute path as other (absolute base but different root)", func(t *testing.T) {
+	t.Run("mixed valid and invalid names", func(t *testing.T) {
 		check(t, testScenario{
-			basePathStr:   "/a/b",
-			otherPathStrs: []string{"/c/d"},
-			expectErr:     true,
-			errContains:   "path escaped error: joining '/a/b' to '[/c/d]' results in '/c/d' which is outside the base",
-			expectedPath:  New(-1, []string{"c", "d"}, false),
+			base:   "a/b",
+			others: []string{"c", "d/e"},
+			errMsg: "it is not a name: d/e",
 		})
 	})
-
-	t.Run("join with absolute path as other (absolute base and valid descendant)", func(t *testing.T) {
-		check(t, testScenario{
-			basePathStr:   "/a/b",
-			otherPathStrs: []string{"/a/b/c/d"},
-			expectErr:     false,
-			expectedPath:  New(-1, []string{"a", "b", "c", "d"}, false),
-		})
-	})
-
-	t.Run("join with empty other path", func(t *testing.T) {
-		check(t, testScenario{
-			basePathStr:   "a/b",
-			otherPathStrs: []string{""},
-			expectedPath:  New(0, []string{"a", "b"}, false),
-		})
-	})
-
-	t.Run("join with current directory .", func(t *testing.T) {
-		check(t, testScenario{
-			basePathStr:   "a/b",
-			otherPathStrs: []string{"."},
-			expectedPath:  New(0, []string{"a", "b"}, false),
-		})
-	})
-
-	t.Run("join with current directory ./ and trailing slash", func(t *testing.T) {
-		check(t, testScenario{
-			basePathStr:   "a/b",
-			otherPathStrs: []string{"./"},
-			expectedPath:  New(0, []string{"a", "b"}, true),
-		})
-	})
-
-	t.Run("base path with trailing slash, simple join", func(t *testing.T) {
-		check(t, testScenario{
-			basePathStr:   "a/b/",
-			otherPathStrs: []string{"c"},
-			expectedPath:  New(0, []string{"a", "b", "c"}, false),
-		})
-	})
-
-	t.Run("base path with trailing slash, other path with trailing slash", func(t *testing.T) {
-		check(t, testScenario{
-			basePathStr:   "a/b/",
-			otherPathStrs: []string{"c/"},
-			expectedPath:  New(0, []string{"a", "b", "c"}, true),
-		})
-	})
-
-	t.Run("join with leading ../ (base is relative)", func(t *testing.T) {
-		check(t, testScenario{
-			basePathStr:   "b/c",
-			otherPathStrs: []string{"../../a"},
-			expectErr:     true,
-			errContains:   "path escaped error: joining 'b/c' to '[../../a]' results in 'a' which is outside the base",
-			expectedPath:  New(0, []string{"a"}, false),
-		})
-	})
-
-	t.Run("join with leading ../ (base is absolute)", func(t *testing.T) {
-		check(t, testScenario{
-			basePathStr:   "/b/c",
-			otherPathStrs: []string{"../../a"},
-			expectErr:     true,
-			errContains:   "path escaped error: joining '/b/c' to '[../../a]' results in '/a' which is outside the base",
-			expectedPath:  New(-1, []string{"a"}, false),
-		})
-	})
-
-	t.Run("join root with a relative path", func(t *testing.T) {
-		check(t, testScenario{
-			basePathStr:   "/",
-			otherPathStrs: []string{"a/b"},
-			expectedPath:  New(-1, []string{"a", "b"}, false),
-		})
-	})
-
-	t.Run("join root with an absolute path", func(t *testing.T) {
-		check(t, testScenario{
-			basePathStr:   "/",
-			otherPathStrs: []string{"/a/b"},
-			expectedPath:  New(-1, []string{"a", "b"}, false),
-		})
-	})
-
-	t.Run("join with no other paths", func(t *testing.T) {
-		check(t, testScenario{
-			basePathStr:   "a/b",
-			otherPathStrs: []string{},
-			expectedPath:  New(0, []string{"a", "b"}, false),
-		})
-	})
-
-	t.Run("path a/b/../c", func(t *testing.T) {
-		check(t, testScenario{
-			basePathStr:   "a",
-			otherPathStrs: []string{"b/../c"},
-			expectedPath:  New(0, []string{"a", "c"}, false),
-		})
-	})
-	t.Run("absolute path join with .. and ending slash", func(t *testing.T) {
-		check(t, testScenario{
-			basePathStr:   "/a/b",
-			otherPathStrs: []string{"../c/"},
-			expectErr:     true,
-			errContains:   "path escaped error: joining '/a/b' to '[../c/]' results in '/a/c/' which is outside the base",
-			expectedPath:  New(-1, []string{"a", "c"}, true),
-		})
-	})
-
-	t.Run("path ../a/b join with ../../c escaping", func(t *testing.T) {
-		check(t, testScenario{
-			basePathStr:   "../a/b",
-			otherPathStrs: []string{"../../c"},
-			expectErr:     true,
-			errContains:   "path escaped error: joining '../a/b' to '[../../c]' results in '../c' which is outside the base",
-			expectedPath:  New(1, []string{"c"}, false),
-		})
-	})
-
-	t.Run("join with parent directory navigation escaping base more levels than parts", func(t *testing.T) {
-		check(t, testScenario{
-			basePathStr:   "a",
-			otherPathStrs: []string{"../../b"},
-			expectErr:     true,
-			errContains:   "path escaped error: joining 'a' to '[../../b]' results in '../b' which is outside the base",
-			expectedPath:  New(1, []string{"b"}, false), // The resulting path after cleaning: ../b
-		})
-	})
-
 }
-

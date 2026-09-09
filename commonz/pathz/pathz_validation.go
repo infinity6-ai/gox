@@ -1,6 +1,8 @@
 package pathz
 
 import (
+	"fmt"
+
 	"github.com/infinity6-ai/gox/commonz/errorz"
 	"github.com/infinity6-ai/gox/commonz/validation"
 )
@@ -23,8 +25,18 @@ func (p *Path) Validate(opts ValidateOptions) error {
 		if err != nil {
 			return err
 		}
-	} else if opts.MaxParents != nil {
-		err := validation.GreaterOrEqual(p.Parents(), *opts.MaxParents, "max parents allowed: %s", p)
+	}
+	if opts.MaxParents != nil {
+		if *opts.MaxParents < 0 {
+			panic("max parents cannot be negative, use opts.Absolute instead")
+		}
+		if p.IsAbsolute() {
+			return fmt.Errorf("max parents allowed %d, but is is absolute: %s", *opts.MaxParents, p)
+		}
+		if p.Parents() < 0 {
+			panic("parents cannot be lesser than -1")
+		}
+		err := validation.LessOrEqual(p.Parents(), *opts.MaxParents, "max parents allowed: %s", p)
 		if err != nil {
 			return err
 		}
