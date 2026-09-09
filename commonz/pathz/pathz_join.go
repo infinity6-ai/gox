@@ -77,3 +77,40 @@ func (p *Path) MustJoin(others ...*Path) *Path {
 	errorz.Check(err)
 	return ret
 }
+
+func (p *Path) JoinNames(others ...*Path) (*Path, error) {
+	for _, other := range others {
+		err := other.Validate(ValidateOptions{Absolute: new(false), MaxParents: new(0), Wildchar: false})
+		if err != nil {
+			return nil, err
+		}
+		if len(other.Parts()) != 1 {
+			return nil, fmt.Errorf("it is not a name: %s", other)
+		}
+	}
+	return p.Join(others...)
+}
+
+func (p *Path) MustJoinNames(others ...*Path) *Path {
+	ret, err := p.JoinNames(others...)
+	errorz.Check(err)
+	return ret
+}
+
+func (p *Path) JoinNamesString(others ...string) (*Path, error) {
+	paths := make([]*Path, len(others))
+	for i, other := range others {
+		p, err := Parse(other)
+		if err != nil {
+			return nil, fmt.Errorf("%w: error parsing %d: %s", err, i, other)
+		}
+		paths[i] = p
+	}
+	return p.JoinNames(paths...)
+}
+
+func (p *Path) MustJoinNamesString(others ...string) *Path {
+	ret, err := p.JoinNamesString(others...)
+	errorz.Check(err)
+	return ret
+}
