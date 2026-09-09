@@ -173,8 +173,6 @@ func (me *StorezStrategyFile) Query(ctx context.Context, query *storez.Query) (s
 	}
 
 	endCursor := NewCursor(query.OrderBys, ret[len(ret)-1])
-	// cursor := ret[len(ret)-1]["id"].Value.(string)
-	// cursor = cryptz.B64EncodeS2S(cursor)
 
 	return endCursor.Format(), ret
 }
