@@ -21,8 +21,6 @@ var mu sync.Mutex
 var mutexes = map[string]*sync.RWMutex{}
 
 type StorezStrategyFile struct {
-	storez.StorezStrategy
-
 	basedir string
 }
 
@@ -42,6 +40,10 @@ func InitEmulator(ctx context.Context, projectId string) (string, io.Closer) {
 
 func Init(ctx context.Context) io.Closer {
 	return errorz.Check2(storez.I6StorezStrategyEncoded.SetEncoded(ctx, "file"))
+}
+
+func New(ctx context.Context, projectId string, db string, schema *storez.StorezSchema) storez.StorezStrategy {
+	return Open(ctx, projectId, db)
 }
 
 func Open(ctx context.Context, projectId string, db string) *StorezStrategyFile {
@@ -70,7 +72,7 @@ func (me *StorezStrategyFile) Close() error {
 	return nil
 }
 
-func (me *StorezStrategyFile) Transaction(ctx context.Context, callback func(strategy storez.StorezStrategy), opts ...storez.TransactionOption) {
+func (me *StorezStrategyFile) Transaction(ctx context.Context, callback func(storez.StorezStrategy), opts ...storez.TransactionOption) {
 	callback(me)
 }
 

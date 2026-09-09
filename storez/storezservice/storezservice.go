@@ -3,28 +3,59 @@ package storezservice
 import (
 	"context"
 	"fmt"
-	"regexp"
+	"io"
 
-	"github.com/infinity6-ai/gox/commonz/validation/checker"
+	"github.com/infinity6-ai/gox/commonz/ioz"
 	"github.com/infinity6-ai/gox/storez/storez"
 	"github.com/infinity6-ai/gox/storez/storezdatastore"
 	"github.com/infinity6-ai/gox/storez/storezfile"
 )
 
-var pattern = regexp.MustCompile("^[a-z0-9]+$")
+type NewStrategy func(ctx context.Context, projectId string, db string, schema *storez.StorezSchema) storez.StorezStrategy
+
+type StorezService struct {
+	New NewStrategy
+}
+
+var storezServices = map[string]*StorezService{
+	"datastore": {
+		New: storezdatastore.New,
+	},
+	"file": {
+		New: storezfile.New,
+	},
+}
+
+func Get(strategy string) *StorezService {
+	return storezServices[strategy]
+}
+
+func New(ctx context.Context, strategy string, projectId string, db string, schema *storez.StorezSchema) (storez.StorezStrategy, error) {
+	ret := Get(strategy)
+	if ret == nil {
+		return nil, fmt.Errorf("unknown strategy %s", strategy)
+	}
+	return ret.New(ctx, projectId, db, schema), nil
+}
+
+func Register(name string, service *StorezService) io.Closer {
+	old := storezServices[name]
+	closer := func() {
+		storezServices[name] = old
+	}
+	storezServices[name] = service
+	return ioz.CloserV(closer)
+}
 
 func Open(ctx context.Context, projectId string, db string, schema *storez.StorezSchema) *storez.StorezClient {
-	checker.RegexMatch(pattern, db, "datastore database name")
-	strategy := storez.I6StorezStrategyEncoded.ReqDecoded(ctx)
-	var strategyImpl storez.StorezStrategy
-	switch strategy {
-	case "datastore":
-		strategyImpl = storezdatastore.Open(ctx, projectId, db)
-	case "file":
-		strategyImpl = storezfile.Open(ctx, projectId, db)
+	strategyName := storez.I6StorezStrategyEncoded.ReqDecoded(ctx)
+	if strategyName == "" {
+		strategyName = "datastore"
 	}
-	if strategyImpl == nil {
-		panic(fmt.Sprintf("Unknown I6_STOREZ_STRATEGY: %s", strategy))
+	factory, found := storezServices[strategyName]
+	if !found {
+		panic(fmt.Sprintf("unknown storez strategy %s", strategyName))
 	}
-	return storez.Strategy(schema, strategyImpl)
+	strategy := factory.New(ctx, projectId, db, schema)
+	return storez.Strategy(schema, strategy)
 }

@@ -26,8 +26,6 @@ var I6StorezTxMaxAttempts = configz.Create("I6_STOREZ_TX_MAX_ATTEMPTS", "")
 const ENV_EMULATOR_HOST = "DATASTORE_EMULATOR_HOST"
 
 type StorezStrategyDatastore struct {
-	storez.StorezStrategy
-
 	client *datastore.Client
 }
 
@@ -51,7 +49,11 @@ func InitEmulator(ctx context.Context, projectId string) (string, io.Closer) {
 	})
 }
 
-func Open(ctx context.Context, projectId string, db string) *StorezStrategyDatastore {
+func New(ctx context.Context, projectId string, db string, schema *storez.StorezSchema) storez.StorezStrategy {
+	return open(ctx, projectId, db)
+}
+
+func open(ctx context.Context, projectId string, db string) *StorezStrategyDatastore {
 	client, err := datastore.NewClientWithDatabase(ctx, projectId, db)
 	errorz.Check(err)
 	return &StorezStrategyDatastore{client: client}
@@ -64,7 +66,7 @@ func (me *StorezStrategyDatastore) Close() error {
 	return nil
 }
 
-func (me *StorezStrategyDatastore) Transaction(ctx context.Context, callback func(client storez.StorezStrategy), opts ...storez.TransactionOption) {
+func (me *StorezStrategyDatastore) Transaction(ctx context.Context, callback func(storez.StorezStrategy), opts ...storez.TransactionOption) {
 	dsOpts := make([]datastore.TransactionOption, len(opts)+1, len(opts)+2)
 	maxAttemptsSet := false
 	for i, opt := range opts {

@@ -28,14 +28,11 @@ type StorezStrategy interface {
 
 	GetAll(ctx context.Context, table string, ids []string) []map[string]*Value
 	PutAll(ctx context.Context, table string, rows []map[string]*Value)
-
-	PutValueAll(ctx context.Context, table string, rows []map[string]*Value)
-
 	DeleteAll(ctx context.Context, table string, ids []string)
 
 	Query(ctx context.Context, query *Query) (string, []map[string]*Value)
 
-	Transaction(ctx context.Context, callback func(client StorezStrategy), opts ...TransactionOption)
+	Transaction(ctx context.Context, callback func(StorezStrategy), opts ...TransactionOption)
 }
 
 type StorezClient struct {
@@ -79,11 +76,7 @@ func (me *StorezClient) PutAll(ctx context.Context, table string, rows []map[str
 	storezvalidation.Row(rows...)
 	tableSchema := me.schema.GetTable(table)
 	rowValues := rows2Value(tableSchema, rows)
-	me.PutValueAll(ctx, table, rowValues)
-}
-
-func (me *StorezClient) PutValueAll(ctx context.Context, table string, rows []map[string]*Value) {
-	me.strategy.PutAll(ctx, table, rows)
+	me.strategy.PutAll(ctx, table, rowValues)
 }
 
 func (me *StorezClient) Put(ctx context.Context, table string, row map[string]any) {
