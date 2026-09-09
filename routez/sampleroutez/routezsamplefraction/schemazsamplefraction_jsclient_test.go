@@ -255,7 +255,7 @@ func TestUnitJsClient(t *testing.T) {
 
 	require.Contains(t, code, "@param {number} params.numerator - numerator")
 	require.Contains(t, code, "@param {string} params.reason - reason")
-	require.Contains(t, code, "@returns {Promise<{status: number, headers: {req_id: string}, body: {display: string, result: number}}>}")
+	require.Contains(t, code, "@returns {Promise<{status: number, headers: {req_id: string}, body: {display: string, result: string}}>}")
 
 	writeJsSdkExamples(t, fnName, code, sampleFractionParams)
 
