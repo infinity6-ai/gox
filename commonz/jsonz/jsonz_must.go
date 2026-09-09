@@ -26,6 +26,12 @@ func MustFormatWriter(w io.Writer, v any) {
 	errorz.Check(FormatWriter(w, v))
 }
 
+// MustFormatReader is like FormatReader but panics if an error occurs.
+// It loads the entire object into memory.
+func MustFormatReader(v any) io.Reader {
+	return MustFormat(v).NewReader()
+}
+
 // MustFormat is like Format but panics if an error occurs.
 func MustFormat(v any) blobz.Blob {
 	res, err := Format(v)

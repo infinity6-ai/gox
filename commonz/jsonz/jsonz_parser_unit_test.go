@@ -3,6 +3,7 @@ package jsonz
 import (
 	"bytes"
 	"encoding/json"
+	"io"
 	"strings"
 	"testing"
 
@@ -192,6 +193,71 @@ func TestUnitFormatWriter(t *testing.T) {
 	})
 }
 
+func TestUnitFormatReadCloser(t *testing.T) {
+	type MyStruct struct {
+		Name string `json:"name"`
+		Age  int    `json:"age"`
+	}
+
+	type testScenario struct {
+		name    string
+		input   any
+		want    string
+		wantErr string
+	}
+
+	check := func(t *testing.T, s testScenario) {
+		t.Helper()
+		reader := FormatReadCloser(s.input)
+		defer reader.Close()
+
+		got, readErr := io.ReadAll(reader)
+
+		if s.wantErr != "" {
+			require.Error(t, readErr)
+			require.Contains(t, readErr.Error(), s.wantErr)
+		} else {
+			require.NoError(t, readErr)
+			require.JSONEq(t, s.want, string(got))
+		}
+	}
+
+	t.Run("Format struct to JSON reader", func(t *testing.T) {
+		input := MyStruct{Name: "Alice", Age: 40}
+		check(t, testScenario{
+			name:  "format struct",
+			input: input,
+			want:  `{"name":"Alice","age":40}`,
+		})
+	})
+
+	t.Run("Format map to JSON reader", func(t *testing.T) {
+		input := map[string]any{"city": "New York", "population": 8000000}
+		check(t, testScenario{
+			name:  "format map",
+			input: input,
+			want:  `{"city":"New York","population":8000000}`,
+		})
+	})
+
+	t.Run("Format nil input", func(t *testing.T) {
+		check(t, testScenario{
+			name:  "format nil",
+			input: nil,
+			want:  `null`,
+		})
+	})
+
+	t.Run("Format unsupported type (channel) to JSON reader", func(t *testing.T) {
+		input := make(chan int)
+		check(t, testScenario{
+			name:    "format unsupported type",
+			input:   input,
+			wantErr: "failed to marshal data: json: unsupported type: chan int",
+		})
+	})
+}
+
 func TestUnitFormat(t *testing.T) {
 	type MyStruct struct {
 		Product string  `json:"product"`
@@ -302,7 +368,7 @@ func TestUnitParseReaderUntilEOF(t *testing.T) {
 
 	t.Run("Stream with whitespace between objects", func(t *testing.T) {
 		check(t, testScenario{
-			name:  "whitespace between objects",
+			name: "whitespace between objects",
 			input: `{"name":"first","id":1}  	{"name":"second","id":2}
 {"name":"third","id":3}`,
 			want: []*MyStruct{

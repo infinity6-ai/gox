@@ -54,6 +54,28 @@ func FormatWriter(w io.Writer, v any) error {
 	return nil
 }
 
+// FormatReadCloser returns an io.ReadCloser that provides the JSON-encoded
+// representation of v. It streams the output and does not load the entire
+// JSON object into memory. The caller must close the reader when finished.
+func FormatReadCloser(v any) io.ReadCloser {
+	r, w := io.Pipe()
+
+	go func() {
+		var err error
+		defer func() {
+			// Ensure the writer is closed with the encoding error, if any.
+			w.CloseWithError(err)
+		}()
+		encoder := json.NewEncoder(w)
+		encodeErr := encoder.Encode(v)
+		if encodeErr != nil {
+			err = fmt.Errorf("failed to marshal data: %w", encodeErr)
+		}
+	}()
+
+	return r
+}
+
 func Format(v any) (blobz.Blob, error) {
 	b, err := json.Marshal(v)
 	if err != nil {
