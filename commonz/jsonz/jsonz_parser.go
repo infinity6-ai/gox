@@ -54,10 +54,10 @@ func FormatWriter(w io.Writer, v any) error {
 	return nil
 }
 
-// FormatReader returns an io.ReadCloser that provides the JSON-encoded
+// FormatReadCloser returns an io.ReadCloser that provides the JSON-encoded
 // representation of v. It streams the output and does not load the entire
 // JSON object into memory. The caller must close the reader when finished.
-func FormatReader(v any) io.ReadCloser {
+func FormatReadCloser(v any) io.ReadCloser {
 	r, w := io.Pipe()
 
 	go func() {

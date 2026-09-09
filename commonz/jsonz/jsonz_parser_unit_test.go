@@ -193,7 +193,7 @@ func TestUnitFormatWriter(t *testing.T) {
 	})
 }
 
-func TestUnitFormatReader(t *testing.T) {
+func TestUnitFormatReadCloser(t *testing.T) {
 	type MyStruct struct {
 		Name string `json:"name"`
 		Age  int    `json:"age"`
@@ -208,7 +208,7 @@ func TestUnitFormatReader(t *testing.T) {
 
 	check := func(t *testing.T, s testScenario) {
 		t.Helper()
-		reader := FormatReader(s.input)
+		reader := FormatReadCloser(s.input)
 		defer reader.Close()
 
 		got, readErr := io.ReadAll(reader)
@@ -368,7 +368,7 @@ func TestUnitParseReaderUntilEOF(t *testing.T) {
 
 	t.Run("Stream with whitespace between objects", func(t *testing.T) {
 		check(t, testScenario{
-			name:  "whitespace between objects",
+			name: "whitespace between objects",
 			input: `{"name":"first","id":1}  	{"name":"second","id":2}
 {"name":"third","id":3}`,
 			want: []*MyStruct{
