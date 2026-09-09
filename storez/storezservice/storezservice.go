@@ -28,7 +28,7 @@ func Get(strategy string) *StorezService {
 	return storezServices[strategy]
 }
 
-func RegisterStorez(name string, service *StorezService) io.Closer {
+func RegisterStorez(ctx context.Context, name string, service *StorezService) io.Closer {
 	old := storezServices[name]
 	closer := func() {
 		storezServices[name] = old
