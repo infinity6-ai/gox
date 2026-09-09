@@ -49,7 +49,7 @@ func TestUnitBasic(t *testing.T) {
 	reqResp := &routezsamplefraction.FractionReqResp{
 		Req: &routezsamplefraction.FractionReq{
 			Numerator:   10,
-			Denumerator: 3,
+			Denominator: 3,
 			Precision:   3,
 			TraceId:     "xx",
 			Reason:      "myreason",

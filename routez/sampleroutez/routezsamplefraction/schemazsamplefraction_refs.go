@@ -17,10 +17,10 @@ func (f *FractionReqResp) GetDataRefs() *apiz.DataRefs {
 	return &apiz.DataRefs{
 		PathParams: &struct {
 			Numerator   *float64 `json:"numerator"`
-			Denumerator *float64 `json:"denumerator"`
+			Denominator *float64 `json:"denominator"`
 		}{
 			&f.Req.Numerator,
-			&f.Req.Denumerator,
+			&f.Req.Denominator,
 		},
 		QueryParams: &struct {
 			Precision *int `json:"precision"`

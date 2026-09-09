@@ -10,16 +10,16 @@ func Schema() *schemaz.Api {
 
 		Desc: schemaz.Desc{
 			Name:     "Sample Fraction",
-			Summary:  "That is a sample of how to use this",
-			Markdown: "# Sample Fraction",
+			Summary:  "Calculates the result of a fraction with a given precision.",
+			Markdown: "# Sample Fraction API\n\nThis API demonstrates a simple fraction calculation. It accepts a numerator and a denominator as path parameters, a precision as a query parameter, and returns the result in a JSON object.",
 		},
 
 		Method: "POST",
-		Path:   "/api/gox/routez/sample/fraction/{numerator}/{denumerator}",
+		Path:   "/api/gox/routez/sample/fraction/{numerator}/{denominator}",
 
 		ReqParams: []schemaz.Field{
 			{Name: "numerator", Desc: schemaz.Desc{Summary: "numerator"}, Spec: schemaz.Spec{Type: schemaz.TypeNumber}},
-			{Name: "denumerator", Desc: schemaz.Desc{Summary: "denumerator"}, Spec: schemaz.Spec{Type: schemaz.TypeNumber}},
+			{Name: "denominator", Desc: schemaz.Desc{Summary: "denominator"}, Spec: schemaz.Spec{Type: schemaz.TypeNumber}},
 		},
 
 		ReqQuery: []schemaz.Field{
@@ -45,7 +45,7 @@ func Schema() *schemaz.Api {
 			Type: schemaz.TypeObject,
 			Fields: []schemaz.Field{
 				{Name: "display", Desc: schemaz.Desc{Summary: "fraction display"}, Spec: schemaz.Spec{Type: schemaz.TypeString}},
-				{Name: "result", Desc: schemaz.Desc{Summary: "fraction result"}, Spec: schemaz.Spec{Type: schemaz.TypeString}},
+				{Name: "result", Desc: schemaz.Desc{Summary: "fraction result"}, Spec: schemaz.Spec{Type: schemaz.TypeNumber}},
 			},
 		},
 	}

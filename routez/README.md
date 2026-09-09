@@ -27,7 +27,7 @@ type Result struct {
 
 type FractionReq struct {
 	Numerator   float64 `json:"numerator"`
-	Denumerator float64 `json:"denumerator"`
+	Denominator float64 `json:"denominator"`
 	Precision   int     `json:"precision"`
 	TraceId     string  `json:"trace_id"`
 	Reason      string  `json:"reason"`
@@ -62,10 +62,10 @@ func (f *FractionReqResp) GetDataRefs() *apiz.DataRefs {
 	return &apiz.DataRefs{
 		PathParams: &struct {
 			Numerator   *float64 `json:"numerator"`
-			Denumerator *float64 `json:"denumerator"`
+			Denominator *float64 `json:"denominator"`
 		}{
 			&f.Req.Numerator,
-			&f.Req.Denumerator,
+			&f.Req.Denominator,
 		},
 		QueryParams: &struct {
 			Precision *int `json:"precision"`
@@ -108,11 +108,11 @@ func Schema() *schemaz.Api {
 		},
 
 		Method: "POST",
-		Path:   "/api/gox/routez/sample/fraction/{numerator}/{denumerator}",
+		Path:   "/api/gox/routez/sample/fraction/{numerator}/{denominator}",
 
 		ReqParams: []schemaz.Field{
 			{Name: "numerator", Desc: schemaz.Desc{Summary: "numerator"}, Spec: schemaz.Spec{Type: schemaz.TypeNumber}},
-			{Name: "denumerator", Desc: schemaz.Desc{Summary: "denumerator"}, Spec: schemaz.Spec{Type: schemaz.TypeNumber}},
+			{Name: "denominator", Desc: schemaz.Desc{Summary: "denominator"}, Spec: schemaz.Spec{Type: schemaz.TypeNumber}},
 		},
 
 		ReqQuery: []schemaz.Field{
@@ -155,8 +155,8 @@ func Api() *apiz.Api[*FractionReqResp] {
 		Schema: Schema(),
 		Handler: func(ctx context.Context, reqResp *FractionReqResp) (int, error) {
 			reqResp.Resp.ReqId = "reason: " + reqResp.Req.Reason + ", trace: " + reqResp.Req.TraceId
-			reqResp.Resp.Result.Display = fmt.Sprintf(fmt.Sprintf("%%.%df/%%.%df", int(reqResp.Req.Precision), int(reqResp.Req.Precision)), reqResp.Req.Numerator, reqResp.Req.Denumerator)
-			reqResp.Resp.Result.Result = strconv.FormatFloat(reqResp.Req.Numerator/reqResp.Req.Denumerator, 'f', reqResp.Req.Precision, 64)
+			reqResp.Resp.Result.Display = fmt.Sprintf(fmt.Sprintf("%%.%df/%%.%df", int(reqResp.Req.Precision), int(reqResp.Req.Precision)), reqResp.Req.Numerator, reqResp.Req.Denominator)
+			reqResp.Resp.Result.Result = strconv.FormatFloat(reqResp.Req.Numerator/reqResp.Req.Denominator, 'f', reqResp.Req.Precision, 64)
 
 			return 201, nil
 		},
@@ -185,7 +185,7 @@ To make this API accessible, you would typically register it with an `httpzserve
 // routez.Register(s, routezsamplefraction.Api())
 
 // The API is now available at the path defined in Schema():
-// POST /api/gox/routez/sample/fraction/{numerator}/{denumerator}
+// POST /api/gox/routez/sample/fraction/{numerator}/{denominator}
 ```
 
 ---
@@ -225,7 +225,7 @@ ac := apiclientz.Get(c, routezsamplefraction.Api())
 reqResp := &routezsamplefraction.FractionReqResp{
 	Req: &routezsamplefraction.FractionReq{
 		Numerator:   10,
-		Denumerator: 3,
+		Denominator: 3,
 		Precision:   3,
 		TraceId:     "xx",
 		Reason:      "myreason",

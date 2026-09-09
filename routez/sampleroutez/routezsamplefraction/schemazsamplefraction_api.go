@@ -15,7 +15,7 @@ type Result struct {
 
 type FractionReq struct {
 	Numerator   float64 `json:"numerator"`
-	Denumerator float64 `json:"denumerator"`
+	Denominator float64 `json:"denominator"`
 	Precision   int     `json:"precision"`
 	TraceId     string  `json:"x-i6-trace-id"`
 	Reason      string  `json:"reason"`
@@ -37,8 +37,8 @@ func Api() *apiz.Api[*FractionReqResp] {
 		Handler: func(ctx context.Context, reqResp *FractionReqResp) (int, error) {
 
 			reqResp.Resp.TraceMessage = "reason: " + reqResp.Req.Reason + ", trace: " + reqResp.Req.TraceId
-			reqResp.Resp.Result.Display = fmt.Sprintf(fmt.Sprintf("%%.%df/%%.%df", int(reqResp.Req.Precision), int(reqResp.Req.Precision)), reqResp.Req.Numerator, reqResp.Req.Denumerator)
-			reqResp.Resp.Result.Result = strconv.FormatFloat(reqResp.Req.Numerator/reqResp.Req.Denumerator, 'f', reqResp.Req.Precision, 64)
+			reqResp.Resp.Result.Display = fmt.Sprintf(fmt.Sprintf("%%.%df/%%.%df", int(reqResp.Req.Precision), int(reqResp.Req.Precision)), reqResp.Req.Numerator, reqResp.Req.Denominator)
+			reqResp.Resp.Result.Result = strconv.FormatFloat(reqResp.Req.Numerator/reqResp.Req.Denominator, 'f', reqResp.Req.Precision, 64)
 
 			return 201, nil
 		},
