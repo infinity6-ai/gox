@@ -12,17 +12,6 @@ type Mapper struct {
 }
 
 func (b *Mapper) UnmarshalJSON(data []byte) error {
-	// 1. Parse the incoming JSON into a map of raw byte slices
-	// var raw map[string]json.RawMessage
-	// if err := json.Unmarshal(data, &raw); err != nil {
-	// 	return err
-	// }
-
-	_, ok := b.Target.(Mapper)
-	if ok {
-		panic("mapper")
-	}
-
 	m, ok := b.Target.(map[string]*Mapper)
 	if ok {
 		var raw map[string]json.RawMessage
@@ -38,21 +27,6 @@ func (b *Mapper) UnmarshalJSON(data []byte) error {
 		}
 		return nil
 	}
-
-	// s, ok := b.Target.([]*Mapper)
-	// if ok {
-	// 	var raw []json.RawMessage
-	// 	if err := json.Unmarshal(data, &raw); err != nil {
-	// 		return err
-	// 	}
-	// 	for i, ble := range s {
-	// 		if err := json.Unmarshal(raw[i], ble.Target); err != nil {
-	// 			return fmt.Errorf("error parsing key %d: %w", i, err)
-	// 		}
-	// 	}
-	// 	return nil
-	// }
-
 	err := json.Unmarshal(data, b.Target)
 	errorz.Check(err)
 	return err
