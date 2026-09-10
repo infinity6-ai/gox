@@ -14,7 +14,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestUnitBasic(t *testing.T) {
+func TestManualBasic(t *testing.T) {
 	ctx := t.Context()
 	s := httpzserver.New(ctx, httpzserver.Options{})
 	defer s.Close()
