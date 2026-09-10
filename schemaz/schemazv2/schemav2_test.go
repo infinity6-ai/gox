@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/infinity6-ai/gox/commonz/jsonz"
+	"github.com/infinity6-ai/gox/schemaz/mapperz"
 	"github.com/infinity6-ai/gox/schemaz/schemazv2"
 	"github.com/stretchr/testify/require"
 )
@@ -46,17 +47,17 @@ func TestUnitBasic(t *testing.T) {
 				City:   "Houston",
 			},
 		},
-		// CompanyAddresses: []*Address{
-		// 	{
-		// 		Street: "123 Main St",
-		// 		City:   "New York",
-		// 	},
-		// 	{
-		// 		Street: "456 Elm St",
-		// 		City:   "Los Angeles",
-		// 	},
-		// },
-		// Numbers: []int{10, 20, 30, 40, 50},
+		CompanyAddresses: []*Address{
+			{
+				Street: "123 Main St",
+				City:   "New York",
+			},
+			{
+				Street: "456 Elm St",
+				City:   "Los Angeles",
+			},
+		},
+		Numbers: []int{10, 20, 30, 40, 50},
 	}
 
 	var person Person
@@ -97,76 +98,38 @@ func TestUnitBasic(t *testing.T) {
 						return &person.Addresses
 					},
 				},
-				// "company_addresses": {
-				// 	Raw: func() any {
-				// 		return &person.CompanyAddresses
-				// 	},
-				// },
-				// "numbers": {
-				// 	Raw: func() any {
-				// 		return &person.Numbers
-				// 	},
-				// },
+				"company_addresses": {
+					Array: func() *schemazv2.Schema {
+						return &schemazv2.Schema{
+							Object: func() map[string]*schemazv2.Schema {
+								a := &Address{}
+								person.CompanyAddresses = append(person.CompanyAddresses, a)
+								return map[string]*schemazv2.Schema{
+									"street": {
+										Raw: func() any { return &a.Street },
+									},
+									"city": {
+										Raw: func() any { return &a.City },
+									},
+								}
+							},
+						}
+					},
+				},
+				"numbers": {
+					Array: func() *schemazv2.Schema {
+						return &schemazv2.Schema{
+							Raw: func() any {
+								person.Numbers = append(person.Numbers, 0)
+								return &mapperz.Mapper{
+									Target: &person.Numbers[len(person.Numbers)-1],
+								}
+							},
+						}
+					},
+				},
 			}
 		},
-		// Target: map[string]*schemazv2.Schema{
-		// 	"name": {
-		// 		Target: &person.Name,
-		// 	},
-		// 	"age": {
-		// 		Target: &person.Age,
-		// 	},
-		// 	"main_address": {
-		// 		Target: &person.MainAddress,
-		// 	},
-		// 	"secondary_addresses": {
-		// 		Target: &schemazv2.Schema{
-		// 			Target: map[string]*schemazv2.Schema{
-		// 				"street": {
-		// 					Target: &person.SecondaryAddresses.Street,
-		// 				},
-		// 				"city": {
-		// 					Target: &person.SecondaryAddresses.City,
-		// 				},
-		// 			},
-		// 		},
-		// 	},
-		// 	"addresses": {
-		// 		Target: &person.Addresses,
-		// 	},
-		// 	"company_addresses": {
-		// 		Target: &schemazv2.Schema{
-		// 			Target: &mapperz.Array{
-		// 				Element: func() *schemazv2.Schema {
-		// 					y := &Address{}
-		// 					person.CompanyAddresses = append(person.CompanyAddresses, y)
-		// 					return &schemazv2.Schema{
-		// 						Target: map[string]*schemazv2.Schema{
-		// 							"street": {
-		// 								Target: &y.Street,
-		// 							},
-		// 							"city": {
-		// 								Target: &y.City,
-		// 							},
-		// 						},
-		// 					}
-		// 				},
-		// 			},
-		// 		},
-		// 	},
-		// 	"numbers": {
-		// 		Target: &schemazv2.Schema{
-		// 			Target: &mapperz.Array{
-		// 				Element: func() *schemazv2.Schema {
-		// 					person.Numbers = append(person.Numbers, 0)
-		// 					return &schemazv2.Schema{
-		// 						Target: &person.Numbers[len(person.Numbers)-1],
-		// 					}
-		// 				},
-		// 			},
-		// 		},
-		// 	},
-		// },
 	}
 
 	str := jsonz.MustFormat(expected)
