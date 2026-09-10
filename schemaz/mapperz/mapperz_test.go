@@ -90,7 +90,7 @@ func TestUnitBasic(t *testing.T) {
 			},
 			"company_addresses": {
 				Target: &mapperz.Mapper{
-					Target: &mapperz.Array[*Person]{
+					Target: &mapperz.Array{
 						Element: func() *mapperz.Mapper {
 							y := &Address{}
 							person.CompanyAddresses = append(person.CompanyAddresses, y)
@@ -110,7 +110,7 @@ func TestUnitBasic(t *testing.T) {
 			},
 			"numbers": {
 				Target: &mapperz.Mapper{
-					Target: &mapperz.Array[*Person]{
+					Target: &mapperz.Array{
 						Element: func() *mapperz.Mapper {
 							person.Numbers = append(person.Numbers, 0)
 							return &mapperz.Mapper{

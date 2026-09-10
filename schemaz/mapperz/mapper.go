@@ -58,12 +58,11 @@ func (b *Mapper) UnmarshalJSON(data []byte) error {
 	return err
 }
 
-type Array[T any] struct {
+type Array struct {
 	Element func() *Mapper
-	Target  *[]T
 }
 
-func (b *Array[T]) UnmarshalJSON(data []byte) error {
+func (b *Array) UnmarshalJSON(data []byte) error {
 	var raw []json.RawMessage
 	if err := json.Unmarshal(data, &raw); err != nil {
 		return err
