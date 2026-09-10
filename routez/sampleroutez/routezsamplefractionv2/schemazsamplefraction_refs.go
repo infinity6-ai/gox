@@ -1,6 +1,7 @@
 package routezsamplefractionv2
 
 import (
+	"github.com/infinity6-ai/gox/commonz/strconvz"
 	"github.com/infinity6-ai/gox/routez/apiz"
 	"github.com/infinity6-ai/gox/schemaz/schemazv2"
 )
@@ -60,8 +61,8 @@ func (f *FractionReqResp) GetDataRefsV2() *apiz.DataRefsV2 {
 	return &apiz.DataRefsV2{
 		PathParams: &schemazv2.Schema{Object: func() map[string]*schemazv2.Schema {
 			return map[string]*schemazv2.Schema{
-				"numerator":   {Raw: func() any { return &f.Req.Numerator }},
-				"denominator": {Raw: func() any { return &f.Req.Denominator }},
+				"numerator":   {Strs: func(unformatted []string) { f.Req.Numerator = strconvz.MustParseNumber[float64](unformatted[0]) }},
+				"denominator": {Strs: func(unformatted []string) { f.Req.Denominator = strconvz.MustParseNumber[float64](unformatted[0]) }},
 			}
 		}},
 		QueryParams: &schemazv2.Schema{Object: func() map[string]*schemazv2.Schema {

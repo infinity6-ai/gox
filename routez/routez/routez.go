@@ -68,7 +68,7 @@ func parseRequestV2[T apiz.ReqRespV2](a *apiz.ApiV2[T], req *httpzrequest.Req, p
 	reqResp := a.MewReqResp()
 	refs := reqResp.GetDataRefsV2()
 	if refs.PathParams != nil {
-		jsonz.MustCopy(params, refs.PathParams)
+		jsonz.MustParse(jsonz.MustFormat(params).Bytes(), refs.PathParams)
 		// structjsonz.MustParseSingle(params, refs.PathParams)
 	}
 	if refs.QueryParams != nil {
