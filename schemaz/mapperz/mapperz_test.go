@@ -16,11 +16,11 @@ func TestUnitBasic(t *testing.T) {
 	}
 
 	type Person struct {
-		Name               string   `json:"name"`
-		Age                int      `json:"age"`
-		MainAddress        *Address `json:"main_address"`
-		SecondaryAddresses *Address `json:"secondary_addresses"`
-		// Addresses   []Address `json:"addresses"`
+		Name               string     `json:"name"`
+		Age                int        `json:"age"`
+		MainAddress        *Address   `json:"main_address"`
+		SecondaryAddresses *Address   `json:"secondary_addresses"`
+		Addresses          []*Address `json:"addresses"`
 	}
 
 	expected := Person{
@@ -33,6 +33,16 @@ func TestUnitBasic(t *testing.T) {
 		SecondaryAddresses: &Address{
 			Street: "456 Elm St",
 			City:   "Los Angeles",
+		},
+		Addresses: []*Address{
+			{
+				Street: "789 Oak St",
+				City:   "Chicago",
+			},
+			{
+				Street: "321 Pine St",
+				City:   "Houston",
+			},
 		},
 	}
 
@@ -61,6 +71,9 @@ func TestUnitBasic(t *testing.T) {
 						},
 					},
 				},
+			},
+			"addresses": {
+				Target: &person.Addresses,
 			},
 		},
 	}
