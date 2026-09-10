@@ -137,6 +137,9 @@ func TestUnitBasic(t *testing.T) {
 	jsonz.MustParse(str.Bytes(), mapper)
 
 	require.Equal(t, expected, person)
+
+	mapperStr := jsonz.MustFormat(mapper)
+	require.Equal(t, "xxx", mapperStr.String())
 }
 
 func TestUnitValues(t *testing.T) {

@@ -20,6 +20,20 @@ type Schema struct {
 	Desc   func() *Desc
 }
 
+func (s *Schema) MarshalJSON() ([]byte, error) {
+	if s.Raw != nil {
+		return json.Marshal(s.Raw())
+	}
+	if s.Object != nil {
+		return json.Marshal(s.Object())
+	}
+	// if s.Array != nil {
+	// 	return json.Marshal([]*Schema{s.Array()})
+	// }
+	// panic("IMPLEMENT IT")
+	return []byte("null"), nil
+}
+
 func (s *Schema) UnmarshalJSON(data []byte) error {
 	if s.Object != nil {
 		return s.unmarshalJSONObject(data)
