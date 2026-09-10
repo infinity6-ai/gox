@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/infinity6-ai/gox/commonz/jsonz"
+	"github.com/infinity6-ai/gox/commonz/strconvz"
 	"github.com/infinity6-ai/gox/schemaz/schemazv2"
 	"github.com/stretchr/testify/require"
 )
@@ -183,42 +184,42 @@ func TestUnitBasic(t *testing.T) {
 	require.Equal(t, expected, *jsonz.MustParse(mapperStr.Bytes(), &Person{}))
 }
 
-// func TestUnitValues(t *testing.T) {
-// 	str := `{"a":"10.1","b":["20.1","20.2"],"c":["30.1","30.2"]}`
-// 	type My struct {
-// 		A float64
-// 		B []float64
-// 		C float64
-// 	}
-// 	var my My
-// 	mapper := &schemazv2.Schema{
-// 		Object: func() map[string]*schemazv2.Schema {
-// 			return map[string]*schemazv2.Schema{
-// 				"a": {
-// 					Strs: func(unformatted []string) {
-// 						my.A = strconvz.MustParseNumber[float64](unformatted[0])
-// 					},
-// 				},
-// 				"b": {
-// 					Strs: func(unformatted []string) {
-// 						my.B = make([]float64, len(unformatted))
-// 						for i, v := range unformatted {
-// 							my.B[i] = strconvz.MustParseNumber[float64](v)
-// 						}
-// 					},
-// 				},
-// 				"c": {
-// 					Strs: func(unformatted []string) {
-// 						my.C = strconvz.MustParseNumber[float64](unformatted[0])
-// 					},
-// 				},
-// 			}
-// 		},
-// 	}
-// 	jsonz.MustParse([]byte(str), mapper)
-// 	require.Equal(t, My{
-// 		A: 10.1,
-// 		B: []float64{20.1, 20.2},
-// 		C: 30.1,
-// 	}, my)
-// }
+func TestUnitValues(t *testing.T) {
+	str := `{"a":"10.1","b":["20.1","20.2"],"c":["30.1","30.2"]}`
+	type My struct {
+		A float64
+		B []float64
+		C float64
+	}
+	var my My
+	mapper := &schemazv2.Schema{
+		Object: func(read bool) map[string]*schemazv2.Schema {
+			return map[string]*schemazv2.Schema{
+				"a": {
+					Strs: func(unformatted []string) {
+						my.A = strconvz.MustParseNumber[float64](unformatted[0])
+					},
+				},
+				"b": {
+					Strs: func(unformatted []string) {
+						my.B = make([]float64, len(unformatted))
+						for i, v := range unformatted {
+							my.B[i] = strconvz.MustParseNumber[float64](v)
+						}
+					},
+				},
+				"c": {
+					Strs: func(unformatted []string) {
+						my.C = strconvz.MustParseNumber[float64](unformatted[0])
+					},
+				},
+			}
+		},
+	}
+	jsonz.MustParse([]byte(str), mapper)
+	require.Equal(t, My{
+		A: 10.1,
+		B: []float64{20.1, 20.2},
+		C: 30.1,
+	}, my)
+}
