@@ -83,13 +83,18 @@ func TestUnitBasic(t *testing.T) {
 				},
 				"secondary_addresses": {
 					Object: func() map[string]*schemazv2.Schema {
-						person.SecondaryAddresses = &Address{}
+						create := func() *Address {
+							if person.SecondaryAddresses == nil {
+								person.SecondaryAddresses = &Address{}
+							}
+							return person.SecondaryAddresses
+						}
 						return map[string]*schemazv2.Schema{
 							"street": {
-								Raw: func() any { return &person.SecondaryAddresses.Street },
+								Raw: func() any { return &create().Street },
 							},
 							"city": {
-								Raw: func() any { return &person.SecondaryAddresses.City },
+								Raw: func() any { return &create().City },
 							},
 						}
 					},
@@ -108,7 +113,6 @@ func TestUnitBasic(t *testing.T) {
 							}
 							return &schemazv2.Schema{
 								Object: func() map[string]*schemazv2.Schema {
-									print(1)
 									create := func() *Address {
 										if person.CompanyAddresses[idx] == nil {
 											person.CompanyAddresses[idx] = &Address{}
@@ -151,8 +155,8 @@ func TestUnitBasic(t *testing.T) {
 
 	require.Equal(t, expected, person)
 
-	// mapperStr := jsonz.MustFormat(mapper)
-	// require.Equal(t, expected, *jsonz.MustParse(mapperStr.Bytes(), &Person{}))
+	mapperStr := jsonz.MustFormat(mapper)
+	require.Equal(t, expected, *jsonz.MustParse(mapperStr.Bytes(), &Person{}))
 }
 
 func TestUnitValues(t *testing.T) {
