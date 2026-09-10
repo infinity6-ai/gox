@@ -87,7 +87,11 @@ func TestUnitBasic(t *testing.T) {
 				Target: &person.Addresses,
 			},
 			"company_addresses": {
-				Target: &person.CompanyAddresses,
+				Target: &mapperz.Mapper{
+					Target: &mapperz.Array{
+						Target: &person.CompanyAddresses,
+					},
+				},
 			},
 		},
 	}
