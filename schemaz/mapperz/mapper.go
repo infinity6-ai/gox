@@ -58,12 +58,21 @@ func (b *Mapper) UnmarshalJSON(data []byte) error {
 	return err
 }
 
-type Array struct {
-	Target any
+type Array[T any] struct {
+	Element func() *Mapper
+	Target  *[]T
 }
 
-func (b *Array) UnmarshalJSON(data []byte) error {
-	err := json.Unmarshal(data, b.Target)
-	errorz.Check(err)
-	return err
+func (b *Array[T]) UnmarshalJSON(data []byte) error {
+	var raw []json.RawMessage
+	if err := json.Unmarshal(data, &raw); err != nil {
+		return err
+	}
+	for i, ble := range raw {
+		m := b.Element()
+		if err := json.Unmarshal(ble, m); err != nil {
+			return fmt.Errorf("error parsing key %d: %w", i, err)
+		}
+	}
+	return nil
 }

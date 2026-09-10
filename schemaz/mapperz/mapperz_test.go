@@ -88,8 +88,21 @@ func TestUnitBasic(t *testing.T) {
 			},
 			"company_addresses": {
 				Target: &mapperz.Mapper{
-					Target: &mapperz.Array{
-						Target: &person.CompanyAddresses,
+					Target: &mapperz.Array[*Person]{
+						Element: func() *mapperz.Mapper {
+							y := &Address{}
+							person.CompanyAddresses = append(person.CompanyAddresses, y)
+							return &mapperz.Mapper{
+								Target: map[string]*mapperz.Mapper{
+									"street": {
+										Target: &y.Street,
+									},
+									"city": {
+										Target: &y.City,
+									},
+								},
+							}
+						},
 					},
 				},
 			},
