@@ -22,6 +22,7 @@ func TestUnitBasic(t *testing.T) {
 		SecondaryAddresses *Address   `json:"secondary_addresses"`
 		Addresses          []*Address `json:"addresses"`
 		CompanyAddresses   []*Address `json:"company_addresses"`
+		Numbers            []int      `json:"numbers"`
 	}
 
 	expected := Person{
@@ -55,6 +56,7 @@ func TestUnitBasic(t *testing.T) {
 				City:   "Los Angeles",
 			},
 		},
+		Numbers: []int{10, 20, 30, 40, 50},
 	}
 
 	var person Person
@@ -101,6 +103,18 @@ func TestUnitBasic(t *testing.T) {
 										Target: &y.City,
 									},
 								},
+							}
+						},
+					},
+				},
+			},
+			"numbers": {
+				Target: &mapperz.Mapper{
+					Target: &mapperz.Array[*Person]{
+						Element: func() *mapperz.Mapper {
+							person.Numbers = append(person.Numbers, 0)
+							return &mapperz.Mapper{
+								Target: &person.Numbers[len(person.Numbers)-1],
 							}
 						},
 					},

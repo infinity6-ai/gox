@@ -73,6 +73,7 @@ func (b *Array[T]) UnmarshalJSON(data []byte) error {
 		if err := json.Unmarshal(ble, m); err != nil {
 			return fmt.Errorf("error parsing key %d: %w", i, err)
 		}
+		print(111)
 	}
 	return nil
 }
