@@ -32,7 +32,7 @@ type DataRefsV2 struct {
 }
 
 type ReqRespV2 interface {
-	GetDataRefs() *DataRefsV2
+	GetDataRefsV2() *DataRefsV2
 }
 
 type ApiV2[T ReqResp] struct {

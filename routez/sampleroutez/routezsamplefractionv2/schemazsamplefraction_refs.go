@@ -2,6 +2,7 @@ package routezsamplefractionv2
 
 import (
 	"github.com/infinity6-ai/gox/routez/apiz"
+	"github.com/infinity6-ai/gox/schemaz/schemazv2"
 )
 
 func (f *FractionReqResp) GetDataRefs() *apiz.DataRefs {
@@ -43,5 +44,37 @@ func (f *FractionReqResp) GetDataRefs() *apiz.DataRefs {
 			&f.Resp.TraceMessage,
 		},
 		RespBody: f.Resp.Result,
+	}
+}
+
+func (f *FractionReqResp) GetDataRefsV2() *apiz.DataRefsV2 {
+	return &apiz.DataRefsV2{
+		PathParams: &schemazv2.Schema{Object: func() map[string]*schemazv2.Schema {
+			return map[string]*schemazv2.Schema{
+				"numerator":   {Raw: func() any { return &f.Req.Numerator }},
+				"denominator": {Raw: func() any { return &f.Req.Denominator }},
+			}
+		}},
+		QueryParams: &schemazv2.Schema{Object: func() map[string]*schemazv2.Schema {
+			return map[string]*schemazv2.Schema{
+				"precision": {Raw: func() any { return &f.Req.Precision }},
+			}
+		}},
+		ReqHeaders: &schemazv2.Schema{Object: func() map[string]*schemazv2.Schema {
+			return map[string]*schemazv2.Schema{
+				"x_i6_trace_id": {Raw: func() any { return &f.Req.TraceId }},
+			}
+		}},
+		ReqBody: &schemazv2.Schema{Object: func() map[string]*schemazv2.Schema {
+			return map[string]*schemazv2.Schema{
+				"reason": {Raw: func() any { return &f.Req.Reason }},
+			}
+		}},
+		RespHeaders: &schemazv2.Schema{Object: func() map[string]*schemazv2.Schema {
+			return map[string]*schemazv2.Schema{
+				"x_i6_trace_message": {Raw: func() any { return &f.Resp.TraceMessage }},
+			}
+		}},
+		RespBody: &schemazv2.Schema{Raw: func() any { return &f.Resp.Result }},
 	}
 }
