@@ -135,9 +135,6 @@ func TestUnitBasic(t *testing.T) {
 								var a *Address
 								person.CompanyAddresses = append(person.CompanyAddresses, a)
 							}
-							if read && person.CompanyAddresses[idx] == nil {
-								return nil
-							}
 							return &schemazv2.Schema{
 								Object: func(read bool) map[string]*schemazv2.Schema {
 									if !read {
