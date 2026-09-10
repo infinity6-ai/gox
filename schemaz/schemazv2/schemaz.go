@@ -17,7 +17,7 @@ type Schema struct {
 
 	// Mutually exclusive data bindings (returning pointers for 2-way binding)
 	Raw    func() any
-	Object func() map[string]*Schema
+	Object func(read bool) map[string]*Schema
 	Array  func() (length int, getElement func(idx int, read bool) *Schema)
 	Str    func(v string)
 	Strs   func(v []string)
@@ -30,7 +30,7 @@ type Schema struct {
 func (s *Schema) MarshalJSON() ([]byte, error) {
 	if s.Object != nil {
 		// json.Marshal automatically calls MarshalJSON on the *Schema values
-		return json.Marshal(s.Object())
+		return json.Marshal(s.Object(true))
 	}
 	if s.Array != nil {
 		length, getElem := s.Array()
@@ -84,7 +84,7 @@ func (s *Schema) UnmarshalJSON(data []byte) error {
 }
 
 func (s *Schema) unmarshalJSONObject(data []byte) error {
-	m := s.Object()
+	m := s.Object(false)
 	var raw map[string]json.RawMessage
 	if err := json.Unmarshal(data, &raw); err != nil {
 		return err
