@@ -60,16 +60,3 @@ func (s *Schema) unmarshalJSONObject(data []byte) error {
 	}
 	return nil
 }
-
-type Api struct {
-	Id          string
-	Desc        func() *Desc
-	Method      string
-	Path        string
-	PathParams  *Schema
-	QueryParams *Schema
-	ReqHeaders  *Schema
-	ReqBody     *Schema
-	RespHeaders *Schema
-	RespBody    *Schema
-}
