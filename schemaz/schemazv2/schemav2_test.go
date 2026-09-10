@@ -61,7 +61,6 @@ func TestUnitBasic(t *testing.T) {
 	}
 
 	var person Person
-	person.SecondaryAddresses = &Address{}
 
 	mapper := &schemazv2.Schema{
 		Object: func() map[string]*schemazv2.Schema {
@@ -83,6 +82,7 @@ func TestUnitBasic(t *testing.T) {
 				},
 				"secondary_addresses": {
 					Object: func() map[string]*schemazv2.Schema {
+						person.SecondaryAddresses = &Address{}
 						return map[string]*schemazv2.Schema{
 							"street": {
 								Raw: func() any { return &person.SecondaryAddresses.Street },
