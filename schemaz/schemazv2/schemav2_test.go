@@ -108,17 +108,13 @@ func TestUnitBasic(t *testing.T) {
 							}
 							return &schemazv2.Schema{
 								Object: func() map[string]*schemazv2.Schema {
-									a = person.CompanyAddresses[idx]
-									if a == nil {
-										a = &Address{}
-										person.CompanyAddresses[idx] = a
-									}
+									person.CompanyAddresses[idx] = &Address{}
 									return map[string]*schemazv2.Schema{
 										"street": {
-											Raw: func() any { return &a.Street },
+											Raw: func() any { return &person.CompanyAddresses[idx].Street },
 										},
 										"city": {
-											Raw: func() any { return &a.City },
+											Raw: func() any { return &person.CompanyAddresses[idx].City },
 										},
 									}
 								},
