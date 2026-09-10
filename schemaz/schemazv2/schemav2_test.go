@@ -246,8 +246,8 @@ func TestUnitValues(t *testing.T) {
 	mapperStr := jsonz.MustFormat(mapper).String()
 	parsedMapperStr := jsonz.MustParse(mapperStr, new(map[string][]string{}))
 	require.Equal(t, map[string][]string{
-		"a": []string{"10.1"},
-		"b": []string{"20.1", "20.2"},
-		"c": []string{"30.1"},
+		"a": {"10.1"},
+		"b": {"20.1", "20.2"},
+		"c": {"30.1"},
 	}, *parsedMapperStr)
 }
