@@ -15,8 +15,8 @@ type Schema struct {
 	Raw    func() any
 	Object func() map[string]*Schema
 	Array  func() *Schema
-	Strs   func(unformatted []string)
-	Str    func(unformatted string)
+	Strs   func(v []string)
+	Str    func(v string)
 	Desc   func() *Desc
 }
 

@@ -61,18 +61,18 @@ func (f *FractionReqResp) GetDataRefsV2() *apiz.DataRefsV2 {
 	return &apiz.DataRefsV2{
 		PathParams: &schemazv2.Schema{Object: func() map[string]*schemazv2.Schema {
 			return map[string]*schemazv2.Schema{
-				"numerator":   {Str: func(unformatted string) { strconvz.MustParseNumberInto(unformatted, &f.Req.Numerator) }},
-				"denominator": {Str: func(unformatted string) { strconvz.MustParseNumberInto(unformatted, &f.Req.Denominator) }},
+				"numerator":   {Str: func(v string) { strconvz.MustParseNumberInto(v, &f.Req.Numerator) }},
+				"denominator": {Str: func(v string) { strconvz.MustParseNumberInto(v, &f.Req.Denominator) }},
 			}
 		}},
 		QueryParams: &schemazv2.Schema{Object: func() map[string]*schemazv2.Schema {
 			return map[string]*schemazv2.Schema{
-				"precision": {Str: func(unformatted string) { strconvz.MustParseNumberInto(unformatted, &f.Req.Precision) }},
+				"precision": {Str: func(v string) { strconvz.MustParseNumberInto(v, &f.Req.Precision) }},
 			}
 		}},
 		ReqHeaders: &schemazv2.Schema{Object: func() map[string]*schemazv2.Schema {
 			return map[string]*schemazv2.Schema{
-				"x_i6_trace_id": {Raw: func() any { return &f.Req.TraceId }},
+				"x_i6_trace_id": {Str: func(v string) { f.Req.TraceId = v }},
 			}
 		}},
 		ReqBody: &schemazv2.Schema{Object: func() map[string]*schemazv2.Schema {
