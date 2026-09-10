@@ -140,10 +140,11 @@ func TestUnitBasic(t *testing.T) {
 }
 
 func TestUnitValues(t *testing.T) {
-	str := `{"a":"10.1","b":["20.1","20.2"]}`
+	str := `{"a":"10.1","b":["20.1","20.2"],"c":["30.1","30.2"]}`
 	type My struct {
 		A float64
 		B []float64
+		C float64
 	}
 	var my My
 	mapper := &schemazv2.Schema{
@@ -162,6 +163,11 @@ func TestUnitValues(t *testing.T) {
 						}
 					},
 				},
+				"c": {
+					Strs: func(unformatted []string) {
+						my.C = strconvz.MustParseNumber[float64](unformatted[0])
+					},
+				},
 			}
 		},
 	}
@@ -169,5 +175,6 @@ func TestUnitValues(t *testing.T) {
 	require.Equal(t, My{
 		A: 10.1,
 		B: []float64{20.1, 20.2},
+		C: 30.1,
 	}, my)
 }
