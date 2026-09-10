@@ -21,6 +21,7 @@ func TestUnitBasic(t *testing.T) {
 		MainAddress        *Address   `json:"main_address"`
 		SecondaryAddresses *Address   `json:"secondary_addresses"`
 		Addresses          []*Address `json:"addresses"`
+		CompanyAddresses   []*Address `json:"company_addresses"`
 	}
 
 	expected := Person{
@@ -42,6 +43,16 @@ func TestUnitBasic(t *testing.T) {
 			{
 				Street: "321 Pine St",
 				City:   "Houston",
+			},
+		},
+		CompanyAddresses: []*Address{
+			{
+				Street: "123 Main St",
+				City:   "New York",
+			},
+			{
+				Street: "456 Elm St",
+				City:   "Los Angeles",
 			},
 		},
 	}
@@ -74,6 +85,9 @@ func TestUnitBasic(t *testing.T) {
 			},
 			"addresses": {
 				Target: &person.Addresses,
+			},
+			"company_addresses": {
+				Target: &person.CompanyAddresses,
 			},
 		},
 	}
