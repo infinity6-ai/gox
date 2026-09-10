@@ -18,7 +18,7 @@ type Schema struct {
 	// Mutually exclusive data bindings (returning pointers for 2-way binding)
 	Raw    func() any
 	Object func() map[string]*Schema
-	Array  func() (length int, getElement func(idx int) *Schema)
+	Array  func() (length int, getElement func(idx int, read bool) *Schema)
 	Str    func(v string)
 	Strs   func(v []string)
 }
@@ -36,7 +36,7 @@ func (s *Schema) MarshalJSON() ([]byte, error) {
 		length, getElem := s.Array()
 		out := make([]*Schema, length)
 		for i := 0; i < length; i++ {
-			out[i] = getElem(i)
+			out[i] = getElem(i, true)
 		}
 		// Marshaling a slice of *Schema triggers recursive MarshalJSON
 		return json.Marshal(out)
@@ -107,7 +107,7 @@ func (s *Schema) unmarshalJSONArray(data []byte) error {
 
 	_, getElem := s.Array() // We only need the element getter for unmarshaling
 	for i, rawVal := range raw {
-		schemaNode := getElem(i)
+		schemaNode := getElem(i, false)
 		if schemaNode == nil {
 			continue
 		}
