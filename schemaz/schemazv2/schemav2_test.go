@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/infinity6-ai/gox/commonz/jsonz"
+	"github.com/infinity6-ai/gox/commonz/strconvz"
 	"github.com/infinity6-ai/gox/schemaz/mapperz"
 	"github.com/infinity6-ai/gox/schemaz/schemazv2"
 	"github.com/stretchr/testify/require"
@@ -131,8 +132,11 @@ func TestUnitBasic(t *testing.T) {
 					},
 				},
 				"rate": {
-					Raw: func() any {
-						return &person.Rate
+					Values: func(unformatted []string) any {
+						if len(unformatted) == 0 {
+							return 0
+						}
+						return strconvz.MustParseNumber[float64](unformatted[0])
 					},
 				},
 			}
