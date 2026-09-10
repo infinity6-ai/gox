@@ -14,7 +14,7 @@ type Desc struct {
 type Schema struct {
 	Raw    func() any
 	Object func() map[string]*Schema
-	Array  func() *Schema
+	Array  func(idx int) *Schema
 	Strs   func(v []string)
 	Str    func(v string)
 	Desc   func() *Desc
@@ -103,7 +103,7 @@ func (s *Schema) unmarshalJSONArray(data []byte) error {
 		return err
 	}
 	for i, ble := range raw {
-		m := s.Array()
+		m := s.Array(i)
 		if err := json.Unmarshal(ble, m); err != nil {
 			return fmt.Errorf("error parsing key %d: %w", i, err)
 		}

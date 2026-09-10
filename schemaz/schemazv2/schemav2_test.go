@@ -100,11 +100,18 @@ func TestUnitBasic(t *testing.T) {
 					},
 				},
 				"company_addresses": {
-					Array: func() *schemazv2.Schema {
+					Array: func(idx int) *schemazv2.Schema {
+						n := idx - len(person.CompanyAddresses) + 1
+						if n > 0 {
+							person.CompanyAddresses = append(person.CompanyAddresses, make([]*Address, n)...)
+						}
 						return &schemazv2.Schema{
 							Object: func() map[string]*schemazv2.Schema {
-								a := &Address{}
-								person.CompanyAddresses = append(person.CompanyAddresses, a)
+								a := person.CompanyAddresses[idx]
+								if a == nil {
+									a = &Address{}
+									person.CompanyAddresses[idx] = a
+								}
 								return map[string]*schemazv2.Schema{
 									"street": {
 										Raw: func() any { return &a.Street },
@@ -118,7 +125,7 @@ func TestUnitBasic(t *testing.T) {
 					},
 				},
 				"numbers": {
-					Array: func() *schemazv2.Schema {
+					Array: func(idx int) *schemazv2.Schema {
 						return &schemazv2.Schema{
 							Raw: func() any {
 								person.Numbers = append(person.Numbers, 0)
