@@ -52,6 +52,7 @@ func TestUnitBasic(t *testing.T) {
 				Street: "123 Main St",
 				City:   "New York",
 			},
+			nil,
 			{
 				Street: "456 Elm St",
 				City:   "Los Angeles",
