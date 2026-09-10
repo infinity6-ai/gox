@@ -58,7 +58,7 @@ func TestUnitBasic(t *testing.T) {
 				City:   "Los Angeles",
 			},
 		},
-		// Numbers: []int{10, 20, 30, 40, 50},
+		Numbers: []int{10, 20, 30, 40, 50},
 	}
 
 	var person Person
@@ -121,42 +121,21 @@ func TestUnitBasic(t *testing.T) {
 							}
 						}
 					},
-					// Array: func(idx int) *schemazv2.Schema {
-					// 	n := idx - len(person.CompanyAddresses) + 1
-					// 	if n > 0 {
-					// 		person.CompanyAddresses = append(person.CompanyAddresses, make([]*Address, n)...)
-					// 	}
-					// 	return &schemazv2.Schema{
-					// 		Object: func() map[string]*schemazv2.Schema {
-					// 			a := person.CompanyAddresses[idx]
-					// 			if a == nil {
-					// 				a = &Address{}
-					// 				person.CompanyAddresses[idx] = a
-					// 			}
-					// 			return map[string]*schemazv2.Schema{
-					// 				"street": {
-					// 					Raw: func() any { return &a.Street },
-					// 				},
-					// 				"city": {
-					// 					Raw: func() any { return &a.City },
-					// 				},
-					// 			}
-					// 		},
-					// 	}
-					// },
 				},
-				// "numbers": {
-				// 	Array: func(idx int) *schemazv2.Schema {
-				// 		return &schemazv2.Schema{
-				// 			Raw: func() any {
-				// 				person.Numbers = append(person.Numbers, 0)
-				// 				return &mapperz.Mapper{
-				// 					Target: &person.Numbers[len(person.Numbers)-1],
-				// 				}
-				// 			},
-				// 		}
-				// 	},
-				// },
+				"numbers": {
+					Array: func() (length int, getElement func(idx int) *schemazv2.Schema) {
+						return len(person.Numbers), func(idx int) *schemazv2.Schema {
+							if idx >= len(person.Numbers) {
+								person.Numbers = append(person.Numbers, 0)
+							}
+							return &schemazv2.Schema{
+								Raw: func() any {
+									return &person.Numbers[idx]
+								},
+							}
+						}
+					},
+				},
 			}
 		},
 	}
@@ -166,8 +145,8 @@ func TestUnitBasic(t *testing.T) {
 
 	require.Equal(t, expected, person)
 
-	// mapperStr := jsonz.MustFormat(mapper)
-	// require.Equal(t, "xxx", mapperStr.String())
+	mapperStr := jsonz.MustFormat(mapper)
+	require.Equal(t, expected, *jsonz.MustParse(mapperStr.Bytes(), &Person{}))
 }
 
 func TestUnitValues(t *testing.T) {
