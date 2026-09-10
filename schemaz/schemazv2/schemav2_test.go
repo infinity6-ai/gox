@@ -26,6 +26,7 @@ func TestUnitBasic(t *testing.T) {
 		CompanyAddresses   []*Address `json:"company_addresses"`
 		Numbers            []int      `json:"numbers"`
 		Rate               float64    `json:"rate"`
+		RateString         string     `json:"rate_string"`
 	}
 
 	expected := Person{
@@ -59,8 +60,9 @@ func TestUnitBasic(t *testing.T) {
 				City:   "Los Angeles",
 			},
 		},
-		Numbers: []int{10, 20, 30, 40, 50},
-		Rate:    10.1,
+		Numbers:    []int{10, 20, 30, 40, 50},
+		Rate:       10.1,
+		RateString: "10.2",
 	}
 
 	var person Person
@@ -137,6 +139,11 @@ func TestUnitBasic(t *testing.T) {
 							person.Rate = 0
 						}
 						person.Rate = strconvz.MustParseNumber[float64](unformatted[0])
+					},
+				},
+				"rate_string": {
+					Values: func(unformatted []string) {
+						jsonz.MustParse(unformatted[0], &person.RateString)
 					},
 				},
 			}
