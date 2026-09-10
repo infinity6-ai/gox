@@ -35,13 +35,23 @@ type ReqRespV2 interface {
 	GetDataRefsV2() *DataRefsV2
 }
 
-type ApiV2[T ReqResp] struct {
+type HandlerV2[T ReqRespV2] func(ctx context.Context, reqResp T) (int, error)
+
+type ApiV2[T ReqRespV2] struct {
 	Id      string
 	Desc    func() *schemazv2.Desc
 	Method  string
 	Path    string
 	Spec    T
-	Handler Handler[T]
+	Handler HandlerV2[T]
+}
+
+func (a *ApiV2[T]) MewReqResp() T {
+	var v T
+	t := reflect.TypeOf(&v).Elem()
+	checker.Equal(reflect.Ptr, t.Kind(), "it must be a pointer: %T %T", v, t)
+	ret := reflect.New(t.Elem()).Interface().(T)
+	return ret
 }
 
 type Handler[T ReqResp] func(ctx context.Context, reqResp T) (int, error)

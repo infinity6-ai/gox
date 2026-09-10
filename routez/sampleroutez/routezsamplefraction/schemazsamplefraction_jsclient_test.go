@@ -249,7 +249,7 @@ func TestManualJsClient(t *testing.T) {
 	s.Listen()
 	s.Start()
 
-	routez.Register(s, routezsamplefraction.Api())
+	routez.RegisterOLD(s, routezsamplefraction.Api())
 
 	fnName, code := buildJsFetch(routezsamplefraction.Schema())
 
