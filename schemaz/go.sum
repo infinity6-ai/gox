@@ -1,6 +1,8 @@
 github.com/cpuguy83/go-md2man/v2 v2.0.6/go.mod h1:oOW0eioCTA6cOiMLiUPZOpcVxMig6NIQQ7OS05n1F4g=
 github.com/inconshreveable/mousetrap v1.1.0 h1:wN+x4NVGpMsO7ErUn/mUI3vEoE6Jt13X2s0bqwp9tc8=
 github.com/inconshreveable/mousetrap v1.1.0/go.mod h1:vpF70FUmC8bwa3OWnCshd2FqLfsEA9PFc4w1p2J65bw=
+github.com/infinity6-ai/gox/commonz v0.0.12 h1:teNcQXg6lat7XH97rzixgFRgaYHcelSJ80cio7e9aXo=
+github.com/infinity6-ai/gox/commonz v0.0.12/go.mod h1:7uMrazg7SfeU3fFme33SYTmUs1nsR1ORdWqfxORUuWc=
 github.com/infinity6-ai/gox/versionz v0.0.12 h1:hQ/XcbmGVhZMKHU7EXq+6MYcL0Jr7+30I/FCriYN6uA=
 github.com/infinity6-ai/gox/versionz v0.0.12/go.mod h1:odtOp2rCEka+qJ8/rWBKiBzm+fyB93+lwJl2fllGaTg=
 github.com/russross/blackfriday/v2 v2.1.0/go.mod h1:+Rmxgy9KzJVeS9/2gXHxylqXiyQDYRxCVz55jmeOWTM=
