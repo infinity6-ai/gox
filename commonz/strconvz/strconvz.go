@@ -14,7 +14,7 @@ func ParseNumberInto[T constraintz.Numbers](v string, target *T) error {
 	return err
 }
 
-func MustParseNumberInto(v string, target *float64) {
+func MustParseNumberInto[T constraintz.Numbers](v string, target *T) {
 	errorz.Check(ParseNumberInto(v, target))
 }
 

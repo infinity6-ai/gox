@@ -69,10 +69,9 @@ func parseRequestV2[T apiz.ReqRespV2](a *apiz.ApiV2[T], req *httpzrequest.Req, p
 	refs := reqResp.GetDataRefsV2()
 	if refs.PathParams != nil {
 		jsonz.MustParse(jsonz.MustFormat(params).Bytes(), refs.PathParams)
-		// structjsonz.MustParseSingle(params, refs.PathParams)
 	}
 	if refs.QueryParams != nil {
-		structjsonz.MustParse(req.Query, refs.QueryParams)
+		jsonz.MustParse(jsonz.MustFormat(req.Query).Bytes(), refs.QueryParams)
 	}
 	if refs.ReqHeaders != nil {
 		structjsonz.MustParse(converter.Header2Json(req.Headers), refs.ReqHeaders)

@@ -67,7 +67,7 @@ func (f *FractionReqResp) GetDataRefsV2() *apiz.DataRefsV2 {
 		}},
 		QueryParams: &schemazv2.Schema{Object: func() map[string]*schemazv2.Schema {
 			return map[string]*schemazv2.Schema{
-				"precision": {Raw: func() any { return &f.Req.Precision }},
+				"precision": {Str: func(unformatted string) { strconvz.MustParseNumberInto(unformatted, &f.Req.Precision) }},
 			}
 		}},
 		ReqHeaders: &schemazv2.Schema{Object: func() map[string]*schemazv2.Schema {
