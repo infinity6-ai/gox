@@ -36,16 +36,16 @@ func TestUnitBasic(t *testing.T) {
 			Street: "456 Elm St",
 			City:   "Los Angeles",
 		},
-		// Addresses: []*Address{
-		// 	{
-		// 		Street: "789 Oak St",
-		// 		City:   "Chicago",
-		// 	},
-		// 	{
-		// 		Street: "321 Pine St",
-		// 		City:   "Houston",
-		// 	},
-		// },
+		Addresses: []*Address{
+			{
+				Street: "789 Oak St",
+				City:   "Chicago",
+			},
+			{
+				Street: "321 Pine St",
+				City:   "Houston",
+			},
+		},
 		// CompanyAddresses: []*Address{
 		// 	{
 		// 		Street: "123 Main St",
@@ -92,11 +92,11 @@ func TestUnitBasic(t *testing.T) {
 						}
 					},
 				},
-				// "addresses": {
-				// 	Raw: func() any {
-				// 		return &person.Addresses
-				// 	},
-				// },
+				"addresses": {
+					Raw: func() any {
+						return &person.Addresses
+					},
+				},
 				// "company_addresses": {
 				// 	Raw: func() any {
 				// 		return &person.CompanyAddresses
