@@ -19,8 +19,8 @@ type Schema struct {
 	Raw    func() any
 	Object func(read bool) map[string]*Schema
 	Array  func() (length int, getElement func(idx int, read bool) *Schema)
-	Str    func(v string)
-	Strs   func(v []string)
+	Str    func() (func(v string), func() string)
+	Strs   func() (func(v []string), func() []string)
 }
 
 // =====================================
@@ -44,16 +44,14 @@ func (s *Schema) MarshalJSON() ([]byte, error) {
 	if s.Raw != nil {
 		return json.Marshal(s.Raw())
 	}
-	// if s.Str != nil {
-	// 	if ptr := s.Str(); ptr != nil {
-	// 		return json.Marshal(*ptr)
-	// 	}
-	// }
-	// if s.Strs != nil {
-	// 	if ptr := s.Strs(); ptr != nil {
-	// 		return json.Marshal(*ptr)
-	// 	}
-	// }
+	if s.Str != nil {
+		_, f := s.Str()
+		return json.Marshal([]string{f()})
+	}
+	if s.Strs != nil {
+		_, f := s.Strs()
+		return json.Marshal(f())
+	}
 	return []byte("null"), nil
 }
 
@@ -122,22 +120,23 @@ func (s *Schema) unmarshalJSONStr(data []byte) error {
 	if len(data) == 0 {
 		panic("data must not be empty")
 	}
-	if data[0] == '"' {
-		var str string
-		if err := json.Unmarshal(data, &str); err != nil {
-			return err
-		}
-		s.Str(str)
-		return nil
-	}
+	parser, _ := s.Str()
+	// if data[0] == '"' {
+	// 	var str string
+	// 	if err := json.Unmarshal(data, &str); err != nil {
+	// 		return err
+	// 	}
+	// 	parser(str)
+	// 	return nil
+	// }
 	var strs []string
 	if err := json.Unmarshal(data, &strs); err != nil {
 		return err
 	}
 	if len(strs) == 0 {
-		s.Str("")
+		parser("")
 	} else {
-		s.Str(strs[0])
+		parser(strs[0])
 	}
 	return nil
 }
@@ -146,18 +145,19 @@ func (s *Schema) unmarshalJSONStrs(data []byte) error {
 	if len(data) == 0 {
 		panic("data must not be empty")
 	}
-	if data[0] == '"' {
-		var str string
-		if err := json.Unmarshal(data, &str); err != nil {
-			return err
-		}
-		s.Strs([]string{str})
-		return nil
-	}
+	parser, _ := s.Strs()
+	// if data[0] == '"' {
+	// 	var str string
+	// 	if err := json.Unmarshal(data, &str); err != nil {
+	// 		return err
+	// 	}
+	// 	parser([]string{str})
+	// 	return nil
+	// }
 	var strs []string
 	if err := json.Unmarshal(data, &strs); err != nil {
 		return err
 	}
-	s.Strs(strs)
+	parser(strs)
 	return nil
 }

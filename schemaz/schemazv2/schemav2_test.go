@@ -1,6 +1,7 @@
 package schemazv2_test
 
 import (
+	"strconv"
 	"testing"
 
 	"github.com/infinity6-ai/gox/commonz/jsonz"
@@ -185,7 +186,7 @@ func TestUnitBasic(t *testing.T) {
 }
 
 func TestUnitValues(t *testing.T) {
-	str := `{"a":"10.1","b":["20.1","20.2"],"c":["30.1","30.2"]}`
+	str := `{"a":["10.1"],"b":["20.1","20.2"],"c":["30.1","30.2"]}`
 	type My struct {
 		A float64
 		B []float64
@@ -196,21 +197,37 @@ func TestUnitValues(t *testing.T) {
 		Object: func(read bool) map[string]*schemazv2.Schema {
 			return map[string]*schemazv2.Schema{
 				"a": {
-					Strs: func(unformatted []string) {
-						my.A = strconvz.MustParseNumber[float64](unformatted[0])
+					Str: func() (func(v string), func() string) {
+						return func(unformatted string) {
+								my.A = strconvz.MustParseNumber[float64](unformatted)
+							}, func() string {
+								return strconv.FormatFloat(my.A, 'f', -1, 64)
+							}
 					},
 				},
 				"b": {
-					Strs: func(unformatted []string) {
-						my.B = make([]float64, len(unformatted))
-						for i, v := range unformatted {
-							my.B[i] = strconvz.MustParseNumber[float64](v)
-						}
+					Strs: func() (func(v []string), func() []string) {
+						return func(unformatted []string) {
+								my.B = make([]float64, len(unformatted))
+								for i, v := range unformatted {
+									my.B[i] = strconvz.MustParseNumber[float64](v)
+								}
+							}, func() []string {
+								out := make([]string, len(my.B))
+								for i, v := range my.B {
+									out[i] = strconv.FormatFloat(v, 'f', -1, 64)
+								}
+								return out
+							}
 					},
 				},
 				"c": {
-					Strs: func(unformatted []string) {
-						my.C = strconvz.MustParseNumber[float64](unformatted[0])
+					Strs: func() (func(v []string), func() []string) {
+						return func(unformatted []string) {
+								my.C = strconvz.MustParseNumber[float64](unformatted[0])
+							}, func() []string {
+								return []string{strconv.FormatFloat(my.C, 'f', -1, 64)}
+							}
 					},
 				},
 			}
@@ -227,5 +244,10 @@ func TestUnitValues(t *testing.T) {
 	require.Equal(t, expected, my)
 
 	mapperStr := jsonz.MustFormat(mapper).String()
-	require.Equal(t, expected, *jsonz.MustParse(mapperStr, &My{}))
+	parsedMapperStr := jsonz.MustParse(mapperStr, new(map[string][]string{}))
+	require.Equal(t, map[string][]string{
+		"a": []string{"10.1"},
+		"b": []string{"20.1", "20.2"},
+		"c": []string{"30.1"},
+	}, *parsedMapperStr)
 }
