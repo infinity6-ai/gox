@@ -32,10 +32,10 @@ func TestUnitBasic(t *testing.T) {
 			Street: "123 Main St",
 			City:   "New York",
 		},
-		// SecondaryAddresses: &Address{
-		// 	Street: "456 Elm St",
-		// 	City:   "Los Angeles",
-		// },
+		SecondaryAddresses: &Address{
+			Street: "456 Elm St",
+			City:   "Los Angeles",
+		},
 		// Addresses: []*Address{
 		// 	{
 		// 		Street: "789 Oak St",
@@ -60,7 +60,7 @@ func TestUnitBasic(t *testing.T) {
 	}
 
 	var person Person
-	// person.SecondaryAddresses = &Address{}
+	person.SecondaryAddresses = &Address{}
 
 	mapper := &schemazv2.Schema{
 		Object: func() map[string]*schemazv2.Schema {
@@ -80,11 +80,18 @@ func TestUnitBasic(t *testing.T) {
 						return &person.MainAddress
 					},
 				},
-				// "secondary_addresses": {
-				// 	Raw: func() any {
-				// 		return &person.SecondaryAddresses
-				// 	},
-				// },
+				"secondary_addresses": {
+					Object: func() map[string]*schemazv2.Schema {
+						return map[string]*schemazv2.Schema{
+							"street": {
+								Raw: func() any { return &person.SecondaryAddresses.Street },
+							},
+							"city": {
+								Raw: func() any { return &person.SecondaryAddresses.City },
+							},
+						}
+					},
+				},
 				// "addresses": {
 				// 	Raw: func() any {
 				// 		return &person.Addresses
