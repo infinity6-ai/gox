@@ -61,8 +61,8 @@ func (f *FractionReqResp) GetDataRefsV2() *apiz.DataRefsV2 {
 	return &apiz.DataRefsV2{
 		PathParams: &schemazv2.Schema{Object: func() map[string]*schemazv2.Schema {
 			return map[string]*schemazv2.Schema{
-				"numerator":   {Strs: func(unformatted []string) { f.Req.Numerator = strconvz.MustParseNumber[float64](unformatted[0]) }},
-				"denominator": {Strs: func(unformatted []string) { f.Req.Denominator = strconvz.MustParseNumber[float64](unformatted[0]) }},
+				"numerator":   {Str: func(unformatted string) { strconvz.MustParseNumberInto(unformatted, &f.Req.Numerator) }},
+				"denominator": {Str: func(unformatted string) { strconvz.MustParseNumberInto(unformatted, &f.Req.Denominator) }},
 			}
 		}},
 		QueryParams: &schemazv2.Schema{Object: func() map[string]*schemazv2.Schema {

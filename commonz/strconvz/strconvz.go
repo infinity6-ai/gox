@@ -8,6 +8,16 @@ import (
 	"github.com/infinity6-ai/gox/commonz/errorz"
 )
 
+func ParseNumberInto[T constraintz.Numbers](v string, target *T) error {
+	var err error
+	*target, err = ParseNumber(v, *target)
+	return err
+}
+
+func MustParseNumberInto(v string, target *float64) {
+	errorz.Check(ParseNumberInto(v, target))
+}
+
 // ParseNumber parses a string into a numeric type T.
 // T can be any of the supported number types defined in constraintz.Numbers.
 //
