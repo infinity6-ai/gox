@@ -15,7 +15,7 @@ type Schema struct {
 	Raw    func() any
 	Object func() map[string]*Schema
 	Array  func() *Schema
-	Values func(unformatted []string) any
+	Values func(unformatted []string)
 	Desc   func() *Desc
 }
 
@@ -29,7 +29,19 @@ func (s *Schema) UnmarshalJSON(data []byte) error {
 	if s.Raw != nil {
 		return json.Unmarshal(data, s.Raw())
 	}
+	if s.Values != nil {
+		return s.unmarshalJSONValues(data)
+	}
 	panic("schema must have either object or array or raw field set")
+}
+
+func (s *Schema) unmarshalJSONValues(data []byte) error {
+	var raw json.RawMessage
+	if err := json.Unmarshal(data, &raw); err != nil {
+		return err
+	}
+	s.Values([]string{string(raw)})
+	return nil
 }
 
 func (s *Schema) unmarshalJSONArray(data []byte) error {

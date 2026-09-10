@@ -132,11 +132,11 @@ func TestUnitBasic(t *testing.T) {
 					},
 				},
 				"rate": {
-					Values: func(unformatted []string) any {
+					Values: func(unformatted []string) {
 						if len(unformatted) == 0 {
-							return 0
+							person.Rate = 0
 						}
-						return strconvz.MustParseNumber[float64](unformatted[0])
+						person.Rate = strconvz.MustParseNumber[float64](unformatted[0])
 					},
 				},
 			}
