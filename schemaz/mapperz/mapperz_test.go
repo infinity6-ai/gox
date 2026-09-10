@@ -37,8 +37,9 @@ func TestUnitBasic(t *testing.T) {
 	}
 
 	var person Person
+	person.SecondaryAddresses = &Address{}
 
-	mapper := mapperz.Mapper{
+	mapper := &mapperz.Mapper{
 		Target: map[string]*mapperz.Mapper{
 			"name": {
 				Name:   "name",
@@ -53,14 +54,25 @@ func TestUnitBasic(t *testing.T) {
 				Target: &person.MainAddress,
 			},
 			"secondary_addresses": {
-				Name:   "secondary_addresses",
-				Target: &person.SecondaryAddresses,
+				Name: "secondary_addresses",
+				Target: &mapperz.Mapper{
+					Target: map[string]*mapperz.Mapper{
+						"street": {
+							Name:   "street",
+							Target: &person.SecondaryAddresses.Street,
+						},
+						"city": {
+							Name:   "city",
+							Target: &person.SecondaryAddresses.City,
+						},
+					},
+				},
 			},
 		},
 	}
 
 	str := jsonz.MustFormat(expected)
-	jsonz.MustParse(str.Bytes(), &mapper)
+	jsonz.MustParse(str.Bytes(), mapper)
 
 	require.Equal(t, expected, person)
 }
