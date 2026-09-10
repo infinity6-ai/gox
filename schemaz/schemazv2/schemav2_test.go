@@ -149,10 +149,8 @@ func TestUnitValues(t *testing.T) {
 		Object: func() map[string]*schemazv2.Schema {
 			return map[string]*schemazv2.Schema{
 				"a": {
-					Values: func(unformatted []string) {
-						var x string
-						jsonz.MustParse(unformatted[0], &x)
-						my.A = strconvz.MustParseNumber[float64](x)
+					Strs: func(unformatted []string) {
+						my.A = strconvz.MustParseNumber[float64](unformatted[0])
 					},
 				},
 			}
