@@ -12,29 +12,59 @@ type Desc struct {
 }
 
 type Schema struct {
+	// Documentation Metadata (ignored by JSON, used by your generator)
+	Desc *Desc
+
+	// Mutually exclusive data bindings (returning pointers for 2-way binding)
 	Raw    func() any
 	Object func() map[string]*Schema
-	Array  func(idx int) *Schema
-	Strs   func(v []string)
+	Array  func() (length int, getElement func(idx int) *Schema)
 	Str    func(v string)
-	Desc   func() *Desc
+	Strs   func(v []string)
 }
 
+// =====================================
+// MARSHAL (Writing to JSON)
+// =====================================
+
 func (s *Schema) MarshalJSON() ([]byte, error) {
+	if s.Object != nil {
+		// json.Marshal automatically calls MarshalJSON on the *Schema values
+		return json.Marshal(s.Object())
+	}
+	if s.Array != nil {
+		length, getElem := s.Array()
+		out := make([]*Schema, length)
+		for i := 0; i < length; i++ {
+			out[i] = getElem(i)
+		}
+		// Marshaling a slice of *Schema triggers recursive MarshalJSON
+		return json.Marshal(out)
+	}
 	if s.Raw != nil {
 		return json.Marshal(s.Raw())
 	}
-	if s.Object != nil {
-		return json.Marshal(s.Object())
-	}
-	// if s.Array != nil {
-	// 	return json.Marshal([]*Schema{s.Array()})
+	// if s.Str != nil {
+	// 	if ptr := s.Str(); ptr != nil {
+	// 		return json.Marshal(*ptr)
+	// 	}
 	// }
-	// panic("IMPLEMENT IT")
+	// if s.Strs != nil {
+	// 	if ptr := s.Strs(); ptr != nil {
+	// 		return json.Marshal(*ptr)
+	// 	}
+	// }
 	return []byte("null"), nil
 }
 
+// =====================================
+// UNMARSHAL (Reading from JSON)
+// =====================================
+
 func (s *Schema) UnmarshalJSON(data []byte) error {
+	if string(data) == "null" {
+		return nil
+	}
 	if s.Object != nil {
 		return s.unmarshalJSONObject(data)
 	}
@@ -44,13 +74,48 @@ func (s *Schema) UnmarshalJSON(data []byte) error {
 	if s.Raw != nil {
 		return json.Unmarshal(data, s.Raw())
 	}
-	if s.Strs != nil {
-		return s.unmarshalJSONStrs(data)
-	}
 	if s.Str != nil {
 		return s.unmarshalJSONStr(data)
 	}
-	panic("schema must have either object or array or raw field set")
+	if s.Strs != nil {
+		return s.unmarshalJSONStrs(data)
+	}
+	return fmt.Errorf("schema must have one field set (Object, Array, Raw, Str, Strs)")
+}
+
+func (s *Schema) unmarshalJSONObject(data []byte) error {
+	m := s.Object()
+	var raw map[string]json.RawMessage
+	if err := json.Unmarshal(data, &raw); err != nil {
+		return err
+	}
+	for k, schemaNode := range m {
+		if rawVal, exists := raw[k]; exists {
+			if err := json.Unmarshal(rawVal, schemaNode); err != nil {
+				return fmt.Errorf("error parsing key %q: %w", k, err)
+			}
+		}
+	}
+	return nil
+}
+
+func (s *Schema) unmarshalJSONArray(data []byte) error {
+	var raw []json.RawMessage
+	if err := json.Unmarshal(data, &raw); err != nil {
+		return err
+	}
+
+	_, getElem := s.Array() // We only need the element getter for unmarshaling
+	for i, rawVal := range raw {
+		schemaNode := getElem(i)
+		if schemaNode == nil {
+			continue
+		}
+		if err := json.Unmarshal(rawVal, schemaNode); err != nil {
+			return fmt.Errorf("error parsing index %d: %w", i, err)
+		}
+	}
+	return nil
 }
 
 func (s *Schema) unmarshalJSONStr(data []byte) error {
@@ -94,35 +159,5 @@ func (s *Schema) unmarshalJSONStrs(data []byte) error {
 		return err
 	}
 	s.Strs(strs)
-	return nil
-}
-
-func (s *Schema) unmarshalJSONArray(data []byte) error {
-	var raw []json.RawMessage
-	if err := json.Unmarshal(data, &raw); err != nil {
-		return err
-	}
-	for i, ble := range raw {
-		m := s.Array(i)
-		if err := json.Unmarshal(ble, m); err != nil {
-			return fmt.Errorf("error parsing key %d: %w", i, err)
-		}
-	}
-	return nil
-}
-
-func (s *Schema) unmarshalJSONObject(data []byte) error {
-	m := s.Object()
-	var raw map[string]json.RawMessage
-	if err := json.Unmarshal(data, &raw); err != nil {
-		return err
-	}
-	for k, v := range m {
-		if rawVal, exists := raw[k]; exists {
-			if err := json.Unmarshal(rawVal, &v); err != nil {
-				return fmt.Errorf("error parsing key %q: %w", k, err)
-			}
-		}
-	}
 	return nil
 }
