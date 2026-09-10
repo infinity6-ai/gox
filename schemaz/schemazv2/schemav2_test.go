@@ -102,12 +102,13 @@ func TestUnitBasic(t *testing.T) {
 				"company_addresses": {
 					Array: func() (length int, getElement func(idx int) *schemazv2.Schema) {
 						return len(person.CompanyAddresses), func(idx int) *schemazv2.Schema {
-							var a *Address
 							if idx >= len(person.CompanyAddresses) {
+								var a *Address
 								person.CompanyAddresses = append(person.CompanyAddresses, a)
 							}
 							return &schemazv2.Schema{
 								Object: func() map[string]*schemazv2.Schema {
+									print(1)
 									create := func() *Address {
 										if person.CompanyAddresses[idx] == nil {
 											person.CompanyAddresses[idx] = &Address{}
