@@ -48,6 +48,15 @@ func (f *FractionReqResp) GetDataRefs() *apiz.DataRefs {
 }
 
 func (f *FractionReqResp) GetDataRefsV2() *apiz.DataRefsV2 {
+	if f.Req == nil {
+		f.Req = &FractionReq{}
+	}
+	if f.Resp == nil {
+		f.Resp = &FractionResp{}
+	}
+	if f.Resp.Result == nil {
+		f.Resp.Result = &Result{}
+	}
 	return &apiz.DataRefsV2{
 		PathParams: &schemazv2.Schema{Object: func() map[string]*schemazv2.Schema {
 			return map[string]*schemazv2.Schema{
