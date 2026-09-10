@@ -24,6 +24,7 @@ func TestUnitBasic(t *testing.T) {
 		Addresses          []*Address `json:"addresses"`
 		CompanyAddresses   []*Address `json:"company_addresses"`
 		Numbers            []int      `json:"numbers"`
+		Rate               float64    `json:"rate"`
 	}
 
 	expected := Person{
@@ -58,6 +59,7 @@ func TestUnitBasic(t *testing.T) {
 			},
 		},
 		Numbers: []int{10, 20, 30, 40, 50},
+		Rate:    10.1,
 	}
 
 	var person Person
@@ -126,6 +128,11 @@ func TestUnitBasic(t *testing.T) {
 								}
 							},
 						}
+					},
+				},
+				"rate": {
+					Raw: func() any {
+						return &person.Rate
 					},
 				},
 			}
