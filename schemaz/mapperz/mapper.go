@@ -8,7 +8,6 @@ import (
 )
 
 type Mapper struct {
-	Name   string
 	Target any
 }
 

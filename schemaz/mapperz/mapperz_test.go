@@ -42,27 +42,21 @@ func TestUnitBasic(t *testing.T) {
 	mapper := &mapperz.Mapper{
 		Target: map[string]*mapperz.Mapper{
 			"name": {
-				Name:   "name",
 				Target: &person.Name,
 			},
 			"age": {
-				Name:   "age",
 				Target: &person.Age,
 			},
 			"main_address": {
-				Name:   "main_address",
 				Target: &person.MainAddress,
 			},
 			"secondary_addresses": {
-				Name: "secondary_addresses",
 				Target: &mapperz.Mapper{
 					Target: map[string]*mapperz.Mapper{
 						"street": {
-							Name:   "street",
 							Target: &person.SecondaryAddresses.Street,
 						},
 						"city": {
-							Name:   "city",
 							Target: &person.SecondaryAddresses.City,
 						},
 					},
