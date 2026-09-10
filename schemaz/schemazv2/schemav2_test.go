@@ -216,10 +216,16 @@ func TestUnitValues(t *testing.T) {
 			}
 		},
 	}
-	jsonz.MustParse([]byte(str), mapper)
-	require.Equal(t, My{
+
+	expected := My{
 		A: 10.1,
 		B: []float64{20.1, 20.2},
 		C: 30.1,
-	}, my)
+	}
+
+	jsonz.MustParse([]byte(str), mapper)
+	require.Equal(t, expected, my)
+
+	mapperStr := jsonz.MustFormat(mapper)
+	require.Equal(t, expected, *jsonz.MustParse(mapperStr.Bytes(), &My{}))
 }
