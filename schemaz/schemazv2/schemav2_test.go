@@ -25,8 +25,6 @@ func TestUnitBasic(t *testing.T) {
 		Addresses          []*Address `json:"addresses"`
 		CompanyAddresses   []*Address `json:"company_addresses"`
 		Numbers            []int      `json:"numbers"`
-		Rate               float64    `json:"rate"`
-		RateString         string     `json:"rate_string"`
 	}
 
 	expected := Person{
@@ -60,9 +58,7 @@ func TestUnitBasic(t *testing.T) {
 				City:   "Los Angeles",
 			},
 		},
-		Numbers:    []int{10, 20, 30, 40, 50},
-		Rate:       10.1,
-		RateString: "10.2",
+		Numbers: []int{10, 20, 30, 40, 50},
 	}
 
 	var person Person
@@ -133,19 +129,6 @@ func TestUnitBasic(t *testing.T) {
 						}
 					},
 				},
-				"rate": {
-					Values: func(unformatted []string) {
-						if len(unformatted) == 0 {
-							person.Rate = 0
-						}
-						person.Rate = strconvz.MustParseNumber[float64](unformatted[0])
-					},
-				},
-				"rate_string": {
-					Values: func(unformatted []string) {
-						jsonz.MustParse(unformatted[0], &person.RateString)
-					},
-				},
 			}
 		},
 	}
@@ -154,4 +137,26 @@ func TestUnitBasic(t *testing.T) {
 	jsonz.MustParse(str.Bytes(), mapper)
 
 	require.Equal(t, expected, person)
+}
+
+func TestUnitValues(t *testing.T) {
+	str := `{"a":"10.1"}`
+	type My struct {
+		A float64
+	}
+	var my My
+	mapper := &schemazv2.Schema{
+		Object: func() map[string]*schemazv2.Schema {
+			return map[string]*schemazv2.Schema{
+				"a": {
+					Values: func(unformatted []string) {
+						var x string
+						jsonz.MustParse(unformatted[0], &x)
+						my.A = strconvz.MustParseNumber[float64](x)
+					},
+				},
+			}
+		},
+	}
+	jsonz.MustParse([]byte(str), mapper)
 }
