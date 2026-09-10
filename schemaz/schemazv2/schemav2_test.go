@@ -140,9 +140,10 @@ func TestUnitBasic(t *testing.T) {
 }
 
 func TestUnitValues(t *testing.T) {
-	str := `{"a":"10.1"}`
+	str := `{"a":"10.1","b":["20.1","20.2"]}`
 	type My struct {
 		A float64
+		B []float64
 	}
 	var my My
 	mapper := &schemazv2.Schema{
@@ -153,8 +154,20 @@ func TestUnitValues(t *testing.T) {
 						my.A = strconvz.MustParseNumber[float64](unformatted[0])
 					},
 				},
+				"b": {
+					Strs: func(unformatted []string) {
+						my.B = make([]float64, len(unformatted))
+						for i, v := range unformatted {
+							my.B[i] = strconvz.MustParseNumber[float64](v)
+						}
+					},
+				},
 			}
 		},
 	}
 	jsonz.MustParse([]byte(str), mapper)
+	require.Equal(t, My{
+		A: 10.1,
+		B: []float64{20.1, 20.2},
+	}, my)
 }

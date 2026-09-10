@@ -36,11 +36,22 @@ func (s *Schema) UnmarshalJSON(data []byte) error {
 }
 
 func (s *Schema) unmarshalJSONValues(data []byte) error {
-	var str string
-	if err := json.Unmarshal(data, &str); err != nil {
+	if len(data) == 0 {
+		panic("data must not be empty")
+	}
+	if data[0] == '"' {
+		var str string
+		if err := json.Unmarshal(data, &str); err != nil {
+			return err
+		}
+		s.Strs([]string{str})
+		return nil
+	}
+	var strs []string
+	if err := json.Unmarshal(data, &strs); err != nil {
 		return err
 	}
-	s.Strs([]string{str})
+	s.Strs(strs)
 	return nil
 }
 
