@@ -34,8 +34,9 @@ func parseRequest[T apiz.ReqResp](a *apiz.Api[T], req *httpzrequest.Req, params 
 func writeResponseV2[T apiz.ReqRespV2](status int, resp httpzserver.Resp, reqResp T, formattedHeaders http.Header) {
 	refs := reqResp.GetDataRefsV2()
 	if refs.RespHeaders != nil {
-		mapRespHedaers := structjsonz.MustFormat(refs.RespHeaders)
-		converter.Json2Header(mapRespHedaers, formattedHeaders)
+		headers := map[string][]string{}
+		jsonz.MustCopy(refs.ReqHeaders, &headers)
+		converter.Json2Header(headers, formattedHeaders)
 	}
 	w := resp(status, formattedHeaders)
 	jsonz.FormatWriter(w, refs.RespBody)
