@@ -61,7 +61,7 @@ func (f *FractionReqResp) GetDataRefsV2() *apiz.DataRefsV2 {
 		PathParams:  f.schemaPathParams(),
 		QueryParams: f.schemaQueryParams(),
 		ReqHeaders:  f.schemaReqHeaders(),
-		// ReqBody: f.schemaReqBody(),
+		ReqBody:     f.schemaReqBody(),
 		// RespHeaders: f.schemaRespHeaders(),
 		// RespBody: f.schemaRespBody(),
 		// QueryParams: &schemazv2.Schema{Object: func() map[string]*schemazv2.Schema {
@@ -85,6 +85,16 @@ func (f *FractionReqResp) GetDataRefsV2() *apiz.DataRefsV2 {
 		// 	}
 		// }},
 		RespBody: &schemazv2.Schema{Raw: func() any { return &f.Resp.Result }},
+	}
+}
+
+func (f *FractionReqResp) schemaReqBody() *schemazv2.Schema {
+	return &schemazv2.Schema{
+		Object: func(read bool) map[string]*schemazv2.Schema {
+			return map[string]*schemazv2.Schema{
+				"reason": {Raw: func() any { return &f.Req.Reason }},
+			}
+		},
 	}
 }
 
