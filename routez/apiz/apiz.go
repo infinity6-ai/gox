@@ -36,10 +36,10 @@ type Spec[T Api] struct {
 	Spec   T
 }
 
-func (a *Spec[T]) MewReqResp() T {
+func (a *Spec[T]) NewReqResp() T {
 	var v T
 	t := reflect.TypeOf(&v).Elem()
-	checker.Equal(reflect.Ptr, t.Kind(), "it must be a pointer: %T %T", v, t)
+	checker.Equal(reflect.Pointer, t.Kind(), "it must be a pointer: %T %T", v, t)
 	ret := reflect.New(t.Elem()).Interface().(T)
 	return ret
 }
