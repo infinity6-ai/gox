@@ -12,6 +12,16 @@ type Desc struct {
 	Markdown string
 }
 
+type Parser[T any] struct {
+	Parse  func(v T)
+	Format func() T
+}
+
+type Array struct {
+	Len int
+	Get func(idx int, read bool) *Schema
+}
+
 type Schema struct {
 	// Documentation Metadata (ignored by JSON, used by your generator)
 	Desc *Desc
@@ -22,6 +32,8 @@ type Schema struct {
 	Array  func() (length int, getElement func(idx int, read bool) *Schema)
 	Str    func() (func(v string), func() string)
 	Strs   func() (func(v []string), func() []string)
+	StrV2  func() *Parser[string]
+	StrsV2 func() *Parser[[]string]
 }
 
 // =====================================
