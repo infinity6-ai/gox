@@ -10,24 +10,24 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-type MyValue supervalue.SuperValue[string]
+type Dataset supervalue.SuperValue[string]
 
-func (m MyValue) Validate(v string) error {
+func (m Dataset) Validate(v string) error {
 	return validation.StrNotEmpty(v, "MyValue cannot be empty")
 }
 
-func NewMyValue(val string) MyValue {
-	ret := MyValue{}
+func NewMyValue(val string) Dataset {
+	ret := Dataset{}
 	err := supervalue.Set(&ret, val)
 	errorz.Check(err)
 	return ret
 }
 
-func (m MyValue) MarshalJSON() ([]byte, error) {
+func (m Dataset) MarshalJSON() ([]byte, error) {
 	return supervalue.Marshal[string](m)
 }
 
-func (m *MyValue) UnmarshalJSON(data []byte) error {
+func (m *Dataset) UnmarshalJSON(data []byte) error {
 	return supervalue.Unmarshal(m, data)
 }
 
@@ -39,7 +39,7 @@ func TestUnitBasic(t *testing.T) {
 	require.True(t, a1 == a2)
 	require.False(t, a1 == b1)
 
-	var x1, x2, x3 MyValue
+	var x1, x2, x3 Dataset
 	jsonz.MustClone(&a1, &x1)
 	jsonz.MustClone(&b1, &x2)
 	jsonz.MustClone(&a1, &x3)
