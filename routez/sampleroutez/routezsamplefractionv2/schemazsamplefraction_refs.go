@@ -62,29 +62,29 @@ func (f *FractionReqResp) GetDataRefsV2() *apiz.DataRefsV2 {
 		QueryParams: f.schemaQueryParams(),
 		ReqHeaders:  f.schemaReqHeaders(),
 		ReqBody:     f.schemaReqBody(),
-		// RespHeaders: f.schemaRespHeaders(),
-		// RespBody: f.schemaRespBody(),
-		// QueryParams: &schemazv2.Schema{Object: func() map[string]*schemazv2.Schema {
-		// 	return map[string]*schemazv2.Schema{
-		// 		"precision": {Str: func(v string) { strconvz.MustParseNumberInto(v, &f.Req.Precision) }},
-		// 	}
-		// }},
-		// ReqHeaders: &schemazv2.Schema{Object: func() map[string]*schemazv2.Schema {
-		// 	return map[string]*schemazv2.Schema{
-		// 		"x_i6_trace_id": {Str: func(v string) { f.Req.TraceId = v }},
-		// 	}
-		// }},
-		// ReqBody: &schemazv2.Schema{Object: func() map[string]*schemazv2.Schema {
-		// 	return map[string]*schemazv2.Schema{
-		// 		"reason": {Raw: func() any { return &f.Req.Reason }},
-		// 	}
-		// }},
-		// RespHeaders: &schemazv2.Schema{Object: func() map[string]*schemazv2.Schema {
-		// 	return map[string]*schemazv2.Schema{
-		// 		"x_i6_trace_message": {Raw: func() any { return &f.Resp.TraceMessage }},
-		// 	}
-		// }},
-		RespBody: &schemazv2.Schema{Raw: func() any { return &f.Resp.Result }},
+		RespHeaders: f.schemaRespHeaders(),
+		RespBody:    f.schemaRespBody(),
+	}
+}
+
+func (f *FractionReqResp) schemaRespBody() *schemazv2.Schema {
+	return &schemazv2.Schema{
+		Object: func(read bool) map[string]*schemazv2.Schema {
+			return map[string]*schemazv2.Schema{
+				"display": {Raw: func() any { return &f.Resp.Result.Display }},
+				"result":  {Raw: func() any { return &f.Resp.Result.Result }},
+			}
+		},
+	}
+}
+
+func (f *FractionReqResp) schemaRespHeaders() *schemazv2.Schema {
+	return &schemazv2.Schema{
+		Object: func(read bool) map[string]*schemazv2.Schema {
+			return map[string]*schemazv2.Schema{
+				"x_i6_trace_message": {Raw: func() any { return &f.Resp.TraceMessage }},
+			}
+		},
 	}
 }
 
