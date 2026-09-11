@@ -104,7 +104,12 @@ func (s *Schema) unmarshalJSONArray(data []byte) error {
 		return err
 	}
 
-	_, getElem := s.Array() // We only need the element getter for unmarshaling
+	_, getElem := s.Array()
+
+	// We iterate backwards to give the schema implementation an opportunity to
+	// grow its underlying slice to the correct size from the beginning. The first
+	// index seen will be the largest (len-1), allowing for a single allocation
+	// to the final size.
 	for i, raw := range slices.Backward(raws) {
 		schemaNode := getElem(i, false)
 		if schemaNode == nil {
@@ -122,14 +127,6 @@ func (s *Schema) unmarshalJSONStr(data []byte) error {
 		panic("data must not be empty")
 	}
 	parser, _ := s.Str()
-	// if data[0] == '"' {
-	// 	var str string
-	// 	if err := json.Unmarshal(data, &str); err != nil {
-	// 		return err
-	// 	}
-	// 	parser(str)
-	// 	return nil
-	// }
 	var strs []string
 	if err := json.Unmarshal(data, &strs); err != nil {
 		return err
@@ -147,14 +144,6 @@ func (s *Schema) unmarshalJSONStrs(data []byte) error {
 		panic("data must not be empty")
 	}
 	parser, _ := s.Strs()
-	// if data[0] == '"' {
-	// 	var str string
-	// 	if err := json.Unmarshal(data, &str); err != nil {
-	// 		return err
-	// 	}
-	// 	parser([]string{str})
-	// 	return nil
-	// }
 	var strs []string
 	if err := json.Unmarshal(data, &strs); err != nil {
 		return err
