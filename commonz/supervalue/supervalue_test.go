@@ -10,28 +10,33 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-type Dataset supervalue.SuperValue[string]
+type MyString supervalue.SuperValue[string]
 
-func (m Dataset) Validate(v string) error {
+func (m MyString) Validate(v string) error {
 	return validation.StrNotEmpty(v, "MyValue cannot be empty")
 }
 
-func NewMyValue(val string) Dataset {
-	ret := Dataset{}
+func NewMyValue(val string) MyString {
+	ret := MyString{}
 	err := supervalue.Set(&ret, val)
 	errorz.Check(err)
 	return ret
 }
 
-func (m Dataset) MarshalJSON() ([]byte, error) {
+func (m MyString) MarshalJSON() ([]byte, error) {
 	return supervalue.Marshal[string](m)
 }
 
-func (m *Dataset) UnmarshalJSON(data []byte) error {
+func (m *MyString) UnmarshalJSON(data []byte) error {
 	return supervalue.Unmarshal(m, data)
 }
 
-func TestUnitBasic(t *testing.T) {
+type Person struct {
+	Name  string   `json:"name"`
+	Nicks []string `json:"nicks"`
+}
+
+func TestUnitMyValue(t *testing.T) {
 	a1 := NewMyValue("a")
 	b1 := NewMyValue("b")
 	a2 := NewMyValue("a")
@@ -39,7 +44,7 @@ func TestUnitBasic(t *testing.T) {
 	require.True(t, a1 == a2)
 	require.False(t, a1 == b1)
 
-	var x1, x2, x3 Dataset
+	var x1, x2, x3 MyString
 	jsonz.MustClone(&a1, &x1)
 	jsonz.MustClone(&b1, &x2)
 	jsonz.MustClone(&a1, &x3)
