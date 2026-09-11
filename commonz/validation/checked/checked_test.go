@@ -3,10 +3,10 @@ package checked_test
 import (
 	"testing"
 
-	"github.com/infinity6-ai/gox/commonz/checked"
 	"github.com/infinity6-ai/gox/commonz/errorz"
 	"github.com/infinity6-ai/gox/commonz/jsonz"
 	"github.com/infinity6-ai/gox/commonz/validation"
+	"github.com/infinity6-ai/gox/commonz/validation/checked"
 	"github.com/stretchr/testify/require"
 )
 
