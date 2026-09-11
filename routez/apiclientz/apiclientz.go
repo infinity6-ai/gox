@@ -106,26 +106,25 @@ func writeResponseV2[T apiz.ReqRespV2](nResp *httpzclient.Resp, reqResp T) error
 func parseRequestV2[T apiz.ReqRespV2](api *apiz.ApiV2[T], reqResp T) (*httpzrequest.Req, error) {
 	refs := reqResp.GetDataRefsV2()
 	var p map[string]string
-	// var q, h map[string][]string
-	// var err error
+	var q, h map[string][]string
 	if refs.PathParams != nil {
 		err := formatPathParams(refs.PathParams, &p)
 		if err != nil {
 			return nil, fmt.Errorf("%w: error formatting path params", err)
 		}
 	}
-	// if refs.QueryParams != nil {
-	// 	q, err = structjsonz.Format(refs.QueryParams)
-	// 	if err != nil {
-	// 		return nil, fmt.Errorf("%w: error formatting req query", err)
-	// 	}
-	// }
-	// if refs.ReqHeaders != nil {
-	// 	h, err = structjsonz.Format(refs.ReqHeaders)
-	// 	if err != nil {
-	// 		return nil, fmt.Errorf("%w: error formatting req headers", err)
-	// 	}
-	// }
+	if refs.QueryParams != nil {
+		_, err := jsonz.Copy(refs.QueryParams, &q)
+		if err != nil {
+			return nil, fmt.Errorf("%w: error formatting req query", err)
+		}
+	}
+	if refs.ReqHeaders != nil {
+		_, err := jsonz.Copy(refs.ReqHeaders, &h)
+		if err != nil {
+			return nil, fmt.Errorf("%w: error formatting req headers", err)
+		}
+	}
 	// ret, err := httpzrequest.Format(api.Schema.Method, api.Schema.Path, p)
 	// if err != nil {
 	// 	return nil, fmt.Errorf("%w: error formatting request", err)
