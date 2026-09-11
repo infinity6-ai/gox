@@ -24,7 +24,7 @@ func writeResponse[T apiz.Api](status int, resp httpzserver.Resp, reqResp T, for
 }
 
 func parseRequest[T apiz.Api](a *apiz.Spec[T], req *httpzrequest.Req, params map[string]string) T {
-	reqResp := a.MewReqResp()
+	reqResp := a.NewReqResp()
 	refs := reqResp.GetDataRefs()
 	if refs.PathParams != nil {
 		jsonz.MustCopy(converter.Params2Json(params), refs.PathParams)
