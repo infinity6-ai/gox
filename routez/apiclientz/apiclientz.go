@@ -125,21 +125,18 @@ func parseRequestV2[T apiz.ReqRespV2](api *apiz.ApiV2[T], reqResp T) (*httpzrequ
 			return nil, fmt.Errorf("%w: error formatting req headers", err)
 		}
 	}
-	// ret, err := httpzrequest.Format(api.Schema.Method, api.Schema.Path, p)
-	// if err != nil {
-	// 	return nil, fmt.Errorf("%w: error formatting request", err)
-	// }
-	// ret.Query = q
-	// converter.Json2Header(h, ret.Headers)
-	// if refs.ReqBody != nil {
-	// 	fBody, err := jsonz.Format(refs.ReqBody)
-	// 	if err != nil {
-	// 		return nil, fmt.Errorf("%w: error formatting request body", err)
-	// 	}
-	// 	ret.Body = bytes.NewReader(fBody.Bytes())
-	// }
-	// return ret, nil
-	panic("xxx")
+	ret, err := httpzrequest.Format(api.Method, api.Path, p)
+	if err != nil {
+		return nil, fmt.Errorf("%w: error formatting request", err)
+	}
+	ret.Query = q
+	converter.Json2Header(h, ret.Headers)
+	if refs.ReqBody != nil {
+		r := jsonz.FormatReadCloser(refs.ReqBody)
+		defer r.Close()
+		ret.Body = r
+	}
+	return ret, nil
 }
 
 func formatPathParams(schema *schemazv2.Schema, out *map[string]string) error {
