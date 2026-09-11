@@ -9,6 +9,7 @@ import (
 	"github.com/infinity6-ai/gox/httpz/httpzclient"
 	"github.com/infinity6-ai/gox/httpz/httpzrequest"
 	"github.com/infinity6-ai/gox/httpz/httpzserver"
+	"github.com/infinity6-ai/gox/routez/apiclientz"
 	"github.com/infinity6-ai/gox/routez/routez"
 	"github.com/infinity6-ai/gox/routez/sampleroutez/routezsamplefractionv2"
 	"github.com/stretchr/testify/require"
@@ -43,24 +44,24 @@ func TestManualBasic(t *testing.T) {
 		Result:  "3.333",
 	}, respBody)
 
-	// ac := apiclientz.Get(c, routezsamplefractionv2.ApiOLD())
+	ac := apiclientz.Get(c, routezsamplefractionv2.ApiOLD())
 
-	// reqResp := &routezsamplefractionv2.FractionReqResp{
-	// 	Req: &routezsamplefractionv2.FractionReq{
-	// 		Numerator:   10,
-	// 		Denominator: 3,
-	// 		Precision:   3,
-	// 		TraceId:     "xx",
-	// 		Reason:      "myreason",
-	// 	},
-	// }
-	// status, err := ac(ctx, reqResp)
-	// errorz.Check(err)
-	// require.Equal(t, 201, status)
-	// require.Equal(t, "reason: myreason, trace: xx", reqResp.Resp.TraceMessage)
-	// require.Equal(t, &routezsamplefractionv2.Result{
-	// 	Display: "10.000/3.000",
-	// 	Result:  "3.333",
-	// }, reqResp.Resp.Result)
+	reqResp := &routezsamplefractionv2.FractionReqResp{
+		Req: &routezsamplefractionv2.FractionReq{
+			Numerator:   10,
+			Denominator: 3,
+			Precision:   3,
+			TraceId:     "xx",
+			Reason:      "myreason",
+		},
+	}
+	status, err := ac(ctx, reqResp)
+	errorz.Check(err)
+	require.Equal(t, 201, status)
+	require.Equal(t, "reason: myreason, trace: xx", reqResp.Resp.TraceMessage)
+	require.Equal(t, &routezsamplefractionv2.Result{
+		Display: "10.000/3.000",
+		Result:  "3.333",
+	}, reqResp.Resp.Result)
 
 }
