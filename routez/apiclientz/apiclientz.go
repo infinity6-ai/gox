@@ -14,7 +14,7 @@ import (
 	"github.com/infinity6-ai/gox/schemaz/schemazv2"
 )
 
-func Get[T apiz.ReqResp](client *httpzclient.Client, api *apiz.Api[T]) apiz.Handler[T] {
+func Get[T apiz.Api](client *httpzclient.Client, api *apiz.QualquerNome[T]) apiz.Handler[T] {
 	return func(ctx context.Context, reqResp T) (int, error) {
 		nReq, closer, err := parseRequest(ctx, api, reqResp)
 		if err != nil {
@@ -31,7 +31,7 @@ func Get[T apiz.ReqResp](client *httpzclient.Client, api *apiz.Api[T]) apiz.Hand
 	}
 }
 
-func writeResponse[T apiz.ReqResp](nResp *httpzclient.Resp, reqResp T) error {
+func writeResponse[T apiz.Api](nResp *httpzclient.Resp, reqResp T) error {
 	refs := reqResp.GetDataRefs()
 	if refs.RespHeaders != nil {
 		convertedHeaders := converter.Header2Json(nResp.Headers)
@@ -49,7 +49,7 @@ func writeResponse[T apiz.ReqResp](nResp *httpzclient.Resp, reqResp T) error {
 	return nil
 }
 
-func parseRequest[T apiz.ReqResp](ctx context.Context, api *apiz.Api[T], reqResp T) (*httpzrequest.Req, io.Closer, error) {
+func parseRequest[T apiz.Api](ctx context.Context, api *apiz.QualquerNome[T], reqResp T) (*httpzrequest.Req, io.Closer, error) {
 	dfz := deferz.New(ctx)
 	defer dfz.Close()
 	refs := reqResp.GetDataRefs()

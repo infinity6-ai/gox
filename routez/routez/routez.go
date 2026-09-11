@@ -12,7 +12,7 @@ import (
 	"github.com/infinity6-ai/gox/routez/internal/converter"
 )
 
-func writeResponse[T apiz.ReqResp](status int, resp httpzserver.Resp, reqResp T, formattedHeaders http.Header) {
+func writeResponse[T apiz.Api](status int, resp httpzserver.Resp, reqResp T, formattedHeaders http.Header) {
 	refs := reqResp.GetDataRefs()
 	if refs.RespHeaders != nil {
 		headers := map[string][]string{}
@@ -23,7 +23,7 @@ func writeResponse[T apiz.ReqResp](status int, resp httpzserver.Resp, reqResp T,
 	jsonz.FormatWriter(w, refs.RespBody)
 }
 
-func parseRequest[T apiz.ReqResp](a *apiz.Api[T], req *httpzrequest.Req, params map[string]string) T {
+func parseRequest[T apiz.Api](a *apiz.QualquerNome[T], req *httpzrequest.Req, params map[string]string) T {
 	reqResp := a.MewReqResp()
 	refs := reqResp.GetDataRefs()
 	if refs.PathParams != nil {
@@ -41,7 +41,7 @@ func parseRequest[T apiz.ReqResp](a *apiz.Api[T], req *httpzrequest.Req, params 
 	return reqResp
 }
 
-func Register[T apiz.ReqResp](s *httpzserver.Server, apis ...*apiz.Api[T]) {
+func Register[T apiz.Api](s *httpzserver.Server, apis ...*apiz.QualquerNome[T]) {
 	for _, api := range apis {
 		s.AddHandler(api.Method, api.Path, func(ctx context.Context, resp httpzserver.Resp, req *httpzrequest.Req, params map[string]string) {
 			reqResp := parseRequest(api, req, params)

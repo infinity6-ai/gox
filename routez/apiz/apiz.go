@@ -17,13 +17,13 @@ type DataRefs struct {
 	RespBody    *schemazv2.Schema
 }
 
-type ReqResp interface {
+type Api interface {
 	GetDataRefs() *DataRefs
 }
 
-type Handler[T ReqResp] func(ctx context.Context, reqResp T) (int, error)
+type Handler[T Api] func(ctx context.Context, reqResp T) (int, error)
 
-type Api[T ReqResp] struct {
+type QualquerNome[T Api] struct {
 	Id      string
 	Desc    func() *schemazv2.Desc
 	Method  string
@@ -32,7 +32,7 @@ type Api[T ReqResp] struct {
 	Handler Handler[T]
 }
 
-func (a *Api[T]) MewReqResp() T {
+func (a *QualquerNome[T]) MewReqResp() T {
 	var v T
 	t := reflect.TypeOf(&v).Elem()
 	checker.Equal(reflect.Ptr, t.Kind(), "it must be a pointer: %T %T", v, t)
