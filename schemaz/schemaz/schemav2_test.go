@@ -1,4 +1,4 @@
-package schemazv2_test
+package schemaz_test
 
 import (
 	"strconv"
@@ -7,7 +7,7 @@ import (
 	"github.com/infinity6-ai/gox/commonz/jsonz"
 	"github.com/infinity6-ai/gox/commonz/slicez"
 	"github.com/infinity6-ai/gox/commonz/strconvz"
-	"github.com/infinity6-ai/gox/schemaz/schemazv2"
+	"github.com/infinity6-ai/gox/schemaz/schemaz"
 	"github.com/stretchr/testify/require"
 )
 
@@ -68,9 +68,9 @@ func TestUnitBasic(t *testing.T) {
 
 	var person Person
 
-	mapper := &schemazv2.Schema{
-		Object: func(read bool) map[string]*schemazv2.Schema {
-			return map[string]*schemazv2.Schema{
+	mapper := &schemaz.Schema{
+		Object: func(read bool) map[string]*schemaz.Schema {
+			return map[string]*schemaz.Schema{
 				"name": {
 					Raw: func() any {
 						return &person.Name
@@ -92,14 +92,14 @@ func TestUnitBasic(t *testing.T) {
 					},
 				},
 				"secondary_addresses": {
-					Object: func(read bool) map[string]*schemazv2.Schema {
+					Object: func(read bool) map[string]*schemaz.Schema {
 						if !read {
 							person.SecondaryAddresses = &Address{}
 						}
 						if read && person.SecondaryAddresses == nil {
 							return nil
 						}
-						return map[string]*schemazv2.Schema{
+						return map[string]*schemaz.Schema{
 							"street": {
 								Raw: func() any { return &person.SecondaryAddresses.Street },
 							},
@@ -110,14 +110,14 @@ func TestUnitBasic(t *testing.T) {
 					},
 				},
 				"secondary_addresses_nil": {
-					Object: func(read bool) map[string]*schemazv2.Schema {
+					Object: func(read bool) map[string]*schemaz.Schema {
 						if !read {
 							person.SecondaryAddressesNil = &Address{}
 						}
 						if read && person.SecondaryAddressesNil == nil {
 							return nil
 						}
-						return map[string]*schemazv2.Schema{
+						return map[string]*schemaz.Schema{
 							"street": {
 								Raw: func() any { return &person.SecondaryAddressesNil.Street },
 							},
@@ -133,20 +133,20 @@ func TestUnitBasic(t *testing.T) {
 					},
 				},
 				"company_addresses": {
-					Array: func() *schemazv2.Array {
-						return &schemazv2.Array{
+					Array: func() *schemaz.Array {
+						return &schemaz.Array{
 							Len: len(person.CompanyAddresses),
-							Get: func(idx int, read bool) *schemazv2.Schema {
+							Get: func(idx int, read bool) *schemaz.Schema {
 								person.CompanyAddresses = slicez.GrowLenTo(person.CompanyAddresses, idx+1)
-								return &schemazv2.Schema{
-									Object: func(read bool) map[string]*schemazv2.Schema {
+								return &schemaz.Schema{
+									Object: func(read bool) map[string]*schemaz.Schema {
 										if !read {
 											person.CompanyAddresses[idx] = &Address{}
 										}
 										if read && person.CompanyAddresses[idx] == nil {
 											return nil
 										}
-										return map[string]*schemazv2.Schema{
+										return map[string]*schemaz.Schema{
 											"street": {
 												Raw: func() any { return &person.CompanyAddresses[idx].Street },
 											},
@@ -161,12 +161,12 @@ func TestUnitBasic(t *testing.T) {
 					},
 				},
 				"numbers": {
-					Array: func() *schemazv2.Array {
-						return &schemazv2.Array{
+					Array: func() *schemaz.Array {
+						return &schemaz.Array{
 							Len: len(person.Numbers),
-							Get: func(idx int, read bool) *schemazv2.Schema {
+							Get: func(idx int, read bool) *schemaz.Schema {
 								person.Numbers = slicez.GrowLenTo(person.Numbers, idx+1)
-								return &schemazv2.Schema{
+								return &schemaz.Schema{
 									Raw: func() any {
 										return &person.Numbers[idx]
 									},
@@ -196,12 +196,12 @@ func TestUnitValues(t *testing.T) {
 		C float64
 	}
 	var my My
-	mapper := &schemazv2.Schema{
-		Object: func(read bool) map[string]*schemazv2.Schema {
-			return map[string]*schemazv2.Schema{
+	mapper := &schemaz.Schema{
+		Object: func(read bool) map[string]*schemaz.Schema {
+			return map[string]*schemaz.Schema{
 				"a": {
-					Str: func() *schemazv2.Parser[string] {
-						return &schemazv2.Parser[string]{
+					Str: func() *schemaz.Parser[string] {
+						return &schemaz.Parser[string]{
 							Parse: func(unformatted string) {
 								my.A = strconvz.MustParseNumber[float64](unformatted)
 							},
@@ -212,8 +212,8 @@ func TestUnitValues(t *testing.T) {
 					},
 				},
 				"b": {
-					Strs: func() *schemazv2.Parser[[]string] {
-						return &schemazv2.Parser[[]string]{
+					Strs: func() *schemaz.Parser[[]string] {
+						return &schemaz.Parser[[]string]{
 							Parse: func(unformatted []string) {
 								my.B = make([]float64, len(unformatted))
 								for i, v := range unformatted {
@@ -231,8 +231,8 @@ func TestUnitValues(t *testing.T) {
 					},
 				},
 				"c": {
-					Strs: func() *schemazv2.Parser[[]string] {
-						return &schemazv2.Parser[[]string]{
+					Strs: func() *schemaz.Parser[[]string] {
+						return &schemaz.Parser[[]string]{
 							Parse: func(unformatted []string) {
 								if len(unformatted) > 0 {
 									my.C = strconvz.MustParseNumber[float64](unformatted[0])

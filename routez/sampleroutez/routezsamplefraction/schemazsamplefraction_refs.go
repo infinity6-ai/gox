@@ -2,7 +2,7 @@ package routezsamplefraction
 
 import (
 	"github.com/infinity6-ai/gox/routez/apiz"
-	"github.com/infinity6-ai/gox/schemaz/schemazv2"
+	"github.com/infinity6-ai/gox/schemaz/schemaz"
 )
 
 func (f *FractionApi) GetDataRefs() *apiz.DataRefs {
@@ -25,10 +25,10 @@ func (f *FractionApi) GetDataRefs() *apiz.DataRefs {
 	}
 }
 
-func (f *FractionApi) schemaRespBody() *schemazv2.Schema {
-	return &schemazv2.Schema{
-		Object: func(read bool) map[string]*schemazv2.Schema {
-			return map[string]*schemazv2.Schema{
+func (f *FractionApi) schemaRespBody() *schemaz.Schema {
+	return &schemaz.Schema{
+		Object: func(read bool) map[string]*schemaz.Schema {
+			return map[string]*schemaz.Schema{
 				"display": {Raw: func() any { return &f.Resp.Result.Display }},
 				"result":  {Raw: func() any { return &f.Resp.Result.Result }},
 			}
@@ -36,52 +36,52 @@ func (f *FractionApi) schemaRespBody() *schemazv2.Schema {
 	}
 }
 
-func (f *FractionApi) schemaRespHeaders() *schemazv2.Schema {
-	return &schemazv2.Schema{
-		Object: func(read bool) map[string]*schemazv2.Schema {
-			return map[string]*schemazv2.Schema{
-				"x_i6_trace_message": {Str: schemazv2.ParseStr(&f.Resp.TraceMessage)},
+func (f *FractionApi) schemaRespHeaders() *schemaz.Schema {
+	return &schemaz.Schema{
+		Object: func(read bool) map[string]*schemaz.Schema {
+			return map[string]*schemaz.Schema{
+				"x_i6_trace_message": {Str: schemaz.ParseStr(&f.Resp.TraceMessage)},
 			}
 		},
 	}
 }
 
-func (f *FractionApi) schemaReqBody() *schemazv2.Schema {
-	return &schemazv2.Schema{
-		Object: func(read bool) map[string]*schemazv2.Schema {
-			return map[string]*schemazv2.Schema{
+func (f *FractionApi) schemaReqBody() *schemaz.Schema {
+	return &schemaz.Schema{
+		Object: func(read bool) map[string]*schemaz.Schema {
+			return map[string]*schemaz.Schema{
 				"reason": {Raw: func() any { return &f.Req.Reason }},
 			}
 		},
 	}
 }
 
-func (f *FractionApi) schemaReqHeaders() *schemazv2.Schema {
-	return &schemazv2.Schema{
-		Object: func(read bool) map[string]*schemazv2.Schema {
-			return map[string]*schemazv2.Schema{
-				"x_i6_trace_id": {Str: schemazv2.ParseStr(&f.Req.TraceId)},
+func (f *FractionApi) schemaReqHeaders() *schemaz.Schema {
+	return &schemaz.Schema{
+		Object: func(read bool) map[string]*schemaz.Schema {
+			return map[string]*schemaz.Schema{
+				"x_i6_trace_id": {Str: schemaz.ParseStr(&f.Req.TraceId)},
 			}
 		},
 	}
 }
 
-func (f *FractionApi) schemaQueryParams() *schemazv2.Schema {
-	return &schemazv2.Schema{
-		Object: func(read bool) map[string]*schemazv2.Schema {
-			return map[string]*schemazv2.Schema{
-				"precision": {Str: schemazv2.ParseStrNumber(&f.Req.Precision)},
+func (f *FractionApi) schemaQueryParams() *schemaz.Schema {
+	return &schemaz.Schema{
+		Object: func(read bool) map[string]*schemaz.Schema {
+			return map[string]*schemaz.Schema{
+				"precision": {Str: schemaz.ParseStrNumber(&f.Req.Precision)},
 			}
 		},
 	}
 }
 
-func (f *FractionApi) schemaPathParams() *schemazv2.Schema {
-	return &schemazv2.Schema{
-		Object: func(read bool) map[string]*schemazv2.Schema {
-			return map[string]*schemazv2.Schema{
-				"numerator":   {Str: schemazv2.ParseStrNumber(&f.Req.Numerator)},
-				"denominator": {Str: schemazv2.ParseStrNumber(&f.Req.Denominator)},
+func (f *FractionApi) schemaPathParams() *schemaz.Schema {
+	return &schemaz.Schema{
+		Object: func(read bool) map[string]*schemaz.Schema {
+			return map[string]*schemaz.Schema{
+				"numerator":   {Str: schemaz.ParseStrNumber(&f.Req.Numerator)},
+				"denominator": {Str: schemaz.ParseStrNumber(&f.Req.Denominator)},
 			}
 		},
 	}

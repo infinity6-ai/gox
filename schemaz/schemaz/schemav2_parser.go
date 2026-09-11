@@ -1,4 +1,4 @@
-package schemazv2
+package schemaz
 
 import (
 	"github.com/infinity6-ai/gox/commonz/constraintz"

@@ -1,4 +1,4 @@
-package schemazv2
+package schemaz
 
 import (
 	"encoding/json"

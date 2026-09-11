@@ -5,16 +5,16 @@ import (
 	"reflect"
 
 	"github.com/infinity6-ai/gox/commonz/validation/checker"
-	"github.com/infinity6-ai/gox/schemaz/schemazv2"
+	"github.com/infinity6-ai/gox/schemaz/schemaz"
 )
 
 type DataRefs struct {
-	PathParams  *schemazv2.Schema
-	QueryParams *schemazv2.Schema
-	ReqHeaders  *schemazv2.Schema
-	ReqBody     *schemazv2.Schema
-	RespHeaders *schemazv2.Schema
-	RespBody    *schemazv2.Schema
+	PathParams  *schemaz.Schema
+	QueryParams *schemaz.Schema
+	ReqHeaders  *schemaz.Schema
+	ReqBody     *schemaz.Schema
+	RespHeaders *schemaz.Schema
+	RespBody    *schemaz.Schema
 }
 
 type Api interface {
@@ -30,7 +30,7 @@ type Service[T Api] struct {
 
 type Spec[T Api] struct {
 	Id     string
-	Desc   func() *schemazv2.Desc
+	Desc   func() *schemaz.Desc
 	Method string
 	Path   string
 	Spec   T

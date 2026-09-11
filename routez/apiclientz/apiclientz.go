@@ -11,7 +11,7 @@ import (
 	"github.com/infinity6-ai/gox/httpz/httpzrequest"
 	"github.com/infinity6-ai/gox/routez/apiz"
 	"github.com/infinity6-ai/gox/routez/internal/converter"
-	"github.com/infinity6-ai/gox/schemaz/schemazv2"
+	"github.com/infinity6-ai/gox/schemaz/schemaz"
 )
 
 func Get[T apiz.Api](client *httpzclient.Client, api *apiz.Spec[T]) apiz.Handler[T] {
@@ -87,7 +87,7 @@ func parseRequest[T apiz.Api](ctx context.Context, api *apiz.Spec[T], reqResp T)
 	return ret, dfz.Detach(), nil
 }
 
-func formatPathParams(schema *schemazv2.Schema, out *map[string]string) error {
+func formatPathParams(schema *schemaz.Schema, out *map[string]string) error {
 	var m map[string][]string
 	_, err := jsonz.Copy(schema, &m)
 	if err != nil {
