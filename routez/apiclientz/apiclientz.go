@@ -89,7 +89,7 @@ func writeResponseV2[T apiz.ReqRespV2](nResp *httpzclient.Resp, reqResp T) error
 	refs := reqResp.GetDataRefsV2()
 	if refs.RespHeaders != nil {
 		convertedHeaders := converter.Header2Json(nResp.Headers)
-		err := structjsonz.Parse(convertedHeaders, refs.RespHeaders)
+		_, err := jsonz.Copy(convertedHeaders, refs.RespHeaders)
 		if err != nil {
 			return fmt.Errorf("%w: error parsing resp headers", err)
 		}
