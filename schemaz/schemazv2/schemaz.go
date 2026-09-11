@@ -30,10 +30,8 @@ type Schema struct {
 	Raw    func() any
 	Object func(read bool) map[string]*Schema
 	Array  func() (length int, getElement func(idx int, read bool) *Schema)
-	Str    func() (func(v string), func() string)
-	Strs   func() (func(v []string), func() []string)
-	StrV2  func() *Parser[string]
-	StrsV2 func() *Parser[[]string]
+	Str    func() *Parser[string]
+	Strs   func() *Parser[[]string]
 }
 
 // =====================================
@@ -58,12 +56,10 @@ func (s *Schema) MarshalJSON() ([]byte, error) {
 		return json.Marshal(s.Raw())
 	}
 	if s.Str != nil {
-		_, f := s.Str()
-		return json.Marshal([]string{f()})
+		return json.Marshal([]string{s.Str().Format()})
 	}
 	if s.Strs != nil {
-		_, f := s.Strs()
-		return json.Marshal(f())
+		return json.Marshal(s.Strs().Format())
 	}
 	return []byte("null"), nil
 }
@@ -138,7 +134,7 @@ func (s *Schema) unmarshalJSONStr(data []byte) error {
 	if len(data) == 0 {
 		panic("data must not be empty")
 	}
-	parser, _ := s.Str()
+	parser := s.Str().Parse
 	var strs []string
 	if err := json.Unmarshal(data, &strs); err != nil {
 		return err
@@ -155,7 +151,7 @@ func (s *Schema) unmarshalJSONStrs(data []byte) error {
 	if len(data) == 0 {
 		panic("data must not be empty")
 	}
-	parser, _ := s.Strs()
+	parser := s.Strs().Parse
 	var strs []string
 	if err := json.Unmarshal(data, &strs); err != nil {
 		return err

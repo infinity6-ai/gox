@@ -194,37 +194,48 @@ func TestUnitValues(t *testing.T) {
 		Object: func(read bool) map[string]*schemazv2.Schema {
 			return map[string]*schemazv2.Schema{
 				"a": {
-					Str: func() (func(v string), func() string) {
-						return func(unformatted string) {
+					Str: func() *schemazv2.Parser[string] {
+						return &schemazv2.Parser[string]{
+							Parse: func(unformatted string) {
 								my.A = strconvz.MustParseNumber[float64](unformatted)
-							}, func() string {
+							},
+							Format: func() string {
 								return strconv.FormatFloat(my.A, 'f', -1, 64)
-							}
+							},
+						}
 					},
 				},
 				"b": {
-					Strs: func() (func(v []string), func() []string) {
-						return func(unformatted []string) {
+					Strs: func() *schemazv2.Parser[[]string] {
+						return &schemazv2.Parser[[]string]{
+							Parse: func(unformatted []string) {
 								my.B = make([]float64, len(unformatted))
 								for i, v := range unformatted {
 									my.B[i] = strconvz.MustParseNumber[float64](v)
 								}
-							}, func() []string {
+							},
+							Format: func() []string {
 								out := make([]string, len(my.B))
 								for i, v := range my.B {
 									out[i] = strconv.FormatFloat(v, 'f', -1, 64)
 								}
 								return out
-							}
+							},
+						}
 					},
 				},
 				"c": {
-					Strs: func() (func(v []string), func() []string) {
-						return func(unformatted []string) {
-								my.C = strconvz.MustParseNumber[float64](unformatted[0])
-							}, func() []string {
+					Strs: func() *schemazv2.Parser[[]string] {
+						return &schemazv2.Parser[[]string]{
+							Parse: func(unformatted []string) {
+								if len(unformatted) > 0 {
+									my.C = strconvz.MustParseNumber[float64](unformatted[0])
+								}
+							},
+							Format: func() []string {
 								return []string{strconv.FormatFloat(my.C, 'f', -1, 64)}
-							}
+							},
+						}
 					},
 				},
 			}
