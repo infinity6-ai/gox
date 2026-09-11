@@ -4,7 +4,9 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"io"
 
+	"github.com/infinity6-ai/gox/commonz/deferz"
 	"github.com/infinity6-ai/gox/commonz/jsonz"
 	"github.com/infinity6-ai/gox/commonz/jsonz/structjsonz"
 	"github.com/infinity6-ai/gox/httpz/httpzclient"
@@ -71,10 +73,11 @@ func Get[T apiz.ReqResp](client *httpzclient.Client, api *apiz.Api[T]) apiz.Hand
 
 func GetV2[T apiz.ReqRespV2](client *httpzclient.Client, api *apiz.ApiV2[T]) apiz.HandlerV2[T] {
 	return func(ctx context.Context, reqResp T) (int, error) {
-		nReq, err := parseRequestV2(api, reqResp)
+		nReq, closer, err := parseRequestV2(ctx, api, reqResp)
 		if err != nil {
 			return 0, err
 		}
+		defer closer.Close()
 		nResp, err := client.Do(ctx, nReq)
 		if err != nil {
 			return 0, fmt.Errorf("%w: error calling server", err)
@@ -103,40 +106,42 @@ func writeResponseV2[T apiz.ReqRespV2](nResp *httpzclient.Resp, reqResp T) error
 	return nil
 }
 
-func parseRequestV2[T apiz.ReqRespV2](api *apiz.ApiV2[T], reqResp T) (*httpzrequest.Req, error) {
+func parseRequestV2[T apiz.ReqRespV2](ctx context.Context, api *apiz.ApiV2[T], reqResp T) (*httpzrequest.Req, io.Closer, error) {
+	dfz := deferz.New(ctx)
+	defer dfz.Close()
 	refs := reqResp.GetDataRefsV2()
 	var p map[string]string
 	var q, h map[string][]string
 	if refs.PathParams != nil {
 		err := formatPathParams(refs.PathParams, &p)
 		if err != nil {
-			return nil, fmt.Errorf("%w: error formatting path params", err)
+			return nil, nil, fmt.Errorf("%w: error formatting path params", err)
 		}
 	}
 	if refs.QueryParams != nil {
 		_, err := jsonz.Copy(refs.QueryParams, &q)
 		if err != nil {
-			return nil, fmt.Errorf("%w: error formatting req query", err)
+			return nil, nil, fmt.Errorf("%w: error formatting req query", err)
 		}
 	}
 	if refs.ReqHeaders != nil {
 		_, err := jsonz.Copy(refs.ReqHeaders, &h)
 		if err != nil {
-			return nil, fmt.Errorf("%w: error formatting req headers", err)
+			return nil, nil, fmt.Errorf("%w: error formatting req headers", err)
 		}
 	}
 	ret, err := httpzrequest.Format(api.Method, api.Path, p)
 	if err != nil {
-		return nil, fmt.Errorf("%w: error formatting request", err)
+		return nil, nil, fmt.Errorf("%w: error formatting request", err)
 	}
 	ret.Query = q
 	converter.Json2Header(h, ret.Headers)
 	if refs.ReqBody != nil {
 		r := jsonz.FormatReadCloser(refs.ReqBody)
-		defer r.Close()
+		dfz.AddCloserS(r)
 		ret.Body = r
 	}
-	return ret, nil
+	return ret, dfz.Detach(), nil
 }
 
 func formatPathParams(schema *schemazv2.Schema, out *map[string]string) error {
