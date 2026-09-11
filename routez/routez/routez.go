@@ -41,11 +41,11 @@ func parseRequest[T apiz.Api](a *apiz.Spec[T], req *httpzrequest.Req, params map
 	return reqResp
 }
 
-func Register[T apiz.Api](s *httpzserver.Server, apis ...*apiz.Spec[T]) {
-	for _, api := range apis {
-		s.AddHandler(api.Method, api.Path, func(ctx context.Context, resp httpzserver.Resp, req *httpzrequest.Req, params map[string]string) {
-			reqResp := parseRequest(api, req, params)
-			status, err := api.Handler(ctx, reqResp)
+func Register[T apiz.Api](s *httpzserver.Server, services ...*apiz.Service[T]) {
+	for _, service := range services {
+		s.AddHandler(service.Spec.Method, service.Spec.Path, func(ctx context.Context, resp httpzserver.Resp, req *httpzrequest.Req, params map[string]string) {
+			reqResp := parseRequest(service.Spec, req, params)
+			status, err := service.Handler(ctx, reqResp)
 			errorz.Check(err)
 			formattedHeaders := make(http.Header)
 			formattedHeaders.Set("Content-Type", "application/json")

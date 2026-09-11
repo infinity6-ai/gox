@@ -38,6 +38,12 @@ func Api() *apiz.Spec[*FractionReqResp] {
 		Method: "POST",
 		Path:   "/api/gox/routez/sample/fraction/{numerator}/{denominator}",
 		Spec:   &FractionReqResp{},
+	}
+}
+
+func Service() *apiz.Service[*FractionReqResp] {
+	return &apiz.Service[*FractionReqResp]{
+		Spec: Api(),
 		Handler: func(ctx context.Context, reqResp *FractionReqResp) (int, error) {
 			reqResp.Resp.TraceMessage = "reason: " + reqResp.Req.Reason + ", trace: " + reqResp.Req.TraceId
 			reqResp.Resp.Result.Display = fmt.Sprintf(fmt.Sprintf("%%.%df/%%.%df", int(reqResp.Req.Precision), int(reqResp.Req.Precision)), reqResp.Req.Numerator, reqResp.Req.Denominator)
