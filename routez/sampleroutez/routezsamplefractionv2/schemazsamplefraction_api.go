@@ -31,20 +31,6 @@ type FractionReqResp struct {
 	Resp *FractionResp
 }
 
-func ApiOLD() *apiz.Api[*FractionReqResp] {
-	return &apiz.Api[*FractionReqResp]{
-		Schema: Schema(),
-		Handler: func(ctx context.Context, reqResp *FractionReqResp) (int, error) {
-
-			reqResp.Resp.TraceMessage = "reason: " + reqResp.Req.Reason + ", trace: " + reqResp.Req.TraceId
-			reqResp.Resp.Result.Display = fmt.Sprintf(fmt.Sprintf("%%.%df/%%.%df", int(reqResp.Req.Precision), int(reqResp.Req.Precision)), reqResp.Req.Numerator, reqResp.Req.Denominator)
-			reqResp.Resp.Result.Result = strconv.FormatFloat(reqResp.Req.Numerator/reqResp.Req.Denominator, 'f', reqResp.Req.Precision, 64)
-
-			return 201, nil
-		},
-	}
-}
-
 func Api() *apiz.ApiV2[*FractionReqResp] {
 	return &apiz.ApiV2[*FractionReqResp]{
 		Id:     "samplefraction",
