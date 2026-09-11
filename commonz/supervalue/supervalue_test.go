@@ -53,6 +53,10 @@ func TestUnitBasic(t *testing.T) {
 		supervalue.Set(&a1, "a")
 	})
 
+	// require.PanicsWithValue(t, "x has already been set", func() {
+	// jsonz.MustClone(&a1, &x3)
+	// })
+
 	require.Equal(t, `"b"`, jsonz.MustFormat(b1).String())
 
 }
