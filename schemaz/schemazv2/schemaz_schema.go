@@ -54,10 +54,12 @@ func (s *Schema) MarshalJSON() ([]byte, error) {
 		return json.Marshal(s.Raw())
 	}
 	if s.Str != nil {
-		return json.Marshal([]string{s.Str().Format()})
+		f, _ := s.Str().Format()
+		return json.Marshal([]string{f})
 	}
 	if s.Strs != nil {
-		return json.Marshal(s.Strs().Format())
+		f, _ := s.Strs().Format()
+		return json.Marshal(f)
 	}
 	return []byte("null"), nil
 }

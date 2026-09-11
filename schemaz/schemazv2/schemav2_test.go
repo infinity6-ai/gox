@@ -205,8 +205,8 @@ func TestUnitValues(t *testing.T) {
 							Parse: func(unformatted string) {
 								my.A = strconvz.MustParseNumber[float64](unformatted)
 							},
-							Format: func() string {
-								return strconv.FormatFloat(my.A, 'f', -1, 64)
+							Format: func() (string, any) {
+								return strconv.FormatFloat(my.A, 'f', -1, 64), my.A
 							},
 						}
 					},
@@ -220,12 +220,12 @@ func TestUnitValues(t *testing.T) {
 									my.B[i] = strconvz.MustParseNumber[float64](v)
 								}
 							},
-							Format: func() []string {
+							Format: func() ([]string, any) {
 								out := make([]string, len(my.B))
 								for i, v := range my.B {
 									out[i] = strconv.FormatFloat(v, 'f', -1, 64)
 								}
-								return out
+								return out, my.B
 							},
 						}
 					},
@@ -238,8 +238,8 @@ func TestUnitValues(t *testing.T) {
 									my.C = strconvz.MustParseNumber[float64](unformatted[0])
 								}
 							},
-							Format: func() []string {
-								return []string{strconv.FormatFloat(my.C, 'f', -1, 64)}
+							Format: func() ([]string, any) {
+								return []string{strconv.FormatFloat(my.C, 'f', -1, 64)}, my.C
 							},
 						}
 					},

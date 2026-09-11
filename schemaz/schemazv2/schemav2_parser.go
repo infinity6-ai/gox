@@ -7,7 +7,7 @@ import (
 
 type Parser[T any] struct {
 	Parse  func(v T)
-	Format func() T
+	Format func() (T, any)
 }
 
 func ParseStrNumber[O constraintz.Numbers](out *O) func() *Parser[string] {
@@ -16,8 +16,8 @@ func ParseStrNumber[O constraintz.Numbers](out *O) func() *Parser[string] {
 			Parse: func(v string) {
 				strconvz.MustParseNumberInto(v, out)
 			},
-			Format: func() string {
-				return strconvz.FormatNumber(*out)
+			Format: func() (string, any) {
+				return strconvz.FormatNumber(*out), *out
 			},
 		}
 	}
@@ -29,8 +29,8 @@ func ParseStr(out *string) func() *Parser[string] {
 			Parse: func(v string) {
 				*out = v
 			},
-			Format: func() string {
-				return *out
+			Format: func() (string, any) {
+				return *out, *out
 			},
 		}
 	}
