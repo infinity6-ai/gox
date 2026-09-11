@@ -3,6 +3,7 @@ package schemazv2
 import (
 	"encoding/json"
 	"fmt"
+	"slices"
 )
 
 type Desc struct {
@@ -98,18 +99,18 @@ func (s *Schema) unmarshalJSONObject(data []byte) error {
 }
 
 func (s *Schema) unmarshalJSONArray(data []byte) error {
-	var raw []json.RawMessage
-	if err := json.Unmarshal(data, &raw); err != nil {
+	var raws []json.RawMessage
+	if err := json.Unmarshal(data, &raws); err != nil {
 		return err
 	}
 
 	_, getElem := s.Array() // We only need the element getter for unmarshaling
-	for i, rawVal := range raw {
+	for i, raw := range slices.Backward(raws) {
 		schemaNode := getElem(i, false)
 		if schemaNode == nil {
 			continue
 		}
-		if err := json.Unmarshal(rawVal, schemaNode); err != nil {
+		if err := json.Unmarshal(raw, schemaNode); err != nil {
 			return fmt.Errorf("error parsing index %d: %w", i, err)
 		}
 	}
