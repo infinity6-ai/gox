@@ -12,11 +12,19 @@ func SetLen[S ~[]E, E any](s S, n int) S {
 	panic("implement it")
 }
 
-func Map[S ~[]I, I any, O any](s S, fn func(i int, v I) (O, bool, error)) ([]O, error) {
+func Update[I any](s []I, fn func(i int, v *I) (bool, error)) error {
 	panic("implement it")
 }
 
-func MustMap[S ~[]I, I any, O any](s S, fn func(i int, v I) (O, bool)) []O {
+func MustUpdate[I any](s []I, fn func(i int, v *I) bool) {
+	panic("implement it")
+}
+
+func Map[I any, O any](s []I, fn func(i int, v I) (O, bool, error)) ([]O, error) {
+	panic("implement it")
+}
+
+func MustMap[I any, O any](s []I, fn func(i int, v I) (O, bool)) []O {
 	panic("implement it")
 }
 
