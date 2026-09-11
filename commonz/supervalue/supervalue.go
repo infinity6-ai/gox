@@ -14,7 +14,8 @@ type checker[V any] interface {
 }
 
 type SuperValue[T comparable] struct {
-	v T
+	value   T
+	present bool
 }
 
 // 2. Change 'x any' to 'x checker[V]'.
@@ -33,7 +34,11 @@ func Set[V comparable](x checker[V], v V) {
 
 	if val.Type().ConvertibleTo(targetType) {
 		convertedPtr := val.Convert(targetType).Interface().(*SuperValue[V])
-		convertedPtr.v = v
+		if convertedPtr.present {
+			panic("x has already been set")
+		}
+		convertedPtr.value = v
+		convertedPtr.present = true
 	} else {
 		panic("x is not derived from SuperValue[V]")
 	}
@@ -50,7 +55,7 @@ func Marshal[V comparable](x any) ([]byte, error) {
 	if val.Type().ConvertibleTo(targetType) {
 		// Convert it back to SuperValue so we can read the unexported 'v'
 		base := val.Convert(targetType).Interface().(SuperValue[V])
-		return json.Marshal(base.v)
+		return json.Marshal(base.value)
 	}
 	return nil, fmt.Errorf("type is not convertible to SuperValue")
 }

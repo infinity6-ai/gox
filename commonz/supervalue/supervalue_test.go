@@ -8,18 +8,6 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// type MyValue supervalue.SuperValue[string]
-
-// func (m MyValue) Check() {
-
-// }
-
-// func NewMyValue(val string) MyValue {
-// 	ret := MyValue{}
-// 	supervalue.Set(&ret, val)
-// 	return ret
-// }
-
 func TestUnitBasic(t *testing.T) {
 	a1 := supervalue.NewMyValue("a")
 	b1 := supervalue.NewMyValue("b")
@@ -35,13 +23,14 @@ func TestUnitBasic(t *testing.T) {
 
 	require.True(t, x1 == x3)
 
-	require.Panics(t, func() {
+	require.PanicsWithValue(t, "NOOO", func() {
 		supervalue.NewMyValue("c")
 	})
 
-	require.Equal(t, `"b"`, jsonz.MustFormat(b1).String())
+	require.PanicsWithValue(t, "x has already been set", func() {
+		supervalue.Set(&a1, "a")
+	})
 
-	// x := supervalue.SuperValue[string](a1)
-	// supervalue.Set(a1, "c")
+	require.Equal(t, `"b"`, jsonz.MustFormat(b1).String())
 
 }
