@@ -24,7 +24,7 @@ func TestUnitBasic(t *testing.T) {
 	require.True(t, x1 == x3)
 
 	require.PanicsWithValue(t, "NOOO", func() {
-		supervalue.NewMyValue("c")
+		supervalue.NewMyValue("")
 	})
 
 	require.PanicsWithValue(t, "x has already been set", func() {

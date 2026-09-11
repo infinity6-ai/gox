@@ -85,7 +85,7 @@ func Unmarshal[V comparable](x checker[V], data []byte) (err error) {
 type MyValue SuperValue[string]
 
 func (m MyValue) Check(v string) {
-	if v == "c" {
+	if v == "" {
 		panic("NOOO")
 	}
 }
