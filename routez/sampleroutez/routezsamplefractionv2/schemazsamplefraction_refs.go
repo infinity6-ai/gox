@@ -82,7 +82,7 @@ func (f *FractionReqResp) schemaRespHeaders() *schemazv2.Schema {
 	return &schemazv2.Schema{
 		Object: func(read bool) map[string]*schemazv2.Schema {
 			return map[string]*schemazv2.Schema{
-				"x_i6_trace_message": {Raw: func() any { return &f.Resp.TraceMessage }},
+				"x_i6_trace_message": {Str: schemazv2.ParseStr(&f.Resp.TraceMessage)},
 			}
 		},
 	}

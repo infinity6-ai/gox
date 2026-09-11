@@ -35,7 +35,7 @@ func writeResponseV2[T apiz.ReqRespV2](status int, resp httpzserver.Resp, reqRes
 	refs := reqResp.GetDataRefsV2()
 	if refs.RespHeaders != nil {
 		headers := map[string][]string{}
-		jsonz.MustCopy(refs.ReqHeaders, &headers)
+		jsonz.MustCopy(refs.RespHeaders, &headers)
 		converter.Json2Header(headers, formattedHeaders)
 	}
 	w := resp(status, formattedHeaders)
