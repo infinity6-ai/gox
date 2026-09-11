@@ -10,7 +10,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-type MyString checked.SuperValue[string]
+type MyString checked.Value[string]
 
 func (m MyString) Validate(v string) error {
 	return validation.StrNotEmpty(v, "MyValue cannot be empty")

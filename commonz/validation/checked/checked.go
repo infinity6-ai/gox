@@ -13,7 +13,7 @@ type checker[V comparable] interface {
 	UnmarshalJSON(data []byte) error
 }
 
-type SuperValue[T comparable] struct {
+type Value[T comparable] struct {
 	value   T
 	present bool
 }
@@ -33,10 +33,10 @@ func Set[V comparable](x checker[V], v V) error {
 		panic("Set requires a pointer to a struct")
 	}
 
-	targetType := reflect.TypeOf((*SuperValue[V])(nil))
+	targetType := reflect.TypeOf((*Value[V])(nil))
 
 	if val.Type().ConvertibleTo(targetType) {
-		convertedPtr := val.Convert(targetType).Interface().(*SuperValue[V])
+		convertedPtr := val.Convert(targetType).Interface().(*Value[V])
 		if convertedPtr.present {
 			panic("x has already been set")
 		}
@@ -55,10 +55,10 @@ func Marshal[V comparable](x any) ([]byte, error) {
 		val = val.Elem()
 	}
 
-	targetType := reflect.TypeOf(SuperValue[V]{})
+	targetType := reflect.TypeOf(Value[V]{})
 	if val.Type().ConvertibleTo(targetType) {
 		// Convert it back to SuperValue so we can read the unexported 'v'
-		base := val.Convert(targetType).Interface().(SuperValue[V])
+		base := val.Convert(targetType).Interface().(Value[V])
 		return json.Marshal(base.value)
 	}
 	return nil, fmt.Errorf("type is not convertible to SuperValue")
