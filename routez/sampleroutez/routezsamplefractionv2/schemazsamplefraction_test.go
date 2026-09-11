@@ -10,7 +10,6 @@ import (
 	"github.com/infinity6-ai/gox/httpz/httpzrequest"
 	"github.com/infinity6-ai/gox/httpz/httpzserver"
 	"github.com/infinity6-ai/gox/routez/apiclientzv2"
-	"github.com/infinity6-ai/gox/routez/apizv2"
 	"github.com/infinity6-ai/gox/routez/routezv2"
 	"github.com/infinity6-ai/gox/routez/sampleroutez/routezsamplefractionv2"
 	"github.com/stretchr/testify/require"
@@ -23,7 +22,7 @@ func TestUnitBasic(t *testing.T) {
 	s.Listen()
 	s.Start()
 
-	routezv2.Register(s, any(routezsamplefractionv2.Service()).(apizv2.Service))
+	routezv2.Register(s, routezsamplefractionv2.Services()...)
 
 	c := httpzclient.New(ctx, httpzclient.Options{
 		BaseUrl: s.Base(),
@@ -45,8 +44,6 @@ func TestUnitBasic(t *testing.T) {
 		Result:  "3.333",
 	}, respBody)
 
-	ac := apiclientzv2.Get(c, routezsamplefractionv2.Api())
-
 	reqResp := &routezsamplefractionv2.FractionApi{
 		Req: &routezsamplefractionv2.FractionReq{
 			Numerator:   10,
@@ -56,7 +53,7 @@ func TestUnitBasic(t *testing.T) {
 			Reason:      "myreason",
 		},
 	}
-	status, err := ac(ctx, reqResp)
+	status, err := apiclientzv2.Do(ctx, c, reqResp)
 	errorz.Check(err)
 	require.Equal(t, 201, status)
 	require.Equal(t, "reason: myreason, trace: xx", reqResp.Resp.TraceMessage)

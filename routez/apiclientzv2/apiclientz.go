@@ -14,21 +14,19 @@ import (
 	"github.com/infinity6-ai/gox/schemaz/schemaz"
 )
 
-func Get[T apizv2.Api](client *httpzclient.Client, api T) apizv2.Handler[T] {
-	return func(ctx context.Context, api T) (int, error) {
-		nReq, closer, err := parseRequest(ctx, api)
-		if err != nil {
-			return 0, err
-		}
-		defer closer.Close()
-		nResp, err := client.Do(ctx, nReq)
-		if err != nil {
-			return 0, fmt.Errorf("%w: error calling server", err)
-		}
-		defer nResp.Body.Close()
-		err = writeResponse(nResp, api)
-		return nResp.StatusCode, err
+func Do(ctx context.Context, client *httpzclient.Client, reqResp apizv2.Api) (int, error) {
+	nReq, closer, err := parseRequest(ctx, reqResp)
+	if err != nil {
+		return 0, err
 	}
+	defer closer.Close()
+	nResp, err := client.Do(ctx, nReq)
+	if err != nil {
+		return 0, fmt.Errorf("%w: error calling server", err)
+	}
+	defer nResp.Body.Close()
+	err = writeResponse(nResp, reqResp)
+	return nResp.StatusCode, err
 }
 
 func writeResponse[T apizv2.Api](nResp *httpzclient.Resp, api T) error {

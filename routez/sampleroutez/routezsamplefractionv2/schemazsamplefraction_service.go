@@ -27,12 +27,8 @@ func (f *FractionService) Handler(ctx context.Context) (int, error) {
 	return 201, nil
 }
 
-func Service() *FractionService {
-	return &FractionService{}
-}
-
 func Services() []apizv2.Service {
 	return []apizv2.Service{
-		any(Service()).(apizv2.Service),
+		&FractionService{},
 	}
 }
