@@ -3,22 +3,23 @@ package supervalue_test
 import (
 	"testing"
 
+	"github.com/infinity6-ai/gox/commonz/errorz"
 	"github.com/infinity6-ai/gox/commonz/jsonz"
 	"github.com/infinity6-ai/gox/commonz/supervalue"
+	"github.com/infinity6-ai/gox/commonz/validation"
 	"github.com/stretchr/testify/require"
 )
 
 type MyValue supervalue.SuperValue[string]
 
-func (m MyValue) Check(v string) {
-	if v == "" {
-		panic("NOOO")
-	}
+func (m MyValue) Validate(v string) error {
+	return validation.StrNotEmpty(v, "MyValue cannot be empty")
 }
 
 func NewMyValue(val string) MyValue {
 	ret := MyValue{}
-	supervalue.Set(&ret, val)
+	err := supervalue.Set(&ret, val)
+	errorz.Check(err)
 	return ret
 }
 
@@ -45,7 +46,7 @@ func TestUnitBasic(t *testing.T) {
 
 	require.True(t, x1 == x3)
 
-	require.PanicsWithValue(t, "NOOO", func() {
+	require.PanicsWithError(t, "supervalue validation error: validation error must not be empty: MyValue cannot be empty: (InternalError, code=500)", func() {
 		NewMyValue("")
 	})
 
@@ -53,9 +54,9 @@ func TestUnitBasic(t *testing.T) {
 		supervalue.Set(&a1, "a")
 	})
 
-	// require.PanicsWithValue(t, "x has already been set", func() {
-	// jsonz.MustClone(&a1, &x3)
-	// })
+	require.PanicsWithValue(t, "x has already been set", func() {
+		jsonz.Clone(&a1, &x3)
+	})
 
 	require.Equal(t, `"b"`, jsonz.MustFormat(b1).String())
 

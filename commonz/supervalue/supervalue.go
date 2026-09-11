@@ -8,7 +8,7 @@ import (
 
 // 1. The interface that enforces validation
 type checker[V any] interface {
-	Check(v V)
+	Validate(v V) error
 	MarshalJSON() ([]byte, error)
 	UnmarshalJSON(data []byte) error
 }
@@ -20,9 +20,12 @@ type SuperValue[T comparable] struct {
 
 // 2. Change 'x any' to 'x checker[V]'.
 // Now, the compiler enforces the interface instead of a runtime type assertion!
-func Set[V comparable](x checker[V], v V) {
+func Set[V comparable](x checker[V], v V) error {
 	// Guaranteed to be safe, no type assertion needed
-	x.Check(v)
+	err := x.Validate(v)
+	if err != nil {
+		return fmt.Errorf("supervalue validation error: %s", err)
+	}
 
 	val := reflect.ValueOf(x)
 
@@ -42,6 +45,7 @@ func Set[V comparable](x checker[V], v V) {
 	} else {
 		panic("x is not derived from SuperValue[V]")
 	}
+	return nil
 }
 
 // Marshal extracts the hidden 'v' and marshals it.
@@ -66,16 +70,8 @@ func Unmarshal[V comparable](x checker[V], data []byte) (err error) {
 	if err := json.Unmarshal(data, &temp); err != nil {
 		return err
 	}
-
-	// Catch any panics thrown by the user's Check() method
-	// and convert them into standard JSON unmarshaling errors.
-	defer func() {
-		if r := recover(); r != nil {
-			err = fmt.Errorf("validation failed: %v", r)
-		}
-	}()
-
-	// Set() will automatically call x.Check(temp)
-	Set(x, temp)
+	if err := Set(x, temp); err != nil {
+		return err
+	}
 	return nil
 }
