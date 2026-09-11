@@ -1,4 +1,4 @@
-package routezsamplefractionv2
+package routezsamplefraction
 
 import (
 	"github.com/infinity6-ai/gox/schemaz/schemaz"

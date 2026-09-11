@@ -1,4 +1,4 @@
-package routezsamplefractionv2
+package routezsamplefraction
 
 import (
 	"context"
