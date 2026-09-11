@@ -22,7 +22,7 @@ func TestUnitBasic(t *testing.T) {
 	s.Listen()
 	s.Start()
 
-	routez.Register(s, routezsamplefraction.Service())
+	routez.Register(s, routezsamplefraction.Services()...)
 
 	c := httpzclient.New(ctx, httpzclient.Options{
 		BaseUrl: s.Base(),
@@ -44,8 +44,6 @@ func TestUnitBasic(t *testing.T) {
 		Result:  "3.333",
 	}, respBody)
 
-	ac := apiclientz.Get(c, routezsamplefraction.Spec())
-
 	reqResp := &routezsamplefraction.FractionApi{
 		Req: &routezsamplefraction.FractionReq{
 			Numerator:   10,
@@ -55,7 +53,7 @@ func TestUnitBasic(t *testing.T) {
 			Reason:      "myreason",
 		},
 	}
-	status, err := ac(ctx, reqResp)
+	status, err := apiclientz.Do(ctx, c, reqResp)
 	errorz.Check(err)
 	require.Equal(t, 201, status)
 	require.Equal(t, "reason: myreason, trace: xx", reqResp.Resp.TraceMessage)

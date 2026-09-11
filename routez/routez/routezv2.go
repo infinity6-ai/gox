@@ -12,8 +12,7 @@ import (
 	"github.com/infinity6-ai/gox/routez/internal/converter"
 )
 
-func writeResponse[T apiz.Api](status int, resp httpzserver.Resp, reqResp T, formattedHeaders http.Header) {
-	refs := reqResp.GetDataRefs()
+func writeResponse(status int, resp httpzserver.Resp, refs *apiz.DataRefs, formattedHeaders http.Header) {
 	if refs.RespHeaders != nil {
 		headers := map[string][]string{}
 		jsonz.MustCopy(refs.RespHeaders, &headers)
@@ -23,9 +22,7 @@ func writeResponse[T apiz.Api](status int, resp httpzserver.Resp, reqResp T, for
 	jsonz.FormatWriter(w, refs.RespBody)
 }
 
-func parseRequest[T apiz.Api](a *apiz.Spec[T], req *httpzrequest.Req, params map[string]string) T {
-	reqResp := a.NewReqResp()
-	refs := reqResp.GetDataRefs()
+func parseRequest(refs *apiz.DataRefs, req *httpzrequest.Req, params map[string]string) {
 	if refs.PathParams != nil {
 		jsonz.MustCopy(converter.Params2Json(params), refs.PathParams)
 	}
@@ -38,18 +35,20 @@ func parseRequest[T apiz.Api](a *apiz.Spec[T], req *httpzrequest.Req, params map
 	if refs.ReqBody != nil {
 		jsonz.MustParseReader(req.Body, refs.ReqBody)
 	}
-	return reqResp
 }
 
-func Register[T apiz.Api](s *httpzserver.Server, services ...*apiz.Service[T]) {
+func Register(s *httpzserver.Server, services ...apiz.Service) {
 	for _, service := range services {
-		s.AddHandler(service.Spec.Method, service.Spec.Path, func(ctx context.Context, resp httpzserver.Resp, req *httpzrequest.Req, params map[string]string) {
-			reqResp := parseRequest(service.Spec, req, params)
-			status, err := service.Handler(ctx, reqResp)
+		spec := service.Api().ApiSpec()
+		s.AddHandler(spec.Method, spec.Path, func(ctx context.Context, resp httpzserver.Resp, req *httpzrequest.Req, params map[string]string) {
+			service := service.New()
+			refs := service.Api().GetDataRefs()
+			parseRequest(refs, req, params)
+			status, err := service.Handler(ctx)
 			errorz.Check(err)
 			formattedHeaders := make(http.Header)
 			formattedHeaders.Set("Content-Type", "application/json")
-			writeResponse(status, resp, reqResp, formattedHeaders)
+			writeResponse(status, resp, refs, formattedHeaders)
 		})
 	}
 }

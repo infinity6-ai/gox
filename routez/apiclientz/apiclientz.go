@@ -14,25 +14,23 @@ import (
 	"github.com/infinity6-ai/gox/schemaz/schemaz"
 )
 
-func Get[T apiz.Api](client *httpzclient.Client, api *apiz.Spec[T]) apiz.Handler[T] {
-	return func(ctx context.Context, reqResp T) (int, error) {
-		nReq, closer, err := parseRequest(ctx, api, reqResp)
-		if err != nil {
-			return 0, err
-		}
-		defer closer.Close()
-		nResp, err := client.Do(ctx, nReq)
-		if err != nil {
-			return 0, fmt.Errorf("%w: error calling server", err)
-		}
-		defer nResp.Body.Close()
-		err = writeResponse(nResp, reqResp)
-		return nResp.StatusCode, err
+func Do(ctx context.Context, client *httpzclient.Client, reqResp apiz.Api) (int, error) {
+	nReq, closer, err := parseRequest(ctx, reqResp)
+	if err != nil {
+		return 0, err
 	}
+	defer closer.Close()
+	nResp, err := client.Do(ctx, nReq)
+	if err != nil {
+		return 0, fmt.Errorf("%w: error calling server", err)
+	}
+	defer nResp.Body.Close()
+	err = writeResponse(nResp, reqResp)
+	return nResp.StatusCode, err
 }
 
-func writeResponse[T apiz.Api](nResp *httpzclient.Resp, reqResp T) error {
-	refs := reqResp.GetDataRefs()
+func writeResponse[T apiz.Api](nResp *httpzclient.Resp, api T) error {
+	refs := api.GetDataRefs()
 	if refs.RespHeaders != nil {
 		convertedHeaders := converter.Header2Json(nResp.Headers)
 		_, err := jsonz.Copy(convertedHeaders, refs.RespHeaders)
@@ -49,10 +47,10 @@ func writeResponse[T apiz.Api](nResp *httpzclient.Resp, reqResp T) error {
 	return nil
 }
 
-func parseRequest[T apiz.Api](ctx context.Context, api *apiz.Spec[T], reqResp T) (*httpzrequest.Req, io.Closer, error) {
+func parseRequest[T apiz.Api](ctx context.Context, api T) (*httpzrequest.Req, io.Closer, error) {
 	dfz := deferz.New(ctx)
 	defer dfz.Close()
-	refs := reqResp.GetDataRefs()
+	refs := api.GetDataRefs()
 	var p map[string]string
 	var q, h map[string][]string
 	if refs.PathParams != nil {
@@ -73,7 +71,7 @@ func parseRequest[T apiz.Api](ctx context.Context, api *apiz.Spec[T], reqResp T)
 			return nil, nil, fmt.Errorf("%w: error formatting req headers", err)
 		}
 	}
-	ret, err := httpzrequest.Format(api.Method, api.Path, p)
+	ret, err := httpzrequest.Format(api.ApiSpec().Method, api.ApiSpec().Path, p)
 	if err != nil {
 		return nil, nil, fmt.Errorf("%w: error formatting request", err)
 	}
