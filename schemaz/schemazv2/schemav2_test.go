@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/infinity6-ai/gox/commonz/jsonz"
+	"github.com/infinity6-ai/gox/commonz/slicez"
 	"github.com/infinity6-ai/gox/commonz/strconvz"
 	"github.com/infinity6-ai/gox/schemaz/schemazv2"
 	"github.com/stretchr/testify/require"
@@ -134,10 +135,7 @@ func TestUnitBasic(t *testing.T) {
 				"company_addresses": {
 					Array: func() (length int, getElement func(idx int, read bool) *schemazv2.Schema) {
 						return len(person.CompanyAddresses), func(idx int, read bool) *schemazv2.Schema {
-							if idx >= len(person.CompanyAddresses) {
-								var a *Address
-								person.CompanyAddresses = append(person.CompanyAddresses, a)
-							}
+							person.CompanyAddresses = slicez.GrowLenTo(person.CompanyAddresses, idx+1)
 							return &schemazv2.Schema{
 								Object: func(read bool) map[string]*schemazv2.Schema {
 									if !read {
@@ -162,9 +160,7 @@ func TestUnitBasic(t *testing.T) {
 				"numbers": {
 					Array: func() (length int, getElement func(idx int, read bool) *schemazv2.Schema) {
 						return len(person.Numbers), func(idx int, read bool) *schemazv2.Schema {
-							if idx >= len(person.Numbers) {
-								person.Numbers = append(person.Numbers, 0)
-							}
+							person.Numbers = slicez.GrowLenTo(person.Numbers, idx+1)
 							return &schemazv2.Schema{
 								Raw: func() any {
 									return &person.Numbers[idx]
