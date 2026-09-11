@@ -5,7 +5,7 @@ import (
 	"github.com/infinity6-ai/gox/schemaz/schemazv2"
 )
 
-func (f *FractionReqResp) GetDataRefs() *apiz.DataRefs {
+func (f *FractionApi) GetDataRefs() *apiz.DataRefs {
 	if f.Req == nil {
 		f.Req = &FractionReq{}
 	}
@@ -25,7 +25,7 @@ func (f *FractionReqResp) GetDataRefs() *apiz.DataRefs {
 	}
 }
 
-func (f *FractionReqResp) schemaRespBody() *schemazv2.Schema {
+func (f *FractionApi) schemaRespBody() *schemazv2.Schema {
 	return &schemazv2.Schema{
 		Object: func(read bool) map[string]*schemazv2.Schema {
 			return map[string]*schemazv2.Schema{
@@ -36,7 +36,7 @@ func (f *FractionReqResp) schemaRespBody() *schemazv2.Schema {
 	}
 }
 
-func (f *FractionReqResp) schemaRespHeaders() *schemazv2.Schema {
+func (f *FractionApi) schemaRespHeaders() *schemazv2.Schema {
 	return &schemazv2.Schema{
 		Object: func(read bool) map[string]*schemazv2.Schema {
 			return map[string]*schemazv2.Schema{
@@ -46,7 +46,7 @@ func (f *FractionReqResp) schemaRespHeaders() *schemazv2.Schema {
 	}
 }
 
-func (f *FractionReqResp) schemaReqBody() *schemazv2.Schema {
+func (f *FractionApi) schemaReqBody() *schemazv2.Schema {
 	return &schemazv2.Schema{
 		Object: func(read bool) map[string]*schemazv2.Schema {
 			return map[string]*schemazv2.Schema{
@@ -56,7 +56,7 @@ func (f *FractionReqResp) schemaReqBody() *schemazv2.Schema {
 	}
 }
 
-func (f *FractionReqResp) schemaReqHeaders() *schemazv2.Schema {
+func (f *FractionApi) schemaReqHeaders() *schemazv2.Schema {
 	return &schemazv2.Schema{
 		Object: func(read bool) map[string]*schemazv2.Schema {
 			return map[string]*schemazv2.Schema{
@@ -66,7 +66,7 @@ func (f *FractionReqResp) schemaReqHeaders() *schemazv2.Schema {
 	}
 }
 
-func (f *FractionReqResp) schemaQueryParams() *schemazv2.Schema {
+func (f *FractionApi) schemaQueryParams() *schemazv2.Schema {
 	return &schemazv2.Schema{
 		Object: func(read bool) map[string]*schemazv2.Schema {
 			return map[string]*schemazv2.Schema{
@@ -76,7 +76,7 @@ func (f *FractionReqResp) schemaQueryParams() *schemazv2.Schema {
 	}
 }
 
-func (f *FractionReqResp) schemaPathParams() *schemazv2.Schema {
+func (f *FractionApi) schemaPathParams() *schemazv2.Schema {
 	return &schemazv2.Schema{
 		Object: func(read bool) map[string]*schemazv2.Schema {
 			return map[string]*schemazv2.Schema{

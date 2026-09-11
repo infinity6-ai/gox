@@ -46,7 +46,7 @@ func TestUnitBasic(t *testing.T) {
 
 	ac := apiclientz.Get(c, routezsamplefraction.Spec())
 
-	reqResp := &routezsamplefraction.FractionReqResp{
+	reqResp := &routezsamplefraction.FractionApi{
 		Req: &routezsamplefraction.FractionReq{
 			Numerator:   10,
 			Denominator: 3,

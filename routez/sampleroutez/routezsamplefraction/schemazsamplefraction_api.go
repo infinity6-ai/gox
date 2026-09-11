@@ -26,25 +26,25 @@ type FractionResp struct {
 	Result       *Result `json:"result"`
 }
 
-type FractionReqResp struct {
+type FractionApi struct {
 	Req  *FractionReq
 	Resp *FractionResp
 }
 
-func Spec() *apiz.Spec[*FractionReqResp] {
-	return &apiz.Spec[*FractionReqResp]{
+func Spec() *apiz.Spec[*FractionApi] {
+	return &apiz.Spec[*FractionApi]{
 		Id:     "samplefraction",
 		Desc:   nil,
 		Method: "POST",
 		Path:   "/api/gox/routez/sample/fraction/{numerator}/{denominator}",
-		Spec:   &FractionReqResp{},
+		Spec:   &FractionApi{},
 	}
 }
 
-func Service() *apiz.Service[*FractionReqResp] {
-	return &apiz.Service[*FractionReqResp]{
+func Service() *apiz.Service[*FractionApi] {
+	return &apiz.Service[*FractionApi]{
 		Spec: Spec(),
-		Handler: func(ctx context.Context, reqResp *FractionReqResp) (int, error) {
+		Handler: func(ctx context.Context, reqResp *FractionApi) (int, error) {
 			reqResp.Resp.TraceMessage = "reason: " + reqResp.Req.Reason + ", trace: " + reqResp.Req.TraceId
 			reqResp.Resp.Result.Display = fmt.Sprintf(fmt.Sprintf("%%.%df/%%.%df", int(reqResp.Req.Precision), int(reqResp.Req.Precision)), reqResp.Req.Numerator, reqResp.Req.Denominator)
 			reqResp.Resp.Result.Result = strconv.FormatFloat(reqResp.Req.Numerator/reqResp.Req.Denominator, 'f', reqResp.Req.Precision, 64)
