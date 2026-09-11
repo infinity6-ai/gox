@@ -7,20 +7,20 @@ import (
 )
 
 // 1. The interface that enforces validation
-type checker[V any] interface {
+type checker[V comparable] interface {
 	Validate(v V) error
 	MarshalJSON() ([]byte, error)
 	UnmarshalJSON(data []byte) error
 }
 
-type SuperValue[T any] struct {
+type SuperValue[T comparable] struct {
 	value   T
 	present bool
 }
 
 // 2. Change 'x any' to 'x checker[V]'.
 // Now, the compiler enforces the interface instead of a runtime type assertion!
-func Set[V any](x checker[V], v V) error {
+func Set[V comparable](x checker[V], v V) error {
 	// Guaranteed to be safe, no type assertion needed
 	err := x.Validate(v)
 	if err != nil {
