@@ -133,39 +133,45 @@ func TestUnitBasic(t *testing.T) {
 					},
 				},
 				"company_addresses": {
-					Array: func() (length int, getElement func(idx int, read bool) *schemazv2.Schema) {
-						return len(person.CompanyAddresses), func(idx int, read bool) *schemazv2.Schema {
-							person.CompanyAddresses = slicez.GrowLenTo(person.CompanyAddresses, idx+1)
-							return &schemazv2.Schema{
-								Object: func(read bool) map[string]*schemazv2.Schema {
-									if !read {
-										person.CompanyAddresses[idx] = &Address{}
-									}
-									if read && person.CompanyAddresses[idx] == nil {
-										return nil
-									}
-									return map[string]*schemazv2.Schema{
-										"street": {
-											Raw: func() any { return &person.CompanyAddresses[idx].Street },
-										},
-										"city": {
-											Raw: func() any { return &person.CompanyAddresses[idx].City },
-										},
-									}
-								},
-							}
+					Array: func() *schemazv2.Array {
+						return &schemazv2.Array{
+							Len: len(person.CompanyAddresses),
+							Get: func(idx int, read bool) *schemazv2.Schema {
+								person.CompanyAddresses = slicez.GrowLenTo(person.CompanyAddresses, idx+1)
+								return &schemazv2.Schema{
+									Object: func(read bool) map[string]*schemazv2.Schema {
+										if !read {
+											person.CompanyAddresses[idx] = &Address{}
+										}
+										if read && person.CompanyAddresses[idx] == nil {
+											return nil
+										}
+										return map[string]*schemazv2.Schema{
+											"street": {
+												Raw: func() any { return &person.CompanyAddresses[idx].Street },
+											},
+											"city": {
+												Raw: func() any { return &person.CompanyAddresses[idx].City },
+											},
+										}
+									},
+								}
+							},
 						}
 					},
 				},
 				"numbers": {
-					Array: func() (length int, getElement func(idx int, read bool) *schemazv2.Schema) {
-						return len(person.Numbers), func(idx int, read bool) *schemazv2.Schema {
-							person.Numbers = slicez.GrowLenTo(person.Numbers, idx+1)
-							return &schemazv2.Schema{
-								Raw: func() any {
-									return &person.Numbers[idx]
-								},
-							}
+					Array: func() *schemazv2.Array {
+						return &schemazv2.Array{
+							Len: len(person.Numbers),
+							Get: func(idx int, read bool) *schemazv2.Schema {
+								person.Numbers = slicez.GrowLenTo(person.Numbers, idx+1)
+								return &schemazv2.Schema{
+									Raw: func() any {
+										return &person.Numbers[idx]
+									},
+								}
+							},
 						}
 					},
 				},

@@ -27,12 +27,11 @@ type Schema struct {
 	Desc *Desc
 
 	// Mutually exclusive data bindings (returning pointers for 2-way binding)
-	Raw     func() any
-	Object  func(read bool) map[string]*Schema
-	Array   func() (length int, getElement func(idx int, read bool) *Schema)
-	ArrayV2 func() *Array
-	Str     func() *Parser[string]
-	Strs    func() *Parser[[]string]
+	Raw    func() any
+	Object func(read bool) map[string]*Schema
+	Array  func() *Array
+	Str    func() *Parser[string]
+	Strs   func() *Parser[[]string]
 }
 
 // =====================================
@@ -45,10 +44,13 @@ func (s *Schema) MarshalJSON() ([]byte, error) {
 		return json.Marshal(s.Object(true))
 	}
 	if s.Array != nil {
-		length, getElem := s.Array()
-		out := make([]*Schema, length)
-		for i := 0; i < length; i++ {
-			out[i] = getElem(i, true)
+		arr := s.Array()
+		if arr == nil {
+			return []byte("null"), nil
+		}
+		out := make([]*Schema, arr.Len)
+		for i := 0; i < arr.Len; i++ {
+			out[i] = arr.Get(i, true)
 		}
 		// Marshaling a slice of *Schema triggers recursive MarshalJSON
 		return json.Marshal(out)
@@ -113,14 +115,14 @@ func (s *Schema) unmarshalJSONArray(data []byte) error {
 		return err
 	}
 
-	_, getElem := s.Array()
+	arr := s.Array()
 
 	// We iterate backwards to give the schema implementation an opportunity to
 	// grow its underlying slice to the correct size from the beginning. The first
 	// index seen will be the largest (len-1), allowing for a single allocation
 	// to the final size.
 	for i, raw := range slices.Backward(raws) {
-		schemaNode := getElem(i, false)
+		schemaNode := arr.Get(i, false)
 		if schemaNode == nil {
 			continue
 		}
