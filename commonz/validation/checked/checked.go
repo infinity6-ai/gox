@@ -8,6 +8,8 @@ import (
 
 // 1. The interface that enforces validation
 type Checker[V comparable] interface {
+	Get() V
+	String() string
 	Validate(v V) error
 	MarshalJSON() ([]byte, error)
 	UnmarshalJSON(data []byte) error
@@ -16,6 +18,13 @@ type Checker[V comparable] interface {
 type Value[T comparable] struct {
 	value   T
 	present bool
+}
+
+func (v Value[T]) Get() T {
+	if !v.present {
+		panic("x has not been set")
+	}
+	return v.value
 }
 
 // 2. Change 'x any' to 'x checker[V]'.

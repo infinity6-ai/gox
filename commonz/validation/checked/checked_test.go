@@ -16,6 +16,14 @@ func (m MyString) Validate(v string) error {
 	return validation.StrNotEmpty(v, "MyValue cannot be empty")
 }
 
+func (m MyString) Get() string {
+	return checked.Value[string](m).Get()
+}
+
+func (m MyString) String() string {
+	return m.Get()
+}
+
 func NewMyValue(val string) MyString {
 	ret := MyString{}
 	err := checked.Set(&ret, val)
@@ -31,15 +39,18 @@ func (m *MyString) UnmarshalJSON(data []byte) error {
 	return checked.Unmarshal(m, data)
 }
 
-type Person struct {
-	Name  string   `json:"name"`
-	Nicks []string `json:"nicks"`
-}
-
 func TestUnitMyValue(t *testing.T) {
 	a1 := NewMyValue("a")
 	b1 := NewMyValue("b")
 	a2 := NewMyValue("a")
+
+	require.Equal(t, "a", a1.Get())
+	require.Equal(t, "b", b1.Get())
+	require.Equal(t, "a", a2.Get())
+
+	require.Equal(t, "a", a1.String())
+	require.Equal(t, "b", b1.String())
+	require.Equal(t, "a", a2.String())
 
 	require.True(t, a1 == a2)
 	require.False(t, a1 == b1)
