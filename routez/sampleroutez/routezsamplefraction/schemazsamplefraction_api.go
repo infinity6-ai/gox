@@ -31,8 +31,8 @@ type FractionReqResp struct {
 	Resp *FractionResp
 }
 
-func Api() *apiz.QualquerNome[*FractionReqResp] {
-	return &apiz.QualquerNome[*FractionReqResp]{
+func Api() *apiz.Spec[*FractionReqResp] {
+	return &apiz.Spec[*FractionReqResp]{
 		Id:     "samplefraction",
 		Desc:   nil,
 		Method: "POST",

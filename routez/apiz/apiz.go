@@ -23,7 +23,12 @@ type Api interface {
 
 type Handler[T Api] func(ctx context.Context, reqResp T) (int, error)
 
-type QualquerNome[T Api] struct {
+type HandlerV2[T Api] struct {
+	Spec    Spec[T]
+	Handler func(ctx context.Context, reqResp T) (int, error)
+}
+
+type Spec[T Api] struct {
 	Id      string
 	Desc    func() *schemazv2.Desc
 	Method  string
@@ -32,7 +37,7 @@ type QualquerNome[T Api] struct {
 	Handler Handler[T]
 }
 
-func (a *QualquerNome[T]) MewReqResp() T {
+func (a *Spec[T]) MewReqResp() T {
 	var v T
 	t := reflect.TypeOf(&v).Elem()
 	checker.Equal(reflect.Ptr, t.Kind(), "it must be a pointer: %T %T", v, t)
