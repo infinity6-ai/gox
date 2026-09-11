@@ -1,42 +1,104 @@
 package supervalue
 
-type checker interface {
-	Check()
-}
+import (
+	"encoding/json"
+	"fmt"
+	"reflect"
+)
 
-type X[T comparable] interface {
+// 1. The interface that enforces validation
+type checker[V any] interface {
+	Check(v V)
+	MarshalJSON() ([]byte, error)
+	UnmarshalJSON(data []byte) error
 }
 
 type SuperValue[T comparable] struct {
 	v T
 }
 
-func Set[V comparable](sv *SuperValue[V], v V) {
-	sv.v = v
+// 2. Change 'x any' to 'x checker[V]'.
+// Now, the compiler enforces the interface instead of a runtime type assertion!
+func Set[V comparable](x checker[V], v V) {
+	// Guaranteed to be safe, no type assertion needed
+	x.Check(v)
+
+	val := reflect.ValueOf(x)
+
+	if val.Kind() != reflect.Ptr {
+		panic("Set requires a pointer to a struct")
+	}
+
+	targetType := reflect.TypeOf((*SuperValue[V])(nil))
+
+	if val.Type().ConvertibleTo(targetType) {
+		convertedPtr := val.Convert(targetType).Interface().(*SuperValue[V])
+		convertedPtr.v = v
+	} else {
+		panic("x is not derived from SuperValue[V]")
+	}
 }
 
-// func Set[V comparable](sv *SuperValue[V], s any, v V) {
-// 	sv.v = v
-// }
+// Marshal extracts the hidden 'v' and marshals it.
+func Marshal[V comparable](x any) ([]byte, error) {
+	val := reflect.ValueOf(x)
+	if val.Kind() == reflect.Ptr {
+		val = val.Elem()
+	}
 
-// func Set[T X[V], V comparable](sv T) {
-// }
+	targetType := reflect.TypeOf(SuperValue[V]{})
+	if val.Type().ConvertibleTo(targetType) {
+		// Convert it back to SuperValue so we can read the unexported 'v'
+		base := val.Convert(targetType).Interface().(SuperValue[V])
+		return json.Marshal(base.v)
+	}
+	return nil, fmt.Errorf("type is not convertible to SuperValue")
+}
 
-// func Set[T comparable](sv any, val any) {
-// 	sv.(checker).Check()
-// 	basePtr := SuperValue[T](sv)
-// 	basePtr.v = val
-// }
+// Unmarshal decodes the JSON, runs your Check(), and safely assigns the value.
+func Unmarshal[V comparable](x checker[V], data []byte) (err error) {
+	var temp V
+	if err := json.Unmarshal(data, &temp); err != nil {
+		return err
+	}
+
+	// Catch any panics thrown by the user's Check() method
+	// and convert them into standard JSON unmarshaling errors.
+	defer func() {
+		if r := recover(); r != nil {
+			err = fmt.Errorf("validation failed: %v", r)
+		}
+	}()
+
+	// Set() will automatically call x.Check(temp)
+	Set(x, temp)
+	return nil
+}
+
+// --- Usage ---
 
 type MyValue SuperValue[string]
 
-func (m MyValue) Check() {
-
+func (m MyValue) Check(v string) {
+	if v == "c" {
+		panic("NOOO")
+	}
 }
 
 func NewMyValue(val string) MyValue {
-	x := SuperValue[string]{}
-	Set(&x, val)
-	ret := MyValue(x)
+	ret := MyValue{}
+
+	// If you comment out the Check method above, this exact line
+	// will fail to compile with: "*MyValue does not implement checker[string]"
+	Set(&ret, val)
+
 	return ret
+}
+
+func (m MyValue) MarshalJSON() ([]byte, error) {
+	return Marshal[string](m)
+}
+
+func (m *MyValue) UnmarshalJSON(data []byte) error {
+	return Unmarshal[string](m, data)
 }
