@@ -37,3 +37,13 @@ func Json2Header(in map[string][]string, out http.Header) {
 		}
 	}
 }
+
+func Json2Params(in map[string][]string) map[string]string {
+	n := make(map[string]string, len(in))
+	for k, v := range in {
+		if len(v) > 0 {
+			n[k] = v[0]
+		}
+	}
+	return n
+}
