@@ -93,8 +93,8 @@ func (f *FractionReqResp) schemaPathParams() *schemazv2.Schema {
 	return &schemazv2.Schema{
 		Object: func(read bool) map[string]*schemazv2.Schema {
 			return map[string]*schemazv2.Schema{
-				// "numerator":   {Str: },
-				// "denominator": {},
+				"numerator":   {Str: schemazv2.ParseStrNumber(&f.Req.Numerator)},
+				"denominator": {Str: schemazv2.ParseStrNumber(&f.Req.Denominator)},
 			}
 		},
 	}
