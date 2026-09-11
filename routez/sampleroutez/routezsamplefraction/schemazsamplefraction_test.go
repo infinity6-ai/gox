@@ -44,7 +44,7 @@ func TestManualBasic(t *testing.T) {
 		Result:  "3.333",
 	}, respBody)
 
-	ac := apiclientz.GetV2(c, routezsamplefraction.Api())
+	ac := apiclientz.Get(c, routezsamplefraction.Api())
 
 	reqResp := &routezsamplefraction.FractionReqResp{
 		Req: &routezsamplefraction.FractionReq{

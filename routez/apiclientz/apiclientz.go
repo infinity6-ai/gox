@@ -14,9 +14,9 @@ import (
 	"github.com/infinity6-ai/gox/schemaz/schemazv2"
 )
 
-func GetV2[T apiz.ReqResp](client *httpzclient.Client, api *apiz.Api[T]) apiz.Handler[T] {
+func Get[T apiz.ReqResp](client *httpzclient.Client, api *apiz.Api[T]) apiz.Handler[T] {
 	return func(ctx context.Context, reqResp T) (int, error) {
-		nReq, closer, err := parseRequestV2(ctx, api, reqResp)
+		nReq, closer, err := parseRequest(ctx, api, reqResp)
 		if err != nil {
 			return 0, err
 		}
@@ -26,12 +26,12 @@ func GetV2[T apiz.ReqResp](client *httpzclient.Client, api *apiz.Api[T]) apiz.Ha
 			return 0, fmt.Errorf("%w: error calling server", err)
 		}
 		defer nResp.Body.Close()
-		err = writeResponseV2(nResp, reqResp)
+		err = writeResponse(nResp, reqResp)
 		return nResp.StatusCode, err
 	}
 }
 
-func writeResponseV2[T apiz.ReqResp](nResp *httpzclient.Resp, reqResp T) error {
+func writeResponse[T apiz.ReqResp](nResp *httpzclient.Resp, reqResp T) error {
 	refs := reqResp.GetDataRefs()
 	if refs.RespHeaders != nil {
 		convertedHeaders := converter.Header2Json(nResp.Headers)
@@ -49,7 +49,7 @@ func writeResponseV2[T apiz.ReqResp](nResp *httpzclient.Resp, reqResp T) error {
 	return nil
 }
 
-func parseRequestV2[T apiz.ReqResp](ctx context.Context, api *apiz.Api[T], reqResp T) (*httpzrequest.Req, io.Closer, error) {
+func parseRequest[T apiz.ReqResp](ctx context.Context, api *apiz.Api[T], reqResp T) (*httpzrequest.Req, io.Closer, error) {
 	dfz := deferz.New(ctx)
 	defer dfz.Close()
 	refs := reqResp.GetDataRefs()
