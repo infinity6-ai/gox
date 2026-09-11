@@ -6,6 +6,14 @@ import (
 	"unicode"
 )
 
+func Params2Json(params map[string]string) map[string][]string {
+	n := make(map[string][]string, len(params))
+	for k, v := range params {
+		n[k] = []string{v}
+	}
+	return n
+}
+
 func Header2Json(headers http.Header) map[string][]string {
 	n := make(map[string][]string, len(headers))
 	for k, v := range headers {
