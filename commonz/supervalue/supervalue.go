@@ -11,7 +11,7 @@ type SuperValue[T comparable] struct {
 	v T
 }
 
-func Set[V comparable](sv *SuperValue[V], s any, v V) {
+func Set[V comparable](sv *SuperValue[V], v V) {
 	sv.v = v
 }
 
@@ -35,9 +35,8 @@ func (m MyValue) Check() {
 }
 
 func NewMyValue(val string) MyValue {
-	ret := MyValue{}
-	x := SuperValue[string](ret)
-	Set(&x, ret, val)
-	ret = MyValue(x)
+	x := SuperValue[string]{}
+	Set(&x, val)
+	ret := MyValue(x)
 	return ret
 }
