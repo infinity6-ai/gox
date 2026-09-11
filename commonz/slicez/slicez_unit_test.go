@@ -147,30 +147,34 @@ func TestUnitGrowLenBy(t *testing.T) {
 }
 
 func TestUnitUpdate(t *testing.T) {
-	t.Run("update all elements", func(t *testing.T) {
+	t.Run("update and keep all elements", func(t *testing.T) {
 		s := []int{1, 2, 3}
-		err := Update(s, func(i int, v *int) (bool, error) {
+		originalS := s
+		res, err := Update(s, func(i int, v *int) (bool, error) {
 			*v = *v * 2
 			return true, nil
 		})
 		require.NoError(t, err)
+		require.Equal(t, []int{2, 4, 6}, res)
+		require.Same(t, &originalS[0], &res[0])
 		require.Equal(t, []int{2, 4, 6}, s)
 	})
 
-	t.Run("stop early", func(t *testing.T) {
+	t.Run("update and remove some elements", func(t *testing.T) {
 		s := []int{1, 2, 3, 4}
-		err := Update(s, func(i int, v *int) (bool, error) {
-			*v = *v * 2
-			return i < 1, nil // stop after index 1
+		res, err := Update(s, func(i int, v *int) (bool, error) {
+			*v = *v + 1
+			return *v < 4, nil // remove 3+1=4 and 4+1=5
 		})
 		require.NoError(t, err)
-		require.Equal(t, []int{2, 4, 3, 4}, s)
+		require.Equal(t, []int{2, 3}, res)
+		require.Equal(t, []int{2, 3, 0, 0}, s)
 	})
 
 	t.Run("error occurs", func(t *testing.T) {
 		s := []int{1, 2, 3}
 		expectedErr := errors.New("some error")
-		err := Update(s, func(i int, v *int) (bool, error) {
+		_, err := Update(s, func(i int, v *int) (bool, error) {
 			if i == 1 {
 				return false, expectedErr
 			}
@@ -185,22 +189,24 @@ func TestUnitUpdate(t *testing.T) {
 }
 
 func TestUnitMustUpdate(t *testing.T) {
-	t.Run("update all", func(t *testing.T) {
+	t.Run("update and keep all", func(t *testing.T) {
 		s := []int{1, 2, 3}
-		MustUpdate(s, func(i int, v *int) bool {
+		res := MustUpdate(s, func(i int, v *int) bool {
 			*v = *v * 2
 			return true
 		})
+		require.Equal(t, []int{2, 4, 6}, res)
 		require.Equal(t, []int{2, 4, 6}, s)
 	})
 
-	t.Run("stop early", func(t *testing.T) {
+	t.Run("update and remove some", func(t *testing.T) {
 		s := []int{1, 2, 3, 4}
-		MustUpdate(s, func(i int, v *int) bool {
+		res := MustUpdate(s, func(i int, v *int) bool {
 			*v = *v * 2
-			return i < 1 // stop after index 1
+			return *v < 5 // remove 3*2=6 and 4*2=8
 		})
-		require.Equal(t, []int{2, 4, 3, 4}, s)
+		require.Equal(t, []int{2, 4}, res)
+		require.Equal(t, []int{2, 4, 0, 0}, s)
 	})
 }
 

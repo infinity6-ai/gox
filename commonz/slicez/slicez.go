@@ -39,31 +39,56 @@ func SetLen[S ~[]E, E any](s S, n int) S {
 	return newS
 }
 
-// Update iterates over a slice and applies the function fn to each element.
-// The function fn receives the index and a pointer to the element, allowing in-place modification.
-// Iteration stops if fn returns false or an error.
-func Update[I any](s []I, fn func(i int, v *I) (bool, error)) error {
+// Update iterates over a slice and applies the function fn to each element, allowing in-place modification.
+// If fn returns false for an element, it is removed from the slice (in-place).
+// It returns the updated slice, which might be shorter.
+// If fn returns an error, processing stops and the error is returned.
+func Update[S ~[]I, I any](s S, fn func(i int, v *I) (bool, error)) (S, error) {
+	if s == nil {
+		return nil, nil
+	}
+	n := 0
 	for i := range s {
-		keepGoing, err := fn(i, &s[i])
+		keep, err := fn(i, &s[i])
 		if err != nil {
-			return fmt.Errorf("update failed at index %d: %w", i, err)
+			return nil, fmt.Errorf("update failed at index %d: %w", i, err)
 		}
-		if !keepGoing {
-			break
+		if keep {
+			if n != i {
+				s[n] = s[i]
+			}
+			n++
 		}
 	}
-	return nil
+	var zero I
+	for i := n; i < len(s); i++ {
+		s[i] = zero
+	}
+	return s[:n], nil
 }
 
-// MustUpdate is like Update but panics if the update function returns an error.
-// The function fn receives the index and a pointer to the element.
-// Iteration stops if fn returns false.
-func MustUpdate[I any](s []I, fn func(i int, v *I) bool) {
+// MustUpdate is like Update but for an update function that cannot error.
+// It modifies and filters a slice in-place.
+// If fn returns false for an element, it is removed from the slice (in-place).
+// It returns the updated slice, which might be shorter.
+func MustUpdate[S ~[]I, I any](s S, fn func(i int, v *I) bool) S {
+	if s == nil {
+		return nil
+	}
+	n := 0
 	for i := range s {
-		if !fn(i, &s[i]) {
-			break
+		if fn(i, &s[i]) {
+			if n != i {
+				s[n] = s[i]
+			}
+			n++
 		}
 	}
+	var zero I
+	for i := n; i < len(s); i++ {
+		s[i] = zero
+	}
+	return s[:n]
 }
 
 // Map transforms a slice of type I to a slice of type O using the mapping function fn.
