@@ -23,18 +23,17 @@ type Api interface {
 
 type Handler[T Api] func(ctx context.Context, reqResp T) (int, error)
 
-type HandlerV2[T Api] struct {
-	Spec    Spec[T]
-	Handler func(ctx context.Context, reqResp T) (int, error)
+type Service[T Api] struct {
+	Spec    *Spec[T]
+	Handler Handler[T]
 }
 
 type Spec[T Api] struct {
-	Id      string
-	Desc    func() *schemazv2.Desc
-	Method  string
-	Path    string
-	Spec    T
-	Handler Handler[T]
+	Id     string
+	Desc   func() *schemazv2.Desc
+	Method string
+	Path   string
+	Spec   T
 }
 
 func (a *Spec[T]) MewReqResp() T {
