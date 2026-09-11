@@ -1,16 +1,16 @@
-package supervalue_test
+package checked_test
 
 import (
 	"testing"
 
+	"github.com/infinity6-ai/gox/commonz/checked"
 	"github.com/infinity6-ai/gox/commonz/errorz"
 	"github.com/infinity6-ai/gox/commonz/jsonz"
-	"github.com/infinity6-ai/gox/commonz/supervalue"
 	"github.com/infinity6-ai/gox/commonz/validation"
 	"github.com/stretchr/testify/require"
 )
 
-type MyString supervalue.SuperValue[string]
+type MyString checked.SuperValue[string]
 
 func (m MyString) Validate(v string) error {
 	return validation.StrNotEmpty(v, "MyValue cannot be empty")
@@ -18,17 +18,17 @@ func (m MyString) Validate(v string) error {
 
 func NewMyValue(val string) MyString {
 	ret := MyString{}
-	err := supervalue.Set(&ret, val)
+	err := checked.Set(&ret, val)
 	errorz.Check(err)
 	return ret
 }
 
 func (m MyString) MarshalJSON() ([]byte, error) {
-	return supervalue.Marshal[string](m)
+	return checked.Marshal[string](m)
 }
 
 func (m *MyString) UnmarshalJSON(data []byte) error {
-	return supervalue.Unmarshal(m, data)
+	return checked.Unmarshal(m, data)
 }
 
 type Person struct {
@@ -56,7 +56,7 @@ func TestUnitMyValue(t *testing.T) {
 	})
 
 	require.PanicsWithValue(t, "x has already been set", func() {
-		supervalue.Set(&a1, "a")
+		checked.Set(&a1, "a")
 	})
 
 	require.PanicsWithValue(t, "x has already been set", func() {

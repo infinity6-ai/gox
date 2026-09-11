@@ -1,4 +1,4 @@
-package supervalue
+package checked
 
 import (
 	"encoding/json"
