@@ -87,11 +87,7 @@ func (m MyValue) Check(v string) {
 
 func NewMyValue(val string) MyValue {
 	ret := MyValue{}
-
-	// If you comment out the Check method above, this exact line
-	// will fail to compile with: "*MyValue does not implement checker[string]"
 	Set(&ret, val)
-
 	return ret
 }
 
@@ -100,5 +96,5 @@ func (m MyValue) MarshalJSON() ([]byte, error) {
 }
 
 func (m *MyValue) UnmarshalJSON(data []byte) error {
-	return Unmarshal[string](m, data)
+	return Unmarshal(m, data)
 }
