@@ -1,22 +1,22 @@
-package routezsamplefractionv2
+package routezsamplefraction
 
 import (
 	"context"
 	"fmt"
 	"strconv"
 
-	"github.com/infinity6-ai/gox/routez/apizv2"
+	"github.com/infinity6-ai/gox/routez/apiz"
 )
 
 type FractionService struct {
 	api *FractionApi
 }
 
-func (f *FractionService) New() apizv2.Service {
+func (f *FractionService) New() apiz.Service {
 	return &FractionService{api: Api()}
 }
 
-func (f *FractionService) Api() apizv2.Api {
+func (f *FractionService) Api() apiz.Api {
 	return f.api
 }
 
@@ -27,8 +27,8 @@ func (f *FractionService) Handler(ctx context.Context) (int, error) {
 	return 201, nil
 }
 
-func Services() []apizv2.Service {
-	return []apizv2.Service{
+func Services() []apiz.Service {
+	return []apiz.Service{
 		&FractionService{},
 	}
 }

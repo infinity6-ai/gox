@@ -1,4 +1,4 @@
-package routezsamplefractionv2_test
+package routezsamplefraction_test
 
 import (
 	"strings"
@@ -9,9 +9,9 @@ import (
 	"github.com/infinity6-ai/gox/httpz/httpzclient"
 	"github.com/infinity6-ai/gox/httpz/httpzrequest"
 	"github.com/infinity6-ai/gox/httpz/httpzserver"
-	"github.com/infinity6-ai/gox/routez/apiclientzv2"
-	"github.com/infinity6-ai/gox/routez/routezv2"
-	"github.com/infinity6-ai/gox/routez/sampleroutez/routezsamplefractionv2"
+	"github.com/infinity6-ai/gox/routez/apiclientz"
+	"github.com/infinity6-ai/gox/routez/routez"
+	"github.com/infinity6-ai/gox/routez/sampleroutez/routezsamplefraction"
 	"github.com/stretchr/testify/require"
 )
 
@@ -22,7 +22,7 @@ func TestUnitBasic(t *testing.T) {
 	s.Listen()
 	s.Start()
 
-	routezv2.Register(s, routezsamplefractionv2.Services()...)
+	routez.Register(s, routezsamplefraction.Services()...)
 
 	c := httpzclient.New(ctx, httpzclient.Options{
 		BaseUrl: s.Base(),
@@ -38,14 +38,14 @@ func TestUnitBasic(t *testing.T) {
 	require.Equal(t, 201, resp.StatusCode)
 	require.Equal(t, "application/json", resp.Headers.Get("content-type"))
 	require.Equal(t, "reason: myreason, trace: xx", resp.Headers.Get("x-i6-trace-message"))
-	respBody := jsonz.MustParseReader(resp.Body, &routezsamplefractionv2.Result{})
-	require.Equal(t, &routezsamplefractionv2.Result{
+	respBody := jsonz.MustParseReader(resp.Body, &routezsamplefraction.Result{})
+	require.Equal(t, &routezsamplefraction.Result{
 		Display: "10.000/3.000",
 		Result:  "3.333",
 	}, respBody)
 
-	reqResp := &routezsamplefractionv2.FractionApi{
-		Req: &routezsamplefractionv2.FractionReq{
+	reqResp := &routezsamplefraction.FractionApi{
+		Req: &routezsamplefraction.FractionReq{
 			Numerator:   10,
 			Denominator: 3,
 			Precision:   3,
@@ -53,11 +53,11 @@ func TestUnitBasic(t *testing.T) {
 			Reason:      "myreason",
 		},
 	}
-	status, err := apiclientzv2.Do(ctx, c, reqResp)
+	status, err := apiclientz.Do(ctx, c, reqResp)
 	errorz.Check(err)
 	require.Equal(t, 201, status)
 	require.Equal(t, "reason: myreason, trace: xx", reqResp.Resp.TraceMessage)
-	require.Equal(t, &routezsamplefractionv2.Result{
+	require.Equal(t, &routezsamplefraction.Result{
 		Display: "10.000/3.000",
 		Result:  "3.333",
 	}, reqResp.Resp.Result)

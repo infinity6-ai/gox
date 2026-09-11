@@ -1,7 +1,7 @@
-package routezsamplefractionv2
+package routezsamplefraction
 
 import (
-	"github.com/infinity6-ai/gox/routez/apizv2"
+	"github.com/infinity6-ai/gox/routez/apiz"
 	"github.com/infinity6-ai/gox/schemaz/schemaz"
 )
 
@@ -32,8 +32,8 @@ func Api() *FractionApi {
 	return &FractionApi{}
 }
 
-func (f *FractionApi) ApiSpec() apizv2.ApiSpec {
-	return apizv2.ApiSpec{
+func (f *FractionApi) ApiSpec() apiz.ApiSpec {
+	return apiz.ApiSpec{
 		Id:     "samplefraction",
 		Desc:   nil,
 		Method: "POST",
@@ -41,7 +41,7 @@ func (f *FractionApi) ApiSpec() apizv2.ApiSpec {
 	}
 }
 
-func (f *FractionApi) GetDataRefs() *apizv2.DataRefs {
+func (f *FractionApi) GetDataRefs() *apiz.DataRefs {
 	if f.Req == nil {
 		f.Req = &FractionReq{}
 	}
@@ -51,7 +51,7 @@ func (f *FractionApi) GetDataRefs() *apizv2.DataRefs {
 	if f.Resp.Result == nil {
 		f.Resp.Result = &Result{}
 	}
-	return &apizv2.DataRefs{
+	return &apiz.DataRefs{
 		PathParams:  f.schemaPathParams(),
 		QueryParams: f.schemaQueryParams(),
 		ReqHeaders:  f.schemaReqHeaders(),

@@ -1,4 +1,4 @@
-package apizv2
+package apiz
 
 import (
 	"context"

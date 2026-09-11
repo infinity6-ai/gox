@@ -1,4 +1,4 @@
-package routezv2
+package routez
 
 import (
 	"context"
@@ -8,11 +8,11 @@ import (
 	"github.com/infinity6-ai/gox/commonz/jsonz"
 	"github.com/infinity6-ai/gox/httpz/httpzrequest"
 	"github.com/infinity6-ai/gox/httpz/httpzserver"
-	"github.com/infinity6-ai/gox/routez/apizv2"
+	"github.com/infinity6-ai/gox/routez/apiz"
 	"github.com/infinity6-ai/gox/routez/internal/converter"
 )
 
-func writeResponse(status int, resp httpzserver.Resp, refs *apizv2.DataRefs, formattedHeaders http.Header) {
+func writeResponse(status int, resp httpzserver.Resp, refs *apiz.DataRefs, formattedHeaders http.Header) {
 	if refs.RespHeaders != nil {
 		headers := map[string][]string{}
 		jsonz.MustCopy(refs.RespHeaders, &headers)
@@ -22,7 +22,7 @@ func writeResponse(status int, resp httpzserver.Resp, refs *apizv2.DataRefs, for
 	jsonz.FormatWriter(w, refs.RespBody)
 }
 
-func parseRequest(refs *apizv2.DataRefs, req *httpzrequest.Req, params map[string]string) {
+func parseRequest(refs *apiz.DataRefs, req *httpzrequest.Req, params map[string]string) {
 	if refs.PathParams != nil {
 		jsonz.MustCopy(converter.Params2Json(params), refs.PathParams)
 	}
@@ -37,7 +37,7 @@ func parseRequest(refs *apizv2.DataRefs, req *httpzrequest.Req, params map[strin
 	}
 }
 
-func Register(s *httpzserver.Server, services ...apizv2.Service) {
+func Register(s *httpzserver.Server, services ...apiz.Service) {
 	for _, service := range services {
 		spec := service.Api().ApiSpec()
 		s.AddHandler(spec.Method, spec.Path, func(ctx context.Context, resp httpzserver.Resp, req *httpzrequest.Req, params map[string]string) {

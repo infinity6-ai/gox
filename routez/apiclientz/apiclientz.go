@@ -1,4 +1,4 @@
-package apiclientzv2
+package apiclientz
 
 import (
 	"context"
@@ -9,12 +9,12 @@ import (
 	"github.com/infinity6-ai/gox/commonz/jsonz"
 	"github.com/infinity6-ai/gox/httpz/httpzclient"
 	"github.com/infinity6-ai/gox/httpz/httpzrequest"
-	"github.com/infinity6-ai/gox/routez/apizv2"
+	"github.com/infinity6-ai/gox/routez/apiz"
 	"github.com/infinity6-ai/gox/routez/internal/converter"
 	"github.com/infinity6-ai/gox/schemaz/schemaz"
 )
 
-func Do(ctx context.Context, client *httpzclient.Client, reqResp apizv2.Api) (int, error) {
+func Do(ctx context.Context, client *httpzclient.Client, reqResp apiz.Api) (int, error) {
 	nReq, closer, err := parseRequest(ctx, reqResp)
 	if err != nil {
 		return 0, err
@@ -29,7 +29,7 @@ func Do(ctx context.Context, client *httpzclient.Client, reqResp apizv2.Api) (in
 	return nResp.StatusCode, err
 }
 
-func writeResponse[T apizv2.Api](nResp *httpzclient.Resp, api T) error {
+func writeResponse[T apiz.Api](nResp *httpzclient.Resp, api T) error {
 	refs := api.GetDataRefs()
 	if refs.RespHeaders != nil {
 		convertedHeaders := converter.Header2Json(nResp.Headers)
@@ -47,7 +47,7 @@ func writeResponse[T apizv2.Api](nResp *httpzclient.Resp, api T) error {
 	return nil
 }
 
-func parseRequest[T apizv2.Api](ctx context.Context, api T) (*httpzrequest.Req, io.Closer, error) {
+func parseRequest[T apiz.Api](ctx context.Context, api T) (*httpzrequest.Req, io.Closer, error) {
 	dfz := deferz.New(ctx)
 	defer dfz.Close()
 	refs := api.GetDataRefs()
