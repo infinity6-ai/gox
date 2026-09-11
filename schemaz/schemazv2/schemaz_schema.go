@@ -12,11 +12,6 @@ type Desc struct {
 	Markdown string
 }
 
-type Parser[T any] struct {
-	Parse  func(v T)
-	Format func() T
-}
-
 type Array struct {
 	Len int
 	Get func(idx int, read bool) *Schema
