@@ -22,3 +22,16 @@ func ParseStrNumber[O constraintz.Numbers](out *O) func() *Parser[string] {
 		}
 	}
 }
+
+func ParseStr(out *string) func() *Parser[string] {
+	return func() *Parser[string] {
+		return &Parser[string]{
+			Parse: func(v string) {
+				*out = v
+			},
+			Format: func() string {
+				return *out
+			},
+		}
+	}
+}
