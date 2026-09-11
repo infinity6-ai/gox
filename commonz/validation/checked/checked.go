@@ -7,7 +7,7 @@ import (
 )
 
 // 1. The interface that enforces validation
-type checker[V comparable] interface {
+type Checker[V comparable] interface {
 	Validate(v V) error
 	MarshalJSON() ([]byte, error)
 	UnmarshalJSON(data []byte) error
@@ -20,7 +20,7 @@ type Value[T comparable] struct {
 
 // 2. Change 'x any' to 'x checker[V]'.
 // Now, the compiler enforces the interface instead of a runtime type assertion!
-func Set[V comparable](x checker[V], v V) error {
+func Set[V comparable](x Checker[V], v V) error {
 	// Guaranteed to be safe, no type assertion needed
 	err := x.Validate(v)
 	if err != nil {
@@ -65,7 +65,7 @@ func Marshal[V comparable](x any) ([]byte, error) {
 }
 
 // Unmarshal decodes the JSON, runs your Check(), and safely assigns the value.
-func Unmarshal[V comparable](x checker[V], data []byte) (err error) {
+func Unmarshal[V comparable](x Checker[V], data []byte) (err error) {
 	var temp V
 	if err := json.Unmarshal(data, &temp); err != nil {
 		return err
