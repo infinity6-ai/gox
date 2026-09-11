@@ -23,7 +23,7 @@ func writeResponseV2[T apiz.ReqResp](status int, resp httpzserver.Resp, reqResp 
 	jsonz.FormatWriter(w, refs.RespBody)
 }
 
-func parseRequestV2[T apiz.ReqResp](a *apiz.ApiV2[T], req *httpzrequest.Req, params map[string]string) T {
+func parseRequestV2[T apiz.ReqResp](a *apiz.Api[T], req *httpzrequest.Req, params map[string]string) T {
 	reqResp := a.MewReqResp()
 	refs := reqResp.GetDataRefs()
 	if refs.PathParams != nil {
@@ -41,7 +41,7 @@ func parseRequestV2[T apiz.ReqResp](a *apiz.ApiV2[T], req *httpzrequest.Req, par
 	return reqResp
 }
 
-func Register[T apiz.ReqResp](s *httpzserver.Server, apis ...*apiz.ApiV2[T]) {
+func Register[T apiz.ReqResp](s *httpzserver.Server, apis ...*apiz.Api[T]) {
 	for _, api := range apis {
 		s.AddHandler(api.Method, api.Path, func(ctx context.Context, resp httpzserver.Resp, req *httpzrequest.Req, params map[string]string) {
 			reqResp := parseRequestV2(api, req, params)

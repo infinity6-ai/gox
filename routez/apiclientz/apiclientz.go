@@ -14,7 +14,7 @@ import (
 	"github.com/infinity6-ai/gox/schemaz/schemazv2"
 )
 
-func GetV2[T apiz.ReqResp](client *httpzclient.Client, api *apiz.ApiV2[T]) apiz.HandlerV2[T] {
+func GetV2[T apiz.ReqResp](client *httpzclient.Client, api *apiz.Api[T]) apiz.Handler[T] {
 	return func(ctx context.Context, reqResp T) (int, error) {
 		nReq, closer, err := parseRequestV2(ctx, api, reqResp)
 		if err != nil {
@@ -49,7 +49,7 @@ func writeResponseV2[T apiz.ReqResp](nResp *httpzclient.Resp, reqResp T) error {
 	return nil
 }
 
-func parseRequestV2[T apiz.ReqResp](ctx context.Context, api *apiz.ApiV2[T], reqResp T) (*httpzrequest.Req, io.Closer, error) {
+func parseRequestV2[T apiz.ReqResp](ctx context.Context, api *apiz.Api[T], reqResp T) (*httpzrequest.Req, io.Closer, error) {
 	dfz := deferz.New(ctx)
 	defer dfz.Close()
 	refs := reqResp.GetDataRefs()
