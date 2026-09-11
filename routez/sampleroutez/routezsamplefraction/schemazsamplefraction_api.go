@@ -28,10 +28,6 @@ type FractionApi struct {
 	Resp *FractionResp
 }
 
-func Api() *FractionApi {
-	return &FractionApi{}
-}
-
 func (f *FractionApi) ApiSpec() apiz.ApiSpec {
 	return apiz.ApiSpec{
 		Id:     "samplefraction",

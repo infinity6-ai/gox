@@ -13,7 +13,7 @@ type FractionService struct {
 }
 
 func (f *FractionService) New() apiz.Service {
-	return &FractionService{api: Api()}
+	return &FractionService{api: &FractionApi{}}
 }
 
 func (f *FractionService) Api() apiz.Api {
