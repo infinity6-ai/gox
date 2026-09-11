@@ -79,27 +79,3 @@ func Unmarshal[V comparable](x checker[V], data []byte) (err error) {
 	Set(x, temp)
 	return nil
 }
-
-// --- Usage ---
-
-type MyValue SuperValue[string]
-
-func (m MyValue) Check(v string) {
-	if v == "" {
-		panic("NOOO")
-	}
-}
-
-func NewMyValue(val string) MyValue {
-	ret := MyValue{}
-	Set(&ret, val)
-	return ret
-}
-
-func (m MyValue) MarshalJSON() ([]byte, error) {
-	return Marshal[string](m)
-}
-
-func (m *MyValue) UnmarshalJSON(data []byte) error {
-	return Unmarshal(m, data)
-}
