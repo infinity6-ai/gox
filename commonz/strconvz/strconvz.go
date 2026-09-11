@@ -8,6 +8,10 @@ import (
 	"github.com/infinity6-ai/gox/commonz/errorz"
 )
 
+func FormatNumber[T constraintz.Numbers](v T) string {
+	return fmt.Sprintf("%v", v)
+}
+
 func ParseNumberInto[T constraintz.Numbers](v string, target *T) error {
 	var err error
 	*target, err = ParseNumber(v, *target)
