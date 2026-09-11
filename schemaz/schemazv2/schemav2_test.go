@@ -60,6 +60,7 @@ func TestUnitBasic(t *testing.T) {
 				Street: "456 Elm St",
 				City:   "Los Angeles",
 			},
+			nil,
 		},
 		Numbers: []int{10, 20, 30, 40, 50},
 	}
