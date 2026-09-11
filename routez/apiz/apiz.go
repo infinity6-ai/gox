@@ -8,7 +8,7 @@ import (
 	"github.com/infinity6-ai/gox/schemaz/schemazv2"
 )
 
-type DataRefsV2 struct {
+type DataRefs struct {
 	PathParams  *schemazv2.Schema
 	QueryParams *schemazv2.Schema
 	ReqHeaders  *schemazv2.Schema
@@ -17,13 +17,13 @@ type DataRefsV2 struct {
 	RespBody    *schemazv2.Schema
 }
 
-type ReqRespV2 interface {
-	GetDataRefsV2() *DataRefsV2
+type ReqResp interface {
+	GetDataRefs() *DataRefs
 }
 
-type HandlerV2[T ReqRespV2] func(ctx context.Context, reqResp T) (int, error)
+type HandlerV2[T ReqResp] func(ctx context.Context, reqResp T) (int, error)
 
-type ApiV2[T ReqRespV2] struct {
+type ApiV2[T ReqResp] struct {
 	Id      string
 	Desc    func() *schemazv2.Desc
 	Method  string

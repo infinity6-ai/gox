@@ -14,7 +14,7 @@ import (
 	"github.com/infinity6-ai/gox/schemaz/schemazv2"
 )
 
-func GetV2[T apiz.ReqRespV2](client *httpzclient.Client, api *apiz.ApiV2[T]) apiz.HandlerV2[T] {
+func GetV2[T apiz.ReqResp](client *httpzclient.Client, api *apiz.ApiV2[T]) apiz.HandlerV2[T] {
 	return func(ctx context.Context, reqResp T) (int, error) {
 		nReq, closer, err := parseRequestV2(ctx, api, reqResp)
 		if err != nil {
@@ -31,8 +31,8 @@ func GetV2[T apiz.ReqRespV2](client *httpzclient.Client, api *apiz.ApiV2[T]) api
 	}
 }
 
-func writeResponseV2[T apiz.ReqRespV2](nResp *httpzclient.Resp, reqResp T) error {
-	refs := reqResp.GetDataRefsV2()
+func writeResponseV2[T apiz.ReqResp](nResp *httpzclient.Resp, reqResp T) error {
+	refs := reqResp.GetDataRefs()
 	if refs.RespHeaders != nil {
 		convertedHeaders := converter.Header2Json(nResp.Headers)
 		_, err := jsonz.Copy(convertedHeaders, refs.RespHeaders)
@@ -49,10 +49,10 @@ func writeResponseV2[T apiz.ReqRespV2](nResp *httpzclient.Resp, reqResp T) error
 	return nil
 }
 
-func parseRequestV2[T apiz.ReqRespV2](ctx context.Context, api *apiz.ApiV2[T], reqResp T) (*httpzrequest.Req, io.Closer, error) {
+func parseRequestV2[T apiz.ReqResp](ctx context.Context, api *apiz.ApiV2[T], reqResp T) (*httpzrequest.Req, io.Closer, error) {
 	dfz := deferz.New(ctx)
 	defer dfz.Close()
-	refs := reqResp.GetDataRefsV2()
+	refs := reqResp.GetDataRefs()
 	var p map[string]string
 	var q, h map[string][]string
 	if refs.PathParams != nil {

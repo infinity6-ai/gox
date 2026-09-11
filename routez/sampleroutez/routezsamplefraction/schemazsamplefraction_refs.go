@@ -5,7 +5,7 @@ import (
 	"github.com/infinity6-ai/gox/schemaz/schemazv2"
 )
 
-func (f *FractionReqResp) GetDataRefsV2() *apiz.DataRefsV2 {
+func (f *FractionReqResp) GetDataRefs() *apiz.DataRefs {
 	if f.Req == nil {
 		f.Req = &FractionReq{}
 	}
@@ -15,7 +15,7 @@ func (f *FractionReqResp) GetDataRefsV2() *apiz.DataRefsV2 {
 	if f.Resp.Result == nil {
 		f.Resp.Result = &Result{}
 	}
-	return &apiz.DataRefsV2{
+	return &apiz.DataRefs{
 		PathParams:  f.schemaPathParams(),
 		QueryParams: f.schemaQueryParams(),
 		ReqHeaders:  f.schemaReqHeaders(),

@@ -12,8 +12,8 @@ import (
 	"github.com/infinity6-ai/gox/routez/internal/converter"
 )
 
-func writeResponseV2[T apiz.ReqRespV2](status int, resp httpzserver.Resp, reqResp T, formattedHeaders http.Header) {
-	refs := reqResp.GetDataRefsV2()
+func writeResponseV2[T apiz.ReqResp](status int, resp httpzserver.Resp, reqResp T, formattedHeaders http.Header) {
+	refs := reqResp.GetDataRefs()
 	if refs.RespHeaders != nil {
 		headers := map[string][]string{}
 		jsonz.MustCopy(refs.RespHeaders, &headers)
@@ -23,9 +23,9 @@ func writeResponseV2[T apiz.ReqRespV2](status int, resp httpzserver.Resp, reqRes
 	jsonz.FormatWriter(w, refs.RespBody)
 }
 
-func parseRequestV2[T apiz.ReqRespV2](a *apiz.ApiV2[T], req *httpzrequest.Req, params map[string]string) T {
+func parseRequestV2[T apiz.ReqResp](a *apiz.ApiV2[T], req *httpzrequest.Req, params map[string]string) T {
 	reqResp := a.MewReqResp()
-	refs := reqResp.GetDataRefsV2()
+	refs := reqResp.GetDataRefs()
 	if refs.PathParams != nil {
 		jsonz.MustCopy(converter.Params2Json(params), refs.PathParams)
 	}
@@ -41,7 +41,7 @@ func parseRequestV2[T apiz.ReqRespV2](a *apiz.ApiV2[T], req *httpzrequest.Req, p
 	return reqResp
 }
 
-func Register[T apiz.ReqRespV2](s *httpzserver.Server, apis ...*apiz.ApiV2[T]) {
+func Register[T apiz.ReqResp](s *httpzserver.Server, apis ...*apiz.ApiV2[T]) {
 	for _, api := range apis {
 		s.AddHandler(api.Method, api.Path, func(ctx context.Context, resp httpzserver.Resp, req *httpzrequest.Req, params map[string]string) {
 			reqResp := parseRequestV2(api, req, params)
