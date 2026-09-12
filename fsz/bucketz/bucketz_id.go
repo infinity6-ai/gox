@@ -3,6 +3,7 @@ package bucketz
 import (
 	"regexp"
 
+	"github.com/infinity6-ai/gox/commonz/errorz"
 	"github.com/infinity6-ai/gox/commonz/pathz"
 	"github.com/infinity6-ai/gox/commonz/urlz"
 	"github.com/infinity6-ai/gox/commonz/validation"
@@ -25,8 +26,8 @@ func (d Bucket) MarshalJSON() ([]byte, error) {
 	return checked.Marshal[string](d)
 }
 
-func (d Bucket) UnmarshalJSON(data []byte) error {
-	return checked.Unmarshal(&d, data)
+func (d *Bucket) UnmarshalJSON(data []byte) error {
+	return checked.Unmarshal(d, data)
 }
 
 func (d Bucket) Validate(v string) error {
@@ -41,7 +42,8 @@ func (d Bucket) Validate(v string) error {
 
 func Id(id string) Bucket {
 	var ret Bucket
-	checked.Set(&ret, id)
+	err := checked.Set(&ret, id)
+	errorz.Check(err)
 	return ret
 }
 
