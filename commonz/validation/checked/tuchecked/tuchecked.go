@@ -30,13 +30,14 @@ func Check[T comparable, V comparable](table Table[T, V]) {
 		checker.Equal(cvSecond.Get(), valid, "Get method must be equal: %v", valid)
 		checker.Equal(cvFirst.String(), cvSecond.String(), "String method: %v", valid)
 
-		cvJsonFirst := jsonz.MustFormat(cvFirst).String()
-		cvJsonSecond := jsonz.MustFormat(cvSecond).String()
-		checker.Equal(cvJsonFirst, cvJsonSecond, "json format: %v", valid)
+		jsonFirst := jsonz.MustFormat(first).String()
+		jsonSecond := jsonz.MustFormat(second).String()
+		checker.Equal(jsonFirst, jsonSecond, "json format: %v", valid)
 
-		// var cvParsedFirst checked.Checker[V]
-		// jsonz.MustParse(cvJsonFirst, &cvParsedFirst)
-		// checker.True(cvFirst == cvParsedFirst, "json parser: %v, expected: %v, but was: %v", valid, cvFirst, cvParsedFirst)
+		var firstParsed T
+		jsonz.MustParse(jsonFirst, &firstParsed)
+		cvFirstParsed := any(firstParsed).(checked.Checker[V])
+		checker.Equal(cvFirstParsed.Get(), cvFirst.Get(), "Get method must be equal: %v", valid)
 	}
 }
 
