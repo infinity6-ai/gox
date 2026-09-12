@@ -3,7 +3,6 @@ package checked_test
 import (
 	"testing"
 
-	"github.com/infinity6-ai/gox/commonz/errorz"
 	"github.com/infinity6-ai/gox/commonz/jsonz"
 	"github.com/infinity6-ai/gox/commonz/validation"
 	"github.com/infinity6-ai/gox/commonz/validation/checked"
@@ -27,8 +26,7 @@ func (m MyString) String() string {
 
 func NewMyValue(val string) MyString {
 	ret := MyString{}
-	err := checked.Set(&ret, val)
-	errorz.Check(err)
+	checked.MustSet(&ret, val)
 	return ret
 }
 

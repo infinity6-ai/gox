@@ -3,7 +3,6 @@ package bucketz
 import (
 	"regexp"
 
-	"github.com/infinity6-ai/gox/commonz/errorz"
 	"github.com/infinity6-ai/gox/commonz/pathz"
 	"github.com/infinity6-ai/gox/commonz/urlz"
 	"github.com/infinity6-ai/gox/commonz/validation"
@@ -42,8 +41,7 @@ func (d Bucket) Validate(v string) error {
 
 func Id(id string) Bucket {
 	var ret Bucket
-	err := checked.Set(&ret, id)
-	errorz.Check(err)
+	checked.MustSet(&ret, id)
 	return ret
 }
 

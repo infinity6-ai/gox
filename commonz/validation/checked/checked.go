@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"reflect"
+
+	"github.com/infinity6-ai/gox/commonz/errorz"
 )
 
 // 1. The interface that enforces validation
@@ -25,6 +27,11 @@ func (v Value[T]) Get() T {
 		panic("x has not been set")
 	}
 	return v.value
+}
+
+func MustSet[V comparable](x Checker[V], v V) {
+	err := Set(x, v)
+	errorz.Check(err)
 }
 
 // 2. Change 'x any' to 'x checker[V]'.
