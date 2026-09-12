@@ -4,9 +4,9 @@ go 1.26.1
 
 require (
 	cloud.google.com/go/datastore v1.25.0
-	github.com/infinity6-ai/gox/commonz v0.0.12
-	github.com/infinity6-ai/gox/cryptz v0.0.12
-	github.com/infinity6-ai/gox/versionz v0.0.12
+	github.com/infinity6-ai/gox/commonz v0.0.15
+	github.com/infinity6-ai/gox/cryptz v0.0.15
+	github.com/infinity6-ai/gox/versionz v0.0.15
 	github.com/spf13/cobra v1.10.2
 	github.com/stretchr/testify v1.12.1
 	golang.org/x/exp v0.0.0-20260824195058-e88cd73687aa
