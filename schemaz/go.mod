@@ -3,8 +3,8 @@ module github.com/infinity6-ai/gox/schemaz
 go 1.26.1
 
 require (
-	github.com/infinity6-ai/gox/commonz v0.0.13-0.20260911025637-beb58c3353a6
-	github.com/infinity6-ai/gox/versionz v0.0.12
+	github.com/infinity6-ai/gox/commonz v0.0.14
+	github.com/infinity6-ai/gox/versionz v0.0.14
 	github.com/spf13/cobra v1.10.2
 	github.com/stretchr/testify v1.12.1
 )
