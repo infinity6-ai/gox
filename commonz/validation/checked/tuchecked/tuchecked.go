@@ -18,7 +18,7 @@ type Table[T comparable, V comparable] struct {
 func Check[T comparable, V comparable](table Table[T, V]) {
 	for idx, valid := range table.Valids {
 		var first T
-		err := errorz.UnpanicV(func() {
+		err := errorz.Unpanic(func() {
 			first = table.Create(valid)
 		})
 		checker.Nil(err, "panic while creating [idx=%d]: %v", idx, valid)
@@ -46,7 +46,7 @@ func Check[T comparable, V comparable](table Table[T, V]) {
 		}
 	}
 	for idx, invalid := range table.Invalids {
-		err := errorz.UnpanicV(func() {
+		err := errorz.Unpanic(func() {
 			table.Create(invalid)
 		})
 		checker.NotNil(err, "panic while creating [idx=%d]: %v", idx, invalid)
