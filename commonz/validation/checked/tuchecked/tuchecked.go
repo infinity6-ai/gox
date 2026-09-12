@@ -38,6 +38,12 @@ func Check[T comparable, V comparable](table Table[T, V]) {
 		jsonz.MustParse(jsonFirst, &firstParsed)
 		cvFirstParsed := any(firstParsed).(checked.Checker[V])
 		checker.Equal(cvFirstParsed.Get(), cvFirst.Get(), "Get method must be equal: %v", valid)
+
+		for prvIdx := 0; prvIdx < idx; prvIdx++ {
+			prev := table.Create(table.Valids[prvIdx])
+			cvPrev := any(prev).(checked.Checker[V])
+			checker.NotEqual(cvFirst.Get(), cvPrev.Get(), "Get method must not be equal: %v", valid)
+		}
 	}
 }
 
