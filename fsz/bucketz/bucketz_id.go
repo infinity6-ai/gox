@@ -1,4 +1,4 @@
-package fsz
+package bucketz
 
 import (
 	"regexp"
@@ -37,8 +37,8 @@ func (d Bucket) Validate(v string) error {
 	return nil
 }
 
-func Id(datasetId string) Bucket {
+func Id(id string) Bucket {
 	var ret Bucket
-	checked.Set(&ret, datasetId)
+	checked.Set(&ret, id)
 	return ret
 }
