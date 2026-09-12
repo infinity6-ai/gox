@@ -8,6 +8,7 @@ import (
 	"golang.org/x/exp/constraints"
 )
 
+// Bool
 func True(value bool, msg string, args ...any) {
 	errorz.Check(validation.True(value, msg, args...))
 }
@@ -16,6 +17,7 @@ func False(value bool, msg string, args ...any) {
 	errorz.Check(validation.False(value, msg, args...))
 }
 
+// Comprable
 func Equal[T comparable](expected T, actual T, msg string, args ...any) {
 	errorz.Check(validation.Equal(expected, actual, msg, args...))
 }
@@ -28,10 +30,20 @@ func OneOf[T comparable](expected []T, actual T, msg string, args ...any) {
 	errorz.Check(validation.OneOf(expected, actual, msg, args...))
 }
 
+func Zero[T comparable](actual T, msg string, args ...any) {
+	errorz.Check(validation.Zero(actual, msg, args...))
+}
+
+func NotZero[T comparable](actual T, msg string, args ...any) {
+	errorz.Check(validation.NotZero(actual, msg, args...))
+}
+
+// Fail
 func Fail(msg string, args ...any) {
 	errorz.Check(validation.Fail(msg, args...))
 }
 
+// Nil
 func NotNil(value any, msg string, args ...any) {
 	errorz.Check(validation.NotNil(value, msg, args...))
 }
@@ -40,6 +52,7 @@ func Nil(value any, msg string, args ...any) {
 	errorz.Check(validation.Nil(value, msg, args...))
 }
 
+// Ordered
 func Greater[T constraints.Ordered](value, threshold T, msg string, args ...any) {
 	errorz.Check(validation.Greater(value, threshold, msg, args...))
 }
@@ -56,10 +69,12 @@ func LessOrEqual[T constraints.Ordered](value, threshold T, msg string, args ...
 	errorz.Check(validation.LessOrEqual(value, threshold, msg, args...))
 }
 
+// Regex
 func RegexMatch(pattern *regexp.Regexp, value, msg string, args ...any) {
 	errorz.Check(validation.RegexMatch(pattern, value, msg, args...))
 }
 
+// Slices
 func Empty[S ~[]E, E any](actual S, msg string, args ...any) {
 	errorz.Check(validation.Empty(actual, msg, args...))
 }
@@ -72,6 +87,7 @@ func Len[S ~[]E, E any](actual S, length int, msg string, args ...any) {
 	errorz.Check(validation.Len(actual, length, msg, args...))
 }
 
+// Strings
 func StrPrefix(expected string, actual string, msg string, args ...any) {
 	errorz.Check(validation.StrPrefix(expected, actual, msg, args...))
 }
