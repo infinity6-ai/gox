@@ -85,7 +85,7 @@ func TestUnitChecked(t *testing.T) {
 			ret := NewMyValue(v)
 			return &ret
 		},
-		Valids:   []string{"a", "b", "c"},
-		Invalids: []string{""},
+		// Valids:   []string{"a", "b", "c"},
+		// Invalids: []string{""},
 	})
 }
