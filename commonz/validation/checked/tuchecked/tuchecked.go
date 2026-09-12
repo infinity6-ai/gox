@@ -5,9 +5,9 @@ import (
 )
 
 type Table[T checked.Checker[V], V comparable] struct {
-	Create func(v V) T
-	// Valids map[V][]V
-	// Invalids []V
+	Create   func(v V) T
+	Valids   []V
+	Invalids []V
 }
 
 func Check[T checked.Checker[V], V comparable](table Table[T, V]) {
