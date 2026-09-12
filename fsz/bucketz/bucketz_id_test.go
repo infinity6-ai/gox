@@ -13,7 +13,7 @@ func TestUnitChecked(t *testing.T) {
 			ret := bucketz.Id(v)
 			return &ret
 		},
-		Valids:   []string{"a1a", "b2b", "c2c"},
+		Valids:   []string{"a1a", "b2b", "c-c"},
 		Invalids: []string{"", "a_a", "_1a", "a1_"},
 	})
 }
