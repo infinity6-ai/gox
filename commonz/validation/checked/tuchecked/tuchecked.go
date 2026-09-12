@@ -10,9 +10,9 @@ import (
 )
 
 type Table[T comparable, V comparable] struct {
-	Create func(v V) T
-	Valids []V
-	// Invalids []V
+	Create   func(v V) T
+	Valids   []V
+	Invalids []V
 }
 
 func Check[T comparable, V comparable](table Table[T, V]) {
@@ -44,6 +44,12 @@ func Check[T comparable, V comparable](table Table[T, V]) {
 			cvPrev := any(prev).(checked.Checker[V])
 			checker.NotEqual(cvFirst.Get(), cvPrev.Get(), "Get method must not be equal: %v", valid)
 		}
+	}
+	for idx, invalid := range table.Invalids {
+		err := errorz.UnpanicV(func() {
+			table.Create(invalid)
+		})
+		checker.NotNil(err, "panic while creating [idx=%d]: %v", idx, invalid)
 	}
 }
 
