@@ -7,7 +7,6 @@ require (
 	github.com/infinity6-ai/gox/versionz v0.0.14
 	github.com/spf13/cobra v1.10.2
 	github.com/stretchr/testify v1.12.1
-	go.code.infinity6.ai/platform v1.2.70
 	golang.org/x/exp v0.0.0-20260824195058-e88cd73687aa
 	golang.org/x/sys v0.47.0
 	golang.org/x/term v0.45.0
