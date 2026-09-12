@@ -3,6 +3,8 @@ package bucketz
 import (
 	"regexp"
 
+	"github.com/infinity6-ai/gox/commonz/pathz"
+	"github.com/infinity6-ai/gox/commonz/urlz"
 	"github.com/infinity6-ai/gox/commonz/validation"
 	"github.com/infinity6-ai/gox/commonz/validation/checked"
 )
@@ -41,4 +43,10 @@ func Id(id string) Bucket {
 	var ret Bucket
 	checked.Set(&ret, id)
 	return ret
+}
+
+func Url(url *urlz.Url) (Bucket, *pathz.Path) {
+	bucket := Id(url.Host)
+	object := url.Path.ForceCurrent()
+	return bucket, object
 }

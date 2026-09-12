@@ -11,6 +11,7 @@ import (
 
 	"cloud.google.com/go/storage"
 	"github.com/infinity6-ai/gox/commonz/urlz"
+	"github.com/infinity6-ai/gox/fsz/bucketz"
 	"google.golang.org/api/iterator"
 )
 
@@ -31,10 +32,9 @@ func (gf *gsFs) Stat(ctx context.Context, url *urlz.Url) (*FileStat, error) {
 	}
 	defer client.Close()
 
-	bucket := url.Host
-	object := strings.TrimPrefix(url.Path.String(), "/")
+	bucket, object := bucketz.Url(url)
 
-	attrs, err := client.Bucket(bucket).Object(object).Attrs(ctx)
+	attrs, err := client.Bucket(bucket.Get()).Object(object.String()).Attrs(ctx)
 	if errors.Is(err, storage.ErrObjectNotExist) {
 		return nil, nil
 	}
@@ -60,10 +60,9 @@ func (gf *gsFs) Upload(ctx context.Context, url *urlz.Url, headers http.Header, 
 	}
 	defer client.Close()
 
-	bucket := url.Host
-	object := strings.TrimPrefix(url.Path.String(), "/")
+	bucket, object := bucketz.Url(url)
 
-	wc := client.Bucket(bucket).Object(object).NewWriter(ctx)
+	wc := client.Bucket(bucket.Get()).Object(object.String()).NewWriter(ctx)
 	if _, err := io.Copy(wc, reader); err != nil {
 		return fmt.Errorf("failed to upload to gs://%s/%s: %w", bucket, object, err)
 	}
@@ -81,10 +80,9 @@ func (gf *gsFs) Download(ctx context.Context, url *urlz.Url, callback func(found
 	}
 	defer client.Close()
 
-	bucket := url.Host
-	object := strings.TrimPrefix(url.Path.String(), "/")
+	bucket, object := bucketz.Url(url)
 
-	rc, err := client.Bucket(bucket).Object(object).NewReader(ctx)
+	rc, err := client.Bucket(bucket.Get()).Object(object.String()).NewReader(ctx)
 	if errors.Is(err, storage.ErrObjectNotExist) {
 		return callback(false, nil, nil)
 	}
@@ -106,10 +104,9 @@ func (gf *gsFs) Delete(ctx context.Context, url *urlz.Url) error {
 	}
 	defer client.Close()
 
-	bucket := url.Host
-	object := strings.TrimPrefix(url.Path.String(), "/")
+	bucket, object := bucketz.Url(url)
 
-	err = client.Bucket(bucket).Object(object).Delete(ctx)
+	err = client.Bucket(bucket.Get()).Object(object.String()).Delete(ctx)
 	if errors.Is(err, storage.ErrObjectNotExist) {
 		return nil
 	}
@@ -191,15 +188,14 @@ type SignOptions struct {
 }
 
 func gcssign(url *urlz.Url, opts *SignOptions) (string, error) {
-	bucket := url.Host
-	object := strings.TrimPrefix(url.Path.String(), "/")
+	bucket, object := bucketz.Url(url)
 	o := &storage.SignedURLOptions{
 		Scheme:      storage.SigningSchemeV4,
 		Method:      opts.Method,
 		Expires:     time.Now().Add(opts.Duration),
 		ContentType: opts.ContentType,
 	}
-	return storage.SignedURL(bucket, object, o)
+	return storage.SignedURL(bucket.Get(), object.String(), o)
 }
 
 func (gf *gsFs) SignGet(ctx context.Context, url *urlz.Url, duration time.Duration) (string, error) {
