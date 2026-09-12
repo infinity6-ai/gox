@@ -1,6 +1,8 @@
 package tuchecked
 
 import (
+	"reflect"
+
 	"github.com/infinity6-ai/gox/commonz/jsonz"
 	"github.com/infinity6-ai/gox/commonz/validation/checked"
 	"github.com/infinity6-ai/gox/commonz/validation/checker"
@@ -21,7 +23,7 @@ func Check[T comparable, V comparable](table Table[T, V]) {
 		})
 		checker.Nil(err, "panic while creating [idx=%d]: %v", idx, valid)
 		second := table.Create(valid)
-		// checker.True(first == second, "creating with same value must be equal, expected: %v, but was: %v", valid, valid)
+		checker.True(reflect.ValueOf(first).Elem().Equal(reflect.ValueOf(second).Elem()), "creating with same value must be equal, expected: %v, but was: %v", valid, valid)
 		cvFirst := any(first).(checked.Checker[V])
 		checker.Equal(cvFirst.Get(), valid, "Get method must be equal: %v", valid)
 		cvSecond := any(second).(checked.Checker[V])
