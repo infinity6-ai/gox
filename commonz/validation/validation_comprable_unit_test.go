@@ -26,4 +26,34 @@ func TestUnitValidationComparable(t *testing.T) {
 		require.Contains(t, err.Error(), "must not be equal")
 		require.Contains(t, err.Error(), "actual=1")
 	})
+
+	t.Run("OneOf", func(t *testing.T) {
+		require.NoError(t, OneOf([]int{1, 2, 3}, 2, "should be one of"))
+		err := OneOf([]int{1, 2, 3}, 4, "should not be one of")
+		require.Error(t, err)
+		require.True(t, errors.Is(err, ErrValidation))
+		require.Contains(t, err.Error(), "must be one of")
+		require.Contains(t, err.Error(), "expected=[1 2 3]")
+		require.Contains(t, err.Error(), "actual=4")
+	})
+
+	t.Run("Zero", func(t *testing.T) {
+		require.NoError(t, Zero(0, "should be zero"))
+		require.NoError(t, Zero("", "should be zero"))
+		err := Zero(1, "should not be zero")
+		require.Error(t, err)
+		require.True(t, errors.Is(err, ErrValidation))
+		require.Contains(t, err.Error(), "must be zero")
+		require.Contains(t, err.Error(), "actual=1")
+	})
+
+	t.Run("NotZero", func(t *testing.T) {
+		require.NoError(t, NotZero(1, "should not be zero"))
+		require.NoError(t, NotZero("a", "should not be zero"))
+		err := NotZero(0, "should be zero")
+		require.Error(t, err)
+		require.True(t, errors.Is(err, ErrValidation))
+		require.Contains(t, err.Error(), "must not be zero")
+		require.Contains(t, err.Error(), "actual=0")
+	})
 }
