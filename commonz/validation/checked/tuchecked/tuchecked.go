@@ -3,10 +3,10 @@ package tuchecked
 import (
 	"reflect"
 
+	"github.com/infinity6-ai/gox/commonz/errorz"
 	"github.com/infinity6-ai/gox/commonz/jsonz"
 	"github.com/infinity6-ai/gox/commonz/validation/checked"
 	"github.com/infinity6-ai/gox/commonz/validation/checker"
-	"go.code.infinity6.ai/platform/errorz"
 )
 
 type Table[T comparable, V comparable] struct {
