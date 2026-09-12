@@ -4,8 +4,8 @@ go 1.26.1
 
 require (
 	cloud.google.com/go/storage v1.59.2
-	github.com/infinity6-ai/gox/commonz v0.0.13-0.20260912144900-525ddf22f60d
-	github.com/infinity6-ai/gox/versionz v0.0.14
+	github.com/infinity6-ai/gox/commonz v0.0.15
+	github.com/infinity6-ai/gox/versionz v0.0.15
 	github.com/spf13/cobra v1.10.2
 	github.com/stretchr/testify v1.12.1
 	google.golang.org/api v0.276.0
@@ -54,7 +54,6 @@ require (
 	golang.org/x/oauth2 v0.36.0 // indirect
 	golang.org/x/sync v0.22.0 // indirect
 	golang.org/x/sys v0.47.0 // indirect
-	golang.org/x/term v0.45.0 // indirect
 	golang.org/x/text v0.41.0 // indirect
 	golang.org/x/time v0.15.0 // indirect
 	google.golang.org/genproto v0.0.0-20260319201613-d00831a3d3e7 // indirect
