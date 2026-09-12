@@ -7,6 +7,7 @@ import (
 	"github.com/infinity6-ai/gox/commonz/jsonz"
 	"github.com/infinity6-ai/gox/commonz/validation"
 	"github.com/infinity6-ai/gox/commonz/validation/checked"
+	"github.com/infinity6-ai/gox/commonz/validation/checked/tuchecked"
 	"github.com/stretchr/testify/require"
 )
 
@@ -76,4 +77,13 @@ func TestUnitMyValue(t *testing.T) {
 
 	require.Equal(t, `"b"`, jsonz.MustFormat(b1).String())
 
+}
+
+func TestUnitChecked(t *testing.T) {
+	tuchecked.Check(tuchecked.Table[*MyString, string]{
+		Create: func(v string) *MyString {
+			ret := NewMyValue(v)
+			return &ret
+		},
+	})
 }
