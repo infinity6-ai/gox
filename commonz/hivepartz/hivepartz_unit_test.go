@@ -1,6 +1,7 @@
 package hivepartz
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/infinity6-ai/gox/commonz/pathz"
@@ -157,3 +158,59 @@ func TestUnitParse(t *testing.T) {
 		})
 	})
 }
+
+func TestUnitHivePartsFormatAndString(t *testing.T) {
+	type testScenario struct {
+		name       string
+		hiveParts  *HiveParts
+		expected   string
+	}
+
+	check := func(t *testing.T, s testScenario) {
+		t.Helper()
+		require.Equal(t, s.expected, s.hiveParts.String())
+		require.Equal(t, s.expected, fmt.Sprintf("%s", s.hiveParts))
+		require.Equal(t, s.expected, fmt.Sprintf("%v", s.hiveParts))
+	}
+
+	t.Run("Empty HiveParts", func(t *testing.T) {
+		check(t, testScenario{
+			name:       "empty",
+			hiveParts:  &HiveParts{},
+			expected:   "",
+		})
+	})
+
+	t.Run("Single hive part", func(t *testing.T) {
+		check(t, testScenario{
+			name:       "single",
+			hiveParts:  (&HiveParts{}).Add("year", "2024"),
+			expected:   "year=2024",
+		})
+	})
+
+	t.Run("Multiple hive parts", func(t *testing.T) {
+		check(t, testScenario{
+			name:       "multiple",
+			hiveParts:  (&HiveParts{}).Add("year", "2024").Add("month", "09"),
+			expected:   "year=2024/month=09",
+		})
+	})
+
+	t.Run("Hive part with empty value", func(t *testing.T) {
+		check(t, testScenario{
+			name:       "empty_value",
+			hiveParts:  (&HiveParts{}).Add("key", ""),
+			expected:   "key=",
+		})
+	})
+
+	t.Run("Hive part with special characters", func(t *testing.T) {
+		check(t, testScenario{
+			name:       "special_chars",
+			hiveParts:  (&HiveParts{}).Add("name", "John Doe/S.A."),
+			expected:   "name=John Doe/S.A.",
+		})
+	})
+}
+
