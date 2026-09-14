@@ -5,28 +5,28 @@ import (
 	"slices"
 	"strings"
 
+	"github.com/infinity6-ai/gox/commonz/constraintz/optionalz"
 	"github.com/infinity6-ai/gox/commonz/errorz"
 	"github.com/infinity6-ai/gox/commonz/pathz"
 	"github.com/infinity6-ai/gox/commonz/validation/checker"
 )
 
 type HiveParts struct {
-	names  []string          `json:"names"`
-	values map[string]string `json:"indexes"`
+	names  []string
+	values map[string]string
 }
 
 func (h *HiveParts) Names() []string {
 	return slices.Clone(h.names)
 }
 
-func (h *HiveParts) Get(name string) string {
-	return h.values[name]
+func (h *HiveParts) Optional(name string) optionalz.Optional[string] {
+	ret, ok := h.values[name]
+	return optionalz.New(ret, ok)
 }
 
-func (h *HiveParts) MustGet(name string) string {
-	ret, ok := h.values[name]
-	checker.True(ok, "hive part not found: %s", ret)
-	return ret
+func (h *HiveParts) Get(name string) string {
+	return h.Optional(name).Must()
 }
 
 func (h *HiveParts) Add(name string, value string) *HiveParts {
