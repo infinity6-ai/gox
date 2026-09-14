@@ -19,6 +19,11 @@ func ParseReader[T any](r io.Reader, v T) (T, error) {
 	return v, nil
 }
 
+func ParseInto[I blobz.Data](data I, v any) error {
+	_, err := Parse(data, v)
+	return err
+}
+
 func Parse[T any, I blobz.Data](data I, v T) (T, error) {
 	return ParseReader(blobz.New(data).NewReader(), v)
 }
@@ -82,4 +87,12 @@ func Format(v any) (blobz.Blob, error) {
 		return nil, fmt.Errorf("failed to marshal data: %w", err)
 	}
 	return blobz.New(b), nil
+}
+
+func FormatBytes(v any) ([]byte, error) {
+	ret, err := Format(v)
+	if err != nil {
+		return nil, err
+	}
+	return ret.Bytes(), nil
 }
