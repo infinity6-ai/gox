@@ -52,10 +52,3 @@ func Check[T comparable, V comparable](table Table[T, V]) {
 		checker.NotNil(err, "panic while creating [idx=%d]: %v", idx, invalid)
 	}
 }
-
-// func Check[V comparable](create func(v V) Checker[V], valids []V, invalids []V) {
-// 	for i, valid := range valids {
-// 		v := create(valid)
-// 		// check it is a type of Value
-// 	}
-// }
