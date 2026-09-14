@@ -4,9 +4,61 @@ import (
 	"fmt"
 	"strings"
 
-	"go.code.infinity6.ai/platform/util/filez/pathz"
+	"github.com/infinity6-ai/gox/commonz/pathz"
+	"github.com/infinity6-ai/gox/commonz/validation/checker"
 	"go.code.infinity6.ai/platform/validation"
 )
+
+type HivePartsV2 struct {
+	names  []string          `json:"names"`
+	values map[string]string `json:"indexes"`
+}
+
+func (h *HivePartsV2) Add(name string, value string) *HivePartsV2 {
+	checker.StrNotEmpty(name, "name")
+	checker.StrNotEmpty(value, "value")
+	h.names = append(h.names, name)
+	h.values[name] = value
+	return h
+}
+
+func ParseV2(p *pathz.Path) (*HivePartsV2, *pathz.Path, error) {
+	err := p.Validate(pathz.ValidateOptions{
+		Absolute:   new(false),
+		MaxParents: new(0),
+		Wildchar:   true,
+	})
+	if err != nil {
+		return nil, nil, fmt.Errorf("path unsupported: %w", err)
+	}
+	var ret HivePartsV2
+	if p.PartsLen() == 0 {
+		return &ret, p, nil
+	}
+
+	parts := p.Parts()
+
+	parseEndIndex := 0
+
+	for i, part := range parts {
+		if strings.Contains(part, "=") {
+			kv := strings.SplitN(part, "=", 3)
+			if len(kv) > 2 {
+				return nil, nil, fmt.Errorf("too many parts in hive partition: %s", part)
+			}
+			if len(kv) < 2 {
+				break
+			}
+			ret.Add(kv[0], kv[1])
+			parseEndIndex = i + 1
+		} else {
+			break
+		}
+	}
+
+	p = pathz.New(0, parts[parseEndIndex:], p.HasEndingSlash())
+	return &ret, p, nil
+}
 
 type HivePart struct {
 	Name  string `json:"name"`
