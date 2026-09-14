@@ -34,3 +34,17 @@ type Service interface {
 	Api() Api
 	Handler(ctx context.Context) (int, error)
 }
+
+type ServiceT[A Api] interface {
+	Service
+	SetApi(api A)
+}
+
+func Do[S ServiceT[A], A Api](ctx context.Context, service S, reqResp A) (int, error) {
+	service = service.New().(S)
+	service.SetApi(reqResp)
+	reqResp.GetDataRefs()
+
+	ret, err := service.Handler(ctx)
+	return ret, err
+}
