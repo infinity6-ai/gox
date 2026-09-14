@@ -10,6 +10,7 @@ import (
 	"github.com/infinity6-ai/gox/httpz/httpzrequest"
 	"github.com/infinity6-ai/gox/httpz/httpzserver"
 	"github.com/infinity6-ai/gox/routez/apiclientz"
+	"github.com/infinity6-ai/gox/routez/apiz"
 	"github.com/infinity6-ai/gox/routez/routez"
 	"github.com/infinity6-ai/gox/routez/sampleroutez/routezsamplefraction"
 	"github.com/stretchr/testify/require"
@@ -54,6 +55,24 @@ func TestUnitBasic(t *testing.T) {
 		},
 	}
 	status, err := apiclientz.Do(ctx, c, reqResp)
+	errorz.Check(err)
+	require.Equal(t, 201, status)
+	require.Equal(t, "reason: myreason, trace: xx", reqResp.Resp.TraceMessage)
+	require.Equal(t, &routezsamplefraction.Result{
+		Display: "10.000/3.000",
+		Result:  "3.333",
+	}, reqResp.Resp.Result)
+
+	reqResp = &routezsamplefraction.FractionApi{
+		Req: &routezsamplefraction.FractionReq{
+			Numerator:   10,
+			Denominator: 3,
+			Precision:   3,
+			TraceId:     "xx",
+			Reason:      "myreason",
+		},
+	}
+	status, err = apiz.Do(ctx, routezsamplefraction.NewService(), reqResp)
 	errorz.Check(err)
 	require.Equal(t, 201, status)
 	require.Equal(t, "reason: myreason, trace: xx", reqResp.Resp.TraceMessage)

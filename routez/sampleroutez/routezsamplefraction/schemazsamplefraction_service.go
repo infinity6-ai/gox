@@ -12,12 +12,20 @@ type FractionService struct {
 	api *FractionApi
 }
 
+func NewService() *FractionService {
+	return &FractionService{api: &FractionApi{}}
+}
+
 func (f *FractionService) New() apiz.Service {
 	return &FractionService{api: &FractionApi{}}
 }
 
 func (f *FractionService) Api() apiz.Api {
 	return f.api
+}
+
+func (f *FractionService) SetApi(a *FractionApi) {
+	f.api = a
 }
 
 func (f *FractionService) Handler(ctx context.Context) (int, error) {
