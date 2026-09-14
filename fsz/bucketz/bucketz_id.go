@@ -39,14 +39,14 @@ func (d Bucket) Validate(v string) error {
 	return nil
 }
 
-func Id(id string) Bucket {
+func MustParse(id string) Bucket {
 	var ret Bucket
 	checked.MustSet(&ret, id)
 	return ret
 }
 
 func Url(url *urlz.Url) (Bucket, *pathz.Path) {
-	bucket := Id(url.Host)
+	bucket := MustParse(url.Host)
 	object := url.Path.ForceCurrent()
 	return bucket, object
 }

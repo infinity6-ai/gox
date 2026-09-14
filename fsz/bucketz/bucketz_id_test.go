@@ -10,7 +10,7 @@ import (
 func TestUnitChecked(t *testing.T) {
 	tuchecked.Check(tuchecked.Table[*bucketz.Bucket, string]{
 		Create: func(v string) *bucketz.Bucket {
-			ret := bucketz.Id(v)
+			ret := bucketz.MustParse(v)
 			return &ret
 		},
 		Valids:   []string{"a1a", "b2b", "c-c"},
