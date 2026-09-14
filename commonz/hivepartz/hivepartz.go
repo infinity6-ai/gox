@@ -31,7 +31,9 @@ func (h *HiveParts) Get(name string) string {
 
 func (h *HiveParts) Add(name string, value string) *HiveParts {
 	checker.StrNotEmpty(name, "name")
-	checker.StrNotEmpty(value, "value")
+	if h.values == nil {
+		h.values = make(map[string]string)
+	}
 	h.names = append(h.names, name)
 	h.values[name] = value
 	return h
