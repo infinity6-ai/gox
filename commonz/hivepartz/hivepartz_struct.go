@@ -51,7 +51,7 @@ func (h *HiveParts) Add(name string, value string) error {
 	if err := validation.RegexMatch(nameValidator, name, "name"); err != nil {
 		return err
 	}
-	if err := validation.RegexMatch(valueValidator, value, "value"); err != nil {
+	if err := validation.RegexMatch(valueValidator, value, "value for %s", name); err != nil {
 		return err
 	}
 	if h.values == nil {
