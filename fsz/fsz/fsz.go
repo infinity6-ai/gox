@@ -8,6 +8,8 @@ import (
 	"time"
 
 	"github.com/infinity6-ai/gox/commonz/deferz"
+	"github.com/infinity6-ai/gox/commonz/errorz"
+	"github.com/infinity6-ai/gox/commonz/jsonz"
 	"github.com/infinity6-ai/gox/commonz/urlz"
 )
 
@@ -46,6 +48,20 @@ func Delete(ctx context.Context, url *urlz.Url) error {
 	return p.Delete(ctx, url)
 }
 
+func MustUploadJson(ctx context.Context, url *urlz.Url, headers http.Header, v any) {
+	errorz.Check(UploadJson(ctx, url, headers, v))
+}
+
+func UploadJson(ctx context.Context, url *urlz.Url, headers http.Header, v any) error {
+	r := jsonz.FormatReadCloser(v)
+	defer r.Close()
+	return Upload(ctx, url, headers, r)
+}
+
+func MustUpload(ctx context.Context, url *urlz.Url, headers http.Header, reader io.Reader) {
+	errorz.Check(Upload(ctx, url, headers, reader))
+}
+
 func Upload(ctx context.Context, url *urlz.Url, headers http.Header, reader io.Reader) error {
 	p, err := getProvider(url.Scheme)
 	if err != nil {
@@ -60,6 +76,26 @@ func Stat(ctx context.Context, url *urlz.Url) (*FileStat, error) {
 		return nil, err
 	}
 	return p.Stat(ctx, url)
+}
+
+func MustDownloadJson[T any](ctx context.Context, url *urlz.Url, v T) (f bool, h http.Header) {
+	var err error
+	f, h, err = DownloadJson(ctx, url, v)
+	errorz.Check(err)
+	return
+}
+
+func DownloadJson[T any](ctx context.Context, url *urlz.Url, v T) (f bool, h http.Header, e error) {
+	e = Download(ctx, url, func(found bool, headers http.Header, reader io.Reader) error {
+		f = found
+		h = headers
+		_, err := jsonz.ParseReader(reader, v)
+		if err != nil {
+			return fmt.Errorf("error downloading json: %w", err)
+		}
+		return nil
+	})
+	return
 }
 
 func Download(ctx context.Context, url *urlz.Url, callback func(found bool, headers http.Header, reader io.Reader) error) error {
@@ -152,4 +188,3 @@ func Move(ctx context.Context, src *urlz.Url, dest *urlz.Url) error {
 	}
 	return p.Move(ctx, src, dest)
 }
-
