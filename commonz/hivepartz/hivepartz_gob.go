@@ -21,9 +21,14 @@ func (p *HiveParts) GobDecode(data []byte) error {
 		return fmt.Errorf("cannot unmarshal path from gob: %w", err)
 	}
 
-	err := p.Parse(s)
+	np, r, err := ParseString(s)
 	if err != nil {
 		return fmt.Errorf("cannot parse path from gob: %w", err)
 	}
+	if r.Parents() != 0 || r.HasEndingSlash() || r.PartsLen() != 0 {
+		return fmt.Errorf("path unsupported: %s, remaning: %s", s, r)
+	}
+	p.names = np.names
+	p.values = np.values
 	return nil
 }

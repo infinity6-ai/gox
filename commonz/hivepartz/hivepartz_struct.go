@@ -53,7 +53,11 @@ func (h *HiveParts) Add(name string, value string) error {
 	return nil
 }
 
-func (h *HiveParts) Format() string {
+func (h *HiveParts) Format() *pathz.Path {
+	return pathz.MustParse(h.FormatString())
+}
+
+func (h *HiveParts) FormatString() string {
 	var sb strings.Builder
 	for i, name := range h.names {
 		if i > 0 {
@@ -67,14 +71,21 @@ func (h *HiveParts) Format() string {
 }
 
 func (h *HiveParts) String() string {
-	return h.Format()
+	return h.FormatString()
 }
 
 func MustParse(p *pathz.Path) (*HiveParts, *pathz.Path) {
 	hp, r, err := Parse(p)
 	errorz.Check(err)
 	return hp, r
+}
 
+func ParseString(s string) (*HiveParts, *pathz.Path, error) {
+	p, err := pathz.Parse(s)
+	if err != nil {
+		return nil, nil, fmt.Errorf("error parsing path: %w", err)
+	}
+	return Parse(p)
 }
 
 func (h *HiveParts) Parse(p *pathz.Path) (*pathz.Path, error) {
@@ -91,6 +102,9 @@ func (h *HiveParts) Parse(p *pathz.Path) (*pathz.Path, error) {
 	}
 
 	parts := p.Parts()
+
+	h.names = make([]string, 0, len(parts))
+	h.values = make(map[string]string, len(parts))
 
 	parseEndIndex := 0
 
