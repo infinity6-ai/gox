@@ -138,16 +138,13 @@ func New() *HiveParts {
 	return &HiveParts{}
 }
 
-func From(args ...string) (*HiveParts, error) {
+func From(args ...string) *HiveParts {
 	if len(args)%2 != 0 {
 		panic("invalid number of arguments")
 	}
 	hp := New()
 	for i := 0; i < len(args); i += 2 {
-		err := hp.Add(args[i], args[i+1])
-		if err != nil {
-			return nil, err
-		}
+		hp.MustAdd(args[i], args[i+1])
 	}
-	return hp, nil
+	return hp
 }
