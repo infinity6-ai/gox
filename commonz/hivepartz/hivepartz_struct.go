@@ -2,6 +2,7 @@ package hivepartz
 
 import (
 	"fmt"
+	"maps"
 	"regexp"
 	"slices"
 	"strings"
@@ -18,6 +19,14 @@ var valueValidator = regexp.MustCompile(`^[a-zA-Z0-9]+[a-z0-9\-]*`)
 type HiveParts struct {
 	names  []string
 	values map[string]string
+}
+
+func (h *HiveParts) Values() map[string]string {
+	return maps.Clone(h.values)
+}
+
+func (h *HiveParts) PartsLen() int {
+	return len(h.names)
 }
 
 func (h *HiveParts) Names() []string {
@@ -85,7 +94,14 @@ func ParseString(s string) (*HiveParts, *pathz.Path, error) {
 	if err != nil {
 		return nil, nil, fmt.Errorf("error parsing path: %w", err)
 	}
-	return Parse(p)
+	np, r, err := Parse(p)
+	if err != nil {
+		return nil, nil, err
+	}
+	if r.Parents() != 0 || r.HasEndingSlash() || r.PartsLen() != 0 {
+		return nil, nil, fmt.Errorf("path unsupported: %s, remaning: %s", s, r)
+	}
+	return np, r, nil
 }
 
 func (h *HiveParts) Parse(p *pathz.Path) (*pathz.Path, error) {
@@ -96,6 +112,9 @@ func (h *HiveParts) Parse(p *pathz.Path) (*pathz.Path, error) {
 	})
 	if err != nil {
 		return nil, fmt.Errorf("path unsupported: %w", err)
+	}
+	if p.HasEndingSlash() {
+		return nil, fmt.Errorf("path unsupported: cannot end with slash")
 	}
 	if p.PartsLen() == 0 {
 		return p, nil
@@ -117,7 +136,9 @@ func (h *HiveParts) Parse(p *pathz.Path) (*pathz.Path, error) {
 			if len(kv) < 2 {
 				break
 			}
-			h.Add(kv[0], kv[1])
+			if err := h.Add(kv[0], kv[1]); err != nil {
+				return nil, fmt.Errorf("invalid hive part: %w", err)
+			}
 			parseEndIndex = i + 1
 		} else {
 			break
