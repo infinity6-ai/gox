@@ -6,13 +6,28 @@ import (
 	"io"
 
 	"github.com/infinity6-ai/gox/commonz/deferz"
+	"github.com/infinity6-ai/gox/commonz/errorz"
 	"github.com/infinity6-ai/gox/commonz/jsonz"
+	"github.com/infinity6-ai/gox/commonz/validation/checker"
 	"github.com/infinity6-ai/gox/httpz/httpzclient"
 	"github.com/infinity6-ai/gox/httpz/httpzrequest"
 	"github.com/infinity6-ai/gox/routez/apiz"
 	"github.com/infinity6-ai/gox/routez/internal/converter"
 	"github.com/infinity6-ai/gox/schemaz/schemaz"
 )
+
+func MustSuccess(ctx context.Context, client *httpzclient.Client, reqResp apiz.Api) int {
+	status := MustDo(ctx, client, reqResp)
+	checker.GreaterOrEqual(status, 200, "http status error")
+	checker.Less(status, 300, "http status erro")
+	return status
+}
+
+func MustDo(ctx context.Context, client *httpzclient.Client, reqResp apiz.Api) int {
+	status, err := Do(ctx, client, reqResp)
+	errorz.Check(err)
+	return status
+}
 
 func Do(ctx context.Context, client *httpzclient.Client, reqResp apiz.Api) (int, error) {
 	nReq, closer, err := parseRequest(ctx, reqResp)
