@@ -2,6 +2,7 @@ package hivepartz
 
 import (
 	"fmt"
+	"maps"
 	"regexp"
 	"slices"
 	"strings"
@@ -18,6 +19,14 @@ var valueValidator = regexp.MustCompile(`^[a-zA-Z0-9]+[a-z0-9\-]*`)
 type HiveParts struct {
 	names  []string
 	values map[string]string
+}
+
+func (h *HiveParts) Values() map[string]string {
+	return maps.Clone(h.values)
+}
+
+func (h *HiveParts) PartsLen() int {
+	return len(h.names)
 }
 
 func (h *HiveParts) Names() []string {
