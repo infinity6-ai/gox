@@ -28,9 +28,14 @@ func Header2Json(headers http.Header) map[string][]string {
 	return n
 }
 
+// Json2HeaderName converte uma chave de schema (com "_") no nome real do header ("-").
+func Json2HeaderName(k string) string {
+	return strings.ReplaceAll(k, "_", "-")
+}
+
 func Json2Header(in map[string][]string, out http.Header) {
 	for k, v := range in {
-		nk := strings.ReplaceAll(k, "_", "-")
+		nk := Json2HeaderName(k)
 		out.Del(nk)
 		for _, vv := range v {
 			out.Add(nk, vv)
