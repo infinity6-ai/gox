@@ -8,7 +8,7 @@ import (
 
 func (p *HiveParts) GobEncode() ([]byte, error) {
 	var buf bytes.Buffer
-	if err := gob.NewEncoder(&buf).Encode(p.String()); err != nil {
+	if err := gob.NewEncoder(&buf).Encode(p.FormatString()); err != nil {
 		return nil, fmt.Errorf("cannot marshal path to gob: %w", err)
 	}
 	return buf.Bytes(), nil
