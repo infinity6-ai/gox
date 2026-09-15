@@ -2,14 +2,18 @@ package hivepartz
 
 import (
 	"fmt"
+	"regexp"
 	"slices"
 	"strings"
 
 	"github.com/infinity6-ai/gox/commonz/constraintz/optionalz"
 	"github.com/infinity6-ai/gox/commonz/errorz"
 	"github.com/infinity6-ai/gox/commonz/pathz"
-	"github.com/infinity6-ai/gox/commonz/validation/checker"
+	"github.com/infinity6-ai/gox/commonz/validation"
 )
+
+var nameValidator = regexp.MustCompile(`^[a-z][a-z0-9\-]*`)
+var valueValidator = regexp.MustCompile(`^[a-zA-Z0-9]+[a-z0-9\-]*`)
 
 type HiveParts struct {
 	names  []string
@@ -29,14 +33,24 @@ func (h *HiveParts) Get(name string) string {
 	return h.Optional(name).Must()
 }
 
-func (h *HiveParts) Add(name string, value string) *HiveParts {
-	checker.StrNotEmpty(name, "name")
+func (h *HiveParts) MustAdd(name string, value string) {
+	err := h.Add(name, value)
+	errorz.Check(err)
+}
+
+func (h *HiveParts) Add(name string, value string) error {
+	if err := validation.RegexMatch(nameValidator, name, "name"); err != nil {
+		return err
+	}
+	if err := validation.RegexMatch(valueValidator, value, "value"); err != nil {
+		return err
+	}
 	if h.values == nil {
 		h.values = make(map[string]string)
 	}
 	h.names = append(h.names, name)
 	h.values[name] = value
-	return h
+	return nil
 }
 
 func (h *HiveParts) Format() string {
@@ -63,18 +77,17 @@ func MustParse(p *pathz.Path) (*HiveParts, *pathz.Path) {
 
 }
 
-func Parse(p *pathz.Path) (*HiveParts, *pathz.Path, error) {
+func (h *HiveParts) Parse(p *pathz.Path) (*pathz.Path, error) {
 	err := p.Validate(pathz.ValidateOptions{
 		Absolute:   new(false),
 		MaxParents: new(0),
 		Wildchar:   true,
 	})
 	if err != nil {
-		return nil, nil, fmt.Errorf("path unsupported: %w", err)
+		return nil, fmt.Errorf("path unsupported: %w", err)
 	}
-	var ret HiveParts
 	if p.PartsLen() == 0 {
-		return &ret, p, nil
+		return p, nil
 	}
 
 	parts := p.Parts()
@@ -85,12 +98,12 @@ func Parse(p *pathz.Path) (*HiveParts, *pathz.Path, error) {
 		if strings.Contains(part, "=") {
 			kv := strings.SplitN(part, "=", 3)
 			if len(kv) > 2 {
-				return nil, nil, fmt.Errorf("too many parts in hive partition: %s", part)
+				return nil, fmt.Errorf("too many parts in hive partition: %s", part)
 			}
 			if len(kv) < 2 {
 				break
 			}
-			ret.Add(kv[0], kv[1])
+			h.Add(kv[0], kv[1])
 			parseEndIndex = i + 1
 		} else {
 			break
@@ -98,5 +111,29 @@ func Parse(p *pathz.Path) (*HiveParts, *pathz.Path, error) {
 	}
 
 	p = pathz.New(0, parts[parseEndIndex:], p.HasEndingSlash())
-	return &ret, p, nil
+	return p, nil
+}
+
+func Parse(p *pathz.Path) (*HiveParts, *pathz.Path, error) {
+	hp := &HiveParts{}
+	p, err := hp.Parse(p)
+	return hp, p, err
+}
+
+func New() *HiveParts {
+	return &HiveParts{}
+}
+
+func From(args ...string) (*HiveParts, error) {
+	if len(args)%2 != 0 {
+		panic("invalid number of arguments")
+	}
+	hp := New()
+	for i := 0; i < len(args); i += 2 {
+		err := hp.Add(args[i], args[i+1])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return hp, nil
 }
