@@ -39,27 +39,7 @@ func (h *HiveParts) Add(name string, value string) *HiveParts {
 	return h
 }
 
-// Format implements fmt.Formatter.
-func (h *HiveParts) Format(s fmt.State, verb rune) {
-	switch verb {
-	case 'v', 's':
-		var sb strings.Builder
-		for i, name := range h.names {
-			if i > 0 {
-				sb.WriteRune('/')
-			}
-			sb.WriteString(name)
-			sb.WriteRune('=')
-			sb.WriteString(h.values[name])
-		}
-		_, _ = s.Write([]byte(sb.String()))
-	default:
-		_, _ = fmt.Fprintf(s, "%%!%c(hivepartz.HiveParts=%s)", verb, h.String())
-	}
-}
-
-// String implements fmt.Stringer.
-func (h *HiveParts) String() string {
+func (h *HiveParts) Format() string {
 	var sb strings.Builder
 	for i, name := range h.names {
 		if i > 0 {
@@ -70,6 +50,10 @@ func (h *HiveParts) String() string {
 		sb.WriteString(h.values[name])
 	}
 	return sb.String()
+}
+
+func (h *HiveParts) String() string {
+	return h.Format()
 }
 
 func MustParse(p *pathz.Path) (*HiveParts, *pathz.Path) {
