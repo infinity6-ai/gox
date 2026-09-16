@@ -10,13 +10,8 @@ import (
 	"github.com/infinity6-ai/gox/commonz/validation/checker"
 )
 
-var http_pattern *regexp.Regexp
-
-func init() {
-	var err error
-	http_pattern, err = regexp.Compile(`^[0-9]{4}\-[0-9]{2}\-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}\.[0-9]{3}Z$`)
-	errorz.Check(err)
-}
+var PatternHttp = regexp.MustCompile(`^[0-9]{4}\-[0-9]{2}\-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}\.[0-9]{3}Z$`)
+var PatternTZ = regexp.MustCompile(`^^[0-9]{8}T[0-9]{9}Z$`)
 
 func TimeFormatTZ(t time.Time) string {
 	tstr := t.UTC().Format("20060102T150405.000Z")
@@ -24,7 +19,7 @@ func TimeFormatTZ(t time.Time) string {
 }
 
 func TimeParseTZ(tz string) time.Time {
-	checker.Equal(19, len(tz), "wrong tz")
+	checker.RegexMatch(PatternTZ, tz, "ts")
 	tzStr := tz[:15] + "." + tz[15:]
 	t, err := time.Parse("20060102T150405.000Z", tzStr)
 	errorz.Check(err)
@@ -32,7 +27,7 @@ func TimeParseTZ(tz string) time.Time {
 }
 
 func TimeParseHttp(ts string) time.Time {
-	checker.RegexMatch(http_pattern, ts, "ts")
+	checker.RegexMatch(PatternHttp, ts, "ts")
 	t, err := time.Parse("2006-01-02T15:04:05.000Z", ts)
 	errorz.Check(err)
 	return t.UTC()
