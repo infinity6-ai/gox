@@ -52,10 +52,14 @@ func (c *Client) AddFilter(filter Filter) {
 }
 
 func (c *Client) MustSuccess(ctx context.Context, req *httpzrequest.Req) *Resp {
+	dfz := deferz.New(ctx)
+	defer dfz.Close()
 	ret := c.MustDo(ctx, req)
+	dfz.AddCloserS(ret.Body)
 	if ret.StatusCode < 200 || ret.StatusCode >= 300 {
 		panic(fmt.Errorf("http client error: %d", ret.StatusCode))
 	}
+	dfz.Detach()
 	return ret
 }
 
