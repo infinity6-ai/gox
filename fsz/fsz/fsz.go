@@ -88,6 +88,9 @@ func MustDownloadJson[T any](ctx context.Context, url *urlz.Url, v T) (f bool, h
 func DownloadJson[T any](ctx context.Context, url *urlz.Url, v T) (f bool, h http.Header, e error) {
 	e = Download(ctx, url, func(found bool, headers http.Header, reader io.Reader) error {
 		f = found
+		if !f {
+			return nil
+		}
 		h = headers
 		_, err := jsonz.ParseReader(reader, v)
 		if err != nil {

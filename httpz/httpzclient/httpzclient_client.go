@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/infinity6-ai/gox/commonz/deferz"
+	"github.com/infinity6-ai/gox/commonz/errorz"
 	"github.com/infinity6-ai/gox/commonz/urlz"
 	"github.com/infinity6-ai/gox/httpz/httpzrequest"
 )
@@ -48,6 +49,20 @@ func New(ctx context.Context, opts Options) *Client {
 
 func (c *Client) AddFilter(filter Filter) {
 	c.filters = append(c.filters, filter)
+}
+
+func (c *Client) MustSuccess(ctx context.Context, req *httpzrequest.Req) *Resp {
+	ret := c.MustDo(ctx, req)
+	if ret.StatusCode < 200 || ret.StatusCode >= 300 {
+		panic(fmt.Errorf("http client error: %d", ret.StatusCode))
+	}
+	return ret
+}
+
+func (c *Client) MustDo(ctx context.Context, req *httpzrequest.Req) *Resp {
+	ret, err := c.Do(ctx, req)
+	errorz.Check(err)
+	return ret
 }
 
 func (c *Client) Do(ctx context.Context, req *httpzrequest.Req) (*Resp, error) {
