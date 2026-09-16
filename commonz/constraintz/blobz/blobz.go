@@ -5,6 +5,8 @@ import (
 	"io"
 	"reflect"
 	"strings"
+
+	"github.com/infinity6-ai/gox/commonz/errorz"
 )
 
 type Data interface {
@@ -24,11 +26,39 @@ type Blob interface {
 	String() string
 	Bytes() []byte
 	IsString() bool
+	Len() int
+	Ascii() string
 }
 
 // wrapper is a non-generic struct holding either a string or []byte
 type wrapper struct {
 	data any
+}
+
+func (b *wrapper) Ascii() string {
+	s := b.String()
+	return strings.Map(func(r rune) rune {
+		if r < 20 && r > 127 {
+			return '-'
+		}
+		return r
+	}, s)
+}
+
+// Len implements [Blob].
+func (b *wrapper) Len() int {
+	if s, ok := b.data.(string); ok {
+		return len(s)
+	}
+	if bs, ok := b.data.([]byte); ok {
+		return len(bs)
+	}
+	// Fallback for aliased types
+	rv := reflect.ValueOf(b.data)
+	if rv.Kind() == reflect.String {
+		return len(rv.String())
+	}
+	return len(rv.Bytes())
 }
 
 func (b *wrapper) NewReader() io.Reader {
@@ -90,4 +120,20 @@ func (b *wrapper) IsString() bool {
 
 func New[T Data](val T) Blob {
 	return &wrapper{data: val}
+}
+
+func ReadAll(r io.Reader, max int) (Blob, error) {
+	var ret Blob
+	r = io.LimitReader(r, int64(max))
+	buf, err := io.ReadAll(r)
+	if len(buf) > 0 {
+		ret = New(buf)
+	}
+	return ret, err
+}
+
+func MustReadAll(r io.Reader, size int) Blob {
+	ret, err := ReadAll(r, size)
+	errorz.Check(err)
+	return ret
 }
