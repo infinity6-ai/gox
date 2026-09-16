@@ -123,6 +123,9 @@ func New[T Data](val T) Blob {
 }
 
 func ReadAll(r io.Reader, max int) (Blob, error) {
+	if r == nil {
+		return nil, nil
+	}
 	var ret Blob
 	r = io.LimitReader(r, int64(max))
 	buf, err := io.ReadAll(r)
