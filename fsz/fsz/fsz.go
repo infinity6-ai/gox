@@ -101,6 +101,14 @@ func DownloadJson[T any](ctx context.Context, url *urlz.Url, v T) (f bool, h htt
 	return
 }
 
+func MustDownload(ctx context.Context, url *urlz.Url, callback func(found bool, headers http.Header, reader io.Reader)) {
+	err := Download(ctx, url, func(found bool, headers http.Header, reader io.Reader) error {
+		callback(found, headers, reader)
+		return nil
+	})
+	errorz.Check(err)
+}
+
 func Download(ctx context.Context, url *urlz.Url, callback func(found bool, headers http.Header, reader io.Reader) error) error {
 	p, err := getProvider(url.Scheme)
 	if err != nil {

@@ -3,7 +3,9 @@ package httpzclient
 import (
 	"context"
 	"fmt"
+	"maps"
 	"net/http"
+	"net/url"
 	"time"
 
 	"github.com/infinity6-ai/gox/commonz/constraintz/blobz"
@@ -123,8 +125,20 @@ func (c *Client) buildURL(req *httpzrequest.Req) (string, error) {
 		return "", fmt.Errorf("invalid base URL: must be an absolute URL: %s", c.Options.BaseUrl)
 	}
 
+	query := url.Values{}
+	if u.Query != "" {
+		nq, err := url.ParseQuery(u.Query)
+		if err != nil {
+			return "", fmt.Errorf("invalid query in URL: %s", u)
+		}
+		maps.Copy(query, nq)
+	}
+	if req.Query != nil {
+		maps.Copy(query, req.Query)
+	}
+
 	// u.Path = path.Join(u.Path, req.Path.String())
-	u.Query = req.Query.Encode()
+	u.Query = query.Encode()
 
 	return u.String(), nil
 }

@@ -56,6 +56,15 @@ func New(method string, path string) *Req {
 	}
 }
 
+func FromUrl(method string, u *urlz.Url) *Req {
+	return &Req{
+		Method:  method,
+		Url:     u,
+		Query:   url.Values{},
+		Headers: http.Header{},
+	}
+}
+
 func (r *Req) SetQuery(key, value string) *Req {
 	r.Query.Set(key, value)
 	return r
