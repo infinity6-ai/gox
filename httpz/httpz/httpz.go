@@ -48,11 +48,13 @@ func Do(ctx context.Context, opts Options) error {
 		return err
 	}
 	defer resp.Body.Close()
-	if opts.Validate != nil {
-		err := opts.Validate(resp)
-		if err != nil {
-			return fmt.Errorf("error validating response: %w", err)
-		}
+	validate := opts.Validate
+	if validate == nil {
+		validate = ValidateRespSuccess
+	}
+	err = validate(resp)
+	if err != nil {
+		return fmt.Errorf("error validating response: %w", err)
 	}
 	if opts.Parse != nil {
 		err = opts.Parse(resp.StatusCode, resp.Headers, resp.Body)
