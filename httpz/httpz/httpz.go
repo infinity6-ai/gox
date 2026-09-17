@@ -7,6 +7,7 @@ import (
 	"net/http"
 
 	"github.com/infinity6-ai/gox/commonz/constraintz/blobz"
+	"github.com/infinity6-ai/gox/commonz/errorz"
 	"github.com/infinity6-ai/gox/commonz/validation/checker"
 	"github.com/infinity6-ai/gox/httpz/httpzclient"
 	"github.com/infinity6-ai/gox/httpz/httpzrequest"
@@ -25,6 +26,12 @@ type Options struct {
 	Format   func(ctx context.Context) (io.ReadCloser, error)
 	Validate func(resp *httpzclient.Resp) error
 	Parse    func(status int, headers http.Header, r io.Reader) error
+}
+
+func MustSend(ctx context.Context, opts Options) *httpzclient.Resp {
+	ret, err := Send(ctx, opts)
+	errorz.Check(err)
+	return ret
 }
 
 func Send(ctx context.Context, opts Options) (*httpzclient.Resp, error) {
