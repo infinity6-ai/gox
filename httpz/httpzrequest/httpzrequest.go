@@ -1,3 +1,5 @@
+// Package httpzrequest provides data structures and builder methods for constructing
+// and configuring HTTP requests with paths, URLs, query parameters, headers, and bodies.
 package httpzrequest
 
 import (
@@ -12,15 +14,24 @@ import (
 	"github.com/infinity6-ai/gox/commonz/urlz"
 )
 
+// Req represents an HTTP request definition with structured path or URL, query parameters, headers, and body.
 type Req struct {
-	Method  string
-	Path    *pathz.Path
-	Url     *urlz.Url
-	Query   url.Values
+	// Method is the HTTP method (e.g. GET, POST).
+	Method string
+	// Path is the parsed relative or absolute request path.
+	Path *pathz.Path
+	// Url is the fully qualified target URL, mutually exclusive with Path during resolution.
+	Url *urlz.Url
+	// Query holds URL query parameters.
+	Query url.Values
+	// Headers holds HTTP request headers.
 	Headers http.Header
-	Body    io.Reader
+	// Body is the request payload stream.
+	Body io.Reader
 }
 
+// Format creates a new Req by parsing path and substituting named pattern parameters.
+// If params is not empty, path is parsed as a pattern and formatted with the given parameters.
 func Format(method string, path string, params map[string]string) (*Req, error) {
 	p := pathz.MustParse(path)
 	if len(params) > 0 {
@@ -41,12 +52,14 @@ func Format(method string, path string, params map[string]string) (*Req, error) 
 	}, nil
 }
 
+// MustFormat creates a new Req with pattern parameters formatted, panicking if formatting fails.
 func MustFormat(method string, path string, params map[string]string) *Req {
 	req, err := Format(method, path, params)
 	errorz.Check(err)
 	return req
 }
 
+// New creates a new Req initialized with the specified HTTP method and path string.
 func New(method string, path string) *Req {
 	return &Req{
 		Method:  method,
@@ -56,6 +69,7 @@ func New(method string, path string) *Req {
 	}
 }
 
+// FromUrl creates a new Req initialized with the specified HTTP method and absolute URL.
 func FromUrl(method string, u *urlz.Url) *Req {
 	return &Req{
 		Method:  method,
@@ -65,31 +79,40 @@ func FromUrl(method string, u *urlz.Url) *Req {
 	}
 }
 
+// SetQuery sets the query parameter key to value, overwriting any previous values for key.
 func (r *Req) SetQuery(key, value string) *Req {
 	r.Query.Set(key, value)
 	return r
 }
 
+// AddQuery appends a value to the query parameter key.
 func (r *Req) AddQuery(key, value string) *Req {
 	r.Query.Add(key, value)
 	return r
 }
 
+// AddHeader appends a header key-value pair to the request.
 func (r *Req) AddHeader(key, value string) *Req {
 	r.Headers.Add(key, value)
 	return r
 }
 
+// SetHeader sets the header key to value, overwriting any previous values for key.
 func (r *Req) SetHeader(key, value string) *Req {
 	r.Headers.Set(key, value)
 	return r
 }
 
+// SetBody sets the request body reader.
 func (r *Req) SetBody(body io.Reader) *Req {
 	r.Body = body
 	return r
 }
 
+// ResolveUrl resolves the effective request URL against an optional baseUrl.
+// It panics if both Path and Url are specified or if neither is specified.
+// If Url is set, it validates that baseUrl is a base of Url (if baseUrl is non-nil).
+// If Path is set, baseUrl must not be nil and Path is joined onto baseUrl.
 func (r *Req) ResolveUrl(baseUrl *urlz.Url) (*urlz.Url, error) {
 	if r.Path == nil && r.Url == nil {
 		panic("use either Path or Url")

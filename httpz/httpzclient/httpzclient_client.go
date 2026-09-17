@@ -1,3 +1,5 @@
+// Package httpzclient provides an HTTP client with filter middleware support,
+// base URL resolution, and lifecycle error handling.
 package httpzclient
 
 import (
@@ -24,20 +26,26 @@ var defaultHttpClient = &http.Client{
 	},
 }
 
+// Options configures a Client instance.
 type Options struct {
-	BaseUrl   *urlz.Url
+	// BaseUrl is the default base URL for relative request paths.
+	BaseUrl *urlz.Url
+	// GetClient optionally supplies a custom *http.Client for a given context.
 	GetClient func(ctx context.Context) *http.Client
 }
 
 func (o *Options) fix() {
 }
 
+// Client represents an HTTP client capable of dispatching requests through a chain of filters.
 type Client struct {
+	// Options holds the configuration options for the client.
 	Options Options
 	filters []Filter
 	client  *http.Client
 }
 
+// New creates a new Client configured with the given Options.
 func New(ctx context.Context, opts Options) *Client {
 	opts.fix()
 	ret := &Client{
@@ -50,10 +58,13 @@ func New(ctx context.Context, opts Options) *Client {
 	return ret
 }
 
+// AddFilter appends a Filter middleware to the client's request execution chain.
 func (c *Client) AddFilter(filter Filter) {
 	c.filters = append(c.filters, filter)
 }
 
+// MustSuccess executes an HTTP request, ensuring a successful response (status code 200-299),
+// and panics if an error occurs or the status code is outside the 2xx range.
 func (c *Client) MustSuccess(ctx context.Context, req *httpzrequest.Req) *Resp {
 	dfz := deferz.New(ctx)
 	defer dfz.Close()
@@ -66,12 +77,14 @@ func (c *Client) MustSuccess(ctx context.Context, req *httpzrequest.Req) *Resp {
 	return ret
 }
 
+// MustDo executes an HTTP request and panics if any error occurs.
 func (c *Client) MustDo(ctx context.Context, req *httpzrequest.Req) *Resp {
 	ret, err := c.Do(ctx, req)
 	errorz.Check(err)
 	return ret
 }
 
+// Do executes an HTTP request through the registered filter middleware pipeline.
 func (c *Client) Do(ctx context.Context, req *httpzrequest.Req) (*Resp, error) {
 	var h Handler = c.send
 	for i := len(c.filters) - 1; i >= 0; i-- {

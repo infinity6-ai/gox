@@ -1,3 +1,4 @@
+// Package cmdhttpz provides command-line interface definitions and commands for httpz.
 package cmdhttpz
 
 import (
@@ -9,6 +10,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
+// Prepare initializes and returns the root cobra command for httpz.
 func Prepare(ctx context.Context) *cobra.Command {
 	var rootCmd = &cobra.Command{
 		Version: version.Version(),
@@ -26,6 +28,7 @@ func Prepare(ctx context.Context) *cobra.Command {
 	return rootCmd
 }
 
+// Execute executes the given root cobra command and terminates the process on error.
 func Execute(rootCmd *cobra.Command) {
 	if err := rootCmd.Execute(); err != nil {
 		fmt.Fprintln(os.Stderr, err)

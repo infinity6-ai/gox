@@ -1,7 +1,10 @@
+// Package httpzjson provides JSON-oriented HTTP request helpers built on top of httpz,
+// enabling automated serialization of request inputs and deserialization of response outputs.
 package httpzjson
 
 import (
 	"context"
+	"fmt"
 	"io"
 	"net/http"
 
@@ -12,19 +15,31 @@ import (
 	"github.com/infinity6-ai/gox/httpz/httpzrequest"
 )
 
+// Options configures a JSON HTTP request and response execution workflow.
 type Options struct {
-	Client   *httpzclient.Client
-	Req      *httpzrequest.Req
-	Input    func() any
+	// Client is the HTTP client used to send the request.
+	Client *httpzclient.Client
+	// Req is the HTTP request to execute. Req.Body must be nil.
+	Req *httpzrequest.Req
+	// Input optionally provides a value to be JSON-serialized into the request body.
+	Input func() any
+	// Validate optionally verifies the response status. If nil, httpz.ValidateRespSuccess is used.
 	Validate func(resp *httpzclient.Resp) error
-	Output   func(status int, headers http.Header) any
+	// Output optionally returns a destination pointer into which the JSON response body will be decoded.
+	Output func(status int, headers http.Header) any
 }
 
+// MustDo executes a JSON HTTP request according to the provided Options, panicking if an error occurs.
 func MustDo(ctx context.Context, opts Options) {
 	err := Do(ctx, opts)
 	errorz.Check(err)
 }
 
+// Do executes a JSON HTTP request according to the provided Options.
+//
+// If opts.Input is non-nil, its returned value is formatted as a JSON ReadCloser for the request body.
+// The request is executed and validated via httpz.Do. If opts.Output is non-nil and returns a destination
+// pointer, the response body is JSON-decoded into that value.
 func Do(ctx context.Context, opts Options) error {
 	o := httpz.Options{
 		Client:   opts.Client,
@@ -41,10 +56,17 @@ func Do(ctx context.Context, opts Options) error {
 			v := opts.Output(status, headers)
 			if v != nil {
 				_, err := jsonz.ParseReader(r, v)
-				return err
+				if err != nil {
+					return fmt.Errorf("failed to parse json response: %w", err)
+				}
+				return nil
 			}
 			return nil
 		}
 	}
-	return httpz.Do(ctx, o)
+	err := httpz.Do(ctx, o)
+	if err != nil {
+		return fmt.Errorf("failed to execute json request: %w", err)
+	}
+	return nil
 }

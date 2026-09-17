@@ -1,3 +1,4 @@
+// Package httpzhelper provides internal helper utilities for HTTP conversion.
 package httpzhelper
 
 import (
@@ -8,6 +9,7 @@ import (
 	"github.com/infinity6-ai/gox/httpz/httpzrequest"
 )
 
+// FromHttpRequest populates a Req instance with values extracted from a standard http.Request.
 func FromHttpRequest(input *http.Request, output *httpzrequest.Req) {
 	output.Method = input.Method
 	output.Path = pathz.MustParse(input.URL.Path)

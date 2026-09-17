@@ -26,8 +26,11 @@ var allowedMethods = []string{
 	"*",
 }
 
+// Handler defines the function signature for a server-side request handler.
 type Handler func(ctx context.Context, resp Resp, req *httpzrequest.Req)
 
+// WrapResponse wraps the response status, headers, and writer for middleware interception.
+// It allows modifying the response status, injecting headers, and wrapping the output io.Writer.
 func (h Handler) WrapResponse(ctx context.Context, resp Resp, req *httpzrequest.Req, fixHeaders func(outStatus int, outHeaders http.Header) int, fixWriter func(outWriter io.Writer) io.Writer) io.Writer {
 	var rWriter io.Writer
 	nResp := func(nStatus int, nHeaders http.Header) io.Writer {
@@ -40,14 +43,19 @@ func (h Handler) WrapResponse(ctx context.Context, resp Resp, req *httpzrequest.
 	return rWriter
 }
 
+// HandlerPattern defines a route handler that accepts parsed route pattern parameters.
 type HandlerPattern func(ctx context.Context, resp Resp, req *httpzrequest.Req, params map[string]string)
 
+// Filter is a server middleware that intercepts request processing, allowing pre-processing,
+// post-processing, and wrapping next in the middleware chain.
 type Filter func(ctx context.Context, resp Resp, req *httpzrequest.Req, next Handler)
 
+// AddFilter registers a middleware Filter to the server's request handling pipeline.
 func (s *Server) AddFilter(filter Filter) {
 	s.filters = append(s.filters, filter)
 }
 
+// PatternHandler stores an HTTP method, compiled path pattern, prefix flag, and HandlerPattern.
 type PatternHandler struct {
 	Method  string
 	Pattern *patternpathz.Pattern
@@ -55,6 +63,8 @@ type PatternHandler struct {
 	Handler HandlerPattern
 }
 
+// AddHandler registers a pattern route handler for a given HTTP method and pattern path.
+// Use "*" as the method to match any HTTP method, or trailing "/*" in the pattern for prefix matching.
 func (s *Server) AddHandler(method string, pattern string, handler HandlerPattern) {
 	checker.OneOf(allowedMethods, method, "unknown method")
 	ph := &PatternHandler{}

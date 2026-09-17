@@ -1,3 +1,5 @@
+// Package httpzserver provides an HTTP server featuring pattern-based URL routing,
+// filter middleware pipelines, and structured lifecycle management.
 package httpzserver
 
 import (
@@ -23,7 +25,10 @@ type tlogger logz.Type
 
 var logger = logz.Create(tlogger(true))
 
+// Options configures a Server instance.
 type Options struct {
+	// LocalAddress is the TCP address to bind the server to (e.g. "localhost:8080" or ":8080").
+	// If empty, it checks the PORT environment variable or defaults to "localhost:0".
 	LocalAddress string
 }
 
@@ -39,6 +44,8 @@ func (o *Options) fix() {
 	}
 }
 
+// Server is an HTTP server that routes requests using pattern matching and processes them
+// through middleware filters.
 type Server struct {
 	Context         context.Context
 	Options         Options
@@ -50,6 +57,7 @@ type Server struct {
 	httpServer      *http.Server
 }
 
+// New creates a new Server instance with the specified Options.
 func New(ctx context.Context, opts Options) *Server {
 	opts.fix()
 	ret := &Server{
@@ -65,6 +73,7 @@ func New(ctx context.Context, opts Options) *Server {
 	return ret
 }
 
+// Base returns the base URL of the running server, using the listening address.
 func (s *Server) Base() *urlz.Url {
 	return &urlz.Url{
 		Scheme: "http",
@@ -73,6 +82,7 @@ func (s *Server) Base() *urlz.Url {
 	}
 }
 
+// Addr returns the network listener address, or nil if the server is not listening.
 func (s *Server) Addr() net.Addr {
 	if s.listener == nil {
 		return nil
@@ -80,6 +90,8 @@ func (s *Server) Addr() net.Addr {
 	return s.listener.Addr()
 }
 
+// Listen creates and starts the underlying TCP network listener.
+// It panics if the server is already listening or if binding fails.
 func (s *Server) Listen() {
 	if s.listener != nil {
 		panic(fmt.Sprintf("already configured: %s", s.listener.Addr()))
@@ -90,6 +102,7 @@ func (s *Server) Listen() {
 	s.dfz.AddCloserS(listener)
 }
 
+// Close gracefully stops the server and releases all bound resources.
 func (s *Server) Close() error {
 	if s.dfz != nil {
 		return s.dfz.Close()
