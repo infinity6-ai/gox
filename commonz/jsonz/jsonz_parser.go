@@ -8,6 +8,8 @@ import (
 	"github.com/infinity6-ai/gox/commonz/constraintz/blobz"
 )
 
+// ParseReader reads JSON from the given io.Reader and unmarshals it into v.
+// It returns v and any error encountered.
 func ParseReader[T any](r io.Reader, v T) (T, error) {
 	decoder := json.NewDecoder(r)
 	decoder.UseNumber()
@@ -19,11 +21,14 @@ func ParseReader[T any](r io.Reader, v T) (T, error) {
 	return v, nil
 }
 
+// ParseInto unmarshals the JSON data from blobz.Data into v.
 func ParseInto[I blobz.Data](data I, v any) error {
 	_, err := Parse(data, v)
 	return err
 }
 
+// Parse unmarshals the JSON data from blobz.Data into v.
+// It returns v and any error encountered.
 func Parse[T any, I blobz.Data](data I, v T) (T, error) {
 	return ParseReader(blobz.New(data).NewReader(), v)
 }
@@ -50,6 +55,7 @@ func ParseReaderUntilEOF[T any](r io.Reader) ([]*T, error) {
 	return result, nil
 }
 
+// FormatWriter marshals v into JSON and writes it to w.
 func FormatWriter(w io.Writer, v any) error {
 	encoder := json.NewEncoder(w)
 	err := encoder.Encode(v)
@@ -81,12 +87,15 @@ func FormatReadCloser(v any) io.ReadCloser {
 	return r
 }
 
+// FormatReader streams the JSON-encoded representation of v to the given callback fn.
+// It automatically closes the underlying stream once fn completes.
 func FormatReader(v any, fn func(r io.Reader) error) error {
 	r := FormatReadCloser(v)
 	defer r.Close()
 	return fn(r)
 }
 
+// Format marshals v into JSON and returns it as a blobz.Blob.
 func Format(v any) (blobz.Blob, error) {
 	b, err := json.Marshal(v)
 	if err != nil {
@@ -95,6 +104,7 @@ func Format(v any) (blobz.Blob, error) {
 	return blobz.New(b), nil
 }
 
+// FormatBytes marshals v into JSON and returns it as a byte slice.
 func FormatBytes(v any) ([]byte, error) {
 	ret, err := Format(v)
 	if err != nil {

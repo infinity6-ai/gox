@@ -411,3 +411,96 @@ func TestUnitParseReaderUntilEOF(t *testing.T) {
 		})
 	})
 }
+
+func TestUnitParseInto(t *testing.T) {
+	type MyStruct struct {
+		Name string `json:"name"`
+		Age  int    `json:"age"`
+	}
+
+	t.Run("Valid JSON string to struct using ParseInto", func(t *testing.T) {
+		initial := &MyStruct{}
+		want := &MyStruct{Name: "Jane Doe", Age: 25}
+		input := []byte(`{"name":"Jane Doe","age":25}`)
+
+		err := ParseInto(input, initial)
+		require.NoError(t, err)
+		require.Equal(t, want, initial)
+	})
+
+	t.Run("Invalid JSON string using ParseInto", func(t *testing.T) {
+		initial := &MyStruct{}
+		input := []byte(`{"status":`)
+		wantErr := "failed to parse json: unexpected EOF"
+
+		err := ParseInto(input, initial)
+
+		require.Error(t, err)
+		require.Contains(t, err.Error(), wantErr)
+		require.Equal(t, &MyStruct{}, initial)
+	})
+}
+
+func TestUnitFormatReader(t *testing.T) {
+	type MyStruct struct {
+		Name string `json:"name"`
+		Age  int    `json:"age"`
+	}
+
+	t.Run("Format struct to JSON reader callback", func(t *testing.T) {
+		input := MyStruct{Name: "Alice", Age: 40}
+		var result []byte
+		
+		err := FormatReader(input, func(r io.Reader) error {
+			var readErr error
+			result, readErr = io.ReadAll(r)
+			return readErr
+		})
+
+		require.NoError(t, err)
+		require.JSONEq(t, `{"name":"Alice","age":40}`, string(result))
+	})
+
+	t.Run("Format unsupported type (channel) to JSON reader callback", func(t *testing.T) {
+		input := make(chan int)
+		err := FormatReader(input, func(r io.Reader) error {
+			_, readErr := io.ReadAll(r)
+			return readErr
+		})
+
+		require.Error(t, err)
+		require.Contains(t, err.Error(), "failed to marshal data: json: unsupported type: chan int")
+	})
+}
+
+func TestUnitFormatBytes(t *testing.T) {
+	type MyStruct struct {
+		Product string  `json:"product"`
+		Price   float64 `json:"price"`
+	}
+
+	t.Run("Format struct to bytes", func(t *testing.T) {
+		input := MyStruct{Product: "Laptop", Price: 1200.50}
+		got, err := FormatBytes(input)
+
+		require.NoError(t, err)
+		require.JSONEq(t, `{"product":"Laptop","price":1200.5}`, string(got))
+	})
+
+	t.Run("Format map to bytes", func(t *testing.T) {
+		input := map[string]any{"item": "Book", "quantity": 1}
+		got, err := FormatBytes(input)
+
+		require.NoError(t, err)
+		require.JSONEq(t, `{"item":"Book","quantity":1}`, string(got))
+	})
+
+	t.Run("Format unsupported type (function) to bytes", func(t *testing.T) {
+		input := func() {}
+		got, err := FormatBytes(input)
+
+		require.Error(t, err)
+		require.Contains(t, err.Error(), "failed to marshal data: json: unsupported type: func()")
+		require.Nil(t, got)
+	})
+}
