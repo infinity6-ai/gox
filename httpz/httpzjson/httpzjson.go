@@ -17,7 +17,7 @@ type Options struct {
 	Req      *httpzrequest.Req
 	Input    func() any
 	Validate func(resp *httpzclient.Resp) error
-	Output   func() any
+	Output   func(status int, headers http.Header) any
 }
 
 func MustDo(ctx context.Context, opts Options) {
@@ -38,8 +38,12 @@ func Do(ctx context.Context, opts Options) error {
 	}
 	if opts.Output != nil {
 		o.Parse = func(status int, headers http.Header, r io.Reader) error {
-			_, err := jsonz.ParseReader(r, opts.Output())
-			return err
+			v := opts.Output(status, headers)
+			if v != nil {
+				_, err := jsonz.ParseReader(r, v)
+				return err
+			}
+			return nil
 		}
 	}
 	return httpz.Do(ctx, o)
