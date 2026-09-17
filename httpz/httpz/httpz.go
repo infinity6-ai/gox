@@ -28,13 +28,13 @@ type Options struct {
 	Parse    func(status int, headers http.Header, r io.Reader) error
 }
 
-func MustSend(ctx context.Context, opts Options) *httpzclient.Resp {
-	ret, err := Send(ctx, opts)
+func MustDo(ctx context.Context, opts Options) *httpzclient.Resp {
+	ret, err := Do(ctx, opts)
 	errorz.Check(err)
 	return ret
 }
 
-func Send(ctx context.Context, opts Options) (*httpzclient.Resp, error) {
+func Do(ctx context.Context, opts Options) (*httpzclient.Resp, error) {
 	checker.Nil(opts.Req.Body, "request body must be nil")
 	if opts.Format != nil {
 		r, err := opts.Format(ctx)
