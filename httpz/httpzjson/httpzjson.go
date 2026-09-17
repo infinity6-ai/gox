@@ -5,6 +5,7 @@ import (
 	"io"
 	"net/http"
 
+	"github.com/infinity6-ai/gox/commonz/errorz"
 	"github.com/infinity6-ai/gox/commonz/jsonz"
 	"github.com/infinity6-ai/gox/httpz/httpz"
 	"github.com/infinity6-ai/gox/httpz/httpzclient"
@@ -14,9 +15,14 @@ import (
 type Options struct {
 	Client   *httpzclient.Client
 	Req      *httpzrequest.Req
-	Input    any
+	Input    func() any
 	Validate func(resp *httpzclient.Resp) error
-	Output   any
+	Output   func() any
+}
+
+func MustDo(ctx context.Context, opts Options) {
+	err := Do(ctx, opts)
+	errorz.Check(err)
 }
 
 func Do(ctx context.Context, opts Options) error {
@@ -27,12 +33,12 @@ func Do(ctx context.Context, opts Options) error {
 	}
 	if opts.Input != nil {
 		o.Format = func(ctx context.Context) (io.ReadCloser, error) {
-			return jsonz.FormatReadCloser(opts.Input), nil
+			return jsonz.FormatReadCloser(opts.Input()), nil
 		}
 	}
 	if opts.Output != nil {
 		o.Parse = func(status int, headers http.Header, r io.Reader) error {
-			_, err := jsonz.ParseReader(r, opts.Output)
+			_, err := jsonz.ParseReader(r, opts.Output())
 			return err
 		}
 	}
