@@ -2,6 +2,7 @@ package httpz
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -13,9 +14,11 @@ import (
 	"github.com/infinity6-ai/gox/httpz/httpzrequest"
 )
 
+var errStatus = errors.New("Http Status Error")
+
 func ValidateRespSuccess(resp *httpzclient.Resp) error {
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		return fmt.Errorf("http client error: %d, head body: %s", resp.StatusCode, blobz.MustReadAll(resp.Body, 1024).Ascii())
+		return errStatus
 	}
 	return nil
 }
@@ -54,7 +57,7 @@ func Do(ctx context.Context, opts Options) error {
 	}
 	err = validate(resp)
 	if err != nil {
-		return fmt.Errorf("error validating response: %w", err)
+		return fmt.Errorf("http validating error: %d, head body: %s, err: %w", resp.StatusCode, blobz.MustReadAll(resp.Body, 1024).Ascii(), err)
 	}
 	if opts.Parse != nil {
 		err = opts.Parse(resp.StatusCode, resp.Headers, resp.Body)
