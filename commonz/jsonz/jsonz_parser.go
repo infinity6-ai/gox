@@ -81,6 +81,12 @@ func FormatReadCloser(v any) io.ReadCloser {
 	return r
 }
 
+func FormatReader(v any, fn func(r io.Reader) error) error {
+	r := FormatReadCloser(v)
+	defer r.Close()
+	return fn(r)
+}
+
 func Format(v any) (blobz.Blob, error) {
 	b, err := json.Marshal(v)
 	if err != nil {
