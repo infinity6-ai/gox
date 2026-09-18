@@ -187,7 +187,7 @@ type SignOptions struct {
 	ContentType string
 }
 
-func gcssign(url *urlz.Url, opts *SignOptions) (string, error) {
+func gcssign(ctx context.Context, url *urlz.Url, opts *SignOptions) (string, error) {
 	bucket, object := bucketz.Url(url)
 	o := &storage.SignedURLOptions{
 		Scheme:      storage.SigningSchemeV4,
@@ -195,25 +195,33 @@ func gcssign(url *urlz.Url, opts *SignOptions) (string, error) {
 		Expires:     time.Now().Add(opts.Duration),
 		ContentType: opts.ContentType,
 	}
-	return storage.SignedURL(bucket.Get(), object.String(), o)
+	client, err := storage.NewClient(ctx)
+	if err != nil {
+		return "", fmt.Errorf("error creating gcs client: %w", err)
+	}
+	ret, err := client.Bucket(bucket.Get()).SignedURL(object.String(), o)
+	if err != nil {
+		return "", fmt.Errorf("error signing url %s/%s: %w", bucket, object, err)
+	}
+	return ret, nil
 }
 
 func (gf *gsFs) SignGet(ctx context.Context, url *urlz.Url, duration time.Duration) (string, error) {
-	return gcssign(url, &SignOptions{
+	return gcssign(ctx, url, &SignOptions{
 		Method:   "GET",
 		Duration: duration,
 	})
 }
 
 func (gf *gsFs) SignPut(ctx context.Context, url *urlz.Url, duration time.Duration) (string, error) {
-	return gcssign(url, &SignOptions{
+	return gcssign(ctx, url, &SignOptions{
 		Method:   "PUT",
 		Duration: duration,
 	})
 }
 
 func (gf *gsFs) SignDelete(ctx context.Context, url *urlz.Url, duration time.Duration) (string, error) {
-	return gcssign(url, &SignOptions{
+	return gcssign(ctx, url, &SignOptions{
 		Method:   "DELETE",
 		Duration: duration,
 	})
