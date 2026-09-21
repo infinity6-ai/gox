@@ -53,16 +53,6 @@ func Delete(ctx context.Context, url *urlz.Url) error {
 	return p.Delete(ctx, url)
 }
 
-func MustUploadJson(ctx context.Context, url *urlz.Url, headers http.Header, v any) {
-	errorz.Check(UploadJson(ctx, url, headers, v))
-}
-
-func UploadJson(ctx context.Context, url *urlz.Url, headers http.Header, v any) error {
-	r := jsonz.FormatReadCloser(v)
-	defer r.Close()
-	return Upload(ctx, url, headers, r)
-}
-
 func MustUpload(ctx context.Context, url *urlz.Url, headers http.Header, reader io.Reader) {
 	errorz.Check(Upload(ctx, url, headers, reader))
 }
