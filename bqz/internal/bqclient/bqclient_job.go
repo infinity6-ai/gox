@@ -1,4 +1,3 @@
 package bqclient
 
-type Job struct {
-}
+type JobId string

@@ -8,6 +8,6 @@ type QueryOptions struct {
 	Query string
 }
 
-func (c *Client) Dispatch(ctx context.Context, query QueryOptions) (*Job, error) {
+func (c *Client) Dispatch(ctx context.Context, query QueryOptions) (JobId, error) {
 	panic("implement")
 }
