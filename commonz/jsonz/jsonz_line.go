@@ -37,19 +37,25 @@ func LineParseStream[E any](r io.Reader, fn func(item E) (bool, error)) error {
 }
 
 // LineParseReader reads line-delimited JSON from r and appends the decoded elements to v.
-func LineParseReader[S ~[]E, E any](r io.Reader, v *S) error {
+// If max > 0, parsing stops and returns nil when the number of loaded elements reaches max.
+func LineParseReader[S ~[]E, E any](r io.Reader, v *S, max int) error {
 	if v == nil {
 		return fmt.Errorf("destination slice pointer cannot be nil")
 	}
+	count := 0
 	return LineParseStream(r, func(item E) (bool, error) {
 		*v = append(*v, item)
+		count++
+		if max > 0 && count >= max {
+			return false, nil
+		}
 		return true, nil
 	})
 }
 
 // LineParseInto unmarshals line-delimited JSON data from blobz.Data into v.
 func LineParseInto[S ~[]E, E any, I blobz.Data](data I, v *S) error {
-	err := LineParseReader(blobz.New(data).NewReader(), v)
+	err := LineParseReader(blobz.New(data).NewReader(), v, 0)
 	if err != nil {
 		return fmt.Errorf("failed to parse into slice: %w", err)
 	}

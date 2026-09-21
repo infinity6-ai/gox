@@ -18,6 +18,7 @@ type lineTestItem struct {
 func TestUnitLineParseReader(t *testing.T) {
 	type testScenario struct {
 		input   string
+		max     int
 		want    []lineTestItem
 		wantErr string
 	}
@@ -26,7 +27,7 @@ func TestUnitLineParseReader(t *testing.T) {
 		t.Helper()
 		var got []lineTestItem
 		reader := strings.NewReader(s.input)
-		err := LineParseReader(reader, &got)
+		err := LineParseReader(reader, &got, s.max)
 
 		if s.wantErr != "" {
 			require.Error(t, err)
@@ -71,8 +72,31 @@ func TestUnitLineParseReader(t *testing.T) {
 		})
 	})
 
+	t.Run("Max limit is reached, stops parsing and does not load next element", func(t *testing.T) {
+		// Even though the second line is invalid JSON, we stop after loading the first element,
+		// so no error is returned.
+		check(t, testScenario{
+			input: "{\"id\":1,\"name\":\"A\"}\n{invalid}\n",
+			max:   1,
+			want: []lineTestItem{
+				{ID: 1, Name: "A"},
+			},
+		})
+	})
+
+	t.Run("Max limit is greater than elements available", func(t *testing.T) {
+		check(t, testScenario{
+			input: "{\"id\":1,\"name\":\"A\"}\n{\"id\":2,\"name\":\"B\"}\n",
+			max:   5,
+			want: []lineTestItem{
+				{ID: 1, Name: "A"},
+				{ID: 2, Name: "B"},
+			},
+		})
+	})
+
 	t.Run("Nil destination pointer", func(t *testing.T) {
-		err := LineParseReader[[]lineTestItem](strings.NewReader(""), nil)
+		err := LineParseReader[[]lineTestItem](strings.NewReader(""), nil, 0)
 		require.Error(t, err)
 		require.Contains(t, err.Error(), "destination slice pointer cannot be nil")
 	})
