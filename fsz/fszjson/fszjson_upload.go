@@ -14,12 +14,11 @@ import (
 
 type UploadOptions struct {
 	Url    *urlz.Url
-	Values []any
 	Gzip   bool
 	Header http.Header
 }
 
-func Upload(ctx context.Context, opts UploadOptions) error {
+func Upload[S ~[]E, E any](ctx context.Context, values S, opts UploadOptions) error {
 	header := maps.Clone(opts.Header)
 	if header == nil {
 		header = make(http.Header)
@@ -27,10 +26,7 @@ func Upload(ctx context.Context, opts UploadOptions) error {
 	if header.Get("Content-Type") == "" {
 		header.Set("Content-Type", "application/json")
 	}
-	if len(opts.Values) > 1 {
-		panic("not implement yet")
-	}
-	r := jsonz.FormatReadCloser(opts.Values[0])
+	r := jsonz.LineFormatReadCloser(values)
 	defer r.Close()
 	var err error
 	if opts.Gzip {
@@ -38,6 +34,7 @@ func Upload(ctx context.Context, opts UploadOptions) error {
 		if err != nil {
 			return fmt.Errorf("gunzip json error: %w", err)
 		}
+		defer r.Close()
 	}
 	err = fsz.Upload(ctx, opts.Url, header, r)
 	if err != nil {
