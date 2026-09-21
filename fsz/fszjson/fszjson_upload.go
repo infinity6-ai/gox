@@ -20,7 +20,7 @@ type UploadOptions struct {
 	Header http.Header
 }
 
-func Upload[S ~[]E, E any](ctx context.Context, values S, opts UploadOptions) error {
+func Upload[E any](ctx context.Context, fn func() (E, bool, error), opts UploadOptions) error {
 	header := maps.Clone(opts.Header)
 	if header == nil {
 		header = make(http.Header)
@@ -29,7 +29,7 @@ func Upload[S ~[]E, E any](ctx context.Context, values S, opts UploadOptions) er
 		header.Set("Content-Type", "application/json")
 	}
 
-	r := jsonz.LineFormatReadCloser(values)
+	r := jsonz.LineFormatReaderStream(fn)
 	defer r.Close()
 
 	var uploadReader io.Reader = r
@@ -53,4 +53,17 @@ func Upload[S ~[]E, E any](ctx context.Context, values S, opts UploadOptions) er
 		return fmt.Errorf("error uploading json %s: %w", opts.Url, err)
 	}
 	return nil
+}
+
+func UploadSlice[S ~[]E, E any](ctx context.Context, values S, opts UploadOptions) error {
+	i := 0
+	return Upload(ctx, func() (E, bool, error) {
+		if i >= len(values) {
+			var zero E
+			return zero, false, nil
+		}
+		val := values[i]
+		i++
+		return val, true, nil
+	}, opts)
 }

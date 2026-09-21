@@ -33,7 +33,7 @@ func TestUnitUploadDownload(t *testing.T) {
 	}
 
 	// 1. Upload
-	err = fszjson.Upload(ctx, items, fszjson.UploadOptions{
+	err = fszjson.UploadSlice(ctx, items, fszjson.UploadOptions{
 		Url:  u,
 		Gzip: false,
 	})
@@ -44,7 +44,7 @@ func TestUnitUploadDownload(t *testing.T) {
 
 	// 2. Download
 	var decoded []SampleItem
-	found, header, err := fszjson.Download(ctx, &decoded, fszjson.DownloadOptions{
+	found, header, err := fszjson.DownloadSlice(ctx, &decoded, fszjson.DownloadOptions{
 		Url:  u,
 		Gzip: false,
 	})
@@ -70,7 +70,7 @@ func TestUnitUploadDownloadGzip(t *testing.T) {
 	}
 
 	// 1. Upload with Gzip
-	err = fszjson.Upload(ctx, items, fszjson.UploadOptions{
+	err = fszjson.UploadSlice(ctx, items, fszjson.UploadOptions{
 		Url:  u,
 		Gzip: true,
 	})
@@ -88,7 +88,7 @@ func TestUnitUploadDownloadGzip(t *testing.T) {
 
 	// 2. Download with Gzip
 	var decoded []SampleItem
-	found, header, err := fszjson.Download(ctx, &decoded, fszjson.DownloadOptions{
+	found, header, err := fszjson.DownloadSlice(ctx, &decoded, fszjson.DownloadOptions{
 		Url:  u,
 		Gzip: true,
 	})
@@ -109,7 +109,7 @@ func TestUnitDownloadNotFound(t *testing.T) {
 	require.NoError(t, err)
 
 	var decoded []SampleItem
-	found, header, err := fszjson.Download(ctx, &decoded, fszjson.DownloadOptions{
+	found, header, err := fszjson.DownloadSlice(ctx, &decoded, fszjson.DownloadOptions{
 		Url:  u,
 		Gzip: false,
 	})
@@ -137,7 +137,7 @@ func TestUnitUploadHeaderPropagation(t *testing.T) {
 	customHeader.Set("Content-Type", "application/x-ndjson")
 
 	// 1. Upload with Custom Header
-	err = fszjson.Upload(ctx, items, fszjson.UploadOptions{
+	err = fszjson.UploadSlice(ctx, items, fszjson.UploadOptions{
 		Url:    u,
 		Gzip:   false,
 		Header: customHeader,
@@ -146,12 +146,60 @@ func TestUnitUploadHeaderPropagation(t *testing.T) {
 
 	// 2. Download and verify we get correct decoding
 	var decoded []SampleItem
-	found, _, err := fszjson.Download(ctx, &decoded, fszjson.DownloadOptions{
+	found, _, err := fszjson.DownloadSlice(ctx, &decoded, fszjson.DownloadOptions{
 		Url:  u,
 		Gzip: false,
 	})
 	require.NoError(t, err)
 	require.True(t, found)
 	require.Len(t, decoded, 1)
+	require.Equal(t, items, decoded)
+}
+
+func TestUnitUploadDownloadStream(t *testing.T) {
+	tmpDir := filez.CreateTempDir("fszjson-stream-test")
+	defer os.RemoveAll(tmpDir)
+
+	ctx := context.Background()
+	filePath := filepath.Join(tmpDir, "items_stream.json")
+	u, err := urlz.Parse("file://" + filePath)
+	require.NoError(t, err)
+
+	items := []SampleItem{
+		{ID: 1, Name: "apple"},
+		{ID: 2, Name: "banana"},
+		{ID: 3, Name: "cherry"},
+	}
+
+	// 1. Upload Stream
+	uploadCount := 0
+	err = fszjson.Upload(ctx, func() (SampleItem, bool, error) {
+		if uploadCount >= len(items) {
+			return SampleItem{}, false, nil
+		}
+		item := items[uploadCount]
+		uploadCount++
+		return item, true, nil
+	}, fszjson.UploadOptions{
+		Url:  u,
+		Gzip: false,
+	})
+	require.NoError(t, err)
+
+	// Verify file was written
+	require.FileExists(t, filePath)
+
+	// 2. Download Stream
+	var decoded []SampleItem
+	found, header, err := fszjson.Download(ctx, func(item SampleItem) (bool, error) {
+		decoded = append(decoded, item)
+		return true, nil // return true to continue streaming
+	}, fszjson.DownloadOptions{
+		Url:  u,
+		Gzip: false,
+	})
+	require.NoError(t, err)
+	require.True(t, found)
+	require.NotNil(t, header)
 	require.Equal(t, items, decoded)
 }

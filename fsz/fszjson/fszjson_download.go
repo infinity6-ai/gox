@@ -17,7 +17,7 @@ type DownloadOptions struct {
 	Gzip bool
 }
 
-func Download[S ~[]E, E any](ctx context.Context, v *S, opts DownloadOptions) (bool, http.Header, error) {
+func Download[E any](ctx context.Context, fn func(item E) (bool, error), opts DownloadOptions) (bool, http.Header, error) {
 	var found bool
 	var header http.Header
 	err := fsz.Download(ctx, opts.Url, func(f bool, h http.Header, r io.Reader) error {
@@ -37,9 +37,9 @@ func Download[S ~[]E, E any](ctx context.Context, v *S, opts DownloadOptions) (b
 			reader = gr
 		}
 
-		err := jsonz.LineParseReader(reader, v)
+		err := jsonz.LineParseStream(reader, fn)
 		if err != nil {
-			return fmt.Errorf("error parsing json lines from %s: %w", opts.Url, err)
+			return fmt.Errorf("error parsing json stream from %s: %w", opts.Url, err)
 		}
 		return nil
 	})
@@ -47,4 +47,16 @@ func Download[S ~[]E, E any](ctx context.Context, v *S, opts DownloadOptions) (b
 		return false, nil, fmt.Errorf("error downloading json from %s: %w", opts.Url, err)
 	}
 	return found, header, nil
+}
+
+func DownloadSlice[S ~[]E, E any](ctx context.Context, v *S, opts DownloadOptions) (bool, http.Header, error) {
+	var results S
+	found, header, err := Download(ctx, func(item E) (bool, error) {
+		results = append(results, item)
+		return true, nil
+	}, opts)
+	if err == nil && found {
+		*v = results
+	}
+	return found, header, err
 }
