@@ -40,5 +40,8 @@ func Upload(ctx context.Context, opts UploadOptions) error {
 		}
 	}
 	err = fsz.Upload(ctx, opts.Url, header, r)
-	return fmt.Errorf("error uploading json %s: %w", opts.Url, err)
+	if err != nil {
+		return fmt.Errorf("error uploading json %s: %w", opts.Url, err)
+	}
+	return nil
 }
