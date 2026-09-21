@@ -29,10 +29,7 @@ func TestManualExternalTable(t *testing.T) {
 	u := urlz.MustParse("gs://i6-rs-contint-tmp/testds/mytable/a=1/b=x/part.json")
 	fsz.MustDelete(ctx, u)
 
-	fsz.MustUploadJson(ctx, u, nil, &SalesHistory{
-		ID:     "id1",
-		ItemId: "item1",
-	})
+	// fsz.MustUpload(ctx, u, nil, gzipz.)
 
 	type testScenario struct {
 		dataset       string
