@@ -55,37 +55,8 @@ func MustGunzip(data []byte) blobz.Blob {
 	return ret
 }
 
-// Reader returns an io.ReadCloser that decompresses gzip-compressed data read from r.
-// The underlying gzip.Reader is initialized lazily upon the first Read call.
-func Reader(r io.Reader) io.ReadCloser {
-	return &lazyReader{r: r}
-}
-
-type lazyReader struct {
-	r   io.Reader
-	gr  *gzip.Reader
-	err error
-}
-
-func (lr *lazyReader) Read(p []byte) (n int, err error) {
-	if lr.err != nil {
-		return 0, lr.err
-	}
-	if lr.gr == nil {
-		lr.gr, lr.err = gzip.NewReader(lr.r)
-		if lr.err != nil {
-			lr.err = fmt.Errorf("failed to create gzip reader: %w", lr.err)
-			return 0, lr.err
-		}
-	}
-	return lr.gr.Read(p)
-}
-
-func (lr *lazyReader) Close() error {
-	if lr.gr != nil {
-		if err := lr.gr.Close(); err != nil {
-			return fmt.Errorf("failed to close gzip reader: %w", err)
-		}
-	}
-	return nil
+func MustReader(r io.Reader) io.ReadCloser {
+	ret, err := gzip.NewReader(r)
+	errorz.Check(err)
+	return ret
 }
