@@ -1,7 +1,6 @@
 package jsonz
 
 import (
-	"bufio"
 	"bytes"
 	"encoding/json"
 	"fmt"
@@ -10,31 +9,42 @@ import (
 	"github.com/infinity6-ai/gox/commonz/constraintz/blobz"
 )
 
+// LineParseStream reads line-delimited JSON from r and streams decoded elements to fn.
+// The callback fn returns a boolean (true to keep streaming, false to stop) and an error.
+// If the callback returns an error, the streaming halts and the error is returned.
+func LineParseStream[E any](r io.Reader, fn func(item E) (bool, error)) error {
+	decoder := json.NewDecoder(r)
+	decoder.UseNumber()
+
+	for {
+		var item E
+		err := decoder.Decode(&item)
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			return fmt.Errorf("failed to parse line: %w", err)
+		}
+		keepGoing, cbErr := fn(item)
+		if cbErr != nil {
+			return cbErr
+		}
+		if !keepGoing {
+			break
+		}
+	}
+	return nil
+}
+
 // LineParseReader reads line-delimited JSON from r and appends the decoded elements to v.
 func LineParseReader[S ~[]E, E any](r io.Reader, v *S) error {
 	if v == nil {
 		return fmt.Errorf("destination slice pointer cannot be nil")
 	}
-	reader := bufio.NewReader(r)
-	for {
-		line, err := reader.ReadBytes('\n')
-		if err != nil && err != io.EOF {
-			return fmt.Errorf("failed to read line: %w", err)
-		}
-		trimmed := bytes.TrimSpace(line)
-		if len(trimmed) > 0 {
-			var item E
-			_, parseErr := Parse(trimmed, &item)
-			if parseErr != nil {
-				return fmt.Errorf("failed to parse line: %w", parseErr)
-			}
-			*v = append(*v, item)
-		}
-		if err == io.EOF {
-			break
-		}
-	}
-	return nil
+	return LineParseStream(r, func(item E) (bool, error) {
+		*v = append(*v, item)
+		return true, nil
+	})
 }
 
 // LineParseInto unmarshals line-delimited JSON data from blobz.Data into v.

@@ -78,6 +78,77 @@ func TestUnitLineParseReader(t *testing.T) {
 	})
 }
 
+func TestUnitLineParseStream(t *testing.T) {
+	type testScenario struct {
+		input   string
+		stopAt  int
+		retErr  error
+		want    []lineTestItem
+		wantErr string
+	}
+
+	check := func(t *testing.T, s testScenario) {
+		t.Helper()
+		var got []lineTestItem
+		reader := strings.NewReader(s.input)
+		count := 0
+		err := LineParseStream(reader, func(item lineTestItem) (bool, error) {
+			count++
+			if s.retErr != nil {
+				return false, s.retErr
+			}
+			got = append(got, item)
+			if s.stopAt > 0 && count >= s.stopAt {
+				return false, nil
+			}
+			return true, nil
+		})
+
+		if s.wantErr != "" {
+			require.Error(t, err)
+			require.Contains(t, err.Error(), s.wantErr)
+		} else {
+			require.NoError(t, err)
+			require.Equal(t, s.want, got)
+		}
+	}
+
+	t.Run("Streams valid lines", func(t *testing.T) {
+		check(t, testScenario{
+			input: "{\"id\":1,\"name\":\"A\"}\n{\"id\":2,\"name\":\"B\"}\n",
+			want: []lineTestItem{
+				{ID: 1, Name: "A"},
+				{ID: 2, Name: "B"},
+			},
+		})
+	})
+
+	t.Run("Stops early when callback returns false", func(t *testing.T) {
+		check(t, testScenario{
+			input:  "{\"id\":1,\"name\":\"A\"}\n{\"id\":2,\"name\":\"B\"}\n",
+			stopAt: 1,
+			want: []lineTestItem{
+				{ID: 1, Name: "A"},
+			},
+		})
+	})
+
+	t.Run("Propagates callback error", func(t *testing.T) {
+		check(t, testScenario{
+			input:   "{\"id\":1,\"name\":\"A\"}\n{\"id\":2,\"name\":\"B\"}\n",
+			retErr:  fmt.Errorf("callback failed custom"),
+			wantErr: "callback failed custom",
+		})
+	})
+
+	t.Run("Handles parsing error", func(t *testing.T) {
+		check(t, testScenario{
+			input:   "{\"id\":1,\"name\":\"A\"}\n{invalid}\n",
+			wantErr: "failed to parse line",
+		})
+	})
+}
+
 func TestUnitLineParseInto(t *testing.T) {
 	t.Run("Parse into from string", func(t *testing.T) {
 		input := "{\"id\":1,\"name\":\"A\"}\n{\"id\":2,\"name\":\"B\"}"
