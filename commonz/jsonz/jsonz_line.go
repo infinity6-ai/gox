@@ -56,22 +56,33 @@ func LineParseInto[S ~[]E, E any, I blobz.Data](data I, v *S) error {
 	return nil
 }
 
-// LineFormatWriter encodes each element in v as a JSON line and writes it to w.
-func LineFormatWriter[S ~[]E, E any](w io.Writer, v S) error {
+// LineFormatStream writes JSON lines to w by invoking the callback fn to obtain items.
+// The callback fn returns an item E, a boolean keepGoing (true if item is valid and we should continue,
+// false to stop), and an error.
+func LineFormatStream[E any](w io.Writer, fn func() (E, bool, error)) error {
 	encoder := json.NewEncoder(w)
-	for i, item := range v {
-		err := encoder.Encode(item)
+	var i int
+	for {
+		item, keepGoing, err := fn()
+		if err != nil {
+			return err
+		}
+		if !keepGoing {
+			break
+		}
+		err = encoder.Encode(item)
 		if err != nil {
 			return fmt.Errorf("failed to encode item at index %d: %w", i, err)
 		}
+		i++
 	}
 	return nil
 }
 
-// LineFormatReadCloser returns an io.ReadCloser that provides the line-delimited JSON-encoded
-// representation of v. It streams the output and does not load the entire JSON object into memory.
-// The caller must close the reader when finished.
-func LineFormatReadCloser[S ~[]E, E any](v S) io.ReadCloser {
+// LineFormatReaderStream returns an io.ReadCloser that provides the line-delimited JSON-encoded
+// representation of elements retrieved by calling fn. It streams the output and does not load
+// the entire JSON object into memory. The caller must close the reader when finished.
+func LineFormatReaderStream[E any](fn func() (E, bool, error)) io.ReadCloser {
 	r, w := io.Pipe()
 
 	go func() {
@@ -79,10 +90,40 @@ func LineFormatReadCloser[S ~[]E, E any](v S) io.ReadCloser {
 		defer func() {
 			w.CloseWithError(err)
 		}()
-		err = LineFormatWriter(w, v)
+		err = LineFormatStream(w, fn)
 	}()
 
 	return r
+}
+
+// LineFormatWriter encodes each element in v as a JSON line and writes it to w.
+func LineFormatWriter[S ~[]E, E any](w io.Writer, v S) error {
+	i := 0
+	return LineFormatStream(w, func() (E, bool, error) {
+		if i >= len(v) {
+			var zero E
+			return zero, false, nil
+		}
+		item := v[i]
+		i++
+		return item, true, nil
+	})
+}
+
+// LineFormatReadCloser returns an io.ReadCloser that provides the line-delimited JSON-encoded
+// representation of v. It streams the output and does not load the entire JSON object into memory.
+// The caller must close the reader when finished.
+func LineFormatReadCloser[S ~[]E, E any](v S) io.ReadCloser {
+	i := 0
+	return LineFormatReaderStream(func() (E, bool, error) {
+		if i >= len(v) {
+			var zero E
+			return zero, false, nil
+		}
+		item := v[i]
+		i++
+		return item, true, nil
+	})
 }
 
 // LineFormatReader streams the line-delimited JSON-encoded representation of v to the given callback fn.

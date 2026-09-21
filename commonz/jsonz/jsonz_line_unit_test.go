@@ -297,3 +297,92 @@ func TestUnitLineFormatAndBytes(t *testing.T) {
 		require.Contains(t, err.Error(), "failed to format bytes")
 	})
 }
+
+func TestUnitLineFormatStream(t *testing.T) {
+	t.Run("Valid stream", func(t *testing.T) {
+		input := []lineTestItem{
+			{ID: 1, Name: "A"},
+			{ID: 2, Name: "B"},
+		}
+		var buf bytes.Buffer
+		i := 0
+		err := LineFormatStream(&buf, func() (lineTestItem, bool, error) {
+			if i >= len(input) {
+				return lineTestItem{}, false, nil
+			}
+			item := input[i]
+			i++
+			return item, true, nil
+		})
+		require.NoError(t, err)
+		require.Equal(t, "{\"id\":1,\"name\":\"A\"}\n{\"id\":2,\"name\":\"B\"}\n", buf.String())
+	})
+
+	t.Run("Callback error", func(t *testing.T) {
+		var buf bytes.Buffer
+		err := LineFormatStream(&buf, func() (lineTestItem, bool, error) {
+			return lineTestItem{}, false, fmt.Errorf("custom stream error")
+		})
+		require.Error(t, err)
+		require.Contains(t, err.Error(), "custom stream error")
+	})
+
+	t.Run("Encode error", func(t *testing.T) {
+		type badItem struct {
+			Ch chan int
+		}
+		var buf bytes.Buffer
+		i := 0
+		err := LineFormatStream(&buf, func() (badItem, bool, error) {
+			if i > 0 {
+				return badItem{}, false, nil
+			}
+			i++
+			return badItem{Ch: make(chan int)}, true, nil
+		})
+		require.Error(t, err)
+		require.Contains(t, err.Error(), "failed to encode item at index 0")
+	})
+}
+
+func TestUnitLineFormatReaderStream(t *testing.T) {
+	t.Run("Valid stream", func(t *testing.T) {
+		input := []lineTestItem{
+			{ID: 1, Name: "A"},
+			{ID: 2, Name: "B"},
+		}
+		i := 0
+		rc := LineFormatReaderStream(func() (lineTestItem, bool, error) {
+			if i >= len(input) {
+				return lineTestItem{}, false, nil
+			}
+			item := input[i]
+			i++
+			return item, true, nil
+		})
+		defer rc.Close()
+		
+		data, err := io.ReadAll(rc)
+		require.NoError(t, err)
+		require.Equal(t, "{\"id\":1,\"name\":\"A\"}\n{\"id\":2,\"name\":\"B\"}\n", string(data))
+	})
+
+	t.Run("Encode error in stream", func(t *testing.T) {
+		type badItem struct {
+			Ch chan int
+		}
+		i := 0
+		rc := LineFormatReaderStream(func() (badItem, bool, error) {
+			if i > 0 {
+				return badItem{}, false, nil
+			}
+			i++
+			return badItem{Ch: make(chan int)}, true, nil
+		})
+		defer rc.Close()
+		
+		_, err := io.ReadAll(rc)
+		require.Error(t, err)
+		require.Contains(t, err.Error(), "failed to encode item at index 0")
+	})
+}
