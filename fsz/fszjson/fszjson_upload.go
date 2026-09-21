@@ -1,9 +1,11 @@
 package fszjson
 
 import (
+	"bytes"
 	"compress/gzip"
 	"context"
 	"fmt"
+	"io"
 	"maps"
 	"net/http"
 
@@ -26,17 +28,27 @@ func Upload[S ~[]E, E any](ctx context.Context, values S, opts UploadOptions) er
 	if header.Get("Content-Type") == "" {
 		header.Set("Content-Type", "application/json")
 	}
+
 	r := jsonz.LineFormatReadCloser(values)
 	defer r.Close()
-	var err error
+
+	var uploadReader io.Reader = r
 	if opts.Gzip {
-		r, err = gzip.NewReader(r)
+		header.Set("Content-Encoding", "gzip")
+		var buf bytes.Buffer
+		gw := gzip.NewWriter(&buf)
+		_, err := io.Copy(gw, r)
 		if err != nil {
-			return fmt.Errorf("gunzip json error: %w", err)
+			return fmt.Errorf("gzip json error: %w", err)
 		}
-		defer r.Close()
+		err = gw.Close()
+		if err != nil {
+			return fmt.Errorf("gzip close error: %w", err)
+		}
+		uploadReader = &buf
 	}
-	err = fsz.Upload(ctx, opts.Url, header, r)
+
+	err := fsz.Upload(ctx, opts.Url, header, uploadReader)
 	if err != nil {
 		return fmt.Errorf("error uploading json %s: %w", opts.Url, err)
 	}

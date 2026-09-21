@@ -335,7 +335,7 @@ func TestUnitFileFsFindNonExistentDir(t *testing.T) {
 
 	paginator, err := fsz.Find(context.Background(), nonExistentDirUrl)
 
-	require.NoError(t, err)   // Should not return an error
+	require.NoError(t, err)      // Should not return an error
 	require.NotNil(t, paginator) // Should return a non-nil paginator (fileFindPaginator)
 
 	// Ensure it returns no results and no error on Paginate
@@ -397,7 +397,6 @@ func TestUnitFileFsRmTree(t *testing.T) {
 	require.True(t, os.IsNotExist(err), "directory should not exist after RmTree")
 }
 
-
 func TestUnitFileFsMoveFile(t *testing.T) {
 	tmpDir := t.TempDir()
 
@@ -422,7 +421,6 @@ func TestUnitFileFsMoveFile(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, "content", string(content))
 }
-
 
 func TestUnitFileFsMoveDirFails(t *testing.T) {
 	tmpDir := t.TempDir()

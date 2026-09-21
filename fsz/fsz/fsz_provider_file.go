@@ -218,7 +218,6 @@ func (ff *fileFs) Find(ctx context.Context, prefix *urlz.Url) (Paginator, error)
 	return &fileFindPaginator{ch: ch, cancel: cancel}, nil
 }
 
-
 func (ff *fileFs) SignGet(ctx context.Context, url *urlz.Url, duration time.Duration) (string, error) {
 	return "", ErrUnsupportedOperation
 }
