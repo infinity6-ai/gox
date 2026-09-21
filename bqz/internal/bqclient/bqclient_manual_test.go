@@ -6,6 +6,8 @@ import (
 
 	"github.com/infinity6-ai/gox/bqz/bqz"
 	"github.com/infinity6-ai/gox/bqz/internal/bqclient"
+	"github.com/infinity6-ai/gox/commonz/urlz"
+	"github.com/infinity6-ai/gox/fsz/fsz"
 	"github.com/stretchr/testify/require"
 )
 
@@ -23,6 +25,14 @@ func TestManualExternalTable(t *testing.T) {
 		XPosPrice          string `json:"x_pos_price" bigquery:"x_pos_price"`
 		XRegulatedMaxPrice string `json:"x_regulated_max_price" bigquery:"x_regulated_max_price"`
 	}
+
+	u := urlz.MustParse("gs://i6-rs-contint-tmp/testds/mytable/a=1/b=x/part.json")
+	fsz.MustDelete(ctx, u)
+
+	fsz.MustUploadJson(ctx, u, nil, &SalesHistory{
+		ID:     "id1",
+		ItemId: "item1",
+	})
 
 	type testScenario struct {
 		dataset       string
@@ -81,11 +91,13 @@ func TestManualExternalTable(t *testing.T) {
 
 	t.Run("Create external table", func(t *testing.T) {
 		check(t, testScenario{
-			dataset:   "testds",
-			table:     "mytable",
-			uri:       "gs://i6-rs-contint-tmp/testds/mytable",
-			hiveParts: []string{"a", "b"},
-			schema:    &SalesHistory{},
+			dataset:       "testds",
+			table:         "mytable",
+			uri:           "gs://i6-rs-contint-tmp/testds/mytable",
+			hiveParts:     []string{"a", "b"},
+			schema:        &SalesHistory{},
+			query:         "select count(0) AS num from testds.mytable",
+			expectedValue: 1,
 		})
 	})
 
