@@ -2,10 +2,12 @@ package bqclient
 
 import (
 	"context"
-
-	"github.com/infinity6-ai/gox/bqz/bqz"
 )
 
-func (c *Client) Dispatch(ctx context.Context, table bqz.ExternalTable) error {
+type QueryOptions struct {
+	Query string
+}
+
+func (c *Client) Dispatch(ctx context.Context, query QueryOptions) (*Job, error) {
 	panic("implement")
 }
