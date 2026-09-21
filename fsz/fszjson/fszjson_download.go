@@ -7,6 +7,7 @@ import (
 	"io"
 	"net/http"
 
+	"github.com/infinity6-ai/gox/commonz/errorz"
 	"github.com/infinity6-ai/gox/commonz/jsonz"
 	"github.com/infinity6-ai/gox/commonz/urlz"
 	"github.com/infinity6-ai/gox/fsz/fsz"
@@ -49,13 +50,6 @@ func Download[E any](ctx context.Context, fn func(item E) (bool, error), opts Do
 	return found, header, nil
 }
 
-func DownloadJson[T any](ctx context.Context, v *T, opts DownloadOptions) (bool, http.Header, error) {
-	return Download(ctx, func(item T) (bool, error) {
-		*v = item
-		return false, nil
-	}, opts)
-}
-
 func DownloadSlice[S ~[]E, E any](ctx context.Context, v *S, opts DownloadOptions) (bool, http.Header, error) {
 	var results S
 	found, header, err := Download(ctx, func(item E) (bool, error) {
@@ -66,4 +60,27 @@ func DownloadSlice[S ~[]E, E any](ctx context.Context, v *S, opts DownloadOption
 		*v = results
 	}
 	return found, header, err
+}
+
+func MustDownloadJson[T any](ctx context.Context, url *urlz.Url, v T) (f bool, h http.Header) {
+	var err error
+	f, h, err = DownloadJson(ctx, url, v)
+	errorz.Check(err)
+	return
+}
+
+func DownloadJson[T any](ctx context.Context, url *urlz.Url, v T) (f bool, h http.Header, e error) {
+	e = fsz.Download(ctx, url, func(found bool, headers http.Header, reader io.Reader) error {
+		f = found
+		if !f {
+			return nil
+		}
+		h = headers
+		_, err := jsonz.ParseReader(reader, v)
+		if err != nil {
+			return fmt.Errorf("error downloading json: %w", err)
+		}
+		return nil
+	})
+	return
 }
