@@ -8,9 +8,9 @@ import (
 
 	"cloud.google.com/go/bigquery"
 	"github.com/infinity6-ai/gox/bqz/bqz"
+	"github.com/infinity6-ai/gox/commonz/errorz"
 	"github.com/infinity6-ai/gox/commonz/slicez"
 	"github.com/infinity6-ai/gox/commonz/validation"
-	"go.code.infinity6.ai/platform/util"
 )
 
 func (c *Client) CreateExternalTable(ctx context.Context, opts bqz.ExternalTable) error {
@@ -29,7 +29,7 @@ func (c *Client) CreateExternalTable(ctx context.Context, opts bqz.ExternalTable
 	schema, ok := opts.Schema.(bigquery.Schema)
 	if !ok {
 		schema, err = bigquery.InferSchema(opts.Schema)
-		util.Check(err)
+		errorz.Check(err)
 	}
 
 	extConfig := &bigquery.ExternalDataConfig{
