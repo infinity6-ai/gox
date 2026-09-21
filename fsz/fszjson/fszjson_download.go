@@ -49,6 +49,13 @@ func Download[E any](ctx context.Context, fn func(item E) (bool, error), opts Do
 	return found, header, nil
 }
 
+func DownloadJson[T any](ctx context.Context, v *T, opts DownloadOptions) (bool, http.Header, error) {
+	return Download(ctx, func(item T) (bool, error) {
+		*v = item
+		return false, nil
+	}, opts)
+}
+
 func DownloadSlice[S ~[]E, E any](ctx context.Context, v *S, opts DownloadOptions) (bool, http.Header, error) {
 	var results S
 	found, header, err := Download(ctx, func(item E) (bool, error) {

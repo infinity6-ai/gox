@@ -55,6 +55,10 @@ func Upload[E any](ctx context.Context, fn func() (E, bool, error), opts UploadO
 	return nil
 }
 
+func UploadJson(ctx context.Context, value any, opts UploadOptions) error {
+	return UploadJson(ctx, []any{value}, opts)
+}
+
 func UploadSlice[S ~[]E, E any](ctx context.Context, values S, opts UploadOptions) error {
 	i := 0
 	return Upload(ctx, func() (E, bool, error) {
