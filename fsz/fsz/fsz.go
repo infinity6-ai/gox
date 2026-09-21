@@ -40,6 +40,11 @@ func getProvider(scheme string) (FsProvider, error) {
 	return prv, nil
 }
 
+func MustDelete(ctx context.Context, url *urlz.Url) {
+	err := Delete(ctx, url)
+	errorz.Check(err)
+}
+
 func Delete(ctx context.Context, url *urlz.Url) error {
 	p, err := getProvider(url.Scheme)
 	if err != nil {
