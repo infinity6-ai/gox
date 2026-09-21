@@ -14,6 +14,13 @@ type Client struct {
 	client *bigquery.Client
 }
 
+func (c *Client) Close() error {
+	if c.client == nil {
+		return nil
+	}
+	return c.client.Close()
+}
+
 func New(ctx context.Context, opts ClientOptions) *Client {
 	panic("implement it")
 }
