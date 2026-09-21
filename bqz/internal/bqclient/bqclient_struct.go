@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"cloud.google.com/go/bigquery"
+	"github.com/infinity6-ai/gox/commonz/errorz"
 )
 
 type ClientOptions struct {
@@ -22,5 +23,7 @@ func (c *Client) Close() error {
 }
 
 func New(ctx context.Context, opts ClientOptions) *Client {
-	panic("implement it")
+	client, err := bigquery.NewClient(ctx, opts.Project)
+	errorz.Check(err)
+	return &Client{client: client}
 }

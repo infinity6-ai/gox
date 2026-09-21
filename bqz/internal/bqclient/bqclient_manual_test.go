@@ -24,17 +24,75 @@ func TestManualExternalTable(t *testing.T) {
 		XRegulatedMaxPrice string `json:"x_regulated_max_price" bigquery:"x_regulated_max_price"`
 	}
 
+	type testScenario struct {
+		dataset       string
+		table         string
+		uri           string
+		hiveParts     []string
+		schema        any
+		query         string
+		expectedValue int
+	}
+
 	c := bqclient.New(ctx, bqclient.ClientOptions{
 		Project: "i6-rs-contint",
 	})
 
-	err := c.CreateExternalTable(ctx, bqz.ExternalTable{
-		Dataset:   "testds",
-		Table:     "mytable",
-		Uri:       "gs://i6-rs-contint-tmp/testds/mytable",
-		HiveParts: []string{"a", "b"},
-		Schema:    &SalesHistory{},
-	})
-	require.Nil(t, err)
+	check := func(t *testing.T, s testScenario) {
+		t.Helper()
 
+		if s.uri != "" {
+			err := c.CreateExternalTable(ctx, bqz.ExternalTable{
+				Dataset:   s.dataset,
+				Table:     s.table,
+				Uri:       s.uri,
+				HiveParts: s.hiveParts,
+				Schema:    s.schema,
+			})
+			require.NoError(t, err)
+		}
+
+		if s.query != "" {
+			jobId, err := c.Dispatch(ctx, bqclient.QueryOptions{
+				Query: s.query,
+			})
+			require.NoError(t, err)
+			require.NotEmpty(t, jobId)
+
+			err = c.WaitFor(ctx, jobId)
+			require.NoError(t, err)
+
+			done, err := c.IsDone(ctx, jobId)
+			require.NoError(t, err)
+			require.True(t, done)
+
+			it, err := c.Read(ctx, jobId)
+			require.NoError(t, err)
+
+			type resultRow struct {
+				Num int `bigquery:"num"`
+			}
+			var row resultRow
+			err = it.Next(&row)
+			require.NoError(t, err)
+			require.Equal(t, s.expectedValue, row.Num)
+		}
+	}
+
+	t.Run("Create external table", func(t *testing.T) {
+		check(t, testScenario{
+			dataset:   "testds",
+			table:     "mytable",
+			uri:       "gs://i6-rs-contint-tmp/testds/mytable",
+			hiveParts: []string{"a", "b"},
+			schema:    &SalesHistory{},
+		})
+	})
+
+	t.Run("Dispatch query job and read results", func(t *testing.T) {
+		check(t, testScenario{
+			query:         "SELECT 42 AS num",
+			expectedValue: 42,
+		})
+	})
 }

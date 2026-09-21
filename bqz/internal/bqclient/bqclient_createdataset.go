@@ -15,13 +15,16 @@ type DatasetOptions struct {
 func (c *Client) CreateDataset(ctx context.Context, opts DatasetOptions) error {
 	ds := c.client.Dataset(opts.Dataset)
 	_, err := ds.Metadata(ctx)
-	if ParseErrorCode(err) != 404 {
-		return fmt.Errorf("error loading dataset: %#v, %w", opts, err)
-	}
 	if err == nil {
 		return nil
 	}
+	if ParseErrorCode(err) != 404 {
+		return fmt.Errorf("error loading dataset: %#v, %w", opts, err)
+	}
 	err = ds.Create(ctx, opts.Metadata)
+	if err == nil {
+		return nil
+	}
 	if ParseErrorCode(err) != 409 {
 		return fmt.Errorf("error creating dataset: %#v, %w", opts, err)
 	}

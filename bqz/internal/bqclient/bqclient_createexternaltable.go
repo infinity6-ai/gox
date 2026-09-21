@@ -67,6 +67,9 @@ func (c *Client) CreateExternalTable(ctx context.Context, opts bqz.ExternalTable
 	}
 
 	tableRef := c.client.Dataset(opts.Dataset).Table(opts.Table)
+	if err := tableRef.Delete(ctx); err != nil && ParseErrorCode(err) != 404 {
+		return fmt.Errorf("error deleting table before recreation: %w", err)
+	}
 
 	err = tableRef.Create(ctx, meta)
 	if err != nil {
