@@ -12,6 +12,9 @@ import (
 func (b *BqzServiceImpl) Dispatch(ctx context.Context, query *bqz.Query) error {
 	q := b.c.Query(query.Query)
 	q.JobID = query.Job.Get()
+	if query.RunningTimeout > 0 {
+		q.JobTimeout = query.RunningTimeout
+	}
 	if len(query.Binds) > 0 {
 		q.Parameters = make([]bigquery.QueryParameter, 0, len(query.Binds))
 		for k, v := range query.Binds {

@@ -27,9 +27,10 @@ type ExternalTable struct {
 }
 
 type Query struct {
-	Job   bqzjob.Job
-	Query string
-	Binds map[string]any
+	Job            bqzjob.Job
+	Query          string
+	Binds          map[string]any
+	RunningTimeout time.Duration
 }
 
 type Iterator func(ctx context.Context, v any) (bool, error)

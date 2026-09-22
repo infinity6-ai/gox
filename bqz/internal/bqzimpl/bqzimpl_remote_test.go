@@ -46,14 +46,15 @@ func TestRemoteExternalTable(t *testing.T) {
 	})
 
 	type testScenario struct {
-		dataset       string
-		table         string
-		uri           string
-		hiveParts     []string
-		schema        any
-		query         string
-		binds         map[string]any
-		expectedValue int
+		dataset        string
+		table          string
+		uri            string
+		hiveParts      []string
+		schema         any
+		query          string
+		binds          map[string]any
+		runningTimeout time.Duration
+		expectedValue  int
 	}
 
 	c := bqzimpl.New(ctx, bqz.ClientOptions{
@@ -81,9 +82,10 @@ func TestRemoteExternalTable(t *testing.T) {
 		if s.query != "" {
 			jobId := bqzjob.New(fmt.Sprintf("test_job_%d", time.Now().UnixNano()))
 			q := &bqz.Query{
-				Job:   jobId,
-				Query: s.query,
-				Binds: s.binds,
+				Job:            jobId,
+				Query:          s.query,
+				Binds:          s.binds,
+				RunningTimeout: s.runningTimeout,
 			}
 			err := c.Dispatch(ctx, q)
 			require.NoError(t, err)
@@ -160,6 +162,35 @@ func TestRemoteExternalTable(t *testing.T) {
 			binds:         map[string]any{"val": 99},
 			expectedValue: 99,
 		})
+	})
+
+	t.Run("Dispatch query job with RunningTimeout and read results", func(t *testing.T) {
+		check(t, testScenario{
+			query:          "SELECT 55 AS num",
+			runningTimeout: 10 * time.Minute,
+			expectedValue:  55,
+		})
+	})
+
+	t.Run("Dispatch query job with small RunningTimeout", func(t *testing.T) {
+		jobId := bqzjob.New(fmt.Sprintf("test_job_%d", time.Now().UnixNano()))
+		q := &bqz.Query{
+			Job:            jobId,
+			Query:          "SELECT 55 AS num",
+			RunningTimeout: 1 * time.Millisecond,
+		}
+		err := c.Dispatch(ctx, q)
+		if err != nil {
+			t.Logf("Dispatch failed: %v", err)
+			return
+		}
+		err = c.WaitFor(ctx, jobId)
+		if err != nil {
+			t.Logf("WaitFor failed: %v", err)
+			return
+		}
+		status, err := c.JobStatus(ctx, jobId)
+		t.Logf("Job status: %v, err: %v", status, err)
 	})
 }
 
