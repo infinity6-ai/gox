@@ -95,6 +95,7 @@ func TestRemoteExternalTable(t *testing.T) {
 			require.Equal(t, s.expectedValue, row.Num)
 
 			require.ErrorIs(t, it.Next(&row), iterator.Done)
+			require.ErrorIs(t, it.Next(&row), iterator.Done)
 		}
 	}
 
