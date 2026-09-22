@@ -9,6 +9,7 @@ import (
 	"maps"
 	"net/http"
 
+	"github.com/infinity6-ai/gox/commonz/errorz"
 	"github.com/infinity6-ai/gox/commonz/jsonz"
 	"github.com/infinity6-ai/gox/commonz/urlz"
 	"github.com/infinity6-ai/gox/fsz/fsz"
@@ -57,6 +58,11 @@ func Upload[E any](ctx context.Context, fn func() (E, bool, error), opts UploadO
 
 func UploadJson(ctx context.Context, value any, opts UploadOptions) error {
 	return UploadJson(ctx, []any{value}, opts)
+}
+
+func MustUploadSlice[S ~[]E, E any](ctx context.Context, values S, opts UploadOptions) {
+	err := UploadSlice(ctx, values, opts)
+	errorz.Check(err)
 }
 
 func UploadSlice[S ~[]E, E any](ctx context.Context, values S, opts UploadOptions) error {

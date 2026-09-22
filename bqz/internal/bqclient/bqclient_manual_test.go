@@ -8,10 +8,11 @@ import (
 	"github.com/infinity6-ai/gox/bqz/internal/bqclient"
 	"github.com/infinity6-ai/gox/commonz/urlz"
 	"github.com/infinity6-ai/gox/fsz/fsz"
+	"github.com/infinity6-ai/gox/fsz/fszjson"
 	"github.com/stretchr/testify/require"
 )
 
-func TestManualExternalTable(t *testing.T) {
+func TestRemoteExternalTable(t *testing.T) {
 	ctx := context.Background()
 
 	type SalesHistory struct {
@@ -26,10 +27,16 @@ func TestManualExternalTable(t *testing.T) {
 		XRegulatedMaxPrice string `json:"x_regulated_max_price" bigquery:"x_regulated_max_price"`
 	}
 
-	u := urlz.MustParse("gs://i6-rs-contint-tmp/testds/mytable/a=1/b=x/part.json")
+	u := urlz.MustParse("gs://i6-rs-contint-tmp/testds/mytable/a=1/b=x/part.json.gz")
 	fsz.MustDelete(ctx, u)
 
-	// fsz.MustUpload(ctx, u, nil, gzipz.)
+	fszjson.MustUploadSlice(ctx, []SalesHistory{
+		{ID: "a", ItemId: "item_a"},
+		{ID: "b", ItemId: "item_b"},
+	}, fszjson.UploadOptions{
+		Url:  u,
+		Gzip: true,
+	})
 
 	type testScenario struct {
 		dataset       string
@@ -90,11 +97,11 @@ func TestManualExternalTable(t *testing.T) {
 		check(t, testScenario{
 			dataset:       "testds",
 			table:         "mytable",
-			uri:           "gs://i6-rs-contint-tmp/testds/mytable",
+			uri:           "gs://i6-rs-contint-tmp/testds/mytable/*",
 			hiveParts:     []string{"a", "b"},
 			schema:        &SalesHistory{},
 			query:         "select count(0) AS num from testds.mytable",
-			expectedValue: 1,
+			expectedValue: 2,
 		})
 	})
 
