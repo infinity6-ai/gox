@@ -38,6 +38,15 @@ type ClientOptions struct {
 	Project string
 }
 
+type JobStatus string
+
+const (
+	JobStatusNotFound JobStatus = "NOTFOUND"
+	JobStatusCreated  JobStatus = "CREATED"
+	JobStatusRunning  JobStatus = "RUNNING"
+	JobStatusDone     JobStatus = "DONE"
+)
+
 type Service interface {
 	CreateDataset(ctx context.Context, dataset *Dataset) error
 	CreateExternalTable(ctx context.Context, table *ExternalTable) error
