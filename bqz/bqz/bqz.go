@@ -28,6 +28,7 @@ type ExternalTable struct {
 
 type Query struct {
 	Query string
+	Binds map[string]any
 }
 
 type Job struct {

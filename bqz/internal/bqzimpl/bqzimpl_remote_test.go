@@ -47,6 +47,7 @@ func TestRemoteExternalTable(t *testing.T) {
 		hiveParts     []string
 		schema        any
 		query         string
+		binds         map[string]any
 		expectedValue int
 	}
 
@@ -71,6 +72,7 @@ func TestRemoteExternalTable(t *testing.T) {
 		if s.query != "" {
 			q := &bqz.Query{
 				Query: s.query,
+				Binds: s.binds,
 			}
 			job, err := c.Dispatch(ctx, q)
 			require.NoError(t, err)
@@ -91,7 +93,7 @@ func TestRemoteExternalTable(t *testing.T) {
 				Num int `bigquery:"num"`
 			}
 			var row resultRow
-			
+
 			ok, err := it(ctx, &row)
 			require.NoError(t, err)
 			require.True(t, ok)
@@ -123,6 +125,14 @@ func TestRemoteExternalTable(t *testing.T) {
 		check(t, testScenario{
 			query:         "SELECT 42 AS num",
 			expectedValue: 42,
+		})
+	})
+
+	t.Run("Dispatch query job with binds and read results", func(t *testing.T) {
+		check(t, testScenario{
+			query:         "SELECT @val AS num",
+			binds:         map[string]any{"val": 99},
+			expectedValue: 99,
 		})
 	})
 }

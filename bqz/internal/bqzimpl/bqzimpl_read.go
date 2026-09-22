@@ -19,7 +19,7 @@ func (b *BqzServiceImpl) Read(ctx context.Context, job *bqz.Job) (bqz.Iterator, 
 	if err != nil {
 		return nil, fmt.Errorf("failed to read results for job %s: %w", job.Id.Get(), err)
 	}
-	
+
 	return func(ctx context.Context, v any) (bool, error) {
 		err := it.Next(v)
 		if err == iterator.Done {
