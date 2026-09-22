@@ -12,6 +12,7 @@ import (
 	"github.com/infinity6-ai/gox/fsz/fsz"
 	"github.com/infinity6-ai/gox/fsz/fszjson"
 	"github.com/stretchr/testify/require"
+	"google.golang.org/api/iterator"
 )
 
 func TestRemoteExternalTable(t *testing.T) {
@@ -92,6 +93,8 @@ func TestRemoteExternalTable(t *testing.T) {
 			err = it.Next(&row)
 			require.NoError(t, err)
 			require.Equal(t, s.expectedValue, row.Num)
+
+			require.ErrorIs(t, it.Next(&row), iterator.Done)
 		}
 	}
 

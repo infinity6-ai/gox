@@ -1,6 +1,7 @@
 package bqz
 
 import (
+	"context"
 	"time"
 
 	"github.com/infinity6-ai/gox/bqz/bqzdataset"
@@ -30,4 +31,15 @@ type Query struct {
 
 type Job struct {
 	Id string
+}
+
+type Iterator func(ctx context.Context, v any) (bool, error)
+
+type Service interface {
+	CreateDataset(ctx context.Context, dataset *Dataset) error
+	CreateExternalTable(ctx context.Context, table *ExternalTable) error
+	Dispatch(ctx context.Context, query *Query) error
+	WaitFor(ctx context.Context, job *Job) error
+	IsDone(ctx context.Context, job *Job) error
+	Read(ctx context.Context, job *Job) Iterator
 }
