@@ -1,0 +1,21 @@
+package bqzimpl
+
+import (
+	"context"
+	"fmt"
+
+	"github.com/infinity6-ai/gox/bqz/bqzdataset"
+	"github.com/infinity6-ai/gox/bqz/bqztable"
+)
+
+// DropTable implements [bqz.Service].
+func (b *BqzServiceImpl) DropTable(ctx context.Context, dataset bqzdataset.Dataset, table bqztable.Table) error {
+	err := b.c.Dataset(dataset.Get()).Table(table.Get()).Delete(ctx)
+	if err != nil {
+		if ParseErrorCode(err) == 404 {
+			return nil
+		}
+		return fmt.Errorf("failed to drop table %s.%s: %w", dataset.Get(), table.Get(), err)
+	}
+	return nil
+}

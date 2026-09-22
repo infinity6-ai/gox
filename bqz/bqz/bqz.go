@@ -45,4 +45,6 @@ type Service interface {
 	WaitFor(ctx context.Context, job bqzjob.Job) error
 	IsDone(ctx context.Context, job bqzjob.Job) (bool, error)
 	Read(ctx context.Context, job bqzjob.Job) (Iterator, error)
+	TableExists(ctx context.Context, dataset bqzdataset.Dataset, table bqztable.Table) (bool, error)
+	DropTable(ctx context.Context, dataset bqzdataset.Dataset, table bqztable.Table) error
 }

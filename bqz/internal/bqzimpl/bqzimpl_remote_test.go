@@ -139,3 +139,49 @@ func TestRemoteExternalTable(t *testing.T) {
 		})
 	})
 }
+
+func TestRemoteTableExistenceAndLifecycle(t *testing.T) {
+	ctx := context.Background()
+	c := bqzimpl.New(ctx, bqz.ClientOptions{
+		Project: "i6-rs-contint",
+	})
+
+	ds := bqzdataset.New("testds")
+	tbl := bqztable.New("mytemp_test_table")
+
+	// 1. Initial cleanup (Drop if exists, should return no error)
+	err := c.DropTable(ctx, ds, tbl)
+	require.NoError(t, err)
+
+	// 2. Table should not exist initially
+	exists, err := c.TableExists(ctx, ds, tbl)
+	require.NoError(t, err)
+	require.False(t, exists)
+
+	// 3. Create the table
+	type TempSchema struct {
+		ID   string `json:"id" bigquery:"id"`
+		Name string `json:"name" bigquery:"name"`
+	}
+	err = c.CreateExternalTable(ctx, &bqz.ExternalTable{
+		Dataset: ds,
+		Table:   tbl,
+		Uri:     "gs://i6-rs-contint-tmp/testds/mytemp_test_table/*",
+		Schema:  &TempSchema{},
+	})
+	require.NoError(t, err)
+
+	// 4. Table should now exist
+	exists, err = c.TableExists(ctx, ds, tbl)
+	require.NoError(t, err)
+	require.True(t, exists)
+
+	// 5. Drop the table
+	err = c.DropTable(ctx, ds, tbl)
+	require.NoError(t, err)
+
+	// 6. Table should not exist anymore
+	exists, err = c.TableExists(ctx, ds, tbl)
+	require.NoError(t, err)
+	require.False(t, exists)
+}
