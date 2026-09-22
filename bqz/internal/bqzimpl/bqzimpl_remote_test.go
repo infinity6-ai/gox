@@ -91,9 +91,9 @@ func TestRemoteExternalTable(t *testing.T) {
 			err = c.WaitFor(ctx, jobId)
 			require.NoError(t, err)
 
-			done, err := c.IsDone(ctx, jobId)
+			status, err := c.JobStatus(ctx, jobId)
 			require.NoError(t, err)
-			require.True(t, done)
+			require.Equal(t, bqz.JobStatusDone, status)
 
 			read := func() {
 				it, err := c.Read(ctx, jobId)

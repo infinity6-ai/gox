@@ -52,7 +52,7 @@ type Service interface {
 	CreateExternalTable(ctx context.Context, table *ExternalTable) error
 	Dispatch(ctx context.Context, query *Query) error
 	WaitFor(ctx context.Context, job bqzjob.Job) error
-	IsDone(ctx context.Context, job bqzjob.Job) (bool, error)
+	JobStatus(ctx context.Context, job bqzjob.Job) (JobStatus, error)
 	Read(ctx context.Context, job bqzjob.Job) (Iterator, error)
 	TableExists(ctx context.Context, dataset bqzdataset.Dataset, table bqztable.Table) (bool, error)
 	DropTable(ctx context.Context, dataset bqzdataset.Dataset, table bqztable.Table) error
