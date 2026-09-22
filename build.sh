@@ -13,6 +13,7 @@ function cmd_comps_list() {
   echo "fsz" 
   echo "msgz"
   echo "storez"
+  echi "bqz"
 }
 
 function cmd_comps_exec() {
