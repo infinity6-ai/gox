@@ -17,6 +17,7 @@ import (
 	"github.com/infinity6-ai/gox/fsz/fsz"
 	"github.com/infinity6-ai/gox/fsz/fszjson"
 	"github.com/stretchr/testify/require"
+	"cloud.google.com/go/bigquery"
 )
 
 func TestRemoteExternalTable(t *testing.T) {
@@ -172,25 +173,30 @@ func TestRemoteExternalTable(t *testing.T) {
 		})
 	})
 
-	t.Run("Dispatch query job with small RunningTimeout", func(t *testing.T) {
+	t.Run("Dispatch query job with RunningTimeout verifies JobTimeout configuration on server", func(t *testing.T) {
 		jobId := bqzjob.New(fmt.Sprintf("test_job_%d", time.Now().UnixNano()))
 		q := &bqz.Query{
 			Job:            jobId,
 			Query:          "SELECT 55 AS num",
-			RunningTimeout: 1 * time.Millisecond,
+			RunningTimeout: 10 * time.Minute,
 		}
 		err := c.Dispatch(ctx, q)
-		if err != nil {
-			t.Logf("Dispatch failed: %v", err)
-			return
-		}
-		err = c.WaitFor(ctx, jobId)
-		if err != nil {
-			t.Logf("WaitFor failed: %v", err)
-			return
-		}
-		status, err := c.JobStatus(ctx, jobId)
-		t.Logf("Job status: %v, err: %v", status, err)
+		require.NoError(t, err)
+
+		// Verify on the actual BigQuery job configuration that JobTimeout was correctly mapped and applied.
+		bqClient, err := bigquery.NewClient(ctx, "i6-rs-contint")
+		require.NoError(t, err)
+		defer bqClient.Close()
+
+		job, err := bqClient.JobFromID(ctx, jobId.Get())
+		require.NoError(t, err)
+
+		config, err := job.Config()
+		require.NoError(t, err)
+
+		queryConfig, ok := config.(*bigquery.QueryConfig)
+		require.True(t, ok)
+		require.Equal(t, 10*time.Minute, queryConfig.JobTimeout)
 	})
 }
 
