@@ -9,14 +9,13 @@ import (
 )
 
 // Dispatch implements [bqz.Service].
-func (b *BqzServiceImpl) Dispatch(ctx context.Context, query *bqz.Query) error {
+func (b *BqzServiceImpl) Dispatch(ctx context.Context, query *bqz.Query) (*bqz.Job, error) {
 	q := b.c.Query(query.Query)
 	job, err := q.Run(ctx)
 	if err != nil {
-		return fmt.Errorf("failed to run query job: %w", err)
+		return nil, fmt.Errorf("failed to run query job: %w", err)
 	}
-	query.Job = bqz.Job{
+	return &bqz.Job{
 		Id: bqzjob.New(job.ID()),
-	}
-	return nil
+	}, nil
 }

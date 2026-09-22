@@ -28,7 +28,6 @@ type ExternalTable struct {
 
 type Query struct {
 	Query string
-	Job   Job
 }
 
 type Job struct {
@@ -44,7 +43,7 @@ type ClientOptions struct {
 type Service interface {
 	CreateDataset(ctx context.Context, dataset *Dataset) error
 	CreateExternalTable(ctx context.Context, table *ExternalTable) error
-	Dispatch(ctx context.Context, query *Query) error
+	Dispatch(ctx context.Context, query *Query) (*Job, error)
 	WaitFor(ctx context.Context, job *Job) error
 	IsDone(ctx context.Context, job *Job) (bool, error)
 	Read(ctx context.Context, job *Job) (Iterator, error)

@@ -72,18 +72,19 @@ func TestRemoteExternalTable(t *testing.T) {
 			q := &bqz.Query{
 				Query: s.query,
 			}
-			err := c.Dispatch(ctx, q)
+			job, err := c.Dispatch(ctx, q)
 			require.NoError(t, err)
-			require.NotEmpty(t, q.Job.Id.Get())
+			require.NotNil(t, job)
+			require.NotEmpty(t, job.Id.Get())
 
-			err = c.WaitFor(ctx, &q.Job)
+			err = c.WaitFor(ctx, job)
 			require.NoError(t, err)
 
-			done, err := c.IsDone(ctx, &q.Job)
+			done, err := c.IsDone(ctx, job)
 			require.NoError(t, err)
 			require.True(t, done)
 
-			it, err := c.Read(ctx, &q.Job)
+			it, err := c.Read(ctx, job)
 			require.NoError(t, err)
 
 			type resultRow struct {
