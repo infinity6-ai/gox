@@ -41,5 +41,5 @@ type Service interface {
 	Dispatch(ctx context.Context, query *Query) error
 	WaitFor(ctx context.Context, job *Job) error
 	IsDone(ctx context.Context, job *Job) error
-	Read(ctx context.Context, job *Job) Iterator
+	Read(ctx context.Context, job *Job) (Iterator, error)
 }
