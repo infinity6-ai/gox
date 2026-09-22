@@ -144,7 +144,7 @@ func TestRemoteExternalTable(t *testing.T) {
 
 	t.Run("Dispatch query job and read results", func(t *testing.T) {
 		check(t, testScenario{
-			query:         "SELECT 42 AS num",
+			query:         "SELECT 41 AS num; SELECT 42 AS num",
 			expectedValue: 42,
 		})
 	})
