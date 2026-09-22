@@ -7,6 +7,6 @@ import (
 	"github.com/infinity6-ai/gox/bqz/internal/bqzimpl"
 )
 
-func New(ctx context.Context) bqz.Service {
-	return bqzimpl.New()
+func New(ctx context.Context, opts bqz.ClientOptions) bqz.Service {
+	return bqzimpl.New(ctx, opts)
 }

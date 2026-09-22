@@ -36,6 +36,10 @@ type Job struct {
 
 type Iterator func(ctx context.Context, v any) (bool, error)
 
+type ClientOptions struct {
+	Project string
+}
+
 type Service interface {
 	CreateDataset(ctx context.Context, dataset *Dataset) error
 	CreateExternalTable(ctx context.Context, table *ExternalTable) error
