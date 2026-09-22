@@ -7,7 +7,7 @@ import (
 	"github.com/infinity6-ai/gox/commonz/validation/checked"
 )
 
-var validator = regexp.MustCompile("^[a-z][a-z0-9_]*[a-z0-9]$")
+var validator = regexp.MustCompile("^[a-zA-Z0-9_-]+$")
 
 type Job checked.Value[string]
 

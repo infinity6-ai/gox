@@ -1,4 +1,4 @@
-package bqclient_test
+package bqzimpl_test
 
 import (
 	"context"
@@ -7,12 +7,11 @@ import (
 	"github.com/infinity6-ai/gox/bqz/bqz"
 	"github.com/infinity6-ai/gox/bqz/bqzdataset"
 	"github.com/infinity6-ai/gox/bqz/bqztable"
-	"github.com/infinity6-ai/gox/bqz/internal/bqclient"
+	"github.com/infinity6-ai/gox/bqz/internal/bqzimpl"
 	"github.com/infinity6-ai/gox/commonz/urlz"
 	"github.com/infinity6-ai/gox/fsz/fsz"
 	"github.com/infinity6-ai/gox/fsz/fszjson"
 	"github.com/stretchr/testify/require"
-	"google.golang.org/api/iterator"
 )
 
 func TestRemoteExternalTable(t *testing.T) {
@@ -51,7 +50,7 @@ func TestRemoteExternalTable(t *testing.T) {
 		expectedValue int
 	}
 
-	c := bqclient.New(ctx, bqclient.ClientOptions{
+	c := bqzimpl.New(ctx, bqz.ClientOptions{
 		Project: "i6-rs-contint",
 	})
 
@@ -59,7 +58,7 @@ func TestRemoteExternalTable(t *testing.T) {
 		t.Helper()
 
 		if s.uri != "" {
-			err := c.CreateExternalTable(ctx, bqz.ExternalTable{
+			err := c.CreateExternalTable(ctx, &bqz.ExternalTable{
 				Dataset:   bqzdataset.New(s.dataset),
 				Table:     bqztable.New(s.table),
 				Uri:       s.uri,
@@ -70,32 +69,40 @@ func TestRemoteExternalTable(t *testing.T) {
 		}
 
 		if s.query != "" {
-			jobId, err := c.Dispatch(ctx, bqclient.QueryOptions{
+			q := &bqz.Query{
 				Query: s.query,
-			})
+			}
+			err := c.Dispatch(ctx, q)
 			require.NoError(t, err)
-			require.NotEmpty(t, jobId)
+			require.NotEmpty(t, q.Job.Id.Get())
 
-			err = c.WaitFor(ctx, jobId)
+			err = c.WaitFor(ctx, &q.Job)
 			require.NoError(t, err)
 
-			done, err := c.IsDone(ctx, jobId)
+			done, err := c.IsDone(ctx, &q.Job)
 			require.NoError(t, err)
 			require.True(t, done)
 
-			it, err := c.Read(ctx, jobId)
+			it, err := c.Read(ctx, &q.Job)
 			require.NoError(t, err)
 
 			type resultRow struct {
 				Num int `bigquery:"num"`
 			}
 			var row resultRow
-			err = it.Next(&row)
+			
+			ok, err := it(ctx, &row)
 			require.NoError(t, err)
+			require.True(t, ok)
 			require.Equal(t, s.expectedValue, row.Num)
 
-			require.ErrorIs(t, it.Next(&row), iterator.Done)
-			require.ErrorIs(t, it.Next(&row), iterator.Done)
+			ok, err = it(ctx, &row)
+			require.NoError(t, err)
+			require.False(t, ok)
+
+			ok, err = it(ctx, &row)
+			require.NoError(t, err)
+			require.False(t, ok)
 		}
 	}
 
