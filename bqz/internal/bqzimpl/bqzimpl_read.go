@@ -7,17 +7,18 @@ import (
 	"google.golang.org/api/iterator"
 
 	"github.com/infinity6-ai/gox/bqz/bqz"
+	"github.com/infinity6-ai/gox/bqz/bqzjob"
 )
 
 // Read implements [bqz.Service].
-func (b *BqzServiceImpl) Read(ctx context.Context, job *bqz.Job) (bqz.Iterator, error) {
-	j, err := b.c.JobFromID(ctx, job.Id.Get())
+func (b *BqzServiceImpl) Read(ctx context.Context, job bqzjob.Job) (bqz.Iterator, error) {
+	j, err := b.c.JobFromID(ctx, job.Get())
 	if err != nil {
-		return nil, fmt.Errorf("failed to retrieve job %s: %w", job.Id.Get(), err)
+		return nil, fmt.Errorf("failed to retrieve job %s: %w", job.Get(), err)
 	}
 	it, err := j.Read(ctx)
 	if err != nil {
-		return nil, fmt.Errorf("failed to read results for job %s: %w", job.Id.Get(), err)
+		return nil, fmt.Errorf("failed to read results for job %s: %w", job.Get(), err)
 	}
 
 	return func(ctx context.Context, v any) (bool, error) {

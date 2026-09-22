@@ -2,10 +2,13 @@ package bqzimpl_test
 
 import (
 	"context"
+	"fmt"
 	"testing"
+	"time"
 
 	"github.com/infinity6-ai/gox/bqz/bqz"
 	"github.com/infinity6-ai/gox/bqz/bqzdataset"
+	"github.com/infinity6-ai/gox/bqz/bqzjob"
 	"github.com/infinity6-ai/gox/bqz/bqztable"
 	"github.com/infinity6-ai/gox/bqz/internal/bqzimpl"
 	"github.com/infinity6-ai/gox/commonz/urlz"
@@ -70,23 +73,23 @@ func TestRemoteExternalTable(t *testing.T) {
 		}
 
 		if s.query != "" {
+			jobId := bqzjob.New(fmt.Sprintf("test_job_%d", time.Now().UnixNano()))
 			q := &bqz.Query{
+				Job:   jobId,
 				Query: s.query,
 				Binds: s.binds,
 			}
-			job, err := c.Dispatch(ctx, q)
-			require.NoError(t, err)
-			require.NotNil(t, job)
-			require.NotEmpty(t, job.Id.Get())
-
-			err = c.WaitFor(ctx, job)
+			err := c.Dispatch(ctx, q)
 			require.NoError(t, err)
 
-			done, err := c.IsDone(ctx, job)
+			err = c.WaitFor(ctx, jobId)
+			require.NoError(t, err)
+
+			done, err := c.IsDone(ctx, jobId)
 			require.NoError(t, err)
 			require.True(t, done)
 
-			it, err := c.Read(ctx, job)
+			it, err := c.Read(ctx, jobId)
 			require.NoError(t, err)
 
 			type resultRow struct {

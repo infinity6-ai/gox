@@ -27,12 +27,9 @@ type ExternalTable struct {
 }
 
 type Query struct {
+	Job   bqzjob.Job
 	Query string
 	Binds map[string]any
-}
-
-type Job struct {
-	Id bqzjob.Job
 }
 
 type Iterator func(ctx context.Context, v any) (bool, error)
@@ -44,8 +41,8 @@ type ClientOptions struct {
 type Service interface {
 	CreateDataset(ctx context.Context, dataset *Dataset) error
 	CreateExternalTable(ctx context.Context, table *ExternalTable) error
-	Dispatch(ctx context.Context, query *Query) (*Job, error)
-	WaitFor(ctx context.Context, job *Job) error
-	IsDone(ctx context.Context, job *Job) (bool, error)
-	Read(ctx context.Context, job *Job) (Iterator, error)
+	Dispatch(ctx context.Context, query *Query) error
+	WaitFor(ctx context.Context, job bqzjob.Job) error
+	IsDone(ctx context.Context, job bqzjob.Job) (bool, error)
+	Read(ctx context.Context, job bqzjob.Job) (Iterator, error)
 }
