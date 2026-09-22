@@ -12,7 +12,7 @@ var validator = regexp.MustCompile("^[a-z][a-z0-9_]*[a-z0-9]$")
 type Job checked.Value[string]
 
 func (m Job) Validate(v string) error {
-	return validation.RegexMatch(validator, v, "Table")
+	return validation.RegexMatch(validator, v, "Job")
 }
 
 func (m Job) Get() string {
