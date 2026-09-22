@@ -1,18 +1,23 @@
 package bqz
 
-import "time"
+import (
+	"time"
+
+	"github.com/infinity6-ai/gox/bqz/bqz/bqzdataset"
+	"github.com/infinity6-ai/gox/bqz/bqz/bqztable"
+)
 
 type Labels map[string]string
 
 type Dataset struct {
-	Name                       string
-	Labels                     map[string]string
-	DefaultPartitionExpiration time.Duration
+	Name                   string
+	Labels                 map[string]string
+	DefaultTableExpiration time.Duration
 }
 
 type ExternalTable struct {
-	Dataset   string
-	Table     string
+	Dataset   bqzdataset.Dataset
+	Table     bqztable.Table
 	Uri       string
 	HiveParts []string
 	Schema    any

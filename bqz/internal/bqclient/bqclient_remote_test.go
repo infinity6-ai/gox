@@ -5,6 +5,8 @@ import (
 	"testing"
 
 	"github.com/infinity6-ai/gox/bqz/bqz"
+	"github.com/infinity6-ai/gox/bqz/bqz/bqzdataset"
+	"github.com/infinity6-ai/gox/bqz/bqz/bqztable"
 	"github.com/infinity6-ai/gox/bqz/internal/bqclient"
 	"github.com/infinity6-ai/gox/commonz/urlz"
 	"github.com/infinity6-ai/gox/fsz/fsz"
@@ -57,8 +59,8 @@ func TestRemoteExternalTable(t *testing.T) {
 
 		if s.uri != "" {
 			err := c.CreateExternalTable(ctx, bqz.ExternalTable{
-				Dataset:   s.dataset,
-				Table:     s.table,
+				Dataset:   bqzdataset.New(s.dataset),
+				Table:     bqztable.New(s.table),
 				Uri:       s.uri,
 				HiveParts: s.hiveParts,
 				Schema:    s.schema,

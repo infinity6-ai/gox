@@ -15,10 +15,10 @@ import (
 
 func (c *Client) CreateExternalTable(ctx context.Context, opts bqz.ExternalTable) error {
 	err := c.CreateDataset(ctx, DatasetOptions{
-		Dataset: opts.Dataset,
+		Dataset: opts.Dataset.Get(),
 		Metadata: &bigquery.DatasetMetadata{
 			Labels: map[string]string{
-				"i6ds": opts.Dataset,
+				"i6ds": opts.Dataset.Get(),
 			},
 		},
 	})
@@ -66,7 +66,7 @@ func (c *Client) CreateExternalTable(ctx context.Context, opts bqz.ExternalTable
 		ExpirationTime:     time.Now().UTC().Add(48 * time.Hour),
 	}
 
-	tableRef := c.client.Dataset(opts.Dataset).Table(opts.Table)
+	tableRef := c.client.Dataset(opts.Dataset.Get()).Table(opts.Table.Get())
 	if err := tableRef.Delete(ctx); err != nil && ParseErrorCode(err) != 404 {
 		return fmt.Errorf("error deleting table before recreation: %w", err)
 	}
