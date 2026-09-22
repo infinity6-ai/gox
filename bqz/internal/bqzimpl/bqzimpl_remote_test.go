@@ -2,12 +2,14 @@ package bqzimpl_test
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"testing"
 	"time"
 
 	"github.com/infinity6-ai/gox/bqz/bqz"
 	"github.com/infinity6-ai/gox/bqz/bqzdataset"
+	"github.com/infinity6-ai/gox/bqz/bqzerr"
 	"github.com/infinity6-ai/gox/bqz/bqzjob"
 	"github.com/infinity6-ai/gox/bqz/bqztable"
 	"github.com/infinity6-ai/gox/bqz/internal/bqzimpl"
@@ -62,9 +64,13 @@ func TestRemoteExternalTable(t *testing.T) {
 		t.Helper()
 
 		if s.uri != "" {
+			ds := bqzdataset.New(s.dataset)
+			tbl := bqztable.New(s.table)
+			_ = c.DropTable(ctx, ds, tbl)
+
 			err := c.CreateExternalTable(ctx, &bqz.ExternalTable{
-				Dataset:   bqzdataset.New(s.dataset),
-				Table:     bqztable.New(s.table),
+				Dataset:   ds,
+				Table:     tbl,
 				Uri:       s.uri,
 				HiveParts: s.hiveParts,
 				Schema:    s.schema,
@@ -122,6 +128,18 @@ func TestRemoteExternalTable(t *testing.T) {
 			query:         "select count(0) AS num from testds.mytable",
 			expectedValue: 2,
 		})
+	})
+
+	t.Run("Create external table again returns ErrConflict", func(t *testing.T) {
+		err := c.CreateExternalTable(ctx, &bqz.ExternalTable{
+			Dataset:   bqzdataset.New("testds"),
+			Table:     bqztable.New("mytable"),
+			Uri:       "gs://i6-rs-contint-tmp/testds/mytable/*",
+			HiveParts: []string{"a", "b"},
+			Schema:    &SalesHistory{},
+		})
+		require.Error(t, err)
+		require.True(t, errors.Is(err, bqzerr.ErrConflict))
 	})
 
 	t.Run("Dispatch query job and read results", func(t *testing.T) {

@@ -8,6 +8,7 @@ import (
 
 	"cloud.google.com/go/bigquery"
 	"github.com/infinity6-ai/gox/bqz/bqz"
+	"github.com/infinity6-ai/gox/bqz/bqzerr"
 	"github.com/infinity6-ai/gox/commonz/slicez"
 	"github.com/infinity6-ai/gox/commonz/validation"
 )
@@ -68,12 +69,11 @@ func (b *BqzServiceImpl) CreateExternalTable(ctx context.Context, table *bqz.Ext
 	}
 
 	tableRef := b.c.Dataset(table.Dataset.Get()).Table(table.Table.Get())
-	if err := tableRef.Delete(ctx); err != nil && ParseErrorCode(err) != 404 {
-		return fmt.Errorf("failed to delete external table %s before recreation: %w", table.Table.Get(), err)
-	}
-
 	err = tableRef.Create(ctx, meta)
 	if err != nil {
+		if ParseErrorCode(err) == 409 {
+			return fmt.Errorf("external table %s already exists: %w", table.Table.Get(), bqzerr.ErrConflict)
+		}
 		return fmt.Errorf("failed to create external table %s: %w", table.Table.Get(), err)
 	}
 	return nil
