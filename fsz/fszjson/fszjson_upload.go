@@ -57,7 +57,7 @@ func Upload[E any](ctx context.Context, fn func() (E, bool, error), opts UploadO
 }
 
 func UploadJson(ctx context.Context, value any, opts UploadOptions) error {
-	return UploadJson(ctx, []any{value}, opts)
+	return UploadSlice(ctx, []any{value}, opts)
 }
 
 func MustUploadSlice[S ~[]E, E any](ctx context.Context, values S, opts UploadOptions) {
