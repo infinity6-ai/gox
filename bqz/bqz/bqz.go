@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/infinity6-ai/gox/bqz/bqzdataset"
+	"github.com/infinity6-ai/gox/bqz/bqzjob"
 	"github.com/infinity6-ai/gox/bqz/bqztable"
 )
 
@@ -30,7 +31,7 @@ type Query struct {
 }
 
 type Job struct {
-	Id string
+	Id bqzjob.Job
 }
 
 type Iterator func(ctx context.Context, v any) (bool, error)
