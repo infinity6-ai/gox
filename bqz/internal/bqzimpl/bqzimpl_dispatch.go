@@ -3,6 +3,7 @@ package bqzimpl
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"cloud.google.com/go/bigquery"
 	"github.com/infinity6-ai/gox/bqz/bqz"
@@ -14,6 +15,8 @@ func (b *BqzServiceImpl) Dispatch(ctx context.Context, query *bqz.Query) error {
 	q.JobID = query.Job.Get()
 	if query.RunningTimeout > 0 {
 		q.JobTimeout = query.RunningTimeout
+	} else {
+		q.JobTimeout = 3 * time.Minute
 	}
 	if len(query.Binds) > 0 {
 		q.Parameters = make([]bigquery.QueryParameter, 0, len(query.Binds))

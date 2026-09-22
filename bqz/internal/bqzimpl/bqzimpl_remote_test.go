@@ -198,6 +198,32 @@ func TestRemoteExternalTable(t *testing.T) {
 		require.True(t, ok)
 		require.Equal(t, 10*time.Minute, queryConfig.JobTimeout)
 	})
+
+	t.Run("Dispatch query job with zero/unspecified RunningTimeout defaults to 3 minutes on server", func(t *testing.T) {
+		jobId := bqzjob.New(fmt.Sprintf("test_job_%d", time.Now().UnixNano()))
+		q := &bqz.Query{
+			Job:   jobId,
+			Query: "SELECT 55 AS num",
+			// RunningTimeout is zero / unspecified
+		}
+		err := c.Dispatch(ctx, q)
+		require.NoError(t, err)
+
+		// Verify on the actual BigQuery job configuration that default JobTimeout of 3 minutes was applied.
+		bqClient, err := bigquery.NewClient(ctx, "i6-rs-contint")
+		require.NoError(t, err)
+		defer bqClient.Close()
+
+		job, err := bqClient.JobFromID(ctx, jobId.Get())
+		require.NoError(t, err)
+
+		config, err := job.Config()
+		require.NoError(t, err)
+
+		queryConfig, ok := config.(*bigquery.QueryConfig)
+		require.True(t, ok)
+		require.Equal(t, 3*time.Minute, queryConfig.JobTimeout)
+	})
 }
 
 func TestRemoteTableExistenceAndLifecycle(t *testing.T) {
