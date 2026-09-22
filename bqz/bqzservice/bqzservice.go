@@ -3,9 +3,10 @@ package bqzservice
 import (
 	"context"
 
-	"go.code.infinity6.ai/bqz/bqz"
+	"github.com/infinity6-ai/gox/bqz/bqz"
+	"github.com/infinity6-ai/gox/bqz/internal/bqzimpl"
 )
 
 func New(ctx context.Context) bqz.Service {
-	panic("implement it")
+	return bqzimpl.New()
 }
