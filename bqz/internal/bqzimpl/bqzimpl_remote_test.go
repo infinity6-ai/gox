@@ -224,6 +224,23 @@ func TestRemoteExternalTable(t *testing.T) {
 		require.True(t, ok)
 		require.Equal(t, 3*time.Minute, queryConfig.JobTimeout)
 	})
+
+	t.Run("JobStatus returns status and error when job fails", func(t *testing.T) {
+		jobId := bqzjob.New(fmt.Sprintf("test_job_%d", time.Now().UnixNano()))
+		q := &bqz.Query{
+			Job:   jobId,
+			Query: "SELECT * FROM non_existent_dataset.non_existent_table_xyz_123",
+		}
+		err := c.Dispatch(ctx, q)
+		require.NoError(t, err)
+
+		// Wait for job to complete (which will fail)
+		_ = c.WaitFor(ctx, jobId)
+
+		status, err := c.JobStatus(ctx, jobId)
+		require.Error(t, err)
+		require.Equal(t, bqz.JobStatusDone, status)
+	})
 }
 
 func TestRemoteTableExistenceAndLifecycle(t *testing.T) {

@@ -42,10 +42,11 @@ type ClientOptions struct {
 type JobStatus string
 
 const (
-	JobStatusNotFound JobStatus = "NOTFOUND"
-	JobStatusCreated  JobStatus = "CREATED"
-	JobStatusRunning  JobStatus = "RUNNING"
-	JobStatusDone     JobStatus = "DONE"
+	JobStatusUnspecified JobStatus = ""
+	JobStatusNotFound    JobStatus = "NOTFOUND"
+	JobStatusCreated     JobStatus = "CREATED"
+	JobStatusRunning     JobStatus = "RUNNING"
+	JobStatusDone        JobStatus = "DONE"
 )
 
 type Service interface {
