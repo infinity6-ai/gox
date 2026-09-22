@@ -1,16 +1,16 @@
-package bqztable_test
+package bqzdataset_test
 
 import (
 	"testing"
 
-	"github.com/infinity6-ai/gox/bqz/bqz/bqztable"
+	"github.com/infinity6-ai/gox/bqz/bqzdataset"
 	"github.com/infinity6-ai/gox/commonz/validation/checked/tuchecked"
 )
 
 func TestUnitChecked(t *testing.T) {
-	tuchecked.Check(tuchecked.Table[*bqztable.Table, string]{
-		Create: func(v string) *bqztable.Table {
-			ret := bqztable.New(v)
+	tuchecked.Check(tuchecked.Table[*bqzdataset.Dataset, string]{
+		Create: func(v string) *bqzdataset.Dataset {
+			ret := bqzdataset.New(v)
 			return &ret
 		},
 		Valids:   []string{"a1", "b_1", "c1"},

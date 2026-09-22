@@ -3,8 +3,8 @@ package bqz
 import (
 	"time"
 
-	"github.com/infinity6-ai/gox/bqz/bqz/bqzdataset"
-	"github.com/infinity6-ai/gox/bqz/bqz/bqztable"
+	"github.com/infinity6-ai/gox/bqz/bqzdataset"
+	"github.com/infinity6-ai/gox/bqz/bqztable"
 )
 
 type Labels map[string]string

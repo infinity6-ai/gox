@@ -5,8 +5,8 @@ import (
 	"testing"
 
 	"github.com/infinity6-ai/gox/bqz/bqz"
-	"github.com/infinity6-ai/gox/bqz/bqz/bqzdataset"
-	"github.com/infinity6-ai/gox/bqz/bqz/bqztable"
+	"github.com/infinity6-ai/gox/bqz/bqzdataset"
+	"github.com/infinity6-ai/gox/bqz/bqztable"
 	"github.com/infinity6-ai/gox/bqz/internal/bqclient"
 	"github.com/infinity6-ai/gox/commonz/urlz"
 	"github.com/infinity6-ai/gox/fsz/fsz"
