@@ -95,26 +95,31 @@ func TestRemoteExternalTable(t *testing.T) {
 			require.NoError(t, err)
 			require.True(t, done)
 
-			it, err := c.Read(ctx, jobId)
-			require.NoError(t, err)
+			read := func() {
+				it, err := c.Read(ctx, jobId)
+				require.NoError(t, err)
 
-			type resultRow struct {
-				Num int `bigquery:"num"`
+				type resultRow struct {
+					Num int `bigquery:"num"`
+				}
+				var row resultRow
+
+				ok, err := it(ctx, &row)
+				require.NoError(t, err)
+				require.True(t, ok)
+				require.Equal(t, s.expectedValue, row.Num)
+
+				ok, err = it(ctx, &row)
+				require.NoError(t, err)
+				require.False(t, ok)
+
+				ok, err = it(ctx, &row)
+				require.NoError(t, err)
+				require.False(t, ok)
 			}
-			var row resultRow
 
-			ok, err := it(ctx, &row)
-			require.NoError(t, err)
-			require.True(t, ok)
-			require.Equal(t, s.expectedValue, row.Num)
-
-			ok, err = it(ctx, &row)
-			require.NoError(t, err)
-			require.False(t, ok)
-
-			ok, err = it(ctx, &row)
-			require.NoError(t, err)
-			require.False(t, ok)
+			read()
+			read()
 		}
 	}
 
