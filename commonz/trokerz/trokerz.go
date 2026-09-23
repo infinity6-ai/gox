@@ -1,6 +1,7 @@
-package main
+package trokerz
 
 import (
+	"fmt"
 	"strings"
 )
 
@@ -40,7 +41,7 @@ func Troke(original string, opts Options) (string, error) {
 
 		replacement, shouldReplace, err := opts.Get(v)
 		if err != nil {
-			return "", err
+			return "", fmt.Errorf("failed to get replacement for key %q: %w", v, err)
 		}
 
 		if shouldReplace {
