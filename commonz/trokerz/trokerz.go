@@ -3,12 +3,20 @@ package trokerz
 import (
 	"fmt"
 	"strings"
+
+	"github.com/infinity6-ai/gox/commonz/errorz"
 )
 
 type Options struct {
 	Begin string
 	End   string
 	Get   func(k string) (string, bool, error)
+}
+
+func MustTroke(original string, opts Options) string {
+	ret, err := Troke(original, opts)
+	errorz.Check(err)
+	return ret
 }
 
 func Troke(original string, opts Options) (string, error) {
