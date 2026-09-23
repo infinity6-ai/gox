@@ -8,7 +8,7 @@ import (
 type Options struct {
 	Begin string
 	End   string
-	Get   func(v string) (string, bool, error)
+	Get   func(k string) (string, bool, error)
 }
 
 func Troke(original string, opts Options) (string, error) {
@@ -37,18 +37,18 @@ func Troke(original string, opts Options) (string, error) {
 			break
 		}
 
-		v := afterBegin[:endIdx]
+		k := afterBegin[:endIdx]
 
-		replacement, shouldReplace, err := opts.Get(v)
+		replacement, shouldReplace, err := opts.Get(k)
 		if err != nil {
-			return "", fmt.Errorf("failed to get replacement for key %q: %w", v, err)
+			return "", fmt.Errorf("failed to get replacement for key %q: %w", k, err)
 		}
 
 		if shouldReplace {
 			builder.WriteString(replacement)
 		} else {
 			builder.WriteString(opts.Begin)
-			builder.WriteString(v)
+			builder.WriteString(k)
 			builder.WriteString(opts.End)
 		}
 
