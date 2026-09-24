@@ -13,7 +13,7 @@ func TestUnitChecked(t *testing.T) {
 			ret := bqztable.New(v)
 			return &ret
 		},
-		Valids:   []string{"a1", "b_1", "c1"},
-		Invalids: []string{"", "a", "a-b", "ab-"},
+		Valids:   []string{"a1", "b_1", "c1", "a-b"},
+		Invalids: []string{"", "a", "ab-"},
 	})
 }

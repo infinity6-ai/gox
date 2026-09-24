@@ -90,6 +90,9 @@ func Unmarshal[V comparable](x Checker[V], data []byte) (err error) {
 		return err
 	}
 	if err := Set(x, temp); err != nil {
+		if x.Optional().IsPresent() {
+			panic("it was not supposed to be present")
+		}
 		return err
 	}
 	return nil

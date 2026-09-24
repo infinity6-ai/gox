@@ -29,6 +29,17 @@ func (o Optional[T]) IsPresent() bool {
 	return o.present
 }
 
+func (o Optional[T]) Or(d ...T) T {
+	if o.present {
+		return o.value
+	}
+	if len(d) == 0 {
+		var ret T
+		return ret
+	}
+	return d[0]
+}
+
 func (o Optional[T]) Get() (T, bool) {
 	return o.value, o.present
 }
