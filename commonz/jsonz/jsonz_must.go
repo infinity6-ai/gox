@@ -1,6 +1,7 @@
 package jsonz
 
 import (
+	"encoding/json"
 	"io"
 
 	"github.com/infinity6-ai/gox/commonz/constraintz/blobz"
@@ -30,6 +31,12 @@ func MustFormatWriter(w io.Writer, v any) {
 // It loads the entire object into memory.
 func MustFormatReader(v any) io.Reader {
 	return MustFormat(v).NewReader()
+}
+
+func MustFormatPretty(v any) blobz.Blob {
+	ret, err := json.MarshalIndent(v, "", "  ")
+	errorz.Check(err)
+	return blobz.New(ret)
 }
 
 // MustFormat is like Format but panics if an error occurs.

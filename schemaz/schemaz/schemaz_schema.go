@@ -7,9 +7,9 @@ import (
 )
 
 type Desc struct {
-	Name     string
-	Summary  string
-	Markdown string
+	Name     string `json:"name"`
+	Summary  string `json:"summary"`
+	Markdown string `json:"markdown"`
 }
 
 type Array struct {

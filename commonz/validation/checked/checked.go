@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"reflect"
 
+	"github.com/infinity6-ai/gox/commonz/constraintz/optionalz"
 	"github.com/infinity6-ai/gox/commonz/errorz"
 )
 
@@ -22,11 +23,12 @@ type Value[T comparable] struct {
 	present bool
 }
 
+func (v Value[T]) Optional() optionalz.Optional[T] {
+	return optionalz.New(v.value, v.present)
+}
+
 func (v Value[T]) Get() T {
-	if !v.present {
-		panic("x has not been set")
-	}
-	return v.value
+	return v.Optional().Must()
 }
 
 func MustSet[V comparable](x Checker[V], v V) {
