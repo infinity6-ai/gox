@@ -93,6 +93,9 @@ func Unmarshal[V comparable](x Checker[V], data []byte) (err error) {
 		if x.Optional().IsPresent() {
 			panic("it was not supposed to be present")
 		}
+		if x.Optional().Or() == temp {
+			return nil
+		}
 		return err
 	}
 	return nil
