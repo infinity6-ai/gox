@@ -11,6 +11,7 @@ import (
 
 // 1. The interface that enforces validation
 type Checker[V comparable] interface {
+	Optional() optionalz.Optional[V]
 	Get() V
 	String() string
 	Validate(v V) error

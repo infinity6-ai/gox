@@ -3,6 +3,7 @@ package bqzjob
 import (
 	"regexp"
 
+	"github.com/infinity6-ai/gox/commonz/constraintz/optionalz"
 	"github.com/infinity6-ai/gox/commonz/validation"
 	"github.com/infinity6-ai/gox/commonz/validation/checked"
 )
@@ -13,6 +14,10 @@ type Job checked.Value[string]
 
 func (m Job) Validate(v string) error {
 	return validation.RegexMatch(validator, v, "Job")
+}
+
+func (m Job) Optional() optionalz.Optional[string] {
+	return checked.Value[string](m).Optional()
 }
 
 func (m Job) Get() string {

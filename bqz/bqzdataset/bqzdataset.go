@@ -3,6 +3,7 @@ package bqzdataset
 import (
 	"regexp"
 
+	"github.com/infinity6-ai/gox/commonz/constraintz/optionalz"
 	"github.com/infinity6-ai/gox/commonz/validation"
 	"github.com/infinity6-ai/gox/commonz/validation/checked"
 )
@@ -13,6 +14,10 @@ type Dataset checked.Value[string]
 
 func (m Dataset) Validate(v string) error {
 	return validation.RegexMatch(validator, v, "DatasetId")
+}
+
+func (m Dataset) Optional() optionalz.Optional[string] {
+	return checked.Value[string](m).Optional()
 }
 
 func (m Dataset) Get() string {

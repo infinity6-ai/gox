@@ -3,6 +3,7 @@ package checked_test
 import (
 	"testing"
 
+	"github.com/infinity6-ai/gox/commonz/constraintz/optionalz"
 	"github.com/infinity6-ai/gox/commonz/jsonz"
 	"github.com/infinity6-ai/gox/commonz/validation"
 	"github.com/infinity6-ai/gox/commonz/validation/checked"
@@ -14,6 +15,10 @@ type MyString checked.Value[string]
 
 func (m MyString) Validate(v string) error {
 	return validation.StrNotEmpty(v, "MyValue cannot be empty")
+}
+
+func (m MyString) Optional() optionalz.Optional[string] {
+	return checked.Value[string](m).Optional()
 }
 
 func (m MyString) Get() string {

@@ -3,6 +3,7 @@ package bqztable
 import (
 	"regexp"
 
+	"github.com/infinity6-ai/gox/commonz/constraintz/optionalz"
 	"github.com/infinity6-ai/gox/commonz/validation"
 	"github.com/infinity6-ai/gox/commonz/validation/checked"
 )
@@ -13,6 +14,10 @@ type Table checked.Value[string]
 
 func (m Table) Validate(v string) error {
 	return validation.RegexMatch(validator, v, "Table")
+}
+
+func (m Table) Optional() optionalz.Optional[string] {
+	return checked.Value[string](m).Optional()
 }
 
 func (m Table) Get() string {

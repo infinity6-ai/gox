@@ -3,6 +3,7 @@ package bucketz
 import (
 	"regexp"
 
+	"github.com/infinity6-ai/gox/commonz/constraintz/optionalz"
 	"github.com/infinity6-ai/gox/commonz/pathz"
 	"github.com/infinity6-ai/gox/commonz/urlz"
 	"github.com/infinity6-ai/gox/commonz/validation"
@@ -12,6 +13,10 @@ import (
 var bucketNameValidator = regexp.MustCompile(`^[a-z][a-z0-9\-]{1,}[a-z0-9]$`)
 
 type Bucket checked.Value[string]
+
+func (d Bucket) Optional() optionalz.Optional[string] {
+	return checked.Value[string](d).Optional()
+}
 
 func (d Bucket) Get() string {
 	return checked.Value[string](d).Get()
