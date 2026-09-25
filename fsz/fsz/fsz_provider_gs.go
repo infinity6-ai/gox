@@ -192,7 +192,7 @@ func (gf *gsFs) Find(ctx context.Context, prefix *urlz.Url) (Paginator, error) {
 	path := strings.TrimPrefix(prefix.Path.String(), "/")
 	it := client.Bucket(bucket).Objects(ctx, &storage.Query{Prefix: path})
 
-	return &gsPaginator{it: it, client: client}, nil
+	return &gsPaginator{it: it, client: client, bucket: bucket}, nil
 }
 
 type SignOptions struct {
