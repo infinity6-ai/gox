@@ -116,6 +116,7 @@ func (gf *gsFs) Delete(ctx context.Context, url *urlz.Url) error {
 type gsPaginator struct {
 	it     *storage.ObjectIterator
 	client *storage.Client
+	bucket string
 }
 
 func (p *gsPaginator) Close() error {
@@ -133,9 +134,22 @@ func (p *gsPaginator) Paginate(ctx context.Context, max int) ([]*FileStat, error
 			return nil, fmt.Errorf("failed to iterate gcs objects: %w", err)
 		}
 
-		u, err := urlz.Parse(fmt.Sprintf("gs://%s/%s", attrs.Bucket, attrs.Name))
+		if attrs.Prefix != "" {
+			u, err := urlz.Parse(fmt.Sprintf("gs://%s/%s", p.bucket, attrs.Prefix))
+			if err != nil {
+				return nil, fmt.Errorf("failed to parse prefix URL: %w", err)
+			}
+
+			results = append(results, &FileStat{
+				Url: u,
+			})
+
+			continue
+		}
+
+		u, err := urlz.Parse(fmt.Sprintf("gs://%s/%s", p.bucket, attrs.Name))
 		if err != nil {
-			return nil, fmt.Errorf("failed to parse url for gs://%s/%s: %w", attrs.Bucket, attrs.Name, err)
+			return nil, fmt.Errorf("failed to parse object URL: %w", err)
 		}
 
 		results = append(results, &FileStat{
@@ -165,7 +179,7 @@ func (gf *gsFs) Ls(ctx context.Context, prefix *urlz.Url) (Paginator, error) {
 	path := strings.TrimPrefix(prefix.Path.String(), "/")
 	it := client.Bucket(bucket).Objects(ctx, &storage.Query{Prefix: path, Delimiter: "/"})
 
-	return &gsPaginator{it: it, client: client}, nil
+	return &gsPaginator{it: it, client: client, bucket: bucket}, nil
 }
 
 func (gf *gsFs) Find(ctx context.Context, prefix *urlz.Url) (Paginator, error) {
