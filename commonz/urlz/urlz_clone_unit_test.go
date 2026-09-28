@@ -90,6 +90,7 @@ func TestUnitUrlClone(t *testing.T) {
 		originalPath := pathz.MustParse("/some/box/path")
 		originalUrl := &urlz.Url{
 			Scheme: "boxlocal",
+			Host:   "some-box",
 			Path:   originalPath,
 		}
 		check(t, testScenario{

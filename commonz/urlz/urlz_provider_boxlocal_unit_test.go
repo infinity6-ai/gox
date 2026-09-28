@@ -41,31 +41,28 @@ func TestUnitParseBoxlocal(t *testing.T) {
 	t.Run("absolute path with slashes", func(t *testing.T) {
 		check(t, testScenario{
 			name:   "absolute path with slashes",
-			rawUrl: "boxlocal:///tmp/x",
+			rawUrl: "boxlocal://my-box/tmp/x",
 			expected: &urlz.Url{
 				Scheme: "boxlocal",
+				Host:   "my-box",
 				Path:   p,
 			},
-			expectedStr: "boxlocal:///tmp/x",
+			expectedStr: "boxlocal://my-box/tmp/x",
 		})
 	})
 
-	t.Run("absolute path", func(t *testing.T) {
+	t.Run("missing box", func(t *testing.T) {
 		check(t, testScenario{
-			name:   "absolute path",
-			rawUrl: "boxlocal:/tmp/x",
-			expected: &urlz.Url{
-				Scheme: "boxlocal",
-				Path:   p,
-			},
-			expectedStr: "boxlocal:///tmp/x",
+			name:        "missing box",
+			rawUrl:      "boxlocal:///tmp/x",
+			expectedErr: "boxlocal url is missing box",
 		})
 	})
 
 	t.Run("relative path", func(t *testing.T) {
 		check(t, testScenario{
 			name:        "relative path",
-			rawUrl:      "boxlocal:tmp/x",
+			rawUrl:      "boxlocal://my-box",
 			expectedErr: "path absolute flag",
 		})
 	})
