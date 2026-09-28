@@ -145,8 +145,8 @@ func TestUnitUrlIsBaseOf(t *testing.T) {
 	t.Run("boxlocal scheme", func(t *testing.T) {
 		check(t, testScenario{
 			name:     "boxlocal scheme",
-			baseUrl:  "boxlocal:///a/b",
-			otherUrl: "boxlocal:///a/b/c/d",
+			baseUrl:  "boxlocal://my-box/a/b",
+			otherUrl: "boxlocal://my-box/a/b/c/d",
 			isBase:   true,
 		})
 	})
@@ -154,8 +154,8 @@ func TestUnitUrlIsBaseOf(t *testing.T) {
 	t.Run("boxlocal scheme different path", func(t *testing.T) {
 		check(t, testScenario{
 			name:     "boxlocal scheme different path",
-			baseUrl:  "boxlocal:///a/c",
-			otherUrl: "boxlocal:///a/b/c",
+			baseUrl:  "boxlocal://my-box/a/c",
+			otherUrl: "boxlocal://my-box/a/b/c",
 			isBase:   false,
 		})
 	})

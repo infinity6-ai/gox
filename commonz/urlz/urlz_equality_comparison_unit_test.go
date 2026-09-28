@@ -129,8 +129,8 @@ func TestUnitUrlEquality(t *testing.T) {
 	t.Run("identical boxlocal urls", func(t *testing.T) {
 		check(t, testScenario{
 			name:        "identical boxlocal urls",
-			url1:        "boxlocal:///a/b/c",
-			url2:        "boxlocal:///a/b/c",
+			url1:        "boxlocal://my-box/a/b/c",
+			url2:        "boxlocal://my-box/a/b/c",
 			expectEqual: true,
 		})
 	})
@@ -138,8 +138,8 @@ func TestUnitUrlEquality(t *testing.T) {
 	t.Run("different boxlocal urls", func(t *testing.T) {
 		check(t, testScenario{
 			name:        "different boxlocal urls",
-			url1:        "boxlocal:///a/b",
-			url2:        "boxlocal:///a/c",
+			url1:        "boxlocal://my-box/a/b",
+			url2:        "boxlocal://my-box/a/c",
 			expectEqual: false,
 		})
 	})

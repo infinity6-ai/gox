@@ -108,6 +108,7 @@ func TestUnitUrlGobSerialization(t *testing.T) {
 			name: "gob serialization of boxlocal url",
 			inputURL: &urlz.Url{
 				Scheme: "boxlocal",
+				Host:   "my-box",
 				Path:   p,
 			},
 		})
@@ -213,6 +214,7 @@ func TestUnitUrlJsonSerialization(t *testing.T) {
 			name: "json serialization of boxlocal url",
 			inputURL: &urlz.Url{
 				Scheme: "boxlocal",
+				Host:   "my-box",
 				Path:   p,
 			},
 		})

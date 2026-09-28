@@ -80,12 +80,12 @@ func TestUnitUrlJoinPath(t *testing.T) {
 	})
 
 	t.Run("join with boxlocal scheme", func(t *testing.T) {
-		originalUrl := &urlz.Url{Scheme: "boxlocal", Path: pathz.MustParse("/my/box")}
+		originalUrl := &urlz.Url{Scheme: "boxlocal", Host: "my-box", Path: pathz.MustParse("/my/box")}
 		check(t, testScenario{
 			name:        "join with boxlocal scheme",
 			originalUrl: originalUrl,
 			joinPaths:   []*pathz.Path{pathz.MustParse("item")},
-			expectedUrl: "boxlocal:///my/box/item",
+			expectedUrl: "boxlocal://my-box/my/box/item",
 		})
 	})
 
