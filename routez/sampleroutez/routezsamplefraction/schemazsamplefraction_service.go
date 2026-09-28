@@ -37,6 +37,6 @@ func (f *FractionService) Handler(ctx context.Context) (int, error) {
 
 func Services() []apiz.Service {
 	return []apiz.Service{
-		&FractionService{},
+		NewService(),
 	}
 }
