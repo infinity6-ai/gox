@@ -3,15 +3,21 @@ package bqzimpl
 import (
 	"context"
 	"fmt"
+	"slices"
 	"strings"
 	"time"
 
 	"cloud.google.com/go/bigquery"
 	"github.com/infinity6-ai/gox/bqz/bqz"
 	"github.com/infinity6-ai/gox/bqz/bqzerr"
+	"github.com/infinity6-ai/gox/commonz/logz"
 	"github.com/infinity6-ai/gox/commonz/slicez"
 	"github.com/infinity6-ai/gox/commonz/validation"
 )
+
+type tlogger logz.Type
+
+var logger = logz.Create(tlogger(true))
 
 // CreateExternalTable implements [bqz.Service].
 func (b *BqzServiceImpl) CreateExternalTable(ctx context.Context, table *bqz.ExternalTable) error {
@@ -28,10 +34,13 @@ func (b *BqzServiceImpl) CreateExternalTable(ctx context.Context, table *bqz.Ext
 	schema, ok := table.Schema.(bigquery.Schema)
 	if !ok {
 		schema, err = bigquery.InferSchema(table.Schema)
+		logger.Info(ctx, "INFER SCHEMA", map[string]any{"schema": schema, "err": err, "table": table, "schema_bla": fmt.Sprintf("%T %#v", table.Schema, table.Schema)})
 		if err != nil {
 			return fmt.Errorf("failed to infer schema for external table %s: %w", table.Table.Get(), err)
 		}
 	}
+
+	schema = slices.Clone(schema)
 
 	extConfig := &bigquery.ExternalDataConfig{
 		SourceFormat:        bigquery.JSON,
@@ -48,6 +57,7 @@ func (b *BqzServiceImpl) CreateExternalTable(ctx context.Context, table *bqz.Ext
 			return fmt.Sprintf("{%s:STRING}", value), true
 		})
 		schema = slicez.MustFilter(schema, func(_ int, value *bigquery.FieldSchema) bool {
+			logger.Info(ctx, "SCHEMA VALUEE", map[string]any{"value": value})
 			_, ok := hiveFields[value.Name]
 			return !ok
 		})
