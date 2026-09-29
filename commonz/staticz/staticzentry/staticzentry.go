@@ -24,7 +24,7 @@ func NewEntry(name *pathz.Path, size int64, open func() (io.ReadCloser, error)) 
 		MaxParents:  new(0),
 		Wildchar:    false,
 		EndingSlash: new(false),
-		Empty:       new(false),
+		MinPart:     1,
 	})
 	return &entry{
 		name: name,

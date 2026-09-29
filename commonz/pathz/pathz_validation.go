@@ -12,7 +12,9 @@ type ValidateOptions struct {
 	MaxParents  *int
 	Wildchar    bool
 	EndingSlash *bool
-	Empty       *bool
+	MinPart     int
+	MaxPart     *int
+	Part        func(idx int, part string) error
 }
 
 func (p *Path) Check(opts ValidateOptions) {
@@ -41,8 +43,23 @@ func (p *Path) Validate(opts ValidateOptions) error {
 			return err
 		}
 	}
-	if opts.Empty != nil {
-		err := validation.Equal(*opts.Empty, len(p.Parts()) == 0, "path empty flag: %s", p)
+	if opts.MinPart < 0 {
+		panic("min part cannot be negative")
+	}
+	if opts.MaxPart != nil {
+		if *opts.MaxPart < 0 {
+			panic("max part cannot be negative")
+		}
+		if opts.MinPart > *opts.MaxPart {
+			panic("min part cannot be greater than max part")
+		}
+		err := validation.LessOrEqual(len(p.parts), *opts.MaxPart, "max parts allowed: %s", p)
+		if err != nil {
+			return err
+		}
+	}
+	if opts.MinPart > 0 {
+		err := validation.GreaterOrEqual(len(p.parts), opts.MinPart, "min parts allowed: %s", p)
 		if err != nil {
 			return err
 		}
@@ -58,6 +75,14 @@ func (p *Path) Validate(opts ValidateOptions) error {
 			err := validation.StrNotContains("*", part, "path contains wildcard characters when not allowed")
 			if err != nil {
 				return err
+			}
+		}
+	}
+	if opts.Part != nil {
+		for idx, part := range p.parts {
+			err := opts.Part(idx, part)
+			if err != nil {
+				return fmt.Errorf("part %d (%s) validation failed: %w", idx, part, err)
 			}
 		}
 	}

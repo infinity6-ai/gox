@@ -80,7 +80,7 @@ func Lookup(ctx context.Context, name any, p *pathz.Path) (staticzentry.Entry, e
 	err := p.Validate(pathz.ValidateOptions{
 		MaxParents:  new(0),
 		EndingSlash: new(false),
-		Empty:       new(false),
+		MinPart:     1,
 	})
 	if err != nil {
 		return nil, err
