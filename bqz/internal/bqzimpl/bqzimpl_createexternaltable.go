@@ -34,7 +34,7 @@ func (b *BqzServiceImpl) CreateExternalTable(ctx context.Context, table *bqz.Ext
 	schema, ok := table.Schema.(bigquery.Schema)
 	if !ok {
 		schema, err = bigquery.InferSchema(table.Schema)
-		logger.Info(ctx, "INFER SCHEMA", map[string]any{"schema": schema, "err": err, "table": table, "schema_bla": fmt.Sprintf("%T %#v", table.Schema, table.Schema)})
+		logger.Info(ctx, "INFER SCHEMA", map[string]any{"schema": schema, "err": err, "table": table, "sample": fmt.Sprintf("%T %#v", table.Schema, table.Schema)})
 		if err != nil {
 			return fmt.Errorf("failed to infer schema for external table %s: %w", table.Table.Get(), err)
 		}
@@ -57,7 +57,6 @@ func (b *BqzServiceImpl) CreateExternalTable(ctx context.Context, table *bqz.Ext
 			return fmt.Sprintf("{%s:STRING}", value), true
 		})
 		schema = slicez.MustFilter(schema, func(_ int, value *bigquery.FieldSchema) bool {
-			logger.Info(ctx, "SCHEMA VALUEE", map[string]any{"value": value})
 			_, ok := hiveFields[value.Name]
 			return !ok
 		})
