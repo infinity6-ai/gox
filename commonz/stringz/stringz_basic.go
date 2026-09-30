@@ -3,11 +3,25 @@
 package stringz
 
 import (
+	"fmt"
 	"strings"
 	"unicode"
 
 	"golang.org/x/text/unicode/norm"
 )
+
+type Stringfible interface {
+	String() string
+}
+
+func String(n any) string {
+	if n != nil {
+		if s, ok := n.(Stringfible); ok {
+			return s.String()
+		}
+	}
+	return fmt.Sprintf("%s", n)
+}
 
 // RemoveAccents removes diacritical marks (accents) from a string.
 // It uses Unicode normalization (NFD) to decompose characters and then

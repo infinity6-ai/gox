@@ -36,6 +36,10 @@ func (p *Path) PartsLen() int {
 	return len(p.parts)
 }
 
+func (p *Path) Part(idx int) string {
+	return p.parts[idx]
+}
+
 func (p *Path) Parts() []string {
 	return slices.Clone(p.parts)
 }
