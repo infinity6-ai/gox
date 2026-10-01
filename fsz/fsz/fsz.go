@@ -104,6 +104,22 @@ func Find(ctx context.Context, url *urlz.Url) (Paginator, error) {
 	return p.Find(ctx, url)
 }
 
+func Lister(ctx context.Context, url *urlz.Url, walker Walker) error {
+	p, err := getProvider(url.Scheme)
+	if err != nil {
+		return err
+	}
+	return p.Lister(ctx, url, walker)
+}
+
+func Finder(ctx context.Context, url *urlz.Url, walker Walker) error {
+	p, err := getProvider(url.Scheme)
+	if err != nil {
+		return err
+	}
+	return p.Finder(ctx, url, walker)
+}
+
 func Copy(ctx context.Context, src *urlz.Url, dest *urlz.Url) error {
 	if src.Scheme != dest.Scheme {
 		srcProvider, err := getProvider(src.Scheme)

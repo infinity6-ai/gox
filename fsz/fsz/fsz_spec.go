@@ -12,6 +12,7 @@ import (
 
 var ErrUnknownScheme = errors.New("unknown scheme")
 var ErrUnsupportedOperation = errors.New("unsupported operation")
+var ErrStop = errors.New("Stop")
 
 type FileStat struct {
 	Url         *urlz.Url  `json:"url"`
@@ -21,6 +22,12 @@ type FileStat struct {
 	Etag        string     `json:"etag"`
 	CreatedAt   *time.Time `json:"created_at"`
 	UpdatedAt   *time.Time `json:"updated_at"`
+}
+
+type Walker struct {
+	StartCursor string
+	PageSize    int
+	Pager       func(page []*FileStat, nextCursor string) error
 }
 
 type Paginator interface {
@@ -39,6 +46,9 @@ type FsProvider interface {
 
 	Ls(ctx context.Context, prefix *urlz.Url) (Paginator, error)
 	Find(ctx context.Context, prefix *urlz.Url) (Paginator, error)
+
+	Lister(ctx context.Context, prefix *urlz.Url, walker Walker) error
+	Finder(ctx context.Context, prefix *urlz.Url, walker Walker) error
 
 	SignGet(ctx context.Context, url *urlz.Url, duration time.Duration) (string, error)
 	SignPut(ctx context.Context, url *urlz.Url, duration time.Duration) (string, error)

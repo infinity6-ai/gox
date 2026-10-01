@@ -113,12 +113,132 @@ func (gf *gsFs) Delete(ctx context.Context, url *urlz.Url) error {
 	return err
 }
 
+func (gf *gsFs) Lister(ctx context.Context, prefix *urlz.Url, walker Walker) error {
+	bucket := prefix.Host
+	path := strings.TrimPrefix(prefix.Path.String(), "/")
+	q := &storage.Query{Prefix: path, Delimiter: "/"}
+	return gf.runGsWalker(ctx, bucket, q, false, walker)
+}
+
+func (gf *gsFs) Finder(ctx context.Context, prefix *urlz.Url, walker Walker) error {
+	bucket := prefix.Host
+	path := strings.TrimPrefix(prefix.Path.String(), "/")
+	q := &storage.Query{Prefix: path}
+	return gf.runGsWalker(ctx, bucket, q, true, walker)
+}
+
+func (gf *gsFs) runGsWalker(ctx context.Context, bucket string, q *storage.Query, isFind bool, walker Walker) error {
+	if walker.Pager == nil {
+		return nil
+	}
+	pageSize := walker.PageSize
+	if pageSize <= 0 {
+		pageSize = 1000
+	}
+
+	client, err := gf.openClient(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to open gcs client: %w", err)
+	}
+	defer client.Close()
+
+	cursor := walker.StartCursor
+	it := client.Bucket(bucket).Objects(ctx, q)
+
+	for {
+		if err := ctx.Err(); err != nil {
+			return fmt.Errorf("context error during gcs walk: %w", err)
+		}
+
+		pager := iterator.NewPager(it, pageSize, cursor)
+		var items []*storage.ObjectAttrs
+		nextToken, err := pager.NextPage(&items)
+		if err != nil {
+			return fmt.Errorf("failed to retrieve next page from gcs: %w", err)
+		}
+
+		page := make([]*FileStat, 0, len(items))
+		for _, attrs := range items {
+			if attrs.Prefix != "" {
+				if isFind {
+					continue
+				}
+
+				prefixStr := attrs.Prefix
+				if !strings.HasSuffix(prefixStr, "/") {
+					prefixStr += "/"
+				}
+
+				u, err := urlz.Parse(fmt.Sprintf("gs://%s/%s", bucket, prefixStr))
+				if err != nil {
+					return fmt.Errorf("failed to parse prefix URL: %w", err)
+				}
+
+				page = append(page, &FileStat{
+					Url: u,
+				})
+
+				continue
+			}
+
+			if strings.HasSuffix(attrs.Name, "/") {
+				if isFind {
+					continue
+				}
+
+				u, err := urlz.Parse(fmt.Sprintf("gs://%s/%s", bucket, attrs.Name))
+				if err != nil {
+					return fmt.Errorf("failed to parse directory object URL: %w", err)
+				}
+
+				page = append(page, &FileStat{
+					Url: u,
+				})
+
+				continue
+			}
+
+			u, err := urlz.Parse(fmt.Sprintf("gs://%s/%s", bucket, attrs.Name))
+			if err != nil {
+				return fmt.Errorf("failed to parse object URL: %w", err)
+			}
+
+			page = append(page, &FileStat{
+				Url:         u,
+				ContentType: attrs.ContentType,
+				Md5:         string(attrs.MD5),
+				Size:        uint64(attrs.Size),
+				Etag:        attrs.Etag,
+				CreatedAt:   &attrs.Created,
+				UpdatedAt:   &attrs.Updated,
+			})
+		}
+
+		if len(page) > 0 {
+			err = walker.Pager(page, nextToken)
+			if err != nil {
+				if errors.Is(err, ErrStop) {
+					return nil
+				}
+				return err
+			}
+		}
+
+		if nextToken == "" {
+			break
+		}
+		cursor = nextToken
+	}
+
+	return nil
+}
+
 type gsPaginator struct {
 	fs     *gsFs
-	bucket string
-	query  *storage.Query
+	prefix *urlz.Url
 	cursor string
 	isFind bool
+	done   bool
 }
 
 func (p *gsPaginator) GetCursor() string {
@@ -127,103 +247,54 @@ func (p *gsPaginator) GetCursor() string {
 
 func (p *gsPaginator) SetCursor(cursor string) {
 	p.cursor = cursor
+	p.done = false
 }
 
 func (p *gsPaginator) Paginate(ctx context.Context, max int) ([]*FileStat, error) {
-	if max <= 0 {
+	if max <= 0 || p.done {
 		return nil, nil
 	}
-
-	client, err := p.fs.openClient(ctx)
-	if err != nil {
-		return nil, fmt.Errorf("failed to open gcs client: %w", err)
-	}
-	defer client.Close()
-
-	it := client.Bucket(p.bucket).Objects(ctx, p.query)
-	pager := iterator.NewPager(it, max, p.cursor)
-
-	var items []*storage.ObjectAttrs
-	nextToken, err := pager.NextPage(&items)
-	if err != nil {
-		return nil, fmt.Errorf("failed to retrieve next page from gcs: %w", err)
+	if err := ctx.Err(); err != nil {
+		return nil, fmt.Errorf("context error during paginate: %w", err)
 	}
 
-	p.cursor = nextToken
-
-	results := make([]*FileStat, 0, len(items))
-	for _, attrs := range items {
-		if attrs.Prefix != "" {
-			if p.isFind {
-				continue
+	var results []*FileStat
+	called := false
+	walker := Walker{
+		StartCursor: p.cursor,
+		PageSize:    max,
+		Pager: func(page []*FileStat, nextCursor string) error {
+			called = true
+			results = page
+			p.cursor = nextCursor
+			if nextCursor == "" {
+				p.done = true
 			}
+			return ErrStop
+		},
+	}
 
-			prefixStr := attrs.Prefix
-			if !strings.HasSuffix(prefixStr, "/") {
-				prefixStr += "/"
-			}
-
-			u, err := urlz.Parse(fmt.Sprintf("gs://%s/%s", p.bucket, prefixStr))
-			if err != nil {
-				return nil, fmt.Errorf("failed to parse prefix URL: %w", err)
-			}
-
-			results = append(results, &FileStat{
-				Url: u,
-			})
-
-			continue
-		}
-
-		if strings.HasSuffix(attrs.Name, "/") {
-			if p.isFind {
-				continue
-			}
-
-			u, err := urlz.Parse(fmt.Sprintf("gs://%s/%s", p.bucket, attrs.Name))
-			if err != nil {
-				return nil, fmt.Errorf("failed to parse directory object URL: %w", err)
-			}
-
-			results = append(results, &FileStat{
-				Url: u,
-			})
-
-			continue
-		}
-
-		u, err := urlz.Parse(fmt.Sprintf("gs://%s/%s", p.bucket, attrs.Name))
-		if err != nil {
-			return nil, fmt.Errorf("failed to parse object URL: %w", err)
-		}
-
-		results = append(results, &FileStat{
-			Url:         u,
-			ContentType: attrs.ContentType,
-			Md5:         string(attrs.MD5),
-			Size:        uint64(attrs.Size),
-			Etag:        attrs.Etag,
-			CreatedAt:   &attrs.Created,
-			UpdatedAt:   &attrs.Updated,
-		})
+	var err error
+	if p.isFind {
+		err = p.fs.Finder(ctx, p.prefix, walker)
+	} else {
+		err = p.fs.Lister(ctx, p.prefix, walker)
+	}
+	if err != nil && !errors.Is(err, ErrStop) {
+		return nil, err
+	}
+	if !called || p.cursor == "" {
+		p.done = true
 	}
 	return results, nil
 }
 
 func (gf *gsFs) Ls(ctx context.Context, prefix *urlz.Url) (Paginator, error) {
-	bucket := prefix.Host
-	path := strings.TrimPrefix(prefix.Path.String(), "/")
-	q := &storage.Query{Prefix: path, Delimiter: "/"}
-
-	return &gsPaginator{fs: gf, bucket: bucket, query: q, isFind: false}, nil
+	return &gsPaginator{fs: gf, prefix: prefix, isFind: false}, nil
 }
 
 func (gf *gsFs) Find(ctx context.Context, prefix *urlz.Url) (Paginator, error) {
-	bucket := prefix.Host
-	path := strings.TrimPrefix(prefix.Path.String(), "/")
-	q := &storage.Query{Prefix: path}
-
-	return &gsPaginator{fs: gf, bucket: bucket, query: q, isFind: true}, nil
+	return &gsPaginator{fs: gf, prefix: prefix, isFind: true}, nil
 }
 
 type SignOptions struct {

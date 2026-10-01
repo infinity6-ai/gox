@@ -2,6 +2,7 @@ package fsz
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -70,68 +71,66 @@ func (ff *fileFs) Delete(ctx context.Context, url *urlz.Url) error {
 	return filez.Remove(p)
 }
 
-// Paginator for Ls (non-recursive, synchronous)
-type fileLsPaginator struct {
-	dirPath string
-	cursor  string
-	done    bool
-}
-
-func (p *fileLsPaginator) GetCursor() string {
-	return p.cursor
-}
-
-func (p *fileLsPaginator) SetCursor(cursor string) {
-	p.cursor = cleanCursor(p.dirPath, cursor)
-	p.done = false
-}
-
-func (p *fileLsPaginator) Paginate(ctx context.Context, max int) ([]*FileStat, error) {
-	if max <= 0 {
-		return nil, nil
+// Lister implements real performant directory listing
+func (ff *fileFs) Lister(ctx context.Context, prefix *urlz.Url, walker Walker) error {
+	if walker.Pager == nil {
+		return nil
 	}
-	if p.done {
-		return nil, nil
-	}
-	if err := ctx.Err(); err != nil {
-		return nil, fmt.Errorf("context error during paginate: %w", err)
+	pageSize := walker.PageSize
+	if pageSize <= 0 {
+		pageSize = 1000
 	}
 
-	entries, err := os.ReadDir(p.dirPath)
+	dirPath := filepath.Clean(prefix.Path.String())
+	cursor := cleanCursor(dirPath, walker.StartCursor)
+
+	entries, err := os.ReadDir(dirPath)
 	if err != nil {
 		if os.IsNotExist(err) {
-			p.cursor = ""
-			p.done = true
-			return nil, nil
+			return nil
 		}
-		return nil, fmt.Errorf("failed to read directory %s: %w", p.dirPath, err)
+		return fmt.Errorf("failed to read directory %s: %w", dirPath, err)
 	}
 
-	var results []*FileStat
-	hasMore := false
+	var currentPage []*FileStat
 
 	for _, entry := range entries {
 		if err := ctx.Err(); err != nil {
-			return nil, fmt.Errorf("context error during paginate: %w", err)
+			return fmt.Errorf("context error during lister: %w", err)
 		}
 
 		name := entry.Name()
-		if p.cursor != "" && name <= p.cursor {
+		if cursor != "" && name <= cursor {
 			continue
 		}
 
-		if len(results) == max {
-			hasMore = true
-			break
+		if len(currentPage) == pageSize {
+			lastPath := currentPage[len(currentPage)-1].Url.Path.String()
+			rel, err := filepath.Rel(dirPath, lastPath)
+			var nextCursor string
+			if err == nil {
+				nextCursor = filepath.ToSlash(rel)
+			} else {
+				nextCursor = filepath.ToSlash(lastPath)
+			}
+
+			err = walker.Pager(currentPage, nextCursor)
+			if err != nil {
+				if errors.Is(err, ErrStop) {
+					return nil
+				}
+				return err
+			}
+			currentPage = make([]*FileStat, 0, pageSize)
 		}
 
-		path := filepath.Join(p.dirPath, name)
+		path := filepath.Join(dirPath, name)
 		info, err := entry.Info()
 		if err != nil {
 			if os.IsNotExist(err) {
 				continue
 			}
-			return nil, fmt.Errorf("failed to get file info for %s: %w", path, err)
+			return fmt.Errorf("failed to get file info for %s: %w", path, err)
 		}
 
 		urlStr := "file://" + filepath.ToSlash(path)
@@ -141,7 +140,7 @@ func (p *fileLsPaginator) Paginate(ctx context.Context, max int) ([]*FileStat, e
 
 		u, err := urlz.Parse(urlStr)
 		if err != nil {
-			return nil, fmt.Errorf("failed to parse url for %s: %w", path, err)
+			return fmt.Errorf("failed to parse url for %s: %w", path, err)
 		}
 
 		stat := &FileStat{
@@ -154,88 +153,62 @@ func (p *fileLsPaginator) Paginate(ctx context.Context, max int) ([]*FileStat, e
 			stat.Size = 0
 		}
 
-		results = append(results, stat)
+		currentPage = append(currentPage, stat)
 	}
 
-	if hasMore && len(results) > 0 {
-		lastPath := results[len(results)-1].Url.Path.String()
-		rel, err := filepath.Rel(p.dirPath, lastPath)
-		if err == nil {
-			p.cursor = filepath.ToSlash(rel)
-		} else {
-			p.cursor = filepath.ToSlash(lastPath)
+	if len(currentPage) > 0 {
+		err = walker.Pager(currentPage, "")
+		if err != nil && !errors.Is(err, ErrStop) {
+			return err
 		}
-		p.done = false
-	} else {
-		p.cursor = ""
-		p.done = true
 	}
 
-	return results, nil
+	return nil
 }
 
-// Paginator for Find (recursive, synchronous)
-type fileFindPaginator struct {
-	dirPath string
-	cursor  string
-	done    bool
-}
-
-func (p *fileFindPaginator) GetCursor() string {
-	return p.cursor
-}
-
-func (p *fileFindPaginator) SetCursor(cursor string) {
-	p.cursor = cleanCursor(p.dirPath, cursor)
-	p.done = false
-}
-
-func (p *fileFindPaginator) Paginate(ctx context.Context, max int) ([]*FileStat, error) {
-	if max <= 0 {
-		return nil, nil
+// Finder implements real performant recursive directory walking
+func (ff *fileFs) Finder(ctx context.Context, prefix *urlz.Url, walker Walker) error {
+	if walker.Pager == nil {
+		return nil
 	}
-	if p.done {
-		return nil, nil
-	}
-	if err := ctx.Err(); err != nil {
-		return nil, fmt.Errorf("context error during paginate: %w", err)
+	pageSize := walker.PageSize
+	if pageSize <= 0 {
+		pageSize = 1000
 	}
 
-	var results []*FileStat
-	hasMore := false
+	dirPath := filepath.Clean(prefix.Path.String())
+	cursor := cleanCursor(dirPath, walker.StartCursor)
 
-	err := filepath.WalkDir(p.dirPath, func(path string, d os.DirEntry, err error) error {
+	var currentPage []*FileStat
+	stopped := false
+
+	err := filepath.WalkDir(dirPath, func(path string, d os.DirEntry, err error) error {
 		if err != nil {
 			return err
 		}
 		if err := ctx.Err(); err != nil {
-			return fmt.Errorf("context error during paginate: %w", err)
+			return fmt.Errorf("context error during finder: %w", err)
 		}
 
-		if path == p.dirPath {
+		if path == dirPath {
 			return nil
 		}
 
-		relPath, err := filepath.Rel(p.dirPath, path)
+		relPath, err := filepath.Rel(dirPath, path)
 		if err != nil {
 			return fmt.Errorf("failed to get relative path for %s: %w", path, err)
 		}
 		relSlash := filepath.ToSlash(relPath)
 
 		if d.IsDir() {
-			if shouldSkipDir(relSlash, p.cursor) {
+			if shouldSkipDir(relSlash, cursor) {
 				return filepath.SkipDir
 			}
 			return nil
 		}
 
-		if p.cursor != "" && compareWalkOrder(relSlash, p.cursor) <= 0 {
+		if cursor != "" && compareWalkOrder(relSlash, cursor) <= 0 {
 			return nil
-		}
-
-		if len(results) == max {
-			hasMore = true
-			return filepath.SkipAll
 		}
 
 		info, err := d.Info()
@@ -250,12 +223,35 @@ func (p *fileFindPaginator) Paginate(ctx context.Context, max int) ([]*FileStat,
 			return nil
 		}
 
+		if len(currentPage) == pageSize {
+			lastPath := currentPage[len(currentPage)-1].Url.Path.String()
+			rel, err := filepath.Rel(dirPath, lastPath)
+			var nextCursor string
+			if err == nil {
+				nextCursor = filepath.ToSlash(rel)
+			} else {
+				nextCursor = filepath.ToSlash(lastPath)
+			}
+
+			pageToSend := currentPage
+			currentPage = make([]*FileStat, 0, pageSize)
+
+			pagerErr := walker.Pager(pageToSend, nextCursor)
+			if pagerErr != nil {
+				if errors.Is(pagerErr, ErrStop) {
+					stopped = true
+					return filepath.SkipAll
+				}
+				return pagerErr
+			}
+		}
+
 		u, err := urlz.Parse("file://" + filepath.ToSlash(path))
 		if err != nil {
 			return fmt.Errorf("failed to parse url for %s: %w", path, err)
 		}
 
-		results = append(results, &FileStat{
+		currentPage = append(currentPage, &FileStat{
 			Url:       u,
 			Size:      uint64(info.Size()),
 			UpdatedAt: filez.GetUpdatedAt(path),
@@ -266,28 +262,119 @@ func (p *fileFindPaginator) Paginate(ctx context.Context, max int) ([]*FileStat,
 	})
 
 	if err != nil {
-		if os.IsNotExist(err) {
-			p.cursor = ""
-			p.done = true
-			return nil, nil
+		if os.IsNotExist(err) || errors.Is(err, ErrStop) {
+			return nil
 		}
-		return nil, fmt.Errorf("failed to walk directory %s: %w", p.dirPath, err)
+		return fmt.Errorf("failed to walk directory %s: %w", dirPath, err)
 	}
 
-	if hasMore && len(results) > 0 {
-		lastPath := results[len(results)-1].Url.Path.String()
-		rel, err := filepath.Rel(p.dirPath, lastPath)
-		if err == nil {
-			p.cursor = filepath.ToSlash(rel)
-		} else {
-			p.cursor = filepath.ToSlash(lastPath)
+	if !stopped && len(currentPage) > 0 {
+		pagerErr := walker.Pager(currentPage, "")
+		if pagerErr != nil && !errors.Is(pagerErr, ErrStop) {
+			return pagerErr
 		}
-		p.done = false
-	} else {
-		p.cursor = ""
+	}
+
+	return nil
+}
+
+// Paginator for Ls (single-page wrapper over Lister)
+type fileLsPaginator struct {
+	fs     *fileFs
+	prefix *urlz.Url
+	cursor string
+	done   bool
+}
+
+func (p *fileLsPaginator) GetCursor() string {
+	return p.cursor
+}
+
+func (p *fileLsPaginator) SetCursor(cursor string) {
+	dirPath := filepath.Clean(p.prefix.Path.String())
+	p.cursor = cleanCursor(dirPath, cursor)
+	p.done = false
+}
+
+func (p *fileLsPaginator) Paginate(ctx context.Context, max int) ([]*FileStat, error) {
+	if max <= 0 || p.done {
+		return nil, nil
+	}
+	if err := ctx.Err(); err != nil {
+		return nil, fmt.Errorf("context error during paginate: %w", err)
+	}
+
+	var results []*FileStat
+	called := false
+	err := p.fs.Lister(ctx, p.prefix, Walker{
+		StartCursor: p.cursor,
+		PageSize:    max,
+		Pager: func(page []*FileStat, nextCursor string) error {
+			called = true
+			results = page
+			p.cursor = nextCursor
+			if nextCursor == "" {
+				p.done = true
+			}
+			return ErrStop
+		},
+	})
+	if err != nil && !errors.Is(err, ErrStop) {
+		return nil, err
+	}
+	if !called || p.cursor == "" {
 		p.done = true
 	}
+	return results, nil
+}
 
+// Paginator for Find (single-page wrapper over Finder)
+type fileFindPaginator struct {
+	fs     *fileFs
+	prefix *urlz.Url
+	cursor string
+	done   bool
+}
+
+func (p *fileFindPaginator) GetCursor() string {
+	return p.cursor
+}
+
+func (p *fileFindPaginator) SetCursor(cursor string) {
+	dirPath := filepath.Clean(p.prefix.Path.String())
+	p.cursor = cleanCursor(dirPath, cursor)
+	p.done = false
+}
+
+func (p *fileFindPaginator) Paginate(ctx context.Context, max int) ([]*FileStat, error) {
+	if max <= 0 || p.done {
+		return nil, nil
+	}
+	if err := ctx.Err(); err != nil {
+		return nil, fmt.Errorf("context error during paginate: %w", err)
+	}
+
+	var results []*FileStat
+	called := false
+	err := p.fs.Finder(ctx, p.prefix, Walker{
+		StartCursor: p.cursor,
+		PageSize:    max,
+		Pager: func(page []*FileStat, nextCursor string) error {
+			called = true
+			results = page
+			p.cursor = nextCursor
+			if nextCursor == "" {
+				p.done = true
+			}
+			return ErrStop
+		},
+	})
+	if err != nil && !errors.Is(err, ErrStop) {
+		return nil, err
+	}
+	if !called || p.cursor == "" {
+		p.done = true
+	}
 	return results, nil
 }
 
@@ -372,13 +459,11 @@ func shouldSkipDir(dirRelPath string, cursor string) bool {
 }
 
 func (ff *fileFs) Ls(ctx context.Context, prefix *urlz.Url) (Paginator, error) {
-	dirPath := filepath.Clean(prefix.Path.String())
-	return &fileLsPaginator{dirPath: dirPath}, nil
+	return &fileLsPaginator{fs: ff, prefix: prefix}, nil
 }
 
 func (ff *fileFs) Find(ctx context.Context, prefix *urlz.Url) (Paginator, error) {
-	dirPath := filepath.Clean(prefix.Path.String())
-	return &fileFindPaginator{dirPath: dirPath}, nil
+	return &fileFindPaginator{fs: ff, prefix: prefix}, nil
 }
 
 func (ff *fileFs) SignGet(ctx context.Context, url *urlz.Url, duration time.Duration) (string, error) {

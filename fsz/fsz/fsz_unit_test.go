@@ -709,3 +709,124 @@ func TestUnitFszLsAndFindDirectoryEndingSlash(t *testing.T) {
 		}
 	})
 }
+
+func TestUnitFszListerAndFinderWalker(t *testing.T) {
+	tmpDir := filez.CreateTempDir("fsz-walker-test")
+	defer os.RemoveAll(tmpDir)
+
+	ctx := context.Background()
+
+	require.NoError(t, os.WriteFile(filepath.Join(tmpDir, "file1.txt"), []byte("1"), 0644))
+	require.NoError(t, os.WriteFile(filepath.Join(tmpDir, "file2.txt"), []byte("2"), 0644))
+	require.NoError(t, filez.CreateParentDirs(filepath.Join(tmpDir, "sub1", "nested1.txt")))
+	require.NoError(t, os.WriteFile(filepath.Join(tmpDir, "sub1", "nested1.txt"), []byte("n1"), 0644))
+	require.NoError(t, os.WriteFile(filepath.Join(tmpDir, "sub1", "nested2.txt"), []byte("n2"), 0644))
+	require.NoError(t, filez.CreateParentDirs(filepath.Join(tmpDir, "sub2", "nested3.txt")))
+	require.NoError(t, os.WriteFile(filepath.Join(tmpDir, "sub2", "nested3.txt"), []byte("n3"), 0644))
+
+	u, err := urlz.Parse("file://" + tmpDir)
+	require.NoError(t, err)
+
+	t.Run("Lister streams all items in pages and reports cursor", func(t *testing.T) {
+		var allPages [][]*fsz.FileStat
+		var cursors []string
+
+		err := fsz.Lister(ctx, u, fsz.Walker{
+			PageSize: 2,
+			Pager: func(page []*fsz.FileStat, nextCursor string) error {
+				allPages = append(allPages, page)
+				cursors = append(cursors, nextCursor)
+				return nil
+			},
+		})
+		require.NoError(t, err)
+
+		// Top level has 4 entries: file1.txt, file2.txt, sub1, sub2
+		require.Len(t, allPages, 2)
+		require.Len(t, allPages[0], 2)
+		require.Len(t, allPages[1], 2)
+		require.NotEmpty(t, cursors[0])
+		require.Equal(t, "", cursors[1])
+	})
+
+	t.Run("Lister stops early on ErrStop", func(t *testing.T) {
+		var pagesCount int
+
+		err := fsz.Lister(ctx, u, fsz.Walker{
+			PageSize: 2,
+			Pager: func(page []*fsz.FileStat, nextCursor string) error {
+				pagesCount++
+				return fsz.ErrStop
+			},
+		})
+		require.NoError(t, err)
+		require.Equal(t, 1, pagesCount)
+	})
+
+	t.Run("Finder streams all files recursively without directories", func(t *testing.T) {
+		var collectedFiles []string
+		var cursors []string
+
+		err := fsz.Finder(ctx, u, fsz.Walker{
+			PageSize: 2,
+			Pager: func(page []*fsz.FileStat, nextCursor string) error {
+				for _, f := range page {
+					require.False(t, f.Url.Path.HasEndingSlash())
+					collectedFiles = append(collectedFiles, filepath.Base(f.Url.Path.String()))
+				}
+				cursors = append(cursors, nextCursor)
+				return nil
+			},
+		})
+		require.NoError(t, err)
+
+		// 5 files total: file1.txt, file2.txt, nested1.txt, nested2.txt, nested3.txt
+		require.Len(t, collectedFiles, 5)
+		require.Len(t, cursors, 3) // pages of 2, 2, 1
+		require.NotEmpty(t, cursors[0])
+		require.NotEmpty(t, cursors[1])
+		require.Equal(t, "", cursors[2])
+	})
+
+	t.Run("Finder stops early on ErrStop", func(t *testing.T) {
+		var filesCount int
+
+		err := fsz.Finder(ctx, u, fsz.Walker{
+			PageSize: 2,
+			Pager: func(page []*fsz.FileStat, nextCursor string) error {
+				filesCount += len(page)
+				return fsz.ErrStop
+			},
+		})
+		require.NoError(t, err)
+		require.Equal(t, 2, filesCount)
+	})
+
+	t.Run("Finder resumes with StartCursor", func(t *testing.T) {
+		var firstCursor string
+
+		err := fsz.Finder(ctx, u, fsz.Walker{
+			PageSize: 2,
+			Pager: func(page []*fsz.FileStat, nextCursor string) error {
+				firstCursor = nextCursor
+				return fsz.ErrStop
+			},
+		})
+		require.NoError(t, err)
+		require.NotEmpty(t, firstCursor)
+
+		var resumedFiles []string
+		err = fsz.Finder(ctx, u, fsz.Walker{
+			StartCursor: firstCursor,
+			PageSize:    10,
+			Pager: func(page []*fsz.FileStat, nextCursor string) error {
+				for _, f := range page {
+					resumedFiles = append(resumedFiles, filepath.Base(f.Url.Path.String()))
+				}
+				return nil
+			},
+		})
+		require.NoError(t, err)
+		require.Len(t, resumedFiles, 3) // 5 total - 2 = 3
+	})
+}
