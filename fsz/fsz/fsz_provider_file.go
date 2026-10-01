@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"strconv"
 	"time"
 
 	"github.com/infinity6-ai/gox/commonz/filez"
@@ -74,6 +75,7 @@ type fileLsPaginator struct {
 	dirPath string
 	entries []os.DirEntry
 	offset  int
+	cursor  string
 }
 
 func (p *fileLsPaginator) Close() error {
@@ -81,8 +83,16 @@ func (p *fileLsPaginator) Close() error {
 	return nil
 }
 
+func (p *fileLsPaginator) NextCursor() string {
+	return p.cursor
+}
+
 func (p *fileLsPaginator) Paginate(ctx context.Context, max int) ([]*FileStat, error) {
+	if max <= 0 {
+		return nil, nil
+	}
 	if p.offset >= len(p.entries) {
+		p.cursor = ""
 		return nil, nil // End of pagination
 	}
 
@@ -92,6 +102,12 @@ func (p *fileLsPaginator) Paginate(ctx context.Context, max int) ([]*FileStat, e
 	}
 	pageEntries := p.entries[p.offset:end]
 	p.offset = end
+
+	if p.offset >= len(p.entries) {
+		p.cursor = ""
+	} else {
+		p.cursor = strconv.Itoa(p.offset)
+	}
 
 	var results []*FileStat
 	for _, entry := range pageEntries {
@@ -144,6 +160,8 @@ type filePaginatorItem struct {
 type fileFindPaginator struct {
 	ch     <-chan *filePaginatorItem
 	cancel context.CancelFunc
+	cursor string
+	count  int
 }
 
 func (p *fileFindPaginator) Close() error {
@@ -151,22 +169,32 @@ func (p *fileFindPaginator) Close() error {
 	return nil
 }
 
+func (p *fileFindPaginator) NextCursor() string {
+	return p.cursor
+}
+
 func (p *fileFindPaginator) Paginate(ctx context.Context, max int) ([]*FileStat, error) {
+	if max <= 0 {
+		return nil, nil
+	}
 	var results []*FileStat
 	for i := 0; i < max; i++ {
 		select {
 		case item, ok := <-p.ch:
 			if !ok {
+				p.cursor = ""
 				return results, nil
 			}
 			if item.err != nil {
 				return nil, item.err
 			}
 			results = append(results, item.stat)
+			p.count++
 		case <-ctx.Done():
 			return results, ctx.Err()
 		}
 	}
+	p.cursor = strconv.Itoa(p.count)
 	return results, nil
 }
 

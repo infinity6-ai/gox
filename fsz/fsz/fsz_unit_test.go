@@ -83,25 +83,31 @@ func TestUnitFszLs(t *testing.T) {
 	require.NoError(t, err)
 	defer paginator.Close()
 
+	require.Equal(t, "", paginator.NextCursor())
+
 	// Paginate with max=2
 	stats1, err := paginator.Paginate(ctx, 2)
 	require.NoError(t, err)
 	require.Len(t, stats1, 2)
+	require.Equal(t, "2", paginator.NextCursor())
 
 	// Paginate with max=2
 	stats2, err := paginator.Paginate(ctx, 2)
 	require.NoError(t, err)
 	require.Len(t, stats2, 2)
+	require.Equal(t, "4", paginator.NextCursor())
 
 	// Paginate with max=2 (should get the last one)
 	stats3, err := paginator.Paginate(ctx, 2)
 	require.NoError(t, err)
 	require.Len(t, stats3, 1)
+	require.Equal(t, "", paginator.NextCursor())
 
 	// Paginate again, should be empty
 	stats4, err := paginator.Paginate(ctx, 2)
 	require.NoError(t, err)
 	require.Len(t, stats4, 0)
+	require.Equal(t, "", paginator.NextCursor())
 }
 
 func TestUnitDownloadNotFound(t *testing.T) {
@@ -299,17 +305,24 @@ func TestUnitFszFind(t *testing.T) {
 	require.NoError(t, err)
 	defer paginator.Close()
 
+	require.Equal(t, "", paginator.NextCursor())
+
 	var foundFiles int
 	for {
 		stats, err := paginator.Paginate(ctx, 2)
 		require.NoError(t, err)
 		if len(stats) == 0 {
+			require.Equal(t, "", paginator.NextCursor())
 			break
 		}
 		foundFiles += len(stats)
+		if foundFiles < len(files) {
+			require.NotEmpty(t, paginator.NextCursor())
+		}
 	}
 
 	require.Equal(t, len(files), foundFiles)
+	require.Equal(t, "", paginator.NextCursor())
 }
 
 func TestUnitFileFsLsNonExistentDir(t *testing.T) {
