@@ -44,9 +44,6 @@ type FsProvider interface {
 
 	Copy(ctx context.Context, src *urlz.Url, dest *urlz.Url) error
 
-	Ls(ctx context.Context, prefix *urlz.Url) (Paginator, error)
-	Find(ctx context.Context, prefix *urlz.Url) (Paginator, error)
-
 	Lister(ctx context.Context, prefix *urlz.Url, walker Walker) error
 	Finder(ctx context.Context, prefix *urlz.Url, walker Walker) error
 

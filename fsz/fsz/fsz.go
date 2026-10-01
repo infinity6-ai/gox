@@ -2,6 +2,7 @@ package fsz
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -88,12 +89,63 @@ func Download(ctx context.Context, url *urlz.Url, callback func(found bool, head
 	return p.Download(ctx, url, callback)
 }
 
+type walkerPaginator struct {
+	fn     func(ctx context.Context, url *urlz.Url, walker Walker) error
+	url    *urlz.Url
+	cursor string
+	done   bool
+}
+
+func (p *walkerPaginator) GetCursor() string {
+	return p.cursor
+}
+
+func (p *walkerPaginator) SetCursor(cursor string) {
+	p.cursor = cursor
+	p.done = false
+}
+
+func (p *walkerPaginator) Paginate(ctx context.Context, max int) ([]*FileStat, error) {
+	if max <= 0 || p.done {
+		return nil, nil
+	}
+	if err := ctx.Err(); err != nil {
+		return nil, fmt.Errorf("context error during paginate: %w", err)
+	}
+
+	var results []*FileStat
+	called := false
+	err := p.fn(ctx, p.url, Walker{
+		StartCursor: p.cursor,
+		PageSize:    max,
+		Pager: func(page []*FileStat, nextCursor string) error {
+			called = true
+			results = page
+			p.cursor = nextCursor
+			if nextCursor == "" {
+				p.done = true
+			}
+			return ErrStop
+		},
+	})
+	if err != nil && !errors.Is(err, ErrStop) {
+		return nil, err
+	}
+	if !called || p.cursor == "" {
+		p.done = true
+	}
+	return results, nil
+}
+
 func Ls(ctx context.Context, url *urlz.Url) (Paginator, error) {
 	p, err := getProvider(url.Scheme)
 	if err != nil {
 		return nil, err
 	}
-	return p.Ls(ctx, url)
+	return &walkerPaginator{
+		fn:  p.Lister,
+		url: url,
+	}, nil
 }
 
 func Find(ctx context.Context, url *urlz.Url) (Paginator, error) {
@@ -101,7 +153,10 @@ func Find(ctx context.Context, url *urlz.Url) (Paginator, error) {
 	if err != nil {
 		return nil, err
 	}
-	return p.Find(ctx, url)
+	return &walkerPaginator{
+		fn:  p.Finder,
+		url: url,
+	}, nil
 }
 
 func Lister(ctx context.Context, url *urlz.Url, walker Walker) error {
