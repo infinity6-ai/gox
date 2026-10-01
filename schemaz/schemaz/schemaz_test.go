@@ -135,7 +135,7 @@ func TestUnitBasic(t *testing.T) {
 				"company_addresses": {
 					Array: func() *schemaz.Array {
 						return &schemaz.Array{
-							Len: len(person.CompanyAddresses),
+							Len: func() int { return len(person.CompanyAddresses) },
 							Get: func(idx int, read bool) *schemaz.Schema {
 								person.CompanyAddresses = slicez.GrowLenTo(person.CompanyAddresses, idx+1)
 								return &schemaz.Schema{
@@ -163,7 +163,7 @@ func TestUnitBasic(t *testing.T) {
 				"numbers": {
 					Array: func() *schemaz.Array {
 						return &schemaz.Array{
-							Len: len(person.Numbers),
+							Len: func() int { return len(person.Numbers) },
 							Get: func(idx int, read bool) *schemaz.Schema {
 								person.Numbers = slicez.GrowLenTo(person.Numbers, idx+1)
 								return &schemaz.Schema{

@@ -13,7 +13,7 @@ type Desc struct {
 }
 
 type Array struct {
-	Len int
+	Len func() int
 	Get func(idx int, read bool) *Schema
 }
 
@@ -43,8 +43,12 @@ func (s *Schema) MarshalJSON() ([]byte, error) {
 		if arr == nil {
 			return []byte("null"), nil
 		}
-		out := make([]*Schema, arr.Len)
-		for i := 0; i < arr.Len; i++ {
+		if arr.Len == nil {
+			panic("len func is required")
+		}
+		l := arr.Len()
+		out := make([]*Schema, l)
+		for i := 0; i < l; i++ {
 			out[i] = arr.Get(i, true)
 		}
 		// Marshaling a slice of *Schema triggers recursive MarshalJSON

@@ -101,7 +101,7 @@ func (f *FractionApi) schemaReqBody() *schemaz.Schema {
 				"messages": {
 					Array: func() *schemaz.Array {
 						return &schemaz.Array{
-							Len: len(f.Req.Messages),
+							Len: func() int { return len(f.Req.Messages) },
 							Get: func(idx int, read bool) *schemaz.Schema {
 								if !read {
 									f.Req.Messages = slicez.GrowLenTo(f.Req.Messages, idx+1)
