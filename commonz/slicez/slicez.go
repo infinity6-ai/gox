@@ -1,6 +1,17 @@
 package slicez
 
-import "fmt"
+import (
+	"fmt"
+
+	"github.com/infinity6-ai/gox/commonz/constraintz/optionalz"
+)
+
+func GetOptional[S ~[]E, E any](s S, n int) optionalz.Optional[E] {
+	if len(s) <= n {
+		return optionalz.Empty[E]()
+	}
+	return optionalz.Present(s[n])
+}
 
 func GrowAndSet[S ~[]E, E any](s S, n int, element E) S {
 	ret := GrowLenTo(s, n+1)
