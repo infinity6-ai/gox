@@ -12,6 +12,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/infinity6-ai/gox/commonz/encz/enczb64"
 	"github.com/infinity6-ai/gox/commonz/filez"
 	"github.com/infinity6-ai/gox/commonz/urlz"
 	"github.com/infinity6-ai/gox/fsz/fsz"
@@ -88,13 +89,13 @@ func TestUnitFszLs(t *testing.T) {
 	stats1, err := paginator.Paginate(ctx, 2)
 	require.NoError(t, err)
 	require.Len(t, stats1, 2)
-	require.Equal(t, "file1.txt", paginator.GetCursor())
+	require.Equal(t, enczb64.UrlEncode("file1.txt").String(), paginator.GetCursor())
 
 	// Paginate with max=2
 	stats2, err := paginator.Paginate(ctx, 2)
 	require.NoError(t, err)
 	require.Len(t, stats2, 2)
-	require.Equal(t, "file3.txt", paginator.GetCursor())
+	require.Equal(t, enczb64.UrlEncode("file3.txt").String(), paginator.GetCursor())
 
 	// Paginate with max=2 (should get the last one)
 	stats3, err := paginator.Paginate(ctx, 2)
@@ -473,7 +474,7 @@ func TestUnitFszSetCursor(t *testing.T) {
 		require.NoError(t, err)
 		require.Len(t, stats1, 2)
 		cursor := p1.GetCursor()
-		require.Equal(t, "file1.txt", cursor)
+		require.Equal(t, enczb64.UrlEncode("file1.txt").String(), cursor)
 
 		p2, err := fsz.Ls(ctx, u)
 		require.NoError(t, err)
@@ -482,7 +483,7 @@ func TestUnitFszSetCursor(t *testing.T) {
 		stats2, err := p2.Paginate(ctx, 2)
 		require.NoError(t, err)
 		require.Len(t, stats2, 2)
-		require.Equal(t, "file3.txt", p2.GetCursor())
+		require.Equal(t, enczb64.UrlEncode("file3.txt").String(), p2.GetCursor())
 		require.Equal(t, filepath.Join(tmpDir, "file2.txt"), filepath.FromSlash(stats2[0].Url.Path.String()))
 		require.Equal(t, filepath.Join(tmpDir, "file3.txt"), filepath.FromSlash(stats2[1].Url.Path.String()))
 
@@ -545,7 +546,7 @@ func TestUnitFszLsLastFileRemovedBeforeNextCall(t *testing.T) {
 	stats1, err := paginator.Paginate(ctx, 2)
 	require.NoError(t, err)
 	require.Len(t, stats1, 2)
-	require.Equal(t, "file1.txt", paginator.GetCursor())
+	require.Equal(t, enczb64.UrlEncode("file1.txt").String(), paginator.GetCursor())
 	require.Equal(t, filepath.Join(tmpDir, "file0.txt"), filepath.FromSlash(stats1[0].Url.Path.String()))
 	require.Equal(t, filepath.Join(tmpDir, "file1.txt"), filepath.FromSlash(stats1[1].Url.Path.String()))
 
@@ -557,7 +558,7 @@ func TestUnitFszLsLastFileRemovedBeforeNextCall(t *testing.T) {
 	stats2, err := paginator.Paginate(ctx, 2)
 	require.NoError(t, err)
 	require.Len(t, stats2, 2)
-	require.Equal(t, "file3.txt", paginator.GetCursor())
+	require.Equal(t, enczb64.UrlEncode("file3.txt").String(), paginator.GetCursor())
 	require.Equal(t, filepath.Join(tmpDir, "file2.txt"), filepath.FromSlash(stats2[0].Url.Path.String()))
 	require.Equal(t, filepath.Join(tmpDir, "file3.txt"), filepath.FromSlash(stats2[1].Url.Path.String()))
 
@@ -612,7 +613,7 @@ func TestUnitFszFindLastFileRemovedBeforeNextCall(t *testing.T) {
 	require.NoError(t, err)
 	require.Len(t, stats1, 2)
 	cursor1 := paginator.GetCursor()
-	require.Equal(t, "a/b/d.txt", cursor1)
+	require.Equal(t, enczb64.UrlEncode("a/b/d.txt").String(), cursor1)
 
 	// Remove the last file of page 1 (a/b/d.txt) and even a/b/c.txt
 	require.NoError(t, os.Remove(filepath.Join(tmpDir, "a/b/d.txt")))
@@ -623,7 +624,7 @@ func TestUnitFszFindLastFileRemovedBeforeNextCall(t *testing.T) {
 	require.NoError(t, err)
 	require.Len(t, stats2, 2)
 	cursor2 := paginator.GetCursor()
-	require.Equal(t, "f.txt", cursor2)
+	require.Equal(t, enczb64.UrlEncode("f.txt").String(), cursor2)
 	require.Equal(t, filepath.Join(tmpDir, "a/e.txt"), filepath.FromSlash(stats2[0].Url.Path.String()))
 	require.Equal(t, filepath.Join(tmpDir, "f.txt"), filepath.FromSlash(stats2[1].Url.Path.String()))
 
@@ -828,5 +829,25 @@ func TestUnitFszListerAndFinderWalker(t *testing.T) {
 		})
 		require.NoError(t, err)
 		require.Len(t, resumedFiles, 3) // 5 total - 2 = 3
+	})
+
+	t.Run("Cursor is base64url encoded and decodes correctly", func(t *testing.T) {
+		var cursor string
+
+		err := fsz.Finder(ctx, u, fsz.Walker{
+			PageSize: 1,
+			Pager: func(page []*fsz.FileStat, nextCursor string) error {
+				cursor = nextCursor
+				return fsz.ErrStop
+			},
+		})
+		require.NoError(t, err)
+		require.NotEmpty(t, cursor)
+
+		// Must decode successfully with enczb64.UrlDecode
+		decoded, err := enczb64.UrlDecode(cursor)
+		require.NoError(t, err)
+		require.NotEmpty(t, decoded.String())
+		require.Equal(t, "file1.txt", decoded.String())
 	})
 }

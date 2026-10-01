@@ -11,6 +11,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/infinity6-ai/gox/commonz/encz/enczb64"
 	"github.com/infinity6-ai/gox/commonz/filez"
 	"github.com/infinity6-ai/gox/commonz/urlz"
 )
@@ -109,9 +110,9 @@ func (ff *fileFs) Lister(ctx context.Context, prefix *urlz.Url, walker Walker) e
 			rel, err := filepath.Rel(dirPath, lastPath)
 			var nextCursor string
 			if err == nil {
-				nextCursor = filepath.ToSlash(rel)
+				nextCursor = encodeCursor(filepath.ToSlash(rel))
 			} else {
-				nextCursor = filepath.ToSlash(lastPath)
+				nextCursor = encodeCursor(filepath.ToSlash(lastPath))
 			}
 
 			err = walker.Pager(currentPage, nextCursor)
@@ -228,9 +229,9 @@ func (ff *fileFs) Finder(ctx context.Context, prefix *urlz.Url, walker Walker) e
 			rel, err := filepath.Rel(dirPath, lastPath)
 			var nextCursor string
 			if err == nil {
-				nextCursor = filepath.ToSlash(rel)
+				nextCursor = encodeCursor(filepath.ToSlash(rel))
 			} else {
-				nextCursor = filepath.ToSlash(lastPath)
+				nextCursor = encodeCursor(filepath.ToSlash(lastPath))
 			}
 
 			pageToSend := currentPage
@@ -278,10 +279,29 @@ func (ff *fileFs) Finder(ctx context.Context, prefix *urlz.Url, walker Walker) e
 	return nil
 }
 
+func encodeCursor(rawCursor string) string {
+	if rawCursor == "" {
+		return ""
+	}
+	return enczb64.UrlEncode(rawCursor).String()
+}
+
+func decodeCursor(cursor string) string {
+	if cursor == "" {
+		return ""
+	}
+	decoded, err := enczb64.UrlDecode(cursor)
+	if err == nil {
+		return decoded.String()
+	}
+	return cursor
+}
+
 func cleanCursor(baseDir string, cursor string) string {
 	if cursor == "" {
 		return ""
 	}
+	cursor = decodeCursor(cursor)
 	if strings.HasPrefix(cursor, "file://") {
 		if u, err := urlz.Parse(cursor); err == nil {
 			cursor = u.Path.String()
