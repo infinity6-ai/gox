@@ -179,28 +179,27 @@ func NewArray[S ~[]E, E any](opts ArrayOptions[S, E]) func() *Array {
 			return z
 		}
 	}
-	s := *opts.Slice()
 	return func() *Array {
+		s := opts.Slice()
 		return &Array{
-			Len: func() int { return len(s) },
+			Len: func() int { return len(*s) },
 			Get: func(idx int, read bool) *Schema {
-				s := s
 				if read {
-					element := slicez.GetOptional(s, idx)
+					element := slicez.GetOptional(*s, idx)
 					if !element.IsPresent() {
 						return nil
 					}
 				} else {
-					if s == nil {
-						s = []E{}
+					if *s == nil {
+						*s = []E{}
 					}
-					oldLen := len(s)
-					s = slicez.GrowLenTo(s, idx+1)
-					for i := oldLen; i < len(s); i++ {
-						(s)[i] = opts.NewElement(i)
+					oldLen := len(*s)
+					*s = slicez.GrowLenTo(*s, idx+1)
+					for i := oldLen; i < len(*s); i++ {
+						(*s)[i] = opts.NewElement(i)
 					}
 				}
-				x := (s)
+				x := (*s)
 				return opts.Get(idx, &x[idx])
 			},
 		}
