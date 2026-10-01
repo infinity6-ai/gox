@@ -1,7 +1,6 @@
 package routezsamplefraction
 
 import (
-	"github.com/infinity6-ai/gox/commonz/slicez"
 	"github.com/infinity6-ai/gox/routez/apiz"
 	"github.com/infinity6-ai/gox/schemaz/schemaz"
 )
@@ -99,32 +98,50 @@ func (f *FractionApi) schemaReqBody() *schemaz.Schema {
 			return map[string]*schemaz.Schema{
 				"reason": {Raw: func() any { return &f.Req.Reason }, Desc: &schemaz.Desc{Summary: "Sample reason of this fraction"}},
 				"messages": {
-					Array: func() *schemaz.Array {
-						return &schemaz.Array{
-							Len: func() int { return len(f.Req.Messages) },
-							Get: func(idx int, read bool) *schemaz.Schema {
-								if !read {
-									f.Req.Messages = slicez.GrowLenTo(f.Req.Messages, idx+1)
-									for idx := range f.Req.Messages {
-										if f.Req.Messages[idx] == nil {
-											f.Req.Messages[idx] = &Message{}
-										}
-									}
-								}
-								return &schemaz.Schema{
-									Desc: &schemaz.Desc{Summary: "message"},
-									Object: func(read bool) map[string]*schemaz.Schema {
-										return map[string]*schemaz.Schema{
-											"message": {
-												Desc: &schemaz.Desc{Summary: "message string"},
-												Raw:  func() any { return &f.Req.Messages[idx].Message },
-											},
-										}
+					Array: schemaz.NewArray(&f.Req.Messages, func(idx int, element **Message) *schemaz.Schema {
+						return &schemaz.Schema{
+							Desc: &schemaz.Desc{Summary: "message"},
+							Object: func(read bool) map[string]*schemaz.Schema {
+								return map[string]*schemaz.Schema{
+									"message": {
+										Desc: &schemaz.Desc{Summary: "message string"},
+										Raw: func() any {
+											if *element == nil {
+												*element = &Message{}
+											}
+											return &(*element).Message
+										},
 									},
 								}
 							},
 						}
-					},
+					}),
+					// Array: func() *schemaz.Array {
+					// 	return &schemaz.Array{
+					// 		Len: func() int { return len(f.Req.Messages) },
+					// 		Get: func(idx int, read bool) *schemaz.Schema {
+					// 			if !read {
+					// 				f.Req.Messages = slicez.GrowLenTo(f.Req.Messages, idx+1)
+					// 				for idx := range f.Req.Messages {
+					// 					if f.Req.Messages[idx] == nil {
+					// 						f.Req.Messages[idx] = &Message{}
+					// 					}
+					// 				}
+					// 			}
+					// 			return &schemaz.Schema{
+					// 				Desc: &schemaz.Desc{Summary: "message"},
+					// 				Object: func(read bool) map[string]*schemaz.Schema {
+					// 					return map[string]*schemaz.Schema{
+					// 						"message": {
+					// 							Desc: &schemaz.Desc{Summary: "message string"},
+					// 							Raw:  func() any { return &f.Req.Messages[idx].Message },
+					// 						},
+					// 					}
+					// 				},
+					// 			}
+					// 		},
+					// 	}
+					// },
 				},
 			}
 		},

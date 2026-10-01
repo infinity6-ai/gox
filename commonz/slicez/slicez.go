@@ -2,6 +2,12 @@ package slicez
 
 import "fmt"
 
+func GrowAndSet[S ~[]E, E any](s S, n int, element E) S {
+	ret := GrowLenTo(s, n+1)
+	ret[n] = element
+	return ret
+}
+
 // GrowLenBy grows the length of the slice by n.
 // It panics if n is negative.
 func GrowLenBy[S ~[]E, E any](s S, n int) S {

@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"slices"
+
+	"github.com/infinity6-ai/gox/commonz/slicez"
 )
 
 type Desc struct {
@@ -162,4 +164,24 @@ func (s *Schema) unmarshalJSONStrs(data []byte) error {
 	}
 	parser(strs)
 	return nil
+}
+
+type ArrayOptions[S ~[]E, E any] struct {
+	Slice  *S
+	Desc   *Desc
+	Object map[string]*Schema
+}
+
+func NewArray[S ~[]E, E any](s *S, fn func(idx int, element *E) *Schema) func() *Array {
+	return func() *Array {
+		return &Array{
+			Len: func() int { return len(*s) },
+			Get: func(idx int, read bool) *Schema {
+				if !read {
+					*s = slicez.GrowLenTo(*s, idx+1)
+				}
+				return fn(idx, &(*s)[idx])
+			},
+		}
+	}
 }
