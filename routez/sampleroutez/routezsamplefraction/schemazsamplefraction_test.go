@@ -52,6 +52,7 @@ func TestUnitBasic(t *testing.T) {
 			Precision:   3,
 			TraceId:     "xx",
 			Reason:      "myreason",
+			Messages:    []*routezsamplefraction.Message{{Message: "msg1"}, {Message: "msg2"}},
 		},
 	}
 	status, err := apiclientz.Do(ctx, c, reqResp)
@@ -59,8 +60,9 @@ func TestUnitBasic(t *testing.T) {
 	require.Equal(t, 201, status)
 	require.Equal(t, "reason: myreason, trace: xx", reqResp.Resp.TraceMessage)
 	require.Equal(t, &routezsamplefraction.Result{
-		Display: "10.000/3.000",
-		Result:  "3.333",
+		Display:  "10.000/3.000",
+		Result:   "3.333",
+		Messages: []string{"msg1", "msg2"},
 	}, reqResp.Resp.Result)
 
 	reqResp = &routezsamplefraction.FractionApi{

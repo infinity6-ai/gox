@@ -75,6 +75,9 @@ func (f *FractionApi) schemaRespBody() *schemaz.Schema {
 			return map[string]*schemaz.Schema{
 				"display": {Raw: func() any { return &f.Resp.Result.Display }, Desc: &schemaz.Desc{Summary: "Human Fraction Representation"}},
 				"result":  {Raw: func() any { return &f.Resp.Result.Result }, Desc: &schemaz.Desc{Summary: "Fraction Result"}},
+				"messages": {Raw: func() any {
+					return &f.Resp.Result.Messages
+				}, Desc: &schemaz.Desc{Summary: "Output Messages"}},
 			}
 		},
 	}
@@ -96,9 +99,9 @@ func (f *FractionApi) schemaReqBody() *schemaz.Schema {
 			return map[string]*schemaz.Schema{
 				"reason": {Raw: func() any { return &f.Req.Reason }, Desc: &schemaz.Desc{Summary: "Sample reason of this fraction"}},
 				"messages": {
-					Desc: &schemaz.Desc{Summary: "messages"},
 					Array: func() *schemaz.Array {
 						return &schemaz.Array{
+							Len: len(f.Req.Messages),
 							Get: func(idx int, read bool) *schemaz.Schema {
 								if !read {
 									f.Req.Messages = slicez.GrowLenTo(f.Req.Messages, idx+1)
