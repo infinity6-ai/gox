@@ -88,13 +88,13 @@ func TestUnitFszLs(t *testing.T) {
 	stats1, err := paginator.Paginate(ctx, 2)
 	require.NoError(t, err)
 	require.Len(t, stats1, 2)
-	require.Equal(t, "2", paginator.GetCursor())
+	require.Equal(t, "file1.txt", paginator.GetCursor())
 
 	// Paginate with max=2
 	stats2, err := paginator.Paginate(ctx, 2)
 	require.NoError(t, err)
 	require.Len(t, stats2, 2)
-	require.Equal(t, "4", paginator.GetCursor())
+	require.Equal(t, "file3.txt", paginator.GetCursor())
 
 	// Paginate with max=2 (should get the last one)
 	stats3, err := paginator.Paginate(ctx, 2)
@@ -473,7 +473,7 @@ func TestUnitFszSetCursor(t *testing.T) {
 		require.NoError(t, err)
 		require.Len(t, stats1, 2)
 		cursor := p1.GetCursor()
-		require.Equal(t, "2", cursor)
+		require.Equal(t, "file1.txt", cursor)
 
 		p2, err := fsz.Ls(ctx, u)
 		require.NoError(t, err)
@@ -482,7 +482,7 @@ func TestUnitFszSetCursor(t *testing.T) {
 		stats2, err := p2.Paginate(ctx, 2)
 		require.NoError(t, err)
 		require.Len(t, stats2, 2)
-		require.Equal(t, "4", p2.GetCursor())
+		require.Equal(t, "file3.txt", p2.GetCursor())
 		require.Equal(t, filepath.Join(tmpDir, "file2.txt"), filepath.FromSlash(stats2[0].Url.Path.String()))
 		require.Equal(t, filepath.Join(tmpDir, "file3.txt"), filepath.FromSlash(stats2[1].Url.Path.String()))
 
@@ -520,4 +520,131 @@ func TestUnitFszSetCursor(t *testing.T) {
 			require.False(t, p1Files[s.Url.String()], "resumed page should not contain items from first page")
 		}
 	})
+}
+
+func TestUnitFszLsLastFileRemovedBeforeNextCall(t *testing.T) {
+	tmpDir := filez.CreateTempDir("fsz-ls-removed-test")
+	defer os.RemoveAll(tmpDir)
+
+	ctx := context.Background()
+
+	// Create files: file0.txt, file1.txt, file2.txt, file3.txt, file4.txt
+	for i := 0; i < 5; i++ {
+		filePath := filepath.Join(tmpDir, fmt.Sprintf("file%d.txt", i))
+		err := os.WriteFile(filePath, fmt.Appendf(nil, "content %d", i), 0644)
+		require.NoError(t, err)
+	}
+
+	u, err := urlz.Parse("file://" + tmpDir)
+	require.NoError(t, err)
+
+	paginator, err := fsz.Ls(ctx, u)
+	require.NoError(t, err)
+
+	// Page 1: returns file0.txt and file1.txt
+	stats1, err := paginator.Paginate(ctx, 2)
+	require.NoError(t, err)
+	require.Len(t, stats1, 2)
+	require.Equal(t, "file1.txt", paginator.GetCursor())
+	require.Equal(t, filepath.Join(tmpDir, "file0.txt"), filepath.FromSlash(stats1[0].Url.Path.String()))
+	require.Equal(t, filepath.Join(tmpDir, "file1.txt"), filepath.FromSlash(stats1[1].Url.Path.String()))
+
+	// Remove the last file returned (file1.txt) before the next call
+	err = os.Remove(filepath.Join(tmpDir, "file1.txt"))
+	require.NoError(t, err)
+
+	// Page 2: should continue seamlessly from after file1.txt, returning file2.txt and file3.txt
+	stats2, err := paginator.Paginate(ctx, 2)
+	require.NoError(t, err)
+	require.Len(t, stats2, 2)
+	require.Equal(t, "file3.txt", paginator.GetCursor())
+	require.Equal(t, filepath.Join(tmpDir, "file2.txt"), filepath.FromSlash(stats2[0].Url.Path.String()))
+	require.Equal(t, filepath.Join(tmpDir, "file3.txt"), filepath.FromSlash(stats2[1].Url.Path.String()))
+
+	// Also remove file3.txt before page 3
+	err = os.Remove(filepath.Join(tmpDir, "file3.txt"))
+	require.NoError(t, err)
+
+	// Page 3: should return file4.txt and cursor becomes empty
+	stats3, err := paginator.Paginate(ctx, 2)
+	require.NoError(t, err)
+	require.Len(t, stats3, 1)
+	require.Equal(t, "", paginator.GetCursor())
+	require.Equal(t, filepath.Join(tmpDir, "file4.txt"), filepath.FromSlash(stats3[0].Url.Path.String()))
+
+	// Page 4: empty
+	stats4, err := paginator.Paginate(ctx, 2)
+	require.NoError(t, err)
+	require.Len(t, stats4, 0)
+	require.Equal(t, "", paginator.GetCursor())
+}
+
+func TestUnitFszFindLastFileRemovedBeforeNextCall(t *testing.T) {
+	tmpDir := filez.CreateTempDir("fsz-find-removed-test")
+	defer os.RemoveAll(tmpDir)
+
+	ctx := context.Background()
+
+	files := []string{
+		"a/b/c.txt",
+		"a/b/d.txt",
+		"a/e.txt",
+		"f.txt",
+		"g/h/i.log",
+		"g/j.txt",
+	}
+	for _, f := range files {
+		filePath := filepath.Join(tmpDir, f)
+		err := filez.CreateParentDirs(filePath)
+		require.NoError(t, err)
+		err = os.WriteFile(filePath, []byte("content"), 0644)
+		require.NoError(t, err)
+	}
+
+	u, err := urlz.Parse("file://" + tmpDir)
+	require.NoError(t, err)
+
+	paginator, err := fsz.Find(ctx, u)
+	require.NoError(t, err)
+
+	// Page 1: returns a/b/c.txt and a/b/d.txt
+	stats1, err := paginator.Paginate(ctx, 2)
+	require.NoError(t, err)
+	require.Len(t, stats1, 2)
+	cursor1 := paginator.GetCursor()
+	require.Equal(t, "a/b/d.txt", cursor1)
+
+	// Remove the last file of page 1 (a/b/d.txt) and even a/b/c.txt
+	require.NoError(t, os.Remove(filepath.Join(tmpDir, "a/b/d.txt")))
+	require.NoError(t, os.Remove(filepath.Join(tmpDir, "a/b/c.txt")))
+
+	// Page 2 on same paginator: should return a/e.txt and f.txt
+	stats2, err := paginator.Paginate(ctx, 2)
+	require.NoError(t, err)
+	require.Len(t, stats2, 2)
+	cursor2 := paginator.GetCursor()
+	require.Equal(t, "f.txt", cursor2)
+	require.Equal(t, filepath.Join(tmpDir, "a/e.txt"), filepath.FromSlash(stats2[0].Url.Path.String()))
+	require.Equal(t, filepath.Join(tmpDir, "f.txt"), filepath.FromSlash(stats2[1].Url.Path.String()))
+
+	// Remove f.txt before resuming with a new paginator using SetCursor
+	require.NoError(t, os.Remove(filepath.Join(tmpDir, "f.txt")))
+
+	p2, err := fsz.Find(ctx, u)
+	require.NoError(t, err)
+	p2.SetCursor(cursor2)
+
+	// Page 3: should return g/h/i.log and g/j.txt
+	stats3, err := p2.Paginate(ctx, 2)
+	require.NoError(t, err)
+	require.Len(t, stats3, 2)
+	require.Equal(t, "", p2.GetCursor())
+	require.Equal(t, filepath.Join(tmpDir, "g/h/i.log"), filepath.FromSlash(stats3[0].Url.Path.String()))
+	require.Equal(t, filepath.Join(tmpDir, "g/j.txt"), filepath.FromSlash(stats3[1].Url.Path.String()))
+
+	// Page 4: empty
+	stats4, err := p2.Paginate(ctx, 2)
+	require.NoError(t, err)
+	require.Len(t, stats4, 0)
+	require.Equal(t, "", p2.GetCursor())
 }
