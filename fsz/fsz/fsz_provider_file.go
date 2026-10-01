@@ -78,11 +78,6 @@ type fileLsPaginator struct {
 	cursor  string
 }
 
-func (p *fileLsPaginator) Close() error {
-	// No-op as we are not holding any open resources
-	return nil
-}
-
 func (p *fileLsPaginator) NextCursor() string {
 	return p.cursor
 }
@@ -164,11 +159,6 @@ type fileFindPaginator struct {
 	count  int
 }
 
-func (p *fileFindPaginator) Close() error {
-	p.cancel()
-	return nil
-}
-
 func (p *fileFindPaginator) NextCursor() string {
 	return p.cursor
 }
@@ -182,15 +172,18 @@ func (p *fileFindPaginator) Paginate(ctx context.Context, max int) ([]*FileStat,
 		select {
 		case item, ok := <-p.ch:
 			if !ok {
+				p.cancel()
 				p.cursor = ""
 				return results, nil
 			}
 			if item.err != nil {
+				p.cancel()
 				return nil, item.err
 			}
 			results = append(results, item.stat)
 			p.count++
 		case <-ctx.Done():
+			p.cancel()
 			return results, ctx.Err()
 		}
 	}
@@ -204,6 +197,7 @@ func (ff *fileFs) Find(ctx context.Context, prefix *urlz.Url) (Paginator, error)
 
 	go func() {
 		defer close(ch)
+		defer cancel()
 		dirPath := prefix.Path.String()
 		err := filepath.WalkDir(dirPath, func(path string, d os.DirEntry, err error) error {
 			if err != nil {

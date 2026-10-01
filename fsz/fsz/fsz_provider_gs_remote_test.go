@@ -103,7 +103,6 @@ func TestRemoteGsProvider(t *testing.T) {
 		prefixURL, _ := urlz.Parse(fmt.Sprintf("gs://%s/%s/dir1/", testBucket, basePath))
 		paginator, err := fsz.Ls(ctx, prefixURL)
 		require.NoError(t, err)
-		defer paginator.Close()
 
 		require.Equal(t, "", paginator.NextCursor())
 
@@ -293,7 +292,6 @@ func TestRemoteGsProvider(t *testing.T) {
 
 		paginator, err := fsz.Find(ctx, prefixUrl)
 		require.NoError(t, err)
-		defer paginator.Close()
 
 		require.Equal(t, "", paginator.NextCursor())
 

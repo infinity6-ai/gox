@@ -26,7 +26,6 @@ type FileStat struct {
 type Paginator interface {
 	Paginate(ctx context.Context, max int) ([]*FileStat, error)
 	NextCursor() string
-	Close() error
 }
 
 type FsProvider interface {

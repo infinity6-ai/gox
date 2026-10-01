@@ -81,7 +81,6 @@ func TestUnitFszLs(t *testing.T) {
 
 	paginator, err := fsz.Ls(ctx, u)
 	require.NoError(t, err)
-	defer paginator.Close()
 
 	require.Equal(t, "", paginator.NextCursor())
 
@@ -303,7 +302,6 @@ func TestUnitFszFind(t *testing.T) {
 
 	paginator, err := fsz.Find(ctx, u)
 	require.NoError(t, err)
-	defer paginator.Close()
 
 	require.Equal(t, "", paginator.NextCursor())
 
@@ -338,7 +336,6 @@ func TestUnitFileFsLsNonExistentDir(t *testing.T) {
 	stats, paginateErr := paginator.Paginate(context.Background(), 10)
 	require.NoError(t, paginateErr)
 	require.Empty(t, stats)
-	require.NoError(t, paginator.Close())
 }
 
 func TestUnitFileFsFindNonExistentDir(t *testing.T) {
@@ -355,7 +352,6 @@ func TestUnitFileFsFindNonExistentDir(t *testing.T) {
 	stats, paginateErr := paginator.Paginate(context.Background(), 10)
 	require.NoError(t, paginateErr)
 	require.Empty(t, stats)
-	require.NoError(t, paginator.Close())
 }
 
 func TestUnitFileFsLsEmptyDir(t *testing.T) {
@@ -371,7 +367,6 @@ func TestUnitFileFsLsEmptyDir(t *testing.T) {
 	stats, paginateErr := paginator.Paginate(context.Background(), 10)
 	require.NoError(t, paginateErr)
 	require.Empty(t, stats)
-	require.NoError(t, paginator.Close())
 }
 
 func TestUnitFileFsFindEmptyDir(t *testing.T) {
@@ -387,7 +382,6 @@ func TestUnitFileFsFindEmptyDir(t *testing.T) {
 	stats, paginateErr := paginator.Paginate(context.Background(), 10)
 	require.NoError(t, paginateErr)
 	require.Empty(t, stats)
-	require.NoError(t, paginator.Close())
 }
 
 func TestUnitFileFsRmTree(t *testing.T) {

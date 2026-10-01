@@ -121,10 +121,6 @@ type gsPaginator struct {
 	started bool
 }
 
-func (p *gsPaginator) Close() error {
-	return nil
-}
-
 func (p *gsPaginator) NextCursor() string {
 	return p.cursor
 }
