@@ -114,7 +114,7 @@ func (gf *gsFs) Delete(ctx context.Context, url *urlz.Url) error {
 }
 
 type gsPaginator struct {
-	client  *storage.Client
+	fs      *gsFs
 	bucket  string
 	query   *storage.Query
 	cursor  string
@@ -122,9 +122,6 @@ type gsPaginator struct {
 }
 
 func (p *gsPaginator) Close() error {
-	if err := p.client.Close(); err != nil {
-		return fmt.Errorf("failed to close gcs client: %w", err)
-	}
 	return nil
 }
 
@@ -141,7 +138,13 @@ func (p *gsPaginator) Paginate(ctx context.Context, max int) ([]*FileStat, error
 	}
 	p.started = true
 
-	it := p.client.Bucket(p.bucket).Objects(ctx, p.query)
+	client, err := p.fs.openClient(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to open gcs client: %w", err)
+	}
+	defer client.Close()
+
+	it := client.Bucket(p.bucket).Objects(ctx, p.query)
 	pager := iterator.NewPager(it, max, p.cursor)
 
 	var items []*storage.ObjectAttrs
@@ -186,29 +189,19 @@ func (p *gsPaginator) Paginate(ctx context.Context, max int) ([]*FileStat, error
 }
 
 func (gf *gsFs) Ls(ctx context.Context, prefix *urlz.Url) (Paginator, error) {
-	client, err := gf.openClient(ctx)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create gcs client: %w", err)
-	}
-
 	bucket := prefix.Host
 	path := strings.TrimPrefix(prefix.Path.String(), "/")
 	q := &storage.Query{Prefix: path, Delimiter: "/"}
 
-	return &gsPaginator{client: client, bucket: bucket, query: q}, nil
+	return &gsPaginator{fs: gf, bucket: bucket, query: q}, nil
 }
 
 func (gf *gsFs) Find(ctx context.Context, prefix *urlz.Url) (Paginator, error) {
-	client, err := gf.openClient(ctx)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create gcs client: %w", err)
-	}
-
 	bucket := prefix.Host
 	path := strings.TrimPrefix(prefix.Path.String(), "/")
 	q := &storage.Query{Prefix: path}
 
-	return &gsPaginator{client: client, bucket: bucket, query: q}, nil
+	return &gsPaginator{fs: gf, bucket: bucket, query: q}, nil
 }
 
 type SignOptions struct {
