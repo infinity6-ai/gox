@@ -96,7 +96,6 @@ func (me *fileMsgz) Pull(ctx context.Context, sub string, limit int, opts msgz.P
 	dstDir := me.basedirUrl().MustJoinPathString("fetched", "topic", sub)
 	ls, err := fsz.Ls(ctx, srcDir)
 	errorz.Check(err)
-	defer ls.Close()
 
 	messages := []*msgz.ManagedMessage{}
 	page, err := ls.Paginate(ctx, limit)
@@ -175,7 +174,6 @@ func (me *fileMsgz) NackAll(ctx context.Context, topic string) {
 
 	p, err := fsz.Ls(ctx, srcDir)
 	errorz.Check(err)
-	defer p.Close()
 
 	for {
 		srcs, err := p.Paginate(ctx, 1000)
