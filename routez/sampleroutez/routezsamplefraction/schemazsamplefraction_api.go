@@ -1,21 +1,28 @@
 package routezsamplefraction
 
 import (
+	"github.com/infinity6-ai/gox/commonz/slicez"
 	"github.com/infinity6-ai/gox/routez/apiz"
 	"github.com/infinity6-ai/gox/schemaz/schemaz"
 )
 
+type Message struct {
+	Message string `json:"message"`
+}
+
 type Result struct {
-	Display string `json:"display"`
-	Result  string `json:"result"`
+	Display  string   `json:"display"`
+	Result   string   `json:"result"`
+	Messages []string `json:"messages"`
 }
 
 type FractionReq struct {
-	Numerator   float64 `json:"numerator"`
-	Denominator float64 `json:"denominator"`
-	Precision   int     `json:"precision"`
-	TraceId     string  `json:"x-i6-trace-id"`
-	Reason      string  `json:"reason"`
+	Numerator   float64    `json:"numerator"`
+	Denominator float64    `json:"denominator"`
+	Precision   int        `json:"precision"`
+	TraceId     string     `json:"x-i6-trace-id"`
+	Reason      string     `json:"reason"`
+	Messages    []*Message `json:"messages"`
 }
 
 type FractionResp struct {
@@ -88,6 +95,34 @@ func (f *FractionApi) schemaReqBody() *schemaz.Schema {
 		Object: func(read bool) map[string]*schemaz.Schema {
 			return map[string]*schemaz.Schema{
 				"reason": {Raw: func() any { return &f.Req.Reason }, Desc: &schemaz.Desc{Summary: "Sample reason of this fraction"}},
+				"messages": {
+					Desc: &schemaz.Desc{Summary: "messages"},
+					Array: func() *schemaz.Array {
+						return &schemaz.Array{
+							Get: func(idx int, read bool) *schemaz.Schema {
+								if !read {
+									f.Req.Messages = slicez.GrowLenTo(f.Req.Messages, idx+1)
+									for idx := range f.Req.Messages {
+										if f.Req.Messages[idx] == nil {
+											f.Req.Messages[idx] = &Message{}
+										}
+									}
+								}
+								return &schemaz.Schema{
+									Desc: &schemaz.Desc{Summary: "message"},
+									Object: func(read bool) map[string]*schemaz.Schema {
+										return map[string]*schemaz.Schema{
+											"message": {
+												Desc: &schemaz.Desc{Summary: "message string"},
+												Raw:  func() any { return &f.Req.Messages[idx].Message },
+											},
+										}
+									},
+								}
+							},
+						}
+					},
+				},
 			}
 		},
 	}
