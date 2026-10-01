@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"slices"
 
-	"github.com/infinity6-ai/gox/commonz/jsonz"
 	"github.com/infinity6-ai/gox/commonz/slicez"
 )
 
@@ -174,11 +173,16 @@ type ArrayOptions[S ~[]E, E any] struct {
 }
 
 func NewArray[S ~[]E, E any](opts ArrayOptions[S, E]) func() *Array {
+	if opts.NewElement == nil {
+		opts.NewElement = func(idx int) E {
+			var z E
+			return z
+		}
+	}
 	return func() *Array {
 		return &Array{
 			Len: func() int { return len(*opts.Slice) },
 			Get: func(idx int, read bool) *Schema {
-				println(fmt.Sprintf("xxxx1 %t %d %s", read, idx, jsonz.MustFormat(*opts.Slice)))
 				if read {
 					element := slicez.GetOptional(*opts.Slice, idx)
 					if !element.IsPresent() {
@@ -188,14 +192,11 @@ func NewArray[S ~[]E, E any](opts ArrayOptions[S, E]) func() *Array {
 					if *opts.Slice == nil {
 						*opts.Slice = []E{}
 					}
-					println(fmt.Sprintf("xxxx2 %t %d %s", read, idx, jsonz.MustFormat(*opts.Slice)))
 					oldLen := len(*opts.Slice)
 					*opts.Slice = slicez.GrowLenTo(*opts.Slice, idx+1)
 					for i := oldLen; i < len(*opts.Slice); i++ {
 						(*opts.Slice)[i] = opts.NewElement(i)
-						println(fmt.Sprintf("xxxx3 %t %d %s [%d %d]", read, idx, jsonz.MustFormat(*opts.Slice), oldLen, i))
 					}
-					println(fmt.Sprintf("xxxx4 %t %d %s [%d %d]", read, idx, jsonz.MustFormat(*opts.Slice), oldLen, len(*opts.Slice)))
 				}
 				x := (*opts.Slice)
 				return opts.Get(idx, &x[idx])
