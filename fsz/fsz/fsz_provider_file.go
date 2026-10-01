@@ -82,6 +82,24 @@ func (p *fileLsPaginator) NextCursor() string {
 	return p.cursor
 }
 
+func (p *fileLsPaginator) SetStartCursor(cursor string) {
+	p.cursor = cursor
+	if cursor == "" {
+		p.offset = 0
+		return
+	}
+	offset, err := strconv.Atoi(cursor)
+	if err != nil || offset < 0 {
+		p.offset = 0
+		return
+	}
+	if offset > len(p.entries) {
+		p.offset = len(p.entries)
+	} else {
+		p.offset = offset
+	}
+}
+
 func (p *fileLsPaginator) Paginate(ctx context.Context, max int) ([]*FileStat, error) {
 	if max <= 0 {
 		return nil, nil
@@ -157,16 +175,51 @@ type fileFindPaginator struct {
 	cancel context.CancelFunc
 	cursor string
 	count  int
+	skipTo int
 }
 
 func (p *fileFindPaginator) NextCursor() string {
 	return p.cursor
 }
 
+func (p *fileFindPaginator) SetStartCursor(cursor string) {
+	p.cursor = cursor
+	if cursor == "" {
+		p.skipTo = 0
+		return
+	}
+	target, err := strconv.Atoi(cursor)
+	if err != nil || target < 0 {
+		p.skipTo = 0
+		return
+	}
+	p.skipTo = target
+}
+
 func (p *fileFindPaginator) Paginate(ctx context.Context, max int) ([]*FileStat, error) {
 	if max <= 0 {
 		return nil, nil
 	}
+
+	for p.count < p.skipTo {
+		select {
+		case item, ok := <-p.ch:
+			if !ok {
+				p.cancel()
+				p.cursor = ""
+				return nil, nil
+			}
+			if item.err != nil {
+				p.cancel()
+				return nil, item.err
+			}
+			p.count++
+		case <-ctx.Done():
+			p.cancel()
+			return nil, ctx.Err()
+		}
+	}
+
 	var results []*FileStat
 	for i := 0; i < max; i++ {
 		select {

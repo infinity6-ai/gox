@@ -312,4 +312,57 @@ func TestRemoteGsProvider(t *testing.T) {
 		require.Equal(t, len(objects), foundFiles)
 		require.Equal(t, "", paginator.NextCursor())
 	})
+
+	t.Run("FindSetStartCursor", func(t *testing.T) {
+		baseObjectName := fmt.Sprintf("test-cursor-base-%d", time.Now().UnixNano())
+		prefixUrl, err := urlz.Parse(fmt.Sprintf("gs://%s/%s/", testBucket, baseObjectName))
+		require.NoError(t, err)
+
+		objects := []string{
+			"file1.txt",
+			"file2.txt",
+			"file3.txt",
+			"file4.txt",
+		}
+		for _, obj := range objects {
+			objUrl, _ := urlz.Parse(fmt.Sprintf("gs://%s/%s/%s", testBucket, baseObjectName, obj))
+			err := fsz.Upload(ctx, objUrl, nil, strings.NewReader("content"))
+			require.NoError(t, err)
+			defer fsz.Delete(ctx, objUrl)
+		}
+
+		p1, err := fsz.Find(ctx, prefixUrl)
+		require.NoError(t, err)
+
+		stats1, err := p1.Paginate(ctx, 2)
+		require.NoError(t, err)
+		require.Len(t, stats1, 2)
+		cursor := p1.NextCursor()
+		require.NotEmpty(t, cursor)
+
+		p2, err := fsz.Find(ctx, prefixUrl)
+		require.NoError(t, err)
+		p2.SetStartCursor(cursor)
+
+		stats2, err := p2.Paginate(ctx, 2)
+		require.NoError(t, err)
+		require.Len(t, stats2, 2)
+
+		p1Files := make(map[string]bool)
+		for _, s := range stats1 {
+			p1Files[s.Url.String()] = true
+		}
+		for _, s := range stats2 {
+			require.False(t, p1Files[s.Url.String()], "resumed page should not contain items from first page")
+		}
+
+		// Empty cursor resets back to start
+		p2.SetStartCursor("")
+		statsReset, err := p2.Paginate(ctx, 2)
+		require.NoError(t, err)
+		require.Len(t, statsReset, 2)
+		for _, s := range statsReset {
+			require.True(t, p1Files[s.Url.String()], "reset page should contain initial items")
+		}
+	})
 }

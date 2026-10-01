@@ -125,6 +125,11 @@ func (p *gsPaginator) NextCursor() string {
 	return p.cursor
 }
 
+func (p *gsPaginator) SetStartCursor(cursor string) {
+	p.cursor = cursor
+	p.started = false
+}
+
 func (p *gsPaginator) Paginate(ctx context.Context, max int) ([]*FileStat, error) {
 	if max <= 0 {
 		return nil, nil

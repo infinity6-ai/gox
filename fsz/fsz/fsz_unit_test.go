@@ -449,3 +449,75 @@ func TestUnitFileFsMoveDirFails(t *testing.T) {
 	_, err = os.Stat(srcDirPath)
 	require.NoError(t, err, "source directory should still exist after failed move")
 }
+
+func TestUnitFszSetStartCursor(t *testing.T) {
+	tmpDir := filez.CreateTempDir("fsz-startcursor-test")
+	defer os.RemoveAll(tmpDir)
+
+	ctx := context.Background()
+
+	for i := 0; i < 5; i++ {
+		filePath := filepath.Join(tmpDir, fmt.Sprintf("file%d.txt", i))
+		err := os.WriteFile(filePath, fmt.Appendf(nil, "content %d", i), 0644)
+		require.NoError(t, err)
+	}
+
+	u, err := urlz.Parse("file://" + tmpDir)
+	require.NoError(t, err)
+
+	t.Run("Ls with SetStartCursor resumes pagination", func(t *testing.T) {
+		p1, err := fsz.Ls(ctx, u)
+		require.NoError(t, err)
+
+		stats1, err := p1.Paginate(ctx, 2)
+		require.NoError(t, err)
+		require.Len(t, stats1, 2)
+		cursor := p1.NextCursor()
+		require.Equal(t, "2", cursor)
+
+		p2, err := fsz.Ls(ctx, u)
+		require.NoError(t, err)
+		p2.SetStartCursor(cursor)
+
+		stats2, err := p2.Paginate(ctx, 2)
+		require.NoError(t, err)
+		require.Len(t, stats2, 2)
+		require.Equal(t, "4", p2.NextCursor())
+		require.Equal(t, filepath.Join(tmpDir, "file2.txt"), filepath.FromSlash(stats2[0].Url.Path.String()))
+		require.Equal(t, filepath.Join(tmpDir, "file3.txt"), filepath.FromSlash(stats2[1].Url.Path.String()))
+
+		// Empty cursor resets
+		p2.SetStartCursor("")
+		statsReset, err := p2.Paginate(ctx, 2)
+		require.NoError(t, err)
+		require.Len(t, statsReset, 2)
+		require.Equal(t, filepath.Join(tmpDir, "file0.txt"), filepath.FromSlash(statsReset[0].Url.Path.String()))
+	})
+
+	t.Run("Find with SetStartCursor resumes pagination", func(t *testing.T) {
+		p1, err := fsz.Find(ctx, u)
+		require.NoError(t, err)
+
+		stats1, err := p1.Paginate(ctx, 2)
+		require.NoError(t, err)
+		require.Len(t, stats1, 2)
+		cursor := p1.NextCursor()
+		require.NotEmpty(t, cursor)
+
+		p2, err := fsz.Find(ctx, u)
+		require.NoError(t, err)
+		p2.SetStartCursor(cursor)
+
+		stats2, err := p2.Paginate(ctx, 2)
+		require.NoError(t, err)
+		require.Len(t, stats2, 2)
+
+		p1Files := make(map[string]bool)
+		for _, s := range stats1 {
+			p1Files[s.Url.String()] = true
+		}
+		for _, s := range stats2 {
+			require.False(t, p1Files[s.Url.String()], "resumed page should not contain items from first page")
+		}
+	})
+}
