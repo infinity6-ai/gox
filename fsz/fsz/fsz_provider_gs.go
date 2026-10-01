@@ -21,12 +21,12 @@ func providerGs() FsProvider {
 
 type gsFs struct{}
 
-func (gf *gsFs) getClient(ctx context.Context) (*storage.Client, error) {
+func (gf *gsFs) openClient(ctx context.Context) (*storage.Client, error) {
 	return storage.NewClient(ctx)
 }
 
 func (gf *gsFs) Stat(ctx context.Context, url *urlz.Url) (*FileStat, error) {
-	client, err := gf.getClient(ctx)
+	client, err := gf.openClient(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create gcs client: %w", err)
 	}
@@ -54,7 +54,7 @@ func (gf *gsFs) Stat(ctx context.Context, url *urlz.Url) (*FileStat, error) {
 }
 
 func (gf *gsFs) Upload(ctx context.Context, url *urlz.Url, headers http.Header, reader io.Reader) error {
-	client, err := gf.getClient(ctx)
+	client, err := gf.openClient(ctx)
 	if err != nil {
 		return fmt.Errorf("failed to create gcs client: %w", err)
 	}
@@ -74,7 +74,7 @@ func (gf *gsFs) Upload(ctx context.Context, url *urlz.Url, headers http.Header, 
 }
 
 func (gf *gsFs) Download(ctx context.Context, url *urlz.Url, callback func(found bool, headers http.Header, reader io.Reader) error) error {
-	client, err := gf.getClient(ctx)
+	client, err := gf.openClient(ctx)
 	if err != nil {
 		return fmt.Errorf("failed to create gcs client: %w", err)
 	}
@@ -98,7 +98,7 @@ func (gf *gsFs) Download(ctx context.Context, url *urlz.Url, callback func(found
 }
 
 func (gf *gsFs) Delete(ctx context.Context, url *urlz.Url) error {
-	client, err := gf.getClient(ctx)
+	client, err := gf.openClient(ctx)
 	if err != nil {
 		return fmt.Errorf("failed to create gcs client: %w", err)
 	}
@@ -186,7 +186,7 @@ func (p *gsPaginator) Paginate(ctx context.Context, max int) ([]*FileStat, error
 }
 
 func (gf *gsFs) Ls(ctx context.Context, prefix *urlz.Url) (Paginator, error) {
-	client, err := gf.getClient(ctx)
+	client, err := gf.openClient(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create gcs client: %w", err)
 	}
@@ -199,7 +199,7 @@ func (gf *gsFs) Ls(ctx context.Context, prefix *urlz.Url) (Paginator, error) {
 }
 
 func (gf *gsFs) Find(ctx context.Context, prefix *urlz.Url) (Paginator, error) {
-	client, err := gf.getClient(ctx)
+	client, err := gf.openClient(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create gcs client: %w", err)
 	}
@@ -258,7 +258,7 @@ func (gf *gsFs) SignDelete(ctx context.Context, url *urlz.Url, duration time.Dur
 }
 
 func (gf *gsFs) Copy(ctx context.Context, src *urlz.Url, dest *urlz.Url) error {
-	client, err := gf.getClient(ctx)
+	client, err := gf.openClient(ctx)
 	if err != nil {
 		return fmt.Errorf("failed to create gcs client: %w", err)
 	}
