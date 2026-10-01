@@ -134,17 +134,27 @@ func (p *fileLsPaginator) Paginate(ctx context.Context, max int) ([]*FileStat, e
 			return nil, fmt.Errorf("failed to get file info for %s: %w", path, err)
 		}
 
-		u, err := urlz.Parse("file://" + filepath.ToSlash(path))
+		urlStr := "file://" + filepath.ToSlash(path)
+		if info.IsDir() {
+			urlStr += "/"
+		}
+
+		u, err := urlz.Parse(urlStr)
 		if err != nil {
 			return nil, fmt.Errorf("failed to parse url for %s: %w", path, err)
 		}
 
-		results = append(results, &FileStat{
+		stat := &FileStat{
 			Url:       u,
 			Size:      uint64(info.Size()),
 			UpdatedAt: filez.GetUpdatedAt(path),
 			CreatedAt: filez.GetCreatedAt(path),
-		})
+		}
+		if info.IsDir() {
+			stat.Size = 0
+		}
+
+		results = append(results, stat)
 	}
 
 	if hasMore && len(results) > 0 {
@@ -234,6 +244,10 @@ func (p *fileFindPaginator) Paginate(ctx context.Context, max int) ([]*FileStat,
 				return nil
 			}
 			return fmt.Errorf("failed to get file info for %s: %w", path, err)
+		}
+
+		if info.IsDir() {
+			return nil
 		}
 
 		u, err := urlz.Parse("file://" + filepath.ToSlash(path))

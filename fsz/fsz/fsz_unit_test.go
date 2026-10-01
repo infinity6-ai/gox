@@ -648,3 +648,64 @@ func TestUnitFszFindLastFileRemovedBeforeNextCall(t *testing.T) {
 	require.Len(t, stats4, 0)
 	require.Equal(t, "", p2.GetCursor())
 }
+
+func TestUnitFszLsAndFindDirectoryEndingSlash(t *testing.T) {
+	tmpDir := filez.CreateTempDir("fsz-endingslash-test")
+	defer os.RemoveAll(tmpDir)
+
+	ctx := context.Background()
+
+	require.NoError(t, os.WriteFile(filepath.Join(tmpDir, "file1.txt"), []byte("1"), 0644))
+	require.NoError(t, os.WriteFile(filepath.Join(tmpDir, "file2.txt"), []byte("2"), 0644))
+	require.NoError(t, filez.CreateParentDirs(filepath.Join(tmpDir, "dir1", "nested.txt")))
+	require.NoError(t, os.WriteFile(filepath.Join(tmpDir, "dir1", "nested.txt"), []byte("nested"), 0644))
+	require.NoError(t, filez.CreateParentDirs(filepath.Join(tmpDir, "dir2", "sub", "deep.txt")))
+	require.NoError(t, os.WriteFile(filepath.Join(tmpDir, "dir2", "sub", "deep.txt"), []byte("deep"), 0644))
+
+	u, err := urlz.Parse("file://" + tmpDir)
+	require.NoError(t, err)
+
+	t.Run("Ls returns directories with HasEndingSlash true and files with false", func(t *testing.T) {
+		p, err := fsz.Ls(ctx, u)
+		require.NoError(t, err)
+
+		stats, err := p.Paginate(ctx, 10)
+		require.NoError(t, err)
+		require.Len(t, stats, 4) // dir1, dir2, file1.txt, file2.txt
+
+		statMap := make(map[string]*fsz.FileStat)
+		for _, s := range stats {
+			statMap[filepath.Base(filepath.Clean(s.Url.Path.String()))] = s
+		}
+
+		require.Contains(t, statMap, "dir1")
+		require.True(t, statMap["dir1"].Url.Path.HasEndingSlash(), "dir1 must have ending slash")
+
+		require.Contains(t, statMap, "dir2")
+		require.True(t, statMap["dir2"].Url.Path.HasEndingSlash(), "dir2 must have ending slash")
+
+		require.Contains(t, statMap, "file1.txt")
+		require.False(t, statMap["file1.txt"].Url.Path.HasEndingSlash(), "file1.txt must not have ending slash")
+
+		require.Contains(t, statMap, "file2.txt")
+		require.False(t, statMap["file2.txt"].Url.Path.HasEndingSlash(), "file2.txt must not have ending slash")
+	})
+
+	t.Run("Find never returns directories", func(t *testing.T) {
+		p, err := fsz.Find(ctx, u)
+		require.NoError(t, err)
+
+		stats, err := p.Paginate(ctx, 10)
+		require.NoError(t, err)
+		// Should only return files: dir1/nested.txt, dir2/sub/deep.txt, file1.txt, file2.txt
+		require.Len(t, stats, 4)
+
+		for _, s := range stats {
+			require.False(t, s.Url.Path.HasEndingSlash(), "Find result must not have ending slash (only files): %s", s.Url.String())
+			filePath := filepath.FromSlash(s.Url.Path.String())
+			info, err := os.Stat(filePath)
+			require.NoError(t, err)
+			require.False(t, info.IsDir(), "Find result must be a file, not directory: %s", filePath)
+		}
+	})
+}
