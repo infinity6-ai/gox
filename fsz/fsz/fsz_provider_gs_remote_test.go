@@ -105,9 +105,12 @@ func TestRemoteGsProvider(t *testing.T) {
 		require.NoError(t, err)
 		defer paginator.Close()
 
+		require.Equal(t, "", paginator.NextCursor())
+
 		stats, err := paginator.Paginate(ctx, 10)
 		require.NoError(t, err)
 		require.Len(t, stats, 2) // Should find file1.txt and file2.txt
+		require.Equal(t, "", paginator.NextCursor())
 
 		foundFiles := make(map[string]bool)
 		for _, stat := range stats {
@@ -292,16 +295,23 @@ func TestRemoteGsProvider(t *testing.T) {
 		require.NoError(t, err)
 		defer paginator.Close()
 
+		require.Equal(t, "", paginator.NextCursor())
+
 		var foundFiles int
 		for {
 			stats, err := paginator.Paginate(ctx, 2)
 			require.NoError(t, err)
 			if len(stats) == 0 {
+				require.Equal(t, "", paginator.NextCursor())
 				break
 			}
 			foundFiles += len(stats)
+			if foundFiles < len(objects) {
+				require.NotEmpty(t, paginator.NextCursor())
+			}
 		}
 
 		require.Equal(t, len(objects), foundFiles)
+		require.Equal(t, "", paginator.NextCursor())
 	})
 }
