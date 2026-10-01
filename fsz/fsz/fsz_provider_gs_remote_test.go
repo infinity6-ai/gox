@@ -104,12 +104,12 @@ func TestRemoteGsProvider(t *testing.T) {
 		paginator, err := fsz.Ls(ctx, prefixURL)
 		require.NoError(t, err)
 
-		require.Equal(t, "", paginator.NextCursor())
+		require.Equal(t, "", paginator.GetCursor())
 
 		stats, err := paginator.Paginate(ctx, 10)
 		require.NoError(t, err)
 		require.Len(t, stats, 2) // Should find file1.txt and file2.txt
-		require.Equal(t, "", paginator.NextCursor())
+		require.Equal(t, "", paginator.GetCursor())
 
 		foundFiles := make(map[string]bool)
 		for _, stat := range stats {
@@ -293,27 +293,27 @@ func TestRemoteGsProvider(t *testing.T) {
 		paginator, err := fsz.Find(ctx, prefixUrl)
 		require.NoError(t, err)
 
-		require.Equal(t, "", paginator.NextCursor())
+		require.Equal(t, "", paginator.GetCursor())
 
 		var foundFiles int
 		for {
 			stats, err := paginator.Paginate(ctx, 2)
 			require.NoError(t, err)
 			if len(stats) == 0 {
-				require.Equal(t, "", paginator.NextCursor())
+				require.Equal(t, "", paginator.GetCursor())
 				break
 			}
 			foundFiles += len(stats)
 			if foundFiles < len(objects) {
-				require.NotEmpty(t, paginator.NextCursor())
+				require.NotEmpty(t, paginator.GetCursor())
 			}
 		}
 
 		require.Equal(t, len(objects), foundFiles)
-		require.Equal(t, "", paginator.NextCursor())
+		require.Equal(t, "", paginator.GetCursor())
 	})
 
-	t.Run("FindSetStartCursor", func(t *testing.T) {
+	t.Run("FindSetCursor", func(t *testing.T) {
 		baseObjectName := fmt.Sprintf("test-cursor-base-%d", time.Now().UnixNano())
 		prefixUrl, err := urlz.Parse(fmt.Sprintf("gs://%s/%s/", testBucket, baseObjectName))
 		require.NoError(t, err)
@@ -337,12 +337,12 @@ func TestRemoteGsProvider(t *testing.T) {
 		stats1, err := p1.Paginate(ctx, 2)
 		require.NoError(t, err)
 		require.Len(t, stats1, 2)
-		cursor := p1.NextCursor()
+		cursor := p1.GetCursor()
 		require.NotEmpty(t, cursor)
 
 		p2, err := fsz.Find(ctx, prefixUrl)
 		require.NoError(t, err)
-		p2.SetStartCursor(cursor)
+		p2.SetCursor(cursor)
 
 		stats2, err := p2.Paginate(ctx, 2)
 		require.NoError(t, err)
@@ -357,7 +357,7 @@ func TestRemoteGsProvider(t *testing.T) {
 		}
 
 		// Empty cursor resets back to start
-		p2.SetStartCursor("")
+		p2.SetCursor("")
 		statsReset, err := p2.Paginate(ctx, 2)
 		require.NoError(t, err)
 		require.Len(t, statsReset, 2)

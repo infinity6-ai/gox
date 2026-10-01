@@ -82,31 +82,31 @@ func TestUnitFszLs(t *testing.T) {
 	paginator, err := fsz.Ls(ctx, u)
 	require.NoError(t, err)
 
-	require.Equal(t, "", paginator.NextCursor())
+	require.Equal(t, "", paginator.GetCursor())
 
 	// Paginate with max=2
 	stats1, err := paginator.Paginate(ctx, 2)
 	require.NoError(t, err)
 	require.Len(t, stats1, 2)
-	require.Equal(t, "2", paginator.NextCursor())
+	require.Equal(t, "2", paginator.GetCursor())
 
 	// Paginate with max=2
 	stats2, err := paginator.Paginate(ctx, 2)
 	require.NoError(t, err)
 	require.Len(t, stats2, 2)
-	require.Equal(t, "4", paginator.NextCursor())
+	require.Equal(t, "4", paginator.GetCursor())
 
 	// Paginate with max=2 (should get the last one)
 	stats3, err := paginator.Paginate(ctx, 2)
 	require.NoError(t, err)
 	require.Len(t, stats3, 1)
-	require.Equal(t, "", paginator.NextCursor())
+	require.Equal(t, "", paginator.GetCursor())
 
 	// Paginate again, should be empty
 	stats4, err := paginator.Paginate(ctx, 2)
 	require.NoError(t, err)
 	require.Len(t, stats4, 0)
-	require.Equal(t, "", paginator.NextCursor())
+	require.Equal(t, "", paginator.GetCursor())
 }
 
 func TestUnitDownloadNotFound(t *testing.T) {
@@ -303,24 +303,24 @@ func TestUnitFszFind(t *testing.T) {
 	paginator, err := fsz.Find(ctx, u)
 	require.NoError(t, err)
 
-	require.Equal(t, "", paginator.NextCursor())
+	require.Equal(t, "", paginator.GetCursor())
 
 	var foundFiles int
 	for {
 		stats, err := paginator.Paginate(ctx, 2)
 		require.NoError(t, err)
 		if len(stats) == 0 {
-			require.Equal(t, "", paginator.NextCursor())
+			require.Equal(t, "", paginator.GetCursor())
 			break
 		}
 		foundFiles += len(stats)
 		if foundFiles < len(files) {
-			require.NotEmpty(t, paginator.NextCursor())
+			require.NotEmpty(t, paginator.GetCursor())
 		}
 	}
 
 	require.Equal(t, len(files), foundFiles)
-	require.Equal(t, "", paginator.NextCursor())
+	require.Equal(t, "", paginator.GetCursor())
 }
 
 func TestUnitFileFsLsNonExistentDir(t *testing.T) {
@@ -450,7 +450,7 @@ func TestUnitFileFsMoveDirFails(t *testing.T) {
 	require.NoError(t, err, "source directory should still exist after failed move")
 }
 
-func TestUnitFszSetStartCursor(t *testing.T) {
+func TestUnitFszSetCursor(t *testing.T) {
 	tmpDir := filez.CreateTempDir("fsz-startcursor-test")
 	defer os.RemoveAll(tmpDir)
 
@@ -465,48 +465,48 @@ func TestUnitFszSetStartCursor(t *testing.T) {
 	u, err := urlz.Parse("file://" + tmpDir)
 	require.NoError(t, err)
 
-	t.Run("Ls with SetStartCursor resumes pagination", func(t *testing.T) {
+	t.Run("Ls with SetCursor resumes pagination", func(t *testing.T) {
 		p1, err := fsz.Ls(ctx, u)
 		require.NoError(t, err)
 
 		stats1, err := p1.Paginate(ctx, 2)
 		require.NoError(t, err)
 		require.Len(t, stats1, 2)
-		cursor := p1.NextCursor()
+		cursor := p1.GetCursor()
 		require.Equal(t, "2", cursor)
 
 		p2, err := fsz.Ls(ctx, u)
 		require.NoError(t, err)
-		p2.SetStartCursor(cursor)
+		p2.SetCursor(cursor)
 
 		stats2, err := p2.Paginate(ctx, 2)
 		require.NoError(t, err)
 		require.Len(t, stats2, 2)
-		require.Equal(t, "4", p2.NextCursor())
+		require.Equal(t, "4", p2.GetCursor())
 		require.Equal(t, filepath.Join(tmpDir, "file2.txt"), filepath.FromSlash(stats2[0].Url.Path.String()))
 		require.Equal(t, filepath.Join(tmpDir, "file3.txt"), filepath.FromSlash(stats2[1].Url.Path.String()))
 
 		// Empty cursor resets
-		p2.SetStartCursor("")
+		p2.SetCursor("")
 		statsReset, err := p2.Paginate(ctx, 2)
 		require.NoError(t, err)
 		require.Len(t, statsReset, 2)
 		require.Equal(t, filepath.Join(tmpDir, "file0.txt"), filepath.FromSlash(statsReset[0].Url.Path.String()))
 	})
 
-	t.Run("Find with SetStartCursor resumes pagination", func(t *testing.T) {
+	t.Run("Find with SetCursor resumes pagination", func(t *testing.T) {
 		p1, err := fsz.Find(ctx, u)
 		require.NoError(t, err)
 
 		stats1, err := p1.Paginate(ctx, 2)
 		require.NoError(t, err)
 		require.Len(t, stats1, 2)
-		cursor := p1.NextCursor()
+		cursor := p1.GetCursor()
 		require.NotEmpty(t, cursor)
 
 		p2, err := fsz.Find(ctx, u)
 		require.NoError(t, err)
-		p2.SetStartCursor(cursor)
+		p2.SetCursor(cursor)
 
 		stats2, err := p2.Paginate(ctx, 2)
 		require.NoError(t, err)

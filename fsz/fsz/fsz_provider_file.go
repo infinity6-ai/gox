@@ -78,11 +78,11 @@ type fileLsPaginator struct {
 	cursor  string
 }
 
-func (p *fileLsPaginator) NextCursor() string {
+func (p *fileLsPaginator) GetCursor() string {
 	return p.cursor
 }
 
-func (p *fileLsPaginator) SetStartCursor(cursor string) {
+func (p *fileLsPaginator) SetCursor(cursor string) {
 	p.cursor = cursor
 	if cursor == "" {
 		p.offset = 0
@@ -178,11 +178,11 @@ type fileFindPaginator struct {
 	skipTo int
 }
 
-func (p *fileFindPaginator) NextCursor() string {
+func (p *fileFindPaginator) GetCursor() string {
 	return p.cursor
 }
 
-func (p *fileFindPaginator) SetStartCursor(cursor string) {
+func (p *fileFindPaginator) SetCursor(cursor string) {
 	p.cursor = cursor
 	if cursor == "" {
 		p.skipTo = 0

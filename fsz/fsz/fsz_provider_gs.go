@@ -114,30 +114,24 @@ func (gf *gsFs) Delete(ctx context.Context, url *urlz.Url) error {
 }
 
 type gsPaginator struct {
-	fs      *gsFs
-	bucket  string
-	query   *storage.Query
-	cursor  string
-	started bool
+	fs     *gsFs
+	bucket string
+	query  *storage.Query
+	cursor string
 }
 
-func (p *gsPaginator) NextCursor() string {
+func (p *gsPaginator) GetCursor() string {
 	return p.cursor
 }
 
-func (p *gsPaginator) SetStartCursor(cursor string) {
+func (p *gsPaginator) SetCursor(cursor string) {
 	p.cursor = cursor
-	p.started = false
 }
 
 func (p *gsPaginator) Paginate(ctx context.Context, max int) ([]*FileStat, error) {
 	if max <= 0 {
 		return nil, nil
 	}
-	if p.started && p.cursor == "" {
-		return nil, nil
-	}
-	p.started = true
 
 	client, err := p.fs.openClient(ctx)
 	if err != nil {
