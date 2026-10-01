@@ -199,8 +199,7 @@ func NewArray[S ~[]E, E any](opts ArrayOptions[S, E]) func() *Array {
 						(*s)[i] = opts.NewElement(i)
 					}
 				}
-				x := (*s)
-				return opts.Get(idx, &x[idx])
+				return opts.Get(idx, &(*s)[idx])
 			},
 		}
 	}
