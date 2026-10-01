@@ -167,7 +167,7 @@ func (s *Schema) unmarshalJSONStrs(data []byte) error {
 }
 
 type ArrayOptions[S ~[]E, E any] struct {
-	Slice      *S
+	Slice      func() *S
 	NewElement func(idx int) E
 	Get        func(idx int, element *E) *Schema
 }
@@ -179,26 +179,28 @@ func NewArray[S ~[]E, E any](opts ArrayOptions[S, E]) func() *Array {
 			return z
 		}
 	}
+	s := *opts.Slice()
 	return func() *Array {
 		return &Array{
-			Len: func() int { return len(*opts.Slice) },
+			Len: func() int { return len(s) },
 			Get: func(idx int, read bool) *Schema {
+				s := s
 				if read {
-					element := slicez.GetOptional(*opts.Slice, idx)
+					element := slicez.GetOptional(s, idx)
 					if !element.IsPresent() {
 						return nil
 					}
 				} else {
-					if *opts.Slice == nil {
-						*opts.Slice = []E{}
+					if s == nil {
+						s = []E{}
 					}
-					oldLen := len(*opts.Slice)
-					*opts.Slice = slicez.GrowLenTo(*opts.Slice, idx+1)
-					for i := oldLen; i < len(*opts.Slice); i++ {
-						(*opts.Slice)[i] = opts.NewElement(i)
+					oldLen := len(s)
+					s = slicez.GrowLenTo(s, idx+1)
+					for i := oldLen; i < len(s); i++ {
+						(s)[i] = opts.NewElement(i)
 					}
 				}
-				x := (*opts.Slice)
+				x := (s)
 				return opts.Get(idx, &x[idx])
 			},
 		}

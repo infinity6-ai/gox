@@ -97,7 +97,7 @@ func (f *FractionApi) schemaReqBody() *schemaz.Schema {
 				"reason": {Raw: func() any { return &f.Req.Reason }, Desc: &schemaz.Desc{Summary: "Sample reason of this fraction"}},
 				"messages": {
 					Array: schemaz.NewArray(schemaz.ArrayOptions[[]*Message, *Message]{
-						Slice:      &f.Req.Messages,
+						Slice:      func() *[]*Message { return &f.Req.Messages },
 						NewElement: func(idx int) *Message { return &Message{} },
 						Get: func(idx int, element **Message) *schemaz.Schema {
 							return &schemaz.Schema{
