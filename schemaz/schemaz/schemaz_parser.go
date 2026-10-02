@@ -1,6 +1,8 @@
 package schemaz
 
 import (
+	"strconv"
+
 	"github.com/infinity6-ai/gox/commonz/constraintz"
 	"github.com/infinity6-ai/gox/commonz/strconvz"
 )
@@ -31,6 +33,35 @@ func ParseStr(out *string) func() *Parser[string] {
 			},
 			Format: func() (string, any) {
 				return *out, *out
+			},
+		}
+	}
+}
+
+func ParseStrBool(out *bool) func() *Parser[string] {
+	return func() *Parser[string] {
+		return &Parser[string]{
+			Parse: func(v string) {
+				*out = strconvz.MustParseBool(v)
+			},
+			Format: func() (string, any) {
+				return strconv.FormatBool(*out), *out
+			},
+		}
+	}
+}
+
+func ParseStrGet[T any](out *T, set func(v string) T) func() *Parser[string] {
+	return func() *Parser[string] {
+		return &Parser[string]{
+			Parse: func(v string) {
+				*out = set(v)
+			},
+			Format: func() (string, any) {
+				type G interface {
+					Get() string
+				}
+				return any(out).(G).Get(), *out
 			},
 		}
 	}

@@ -2,7 +2,15 @@ package pathz
 
 import (
 	"fmt"
+
+	"github.com/infinity6-ai/gox/commonz/errorz"
 )
+
+func (p *Path) MustExtractRelative(other *Path) *Path {
+	ret, err := p.ExtractRelative(other)
+	errorz.Check(err)
+	return ret
+}
 
 // ExtractRelative calculates the relative path from a base path `p` to another path `other`.
 // It returns a new Path object representing the relative path if `other` is a descendant of `p`.
