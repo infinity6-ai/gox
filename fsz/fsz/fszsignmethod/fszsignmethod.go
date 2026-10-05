@@ -1,6 +1,7 @@
 package fszsignmethod
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/infinity6-ai/gox/commonz/constraintz/optionalz"
@@ -44,6 +45,15 @@ func (d *SignMethod) UnmarshalJSON(data []byte) error {
 
 func (d SignMethod) Validate(v string) error {
 	return validation.OneOf(validMethods, v, "unsupported method")
+}
+
+func Parse(id string) (SignMethod, error) {
+	var ret SignMethod
+	err := checked.Set(&ret, id)
+	if err != nil {
+		return ret, fmt.Errorf("unsupported: %s, %w", id, err)
+	}
+	return ret, nil
 }
 
 func MustParse(id string) SignMethod {
