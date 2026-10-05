@@ -1,9 +1,11 @@
 package schemaz
 
 import (
+	"fmt"
 	"strconv"
 
 	"github.com/infinity6-ai/gox/commonz/constraintz"
+	"github.com/infinity6-ai/gox/commonz/constraintz/optionalz"
 	"github.com/infinity6-ai/gox/commonz/strconvz"
 )
 
@@ -58,10 +60,22 @@ func ParseStrGet[T any](out *T, set func(v string) T) func() *Parser[string] {
 				*out = set(v)
 			},
 			Format: func() (string, any) {
+				type O interface {
+					Optional() optionalz.Optional[string]
+				}
+				o, ok := any(out).(O)
+				if ok {
+					ret := o.Optional()
+					return ret.Or(""), *out
+				}
 				type G interface {
 					Get() string
 				}
-				return any(out).(G).Get(), *out
+				g, ok := any(out).(G)
+				if ok {
+					return g.Get(), *out
+				}
+				panic(fmt.Sprintf("unsupported: %T", out))
 			},
 		}
 	}
