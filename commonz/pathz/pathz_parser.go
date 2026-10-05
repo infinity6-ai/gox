@@ -18,6 +18,13 @@ type Path struct {
 	hasEndingSlash bool
 }
 
+func (p *Path) SetEndingSlash(endingSlash bool) *Path {
+	if p.hasEndingSlash == endingSlash {
+		return p
+	}
+	return New(p.parents, p.Parts(), endingSlash)
+}
+
 func New(parents int, parts []string, hasEndingSlash bool) *Path {
 	var p Path
 	p.set(parts, parents, hasEndingSlash)
