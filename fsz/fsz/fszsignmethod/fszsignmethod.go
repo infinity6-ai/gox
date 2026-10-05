@@ -7,6 +7,7 @@ import (
 	"github.com/infinity6-ai/gox/commonz/constraintz/optionalz"
 	"github.com/infinity6-ai/gox/commonz/validation"
 	"github.com/infinity6-ai/gox/commonz/validation/checked"
+	"go.code.infinity6.ai/sdkgo/genjsz/jstypez"
 )
 
 var validMethods = []string{
@@ -22,6 +23,10 @@ var (
 	SignMethodPut    = MustParse(http.MethodPut)
 	SignMethodDelete = MustParse(http.MethodDelete)
 )
+
+func (*SignMethod) JSType() string {
+	return jstypez.TypString
+}
 
 func (d SignMethod) Optional() optionalz.Optional[string] {
 	return checked.Value[string](d).Optional()
@@ -54,6 +59,15 @@ func Parse(id string) (SignMethod, error) {
 		return ret, fmt.Errorf("unsupported: %s, %w", id, err)
 	}
 	return ret, nil
+}
+
+func MustParseOptional(id string) SignMethod {
+	var ret SignMethod
+	if id == "" {
+		return ret
+	}
+	ret = MustParse(id)
+	return ret
 }
 
 func MustParse(id string) SignMethod {

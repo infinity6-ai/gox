@@ -159,6 +159,13 @@ func New() *HiveParts {
 	return &HiveParts{}
 }
 
+func ToPath(hp *HiveParts) *pathz.Path {
+	if hp == nil {
+		return pathz.New(0, nil, false)
+	}
+	return hp.Format()
+}
+
 func From(args ...string) *HiveParts {
 	if len(args)%2 != 0 {
 		panic("invalid number of arguments")
