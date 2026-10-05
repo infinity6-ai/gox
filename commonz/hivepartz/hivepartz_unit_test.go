@@ -280,7 +280,7 @@ func TestUnitParseString(t *testing.T) {
 		check(t, testScenario{
 			input:     "Region=us-east-1/data",
 			expectErr: true,
-			errMsg:    "invalid hive part: validation error validation fail StringRegex (regex=^[a-z][a-z0-9\\-]*, actual=Region): name",
+			errMsg:    "invalid hive part: validation error validation fail StringRegex (actual=Region, regex=^[a-z][a-z0-9\\-]*): name",
 		})
 	})
 
@@ -296,7 +296,7 @@ func TestUnitParseString(t *testing.T) {
 		check(t, testScenario{
 			input:     "../region=us-east-1",
 			expectErr: true,
-			errMsg:    "path unsupported: validation error must be less or equal than (threshold=0, actual=1): max parents allowed: ../region=us-east-1",
+			errMsg:    "path unsupported: validation error must be less or equal than (actual=1, threshold=0): max parents allowed: ../region=us-east-1",
 		})
 	})
 }
@@ -377,7 +377,7 @@ func TestUnitParse(t *testing.T) {
 		check(t, testScenario{
 			input:     pathz.MustParse("../region=us-east-1"),
 			expectErr: true,
-			errMsg:    "path unsupported: validation error must be less or equal than (threshold=0, actual=1): max parents allowed: ../region=us-east-1",
+			errMsg:    "path unsupported: validation error must be less or equal than (actual=1, threshold=0): max parents allowed: ../region=us-east-1",
 		})
 	})
 }

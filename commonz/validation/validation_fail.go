@@ -3,6 +3,7 @@ package validation
 import (
 	"errors"
 	"fmt"
+	"slices"
 	"strings"
 )
 
@@ -18,12 +19,18 @@ func (v *ValidationError) Error() string {
 	sb.WriteString(v.Name)
 	if len(v.Params) > 0 {
 		sb.WriteString(" (")
+		keys := make([]string, 0, len(v.Params))
+		for k := range v.Params {
+			keys = append(keys, k)
+		}
+		slices.Sort(keys)
+
 		first := true
-		for k, val := range v.Params {
+		for _, k := range keys {
 			if !first {
 				sb.WriteString(", ")
 			}
-			fmt.Fprintf(&sb, "%s=%v", k, val)
+			fmt.Fprintf(&sb, "%s=%v", k, v.Params[k])
 			first = false
 		}
 		sb.WriteString(")")
