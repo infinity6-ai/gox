@@ -145,37 +145,7 @@ func TestRemoteGsProvider(t *testing.T) {
 		fsz.Delete(ctx, destURL)
 	})
 
-	t.Run("Sign", func(t *testing.T) {
-		objectName := fmt.Sprintf("test-signed-%d", time.Now().UnixNano())
-		testUrl, err := urlz.Parse(fmt.Sprintf("gs://%s/%s", testBucket, objectName))
-		require.NoError(t, err)
-
-		content := "signed content via Sign"
-		err = fsz.Upload(ctx, testUrl, nil, strings.NewReader(content))
-		require.NoError(t, err)
-		defer fsz.Delete(ctx, testUrl)
-
-		signedURL, err := fsz.Sign(ctx, fszsignmethod.SignMethodGet, testUrl, 5*time.Minute)
-		if err != nil {
-			if strings.Contains(err.Error(), "missing required GoogleAccessID") {
-				t.Skip("Skipping Sign test: environment not configured for signing URLs")
-			}
-			require.NoError(t, err)
-		}
-		require.NotEmpty(t, signedURL)
-
-		// Attempt to download using the signed URL
-		resp, err := http.Get(signedURL)
-		require.NoError(t, err)
-		defer resp.Body.Close()
-		require.Equal(t, http.StatusOK, resp.StatusCode)
-
-		data, err := io.ReadAll(resp.Body)
-		require.NoError(t, err)
-		require.Equal(t, content, string(data))
-	})
-
-	t.Run("SignGet", func(t *testing.T) {
+	t.Run("SignMethodGet", func(t *testing.T) {
 		objectName := fmt.Sprintf("test-signed-get-%d", time.Now().UnixNano())
 		testUrl, err := urlz.Parse(fmt.Sprintf("gs://%s/%s", testBucket, objectName))
 		require.NoError(t, err)
@@ -185,10 +155,10 @@ func TestRemoteGsProvider(t *testing.T) {
 		require.NoError(t, err)
 		defer fsz.Delete(ctx, testUrl)
 
-		signedURL, err := fsz.SignGet(ctx, testUrl, 5*time.Minute)
+		signedURL, err := fsz.Sign(ctx, fszsignmethod.SignMethodGet, testUrl, 5*time.Minute)
 		if err != nil {
 			if strings.Contains(err.Error(), "missing required GoogleAccessID") {
-				t.Skip("Skipping SignGet test: environment not configured for signing URLs")
+				t.Skip("Skipping SignMethodGet test: environment not configured for signing URLs")
 			}
 			require.NoError(t, err)
 		}
@@ -205,17 +175,17 @@ func TestRemoteGsProvider(t *testing.T) {
 		require.Equal(t, content, string(data))
 	})
 
-	t.Run("SignPut", func(t *testing.T) {
+	t.Run("SignMethodPut", func(t *testing.T) {
 		objectName := fmt.Sprintf("test-signed-put-%d", time.Now().UnixNano())
 		testUrl, err := urlz.Parse(fmt.Sprintf("gs://%s/%s", testBucket, objectName))
 		require.NoError(t, err)
 
 		defer fsz.Delete(ctx, testUrl)
 
-		signedURL, err := fsz.SignPut(ctx, testUrl, 5*time.Minute)
+		signedURL, err := fsz.Sign(ctx, fszsignmethod.SignMethodPut, testUrl, 5*time.Minute)
 		if err != nil {
 			if strings.Contains(err.Error(), "missing required GoogleAccessID") {
-				t.Skip("Skipping SignPut test: environment not configured for signing URLs")
+				t.Skip("Skipping SignMethodPut test: environment not configured for signing URLs")
 			}
 			require.NoError(t, err)
 		}
@@ -240,7 +210,7 @@ func TestRemoteGsProvider(t *testing.T) {
 		require.Equal(t, content, downloadedContent.String())
 	})
 
-	t.Run("SignDelete", func(t *testing.T) {
+	t.Run("SignMethodDelete", func(t *testing.T) {
 		objectName := fmt.Sprintf("test-signed-delete-%d", time.Now().UnixNano())
 		testUrl, err := urlz.Parse(fmt.Sprintf("gs://%s/%s", testBucket, objectName))
 		require.NoError(t, err)
@@ -250,10 +220,10 @@ func TestRemoteGsProvider(t *testing.T) {
 		err = fsz.Upload(ctx, testUrl, nil, strings.NewReader(content))
 		require.NoError(t, err)
 
-		signedURL, err := fsz.SignDelete(ctx, testUrl, 5*time.Minute)
+		signedURL, err := fsz.Sign(ctx, fszsignmethod.SignMethodDelete, testUrl, 5*time.Minute)
 		if err != nil {
 			if strings.Contains(err.Error(), "missing required GoogleAccessID") {
-				t.Skip("Skipping SignDelete test: environment not configured for signing URLs")
+				t.Skip("Skipping SignMethodDelete test: environment not configured for signing URLs")
 			}
 			require.NoError(t, err)
 		}

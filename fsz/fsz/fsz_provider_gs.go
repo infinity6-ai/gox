@@ -270,18 +270,6 @@ func (gf *gsFs) Sign(ctx context.Context, signMethod fszsignmethod.SignMethod, u
 	})
 }
 
-func (gf *gsFs) SignGet(ctx context.Context, url *urlz.Url, duration time.Duration) (string, error) {
-	return gf.Sign(ctx, fszsignmethod.SignMethodGet, url, duration)
-}
-
-func (gf *gsFs) SignPut(ctx context.Context, url *urlz.Url, duration time.Duration) (string, error) {
-	return gf.Sign(ctx, fszsignmethod.SignMethodPut, url, duration)
-}
-
-func (gf *gsFs) SignDelete(ctx context.Context, url *urlz.Url, duration time.Duration) (string, error) {
-	return gf.Sign(ctx, fszsignmethod.SignMethodDelete, url, duration)
-}
-
 func (gf *gsFs) Copy(ctx context.Context, src *urlz.Url, dest *urlz.Url) error {
 	client, err := gf.openClient(ctx)
 	if err != nil {

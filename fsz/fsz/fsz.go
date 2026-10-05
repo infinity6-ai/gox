@@ -208,30 +208,6 @@ func Sign(ctx context.Context, signMethod fszsignmethod.SignMethod, url *urlz.Ur
 	return prv.Sign(ctx, signMethod, url, duration)
 }
 
-func SignGet(ctx context.Context, url *urlz.Url, duration time.Duration) (string, error) {
-	prv, err := getProvider(url.Scheme)
-	if err != nil {
-		return "", err
-	}
-	return prv.SignGet(ctx, url, duration)
-}
-
-func SignPut(ctx context.Context, url *urlz.Url, duration time.Duration) (string, error) {
-	prv, err := getProvider(url.Scheme)
-	if err != nil {
-		return "", err
-	}
-	return prv.SignPut(ctx, url, duration)
-}
-
-func SignDelete(ctx context.Context, url *urlz.Url, duration time.Duration) (string, error) {
-	prv, err := getProvider(url.Scheme)
-	if err != nil {
-		return "", err
-	}
-	return prv.SignDelete(ctx, url, duration)
-}
-
 func RmTree(ctx context.Context, url *urlz.Url) error {
 	p, err := getProvider(url.Scheme)
 	if err != nil {

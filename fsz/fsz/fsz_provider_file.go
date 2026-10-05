@@ -383,18 +383,6 @@ func (ff *fileFs) Sign(ctx context.Context, signMethod fszsignmethod.SignMethod,
 	return "", ErrUnsupportedOperation
 }
 
-func (ff *fileFs) SignGet(ctx context.Context, url *urlz.Url, duration time.Duration) (string, error) {
-	return ff.Sign(ctx, fszsignmethod.SignMethodGet, url, duration)
-}
-
-func (ff *fileFs) SignPut(ctx context.Context, url *urlz.Url, duration time.Duration) (string, error) {
-	return ff.Sign(ctx, fszsignmethod.SignMethodPut, url, duration)
-}
-
-func (ff *fileFs) SignDelete(ctx context.Context, url *urlz.Url, duration time.Duration) (string, error) {
-	return ff.Sign(ctx, fszsignmethod.SignMethodDelete, url, duration)
-}
-
 func (ff *fileFs) Copy(ctx context.Context, src *urlz.Url, dest *urlz.Url) error {
 	srcPath := src.Path.String()
 	destPath := dest.Path.String()

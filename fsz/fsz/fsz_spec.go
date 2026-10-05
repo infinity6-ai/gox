@@ -49,9 +49,6 @@ type FsProvider interface {
 	Finder(ctx context.Context, prefix *urlz.Url, walker Walker) error
 
 	Sign(ctx context.Context, signMethod fszsignmethod.SignMethod, url *urlz.Url, duration time.Duration) (string, error)
-	SignGet(ctx context.Context, url *urlz.Url, duration time.Duration) (string, error)
-	SignPut(ctx context.Context, url *urlz.Url, duration time.Duration) (string, error)
-	SignDelete(ctx context.Context, url *urlz.Url, duration time.Duration) (string, error)
 
 	RmTree(ctx context.Context, url *urlz.Url) error
 	Move(ctx context.Context, src *urlz.Url, dest *urlz.Url) error
