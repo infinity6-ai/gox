@@ -11,6 +11,7 @@ import (
 	"github.com/infinity6-ai/gox/commonz/deferz"
 	"github.com/infinity6-ai/gox/commonz/errorz"
 	"github.com/infinity6-ai/gox/commonz/urlz"
+	"github.com/infinity6-ai/gox/fsz/fsz/fszsignmethod"
 )
 
 var providers = map[string]FsProvider{
@@ -197,6 +198,14 @@ func Copy(ctx context.Context, src *urlz.Url, dest *urlz.Url) error {
 		return err
 	}
 	return prv.Copy(ctx, src, dest)
+}
+
+func Sign(ctx context.Context, signMethod fszsignmethod.SignMethod, url *urlz.Url, duration time.Duration) (string, error) {
+	prv, err := getProvider(url.Scheme)
+	if err != nil {
+		return "", err
+	}
+	return prv.Sign(ctx, signMethod, url, duration)
 }
 
 func SignGet(ctx context.Context, url *urlz.Url, duration time.Duration) (string, error) {

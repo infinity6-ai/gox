@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/infinity6-ai/gox/commonz/urlz"
+	"github.com/infinity6-ai/gox/fsz/fsz/fszsignmethod"
 )
 
 var ErrUnknownScheme = errors.New("unknown scheme")
@@ -47,6 +48,7 @@ type FsProvider interface {
 	Lister(ctx context.Context, prefix *urlz.Url, walker Walker) error
 	Finder(ctx context.Context, prefix *urlz.Url, walker Walker) error
 
+	Sign(ctx context.Context, signMethod fszsignmethod.SignMethod, url *urlz.Url, duration time.Duration) (string, error)
 	SignGet(ctx context.Context, url *urlz.Url, duration time.Duration) (string, error)
 	SignPut(ctx context.Context, url *urlz.Url, duration time.Duration) (string, error)
 	SignDelete(ctx context.Context, url *urlz.Url, duration time.Duration) (string, error)

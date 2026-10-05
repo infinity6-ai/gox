@@ -12,6 +12,7 @@ import (
 
 	"github.com/infinity6-ai/gox/commonz/urlz"
 	"github.com/infinity6-ai/gox/fsz/fsz"
+	"github.com/infinity6-ai/gox/fsz/fsz/fszsignmethod"
 	"github.com/stretchr/testify/require"
 )
 
@@ -142,6 +143,36 @@ func TestRemoteGsProvider(t *testing.T) {
 
 		// Clean up destination
 		fsz.Delete(ctx, destURL)
+	})
+
+	t.Run("Sign", func(t *testing.T) {
+		objectName := fmt.Sprintf("test-signed-%d", time.Now().UnixNano())
+		testUrl, err := urlz.Parse(fmt.Sprintf("gs://%s/%s", testBucket, objectName))
+		require.NoError(t, err)
+
+		content := "signed content via Sign"
+		err = fsz.Upload(ctx, testUrl, nil, strings.NewReader(content))
+		require.NoError(t, err)
+		defer fsz.Delete(ctx, testUrl)
+
+		signedURL, err := fsz.Sign(ctx, fszsignmethod.SignMethodGet, testUrl, 5*time.Minute)
+		if err != nil {
+			if strings.Contains(err.Error(), "missing required GoogleAccessID") {
+				t.Skip("Skipping Sign test: environment not configured for signing URLs")
+			}
+			require.NoError(t, err)
+		}
+		require.NotEmpty(t, signedURL)
+
+		// Attempt to download using the signed URL
+		resp, err := http.Get(signedURL)
+		require.NoError(t, err)
+		defer resp.Body.Close()
+		require.Equal(t, http.StatusOK, resp.StatusCode)
+
+		data, err := io.ReadAll(resp.Body)
+		require.NoError(t, err)
+		require.Equal(t, content, string(data))
 	})
 
 	t.Run("SignGet", func(t *testing.T) {

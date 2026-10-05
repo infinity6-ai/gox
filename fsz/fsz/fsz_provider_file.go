@@ -14,6 +14,7 @@ import (
 	"github.com/infinity6-ai/gox/commonz/encz/enczb64"
 	"github.com/infinity6-ai/gox/commonz/filez"
 	"github.com/infinity6-ai/gox/commonz/urlz"
+	"github.com/infinity6-ai/gox/fsz/fsz/fszsignmethod"
 )
 
 func providerFile() FsProvider {
@@ -378,16 +379,20 @@ func shouldSkipDir(dirRelPath string, cursor string) bool {
 	return false
 }
 
-func (ff *fileFs) SignGet(ctx context.Context, url *urlz.Url, duration time.Duration) (string, error) {
+func (ff *fileFs) Sign(ctx context.Context, signMethod fszsignmethod.SignMethod, url *urlz.Url, duration time.Duration) (string, error) {
 	return "", ErrUnsupportedOperation
+}
+
+func (ff *fileFs) SignGet(ctx context.Context, url *urlz.Url, duration time.Duration) (string, error) {
+	return ff.Sign(ctx, fszsignmethod.SignMethodGet, url, duration)
 }
 
 func (ff *fileFs) SignPut(ctx context.Context, url *urlz.Url, duration time.Duration) (string, error) {
-	return "", ErrUnsupportedOperation
+	return ff.Sign(ctx, fszsignmethod.SignMethodPut, url, duration)
 }
 
 func (ff *fileFs) SignDelete(ctx context.Context, url *urlz.Url, duration time.Duration) (string, error) {
-	return "", ErrUnsupportedOperation
+	return ff.Sign(ctx, fszsignmethod.SignMethodDelete, url, duration)
 }
 
 func (ff *fileFs) Copy(ctx context.Context, src *urlz.Url, dest *urlz.Url) error {

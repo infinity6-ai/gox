@@ -12,6 +12,7 @@ import (
 	"cloud.google.com/go/storage"
 	"github.com/infinity6-ai/gox/commonz/urlz"
 	"github.com/infinity6-ai/gox/fsz/bucketz"
+	"github.com/infinity6-ai/gox/fsz/fsz/fszsignmethod"
 	"google.golang.org/api/iterator"
 )
 
@@ -251,6 +252,7 @@ func gcssign(ctx context.Context, url *urlz.Url, opts *SignOptions) (string, err
 	if err != nil {
 		return "", fmt.Errorf("error creating gcs client: %w", err)
 	}
+	defer client.Close()
 	ret, err := client.Bucket(bucket.Get()).SignedURL(object.String(), o)
 	if err != nil {
 		return "", fmt.Errorf("error signing url %s/%s: %w", bucket, object, err)
@@ -258,25 +260,26 @@ func gcssign(ctx context.Context, url *urlz.Url, opts *SignOptions) (string, err
 	return ret, nil
 }
 
-func (gf *gsFs) SignGet(ctx context.Context, url *urlz.Url, duration time.Duration) (string, error) {
+func (gf *gsFs) Sign(ctx context.Context, signMethod fszsignmethod.SignMethod, url *urlz.Url, duration time.Duration) (string, error) {
+	if !signMethod.Optional().IsPresent() {
+		return "", fmt.Errorf("sign method is required")
+	}
 	return gcssign(ctx, url, &SignOptions{
-		Method:   "GET",
+		Method:   signMethod.Get(),
 		Duration: duration,
 	})
+}
+
+func (gf *gsFs) SignGet(ctx context.Context, url *urlz.Url, duration time.Duration) (string, error) {
+	return gf.Sign(ctx, fszsignmethod.SignMethodGet, url, duration)
 }
 
 func (gf *gsFs) SignPut(ctx context.Context, url *urlz.Url, duration time.Duration) (string, error) {
-	return gcssign(ctx, url, &SignOptions{
-		Method:   "PUT",
-		Duration: duration,
-	})
+	return gf.Sign(ctx, fszsignmethod.SignMethodPut, url, duration)
 }
 
 func (gf *gsFs) SignDelete(ctx context.Context, url *urlz.Url, duration time.Duration) (string, error) {
-	return gcssign(ctx, url, &SignOptions{
-		Method:   "DELETE",
-		Duration: duration,
-	})
+	return gf.Sign(ctx, fszsignmethod.SignMethodDelete, url, duration)
 }
 
 func (gf *gsFs) Copy(ctx context.Context, src *urlz.Url, dest *urlz.Url) error {

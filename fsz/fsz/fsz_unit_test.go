@@ -11,11 +11,13 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/infinity6-ai/gox/commonz/encz/enczb64"
 	"github.com/infinity6-ai/gox/commonz/filez"
 	"github.com/infinity6-ai/gox/commonz/urlz"
 	"github.com/infinity6-ai/gox/fsz/fsz"
+	"github.com/infinity6-ai/gox/fsz/fsz/fszsignmethod"
 	"github.com/stretchr/testify/require"
 )
 
@@ -849,5 +851,40 @@ func TestUnitFszListerAndFinderWalker(t *testing.T) {
 		require.NoError(t, err)
 		require.NotEmpty(t, decoded.String())
 		require.Equal(t, "file1.txt", decoded.String())
+	})
+}
+
+func TestUnitFileFsSign(t *testing.T) {
+	ctx := context.Background()
+	u := urlz.MustParse("file:///tmp/test.txt")
+
+	type testScenario struct {
+		method fszsignmethod.SignMethod
+	}
+
+	check := func(t *testing.T, s testScenario) {
+		t.Helper()
+		signedURL, err := fsz.Sign(ctx, s.method, u, 5*time.Minute)
+		require.Error(t, err)
+		require.ErrorIs(t, err, fsz.ErrUnsupportedOperation)
+		require.Empty(t, signedURL)
+	}
+
+	t.Run("Sign GET returns ErrUnsupportedOperation", func(t *testing.T) {
+		check(t, testScenario{
+			method: fszsignmethod.SignMethodGet,
+		})
+	})
+
+	t.Run("Sign PUT returns ErrUnsupportedOperation", func(t *testing.T) {
+		check(t, testScenario{
+			method: fszsignmethod.SignMethodPut,
+		})
+	})
+
+	t.Run("Sign DELETE returns ErrUnsupportedOperation", func(t *testing.T) {
+		check(t, testScenario{
+			method: fszsignmethod.SignMethodDelete,
+		})
 	})
 }
