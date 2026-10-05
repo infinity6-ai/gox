@@ -7,7 +7,6 @@ import (
 	"github.com/infinity6-ai/gox/commonz/constraintz/optionalz"
 	"github.com/infinity6-ai/gox/commonz/validation"
 	"github.com/infinity6-ai/gox/commonz/validation/checked"
-	"go.code.infinity6.ai/sdkgo/genjsz/jstypez"
 )
 
 var validMethods = []string{
@@ -25,7 +24,7 @@ var (
 )
 
 func (*SignMethod) JSType() string {
-	return jstypez.TypString
+	return "string"
 }
 
 func (d SignMethod) Optional() optionalz.Optional[string] {

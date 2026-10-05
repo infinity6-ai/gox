@@ -8,7 +8,6 @@ require (
 	github.com/infinity6-ai/gox/versionz v0.0.41
 	github.com/spf13/cobra v1.10.2
 	github.com/stretchr/testify v1.12.1
-	go.code.infinity6.ai/sdkgo v0.0.29
 	google.golang.org/api v0.299.0
 )
 
