@@ -3,7 +3,6 @@ package fszsignmethod_test
 import (
 	"testing"
 
-	"github.com/infinity6-ai/gox/commonz/validation/checked"
 	"github.com/infinity6-ai/gox/commonz/validation/checked/tuchecked"
 	"github.com/infinity6-ai/gox/fsz/fsz/fszsignmethod"
 )
@@ -11,9 +10,7 @@ import (
 func TestUnitChecked(t *testing.T) {
 	tuchecked.Check(tuchecked.Table[*fszsignmethod.SignMethod, string]{
 		Create: func(v string) *fszsignmethod.SignMethod {
-			var ret fszsignmethod.SignMethod
-			checked.MustSet(&ret, v)
-			return &ret
+			return new(fszsignmethod.MustParse(v))
 		},
 		Valids: []string{
 			fszsignmethod.SignMethodGet.Get(),

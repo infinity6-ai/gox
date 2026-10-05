@@ -17,9 +17,9 @@ var validMethods = []string{
 type SignMethod checked.Value[string]
 
 var (
-	SignMethodGet    = mustParse(http.MethodGet)
-	SignMethodPut    = mustParse(http.MethodPut)
-	SignMethodDelete = mustParse(http.MethodDelete)
+	SignMethodGet    = MustParse(http.MethodGet)
+	SignMethodPut    = MustParse(http.MethodPut)
+	SignMethodDelete = MustParse(http.MethodDelete)
 )
 
 func (d SignMethod) Optional() optionalz.Optional[string] {
@@ -46,7 +46,7 @@ func (d SignMethod) Validate(v string) error {
 	return validation.OneOf(validMethods, v, "unsupported method")
 }
 
-func mustParse(id string) SignMethod {
+func MustParse(id string) SignMethod {
 	var ret SignMethod
 	checked.MustSet(&ret, id)
 	return ret
