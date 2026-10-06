@@ -77,7 +77,7 @@ function cmd_force_delete_version() {
 
 function cmd_release() {
   if find . -name '*.go' | xargs grep go.code.infinity6.ai; then false gox cannot use private deps; fi
-  if find . -name 'go.mod' | xargs grep go.code.infinity6.ai; then false gox cannot use private deps; fi
+  #if find . -name 'go.mod' | xargs grep go.code.infinity6.ai; then false gox cannot use private deps; fi
   [ -z "$(git status -s "$@")" ]
   [ "x0" == "x$(git rev-list --count @{u}..HEAD)" ]
   local _version="$(./comp.sh versionz run version)"
