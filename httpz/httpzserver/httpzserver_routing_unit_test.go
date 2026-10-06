@@ -132,4 +132,17 @@ func TestUnitRouting(t *testing.T) {
 			handlerShouldBeCalled: false,
 		})
 	})
+
+	t.Run("Path with catch-all parameter suffix", func(t *testing.T) {
+		check(t, testScenario{
+			registeredMethod:      "GET",
+			registeredPath:        "/a/{p1}/b/{p2}/{p3...}",
+			requestMethod:         "GET",
+			requestPath:           "/a/val1/b/val2/extra/path/segments",
+			expectedStatus:        http.StatusOK,
+			expectedBody:          "ok",
+			expectedParams:        map[string]string{"p1": "val1", "p2": "val2", "p3": "extra/path/segments"},
+			handlerShouldBeCalled: true,
+		})
+	})
 }

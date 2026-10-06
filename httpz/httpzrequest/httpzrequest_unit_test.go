@@ -45,6 +45,16 @@ func TestUnitRequestFormat(t *testing.T) {
 		})
 	})
 
+	t.Run("Format with catch-all parameter", func(t *testing.T) {
+		check(t, testScenario{
+			name:         "Format with catch-all parameter",
+			method:       "GET",
+			pathPattern:  "/a/{p1}/b/{p2}/{p3...}",
+			params:       map[string]string{"p1": "val1", "p2": "val2", "p3": "extra/path/segments"},
+			expectedPath: "/a/val1/b/val2/extra/path/segments",
+		})
+	})
+
 	t.Run("Format without parameters", func(t *testing.T) {
 		check(t, testScenario{
 			name:         "Format without parameters",

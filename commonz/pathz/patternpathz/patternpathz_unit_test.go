@@ -103,6 +103,34 @@ func TestUnitParse(t *testing.T) {
 			expectedNames:    map[string]int{"id": 1, "post_id": 3},
 		})
 	})
+
+	t.Run("Valid pattern with catch-all parameter", func(t *testing.T) {
+		check(t, testScenario{
+			name:             "Valid pattern with catch-all parameter",
+			patternStr:       "/a/{p1}/b/{p2}/{p3...}",
+			expectErr:        false,
+			expectedSegments: []string{"", "p1", "", "p2", "p3"},
+			expectedNames:    map[string]int{"p1": 1, "p2": 3, "p3": 4},
+		})
+	})
+
+	t.Run("Catch-all parameter not at the end of pattern", func(t *testing.T) {
+		check(t, testScenario{
+			name:       "Catch-all parameter not at the end of pattern",
+			patternStr: "/a/{p1...}/b",
+			expectErr:  true,
+			errMsg:     "catch-all parameter '{p1...}' must be at the end of the pattern",
+		})
+	})
+
+	t.Run("Pattern with empty parameter name before dots", func(t *testing.T) {
+		check(t, testScenario{
+			name:       "Pattern with empty parameter name before dots",
+			patternStr: "/a/{...}",
+			expectErr:  true,
+			errMsg:     "path pattern has empty parameter name before '...' in segment 1",
+		})
+	})
 }
 
 func TestUnitFormat(t *testing.T) {
@@ -192,6 +220,36 @@ func TestUnitFormat(t *testing.T) {
 			params:       map[string]string{"p1": "value1"},
 			expectErr:    false,
 			expectedPath: "/a/value1",
+		})
+	})
+
+	t.Run("Format with catch-all parameter", func(t *testing.T) {
+		check(t, testScenario{
+			name:         "Catch-all parameter with multiple segments",
+			patternStr:   "/a/{p1}/b/{p2}/{p3...}",
+			params:       map[string]string{"p1": "1", "p2": "2", "p3": "x/y/z"},
+			expectErr:    false,
+			expectedPath: "/a/1/b/2/x/y/z",
+		})
+	})
+
+	t.Run("Format with catch-all parameter trailing slash", func(t *testing.T) {
+		check(t, testScenario{
+			name:         "Catch-all parameter with trailing slash",
+			patternStr:   "/a/{p1}/b/{p2}/{p3...}",
+			params:       map[string]string{"p1": "1", "p2": "2", "p3": "x/y/z/"},
+			expectErr:    false,
+			expectedPath: "/a/1/b/2/x/y/z/",
+		})
+	})
+
+	t.Run("Format with empty catch-all parameter", func(t *testing.T) {
+		check(t, testScenario{
+			name:         "Catch-all parameter empty",
+			patternStr:   "/a/{p1}/b/{p2}/{p3...}",
+			params:       map[string]string{"p1": "1", "p2": "2", "p3": ""},
+			expectErr:    false,
+			expectedPath: "/a/1/b/2",
 		})
 	})
 }
@@ -394,6 +452,39 @@ func TestUnitParsePath(t *testing.T) {
 			pathToParse:    "a/b/c",
 			expectErr:      false,
 			expectedParams: map[string]string{},
+			expectedSuffix: nil,
+		})
+	})
+
+	t.Run("Parse with catch-all parameter multiple segments", func(t *testing.T) {
+		check(t, testScenario{
+			name:           "Catch-all parameter multiple segments",
+			patternStr:     "/a/{p1}/b/{p2}/{p3...}",
+			pathToParse:    "/a/1/b/2/x/y/z",
+			expectErr:      false,
+			expectedParams: map[string]string{"p1": "1", "p2": "2", "p3": "x/y/z"},
+			expectedSuffix: nil,
+		})
+	})
+
+	t.Run("Parse with catch-all parameter trailing slash", func(t *testing.T) {
+		check(t, testScenario{
+			name:           "Catch-all parameter trailing slash",
+			patternStr:     "/a/{p1}/b/{p2}/{p3...}",
+			pathToParse:    "/a/1/b/2/x/y/z/",
+			expectErr:      false,
+			expectedParams: map[string]string{"p1": "1", "p2": "2", "p3": "x/y/z/"},
+			expectedSuffix: nil,
+		})
+	})
+
+	t.Run("Parse with catch-all parameter empty suffix", func(t *testing.T) {
+		check(t, testScenario{
+			name:           "Catch-all parameter empty suffix",
+			patternStr:     "/a/{p1}/b/{p2}/{p3...}",
+			pathToParse:    "/a/1/b/2",
+			expectErr:      false,
+			expectedParams: map[string]string{"p1": "1", "p2": "2", "p3": ""},
 			expectedSuffix: nil,
 		})
 	})

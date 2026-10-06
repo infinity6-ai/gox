@@ -12,6 +12,7 @@ type Pattern struct {
 	original *pathz.Path    // a/{p1}/b/{p2}
 	segments []string       // not empty on path param positions
 	names    map[string]int // set of parameter names to its position
+	catchAll int            // position of catch-all parameter, -1 if none
 }
 
 func MustParse(pattern *pathz.Path) *Pattern {
@@ -26,6 +27,7 @@ func Parse(pattern *pathz.Path) (*Pattern, error) {
 		original: pattern,
 		segments: make([]string, len(parts)),
 		names:    make(map[string]int),
+		catchAll: -1,
 	}
 
 	for i, part := range parts {
@@ -34,6 +36,17 @@ func Parse(pattern *pathz.Path) (*Pattern, error) {
 			if name == "" {
 				return nil, fmt.Errorf("path pattern has empty parameter name in segment %d", i)
 			}
+			if strings.HasSuffix(name, "...") {
+				if i != len(parts)-1 {
+					return nil, fmt.Errorf("catch-all parameter '%s' must be at the end of the pattern", part)
+				}
+				name = strings.TrimSuffix(name, "...")
+				if name == "" {
+					return nil, fmt.Errorf("path pattern has empty parameter name before '...' in segment %d", i)
+				}
+				p.catchAll = i
+			}
+
 			if _, ok := p.names[name]; ok {
 				return nil, fmt.Errorf("path pattern has duplicate parameter name '%s'", name)
 			}
