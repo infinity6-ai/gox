@@ -17,6 +17,12 @@ import (
 	"github.com/infinity6-ai/gox/httpz/httpzrequest"
 )
 
+// DefaultCheckRedirect is the default redirect policy function that stops redirect execution
+// and causes the client to return the redirect response directly.
+func DefaultCheckRedirect(req *http.Request, via []*http.Request) error {
+	return http.ErrUseLastResponse
+}
+
 var defaultHttpClient = &http.Client{
 	Timeout: 10 * time.Second,
 	Transport: &http.Transport{
@@ -24,12 +30,19 @@ var defaultHttpClient = &http.Client{
 		MaxIdleConnsPerHost: 100,
 		IdleConnTimeout:     90 * time.Second,
 	},
+	CheckRedirect: DefaultCheckRedirect,
 }
 
 // Options configures a Client instance.
 type Options struct {
 	// BaseUrl is the default base URL for relative request paths.
 	BaseUrl *urlz.Url
+	// CheckRedirect optionally specifies the policy for handling redirects.
+	// If nil and FollowRedirects is false, redirects are not followed.
+	CheckRedirect func(req *http.Request, via []*http.Request) error
+	// FollowRedirects specifies whether the client should follow redirects when CheckRedirect is nil.
+	// Defaults to false (redirects are not followed).
+	FollowRedirects bool
 	// GetClient optionally supplies a custom *http.Client for a given context.
 	GetClient func(ctx context.Context) *http.Client
 }
@@ -54,6 +67,23 @@ func New(ctx context.Context, opts Options) *Client {
 	}
 	if opts.GetClient != nil {
 		ret.client = opts.GetClient(ctx)
+		if opts.CheckRedirect != nil {
+			clientCopy := *ret.client
+			clientCopy.CheckRedirect = opts.CheckRedirect
+			ret.client = &clientCopy
+		} else if !opts.FollowRedirects && ret.client.CheckRedirect == nil {
+			clientCopy := *ret.client
+			clientCopy.CheckRedirect = DefaultCheckRedirect
+			ret.client = &clientCopy
+		}
+	} else if opts.CheckRedirect != nil || opts.FollowRedirects {
+		clientCopy := *defaultHttpClient
+		if opts.CheckRedirect != nil {
+			clientCopy.CheckRedirect = opts.CheckRedirect
+		} else if opts.FollowRedirects {
+			clientCopy.CheckRedirect = nil
+		}
+		ret.client = &clientCopy
 	}
 	return ret
 }
