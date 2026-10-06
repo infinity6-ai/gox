@@ -4,9 +4,9 @@ go 1.26.1
 
 require (
 	cloud.google.com/go/bigquery v1.84.0
-	github.com/infinity6-ai/gox/commonz v0.0.41
-	github.com/infinity6-ai/gox/fsz v0.0.41
-	github.com/infinity6-ai/gox/versionz v0.0.41
+	github.com/infinity6-ai/gox/commonz v0.0.42
+	github.com/infinity6-ai/gox/fsz v0.0.42
+	github.com/infinity6-ai/gox/versionz v0.0.42
 	github.com/spf13/cobra v1.10.2
 	github.com/stretchr/testify v1.12.1
 	google.golang.org/api v0.299.0
@@ -47,7 +47,6 @@ require (
 	github.com/spf13/pflag v1.0.9 // indirect
 	github.com/spiffe/go-spiffe/v2 v2.8.1 // indirect
 	github.com/zeebo/xxh3 v1.0.2 // indirect
-	go.code.infinity6.ai/sdkgo v0.0.29 // indirect
 	go.opentelemetry.io/auto/sdk v1.2.1 // indirect
 	go.opentelemetry.io/contrib/detectors/gcp v1.44.0 // indirect
 	go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc v0.68.0 // indirect
