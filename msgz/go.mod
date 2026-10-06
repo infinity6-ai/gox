@@ -5,7 +5,7 @@ go 1.26.1
 require (
 	cloud.google.com/go/pubsub v1.51.1
 	github.com/infinity6-ai/gox/commonz v0.0.41
-	github.com/infinity6-ai/gox/fsz v0.0.41
+	github.com/infinity6-ai/gox/fsz v0.0.40
 	github.com/infinity6-ai/gox/versionz v0.0.41
 	github.com/spf13/cobra v1.10.2
 	github.com/stretchr/testify v1.12.1
@@ -41,7 +41,6 @@ require (
 	github.com/planetscale/vtprotobuf v0.6.1-0.20240319094008-0393e58bdf10 // indirect
 	github.com/spf13/pflag v1.0.9 // indirect
 	github.com/spiffe/go-spiffe/v2 v2.8.1 // indirect
-	go.code.infinity6.ai/sdkgo v0.0.29 // indirect
 	go.opencensus.io v0.24.0 // indirect
 	go.opentelemetry.io/auto/sdk v1.2.1 // indirect
 	go.opentelemetry.io/contrib/detectors/gcp v1.44.0 // indirect
