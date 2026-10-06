@@ -247,4 +247,12 @@ func TestUnitParse(t *testing.T) {
 			expectedParents:        -1,
 		})
 	})
+
+	t.Run("multiple dots", func(t *testing.T) {
+		check(t, testScenario{
+			input:           "/a/b/c...x",
+			expectedParts:   []string{"a", "b", "c...x"},
+			expectedParents: -1,
+		})
+	})
 }
