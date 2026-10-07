@@ -200,6 +200,12 @@ func Copy(ctx context.Context, src *urlz.Url, dest *urlz.Url) error {
 	return prv.Copy(ctx, src, dest)
 }
 
+func MustSign(ctx context.Context, signMethod fszsignmethod.SignMethod, url *urlz.Url, duration time.Duration) string {
+	ret, err := Sign(ctx, signMethod, url, duration)
+	errorz.Check(err)
+	return ret
+}
+
 func Sign(ctx context.Context, signMethod fszsignmethod.SignMethod, url *urlz.Url, duration time.Duration) (string, error) {
 	prv, err := getProvider(url.Scheme)
 	if err != nil {
