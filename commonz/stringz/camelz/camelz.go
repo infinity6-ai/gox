@@ -44,5 +44,8 @@ func (p *Parsed) QU() string {
 
 // To kebab lower string
 func (p *Parsed) QL() string {
+	if p == nil {
+		return ""
+	}
 	return strings.Join(p.parts, "-")
 }
