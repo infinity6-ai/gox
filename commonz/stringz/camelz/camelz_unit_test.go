@@ -184,10 +184,10 @@ func TestUnitParse(t *testing.T) {
 		})
 	})
 
-	t.Run("empty string error", func(t *testing.T) {
+	t.Run("empty string returns nil parts", func(t *testing.T) {
 		check(t, testScenario{
 			input:         "",
-			expectedError: "empty string",
+			expectedParts: nil,
 		})
 	})
 
@@ -343,6 +343,19 @@ func TestUnitTransform(t *testing.T) {
 			expectedStr: "a",
 		})
 	})
+
+	t.Run("from empty string", func(t *testing.T) {
+		check(t, testScenario{
+			input:       "",
+			expectedP:   "",
+			expectedC:   "",
+			expectedSL:  "",
+			expectedSU:  "",
+			expectedQL:  "",
+			expectedQU:  "",
+			expectedStr: "",
+		})
+	})
 }
 
 func TestUnitNilAndEmpty(t *testing.T) {
@@ -393,7 +406,7 @@ func TestUnitPAndMustParse(t *testing.T) {
 
 	t.Run("MustParse helper panic on error", func(t *testing.T) {
 		require.Panics(t, func() {
-			camelz.MustParse("")
+			camelz.MustParse("bad string with spaces")
 		})
 	})
 }

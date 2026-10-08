@@ -45,11 +45,12 @@ func MustParse(s string) *Parsed {
 //   - kebab-case:  "foo-bar"     -> ["foo", "bar"]
 //   - Mixed:       "a_b-c-pUi"   -> ["a", "b", "c", "p", "ui"]
 //
-// Returns ErrUnsupported if s is empty, contains invalid characters (spaces, symbols),
-// or contains only delimiters without alphanumeric parts.
+// Returns ErrUnsupported if s contains invalid characters (spaces, symbols)
+// or contains only delimiters without alphanumeric parts. An empty string returns
+// a *Parsed with nil parts and no error.
 func Parse(s string) (*Parsed, error) {
 	if s == "" {
-		return nil, fmt.Errorf("%w: empty string", ErrUnsupported)
+		return &Parsed{parts: nil}, nil
 	}
 
 	parts := make([]string, 0, 4)
@@ -105,7 +106,7 @@ func Parse(s string) (*Parsed, error) {
 
 // Parts returns a copy of the parsed lowercase word parts.
 func (p *Parsed) Parts() []string {
-	if p == nil {
+	if p == nil || p.parts == nil {
 		return nil
 	}
 	ret := make([]string, len(p.parts))
