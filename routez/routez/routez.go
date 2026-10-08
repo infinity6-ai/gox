@@ -42,7 +42,7 @@ func Register(s *httpzserver.Server, services ...apiz.Service) {
 		spec := service.Api().ApiSpec()
 		s.AddHandler(spec.Method, spec.Path, func(ctx context.Context, resp httpzserver.Resp, req *httpzrequest.Req, params map[string]string) {
 			service := service.New()
-			refs := service.Api().GetDataRefs()
+			refs := service.Api().ApiDataRefs()
 			parseRequest(refs, req, params)
 			status, err := service.Handler(ctx)
 			errorz.Check(err)

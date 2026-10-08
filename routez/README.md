@@ -24,7 +24,7 @@ The `routez` package simplifies API definition by allowing developers to declare
 ### Core Concepts for API Implementation
 
 1.  **The `*ReqResp` Struct**: A central struct that encapsulates all incoming request data (path parameters, query parameters, headers, body) and outgoing response data (headers, body).
-2.  **The `GetDataRefs()` Method**: A method on the `*ReqResp` struct that maps its fields to the `apiz.DataRefs` structure, which `routez` uses internally to bind HTTP request/response elements.
+2.  **The `ApiDataRefs()` Method**: A method on the `*ReqResp` struct that maps its fields to the `apiz.DataRefs` structure, which `routez` uses internally to bind HTTP request/response elements.
 3.  **The `Schema()` Function**: Defines the API's contract using `schemaz.Api`, specifying HTTP method, path, and detailed schemas for request and response elements.
 4.  **The `Api()` Function**: Combines the defined schema with the API's business logic (handler function) into a single `apiz.Api` object, ready for registration with an HTTP server.
 
@@ -59,12 +59,12 @@ type FractionReqResp struct {
 }
 ```
 
-### Example: `GetDataRefs()` Method
+### Example: `ApiDataRefs()` Method
 
 This method is crucial for `routez` to understand how to populate the `FractionReqResp` struct from an incoming HTTP request and extract data for the HTTP response. It returns an `apiz.DataRefs` object, where each field points to a specific part of the `FractionReqResp` struct.
 
 ```go
-func (f *FractionReqResp) GetDataRefs() *apiz.DataRefs {
+func (f *FractionReqResp) ApiDataRefs() *apiz.DataRefs {
 	if f.Req == nil {
 		f.Req = &FractionReq{}
 	}
@@ -212,8 +212,8 @@ The `apiclientz` package provides a way to generate type-safe client functions f
 ### Core Concepts for Client Generation
 
 1.  **`apiclientz.Get()` Function**: This function takes an `httpzclient.Client` and an `apiz.Api` definition to return a client-side handler function. This handler takes the same `*ReqResp` struct as the server-side API handler, allowing for a consistent API interface.
-2.  **`parseRequest()`**: (Internal) Converts the `*ReqResp` struct into an `httpzrequest.Req` suitable for sending over HTTP. It uses the `GetDataRefs()` method of the `*ReqResp` struct to correctly map data to path parameters, query parameters, headers, and the request body.
-3.  **`writeResponse()`**: (Internal) Populates the `Resp` fields of the `*ReqResp` struct with data received from the HTTP response. It uses `GetDataRefs()` to correctly map response headers and the response body back into the `*ReqResp` struct.
+2.  **`parseRequest()`**: (Internal) Converts the `*ReqResp` struct into an `httpzrequest.Req` suitable for sending over HTTP. It uses the `ApiDataRefs()` method of the `*ReqResp` struct to correctly map data to path parameters, query parameters, headers, and the request body.
+3.  **`writeResponse()`**: (Internal) Populates the `Resp` fields of the `*ReqResp` struct with data received from the HTTP response. It uses `ApiDataRefs()` to correctly map response headers and the response body back into the `*ReqResp` struct.
 
 ### Example: Using `apiclientz.Get()`
 

@@ -48,7 +48,7 @@ func (f *FractionApi) ApiSpec() apiz.ApiSpec {
 	}
 }
 
-func (f *FractionApi) GetDataRefs() *apiz.DataRefs {
+func (f *FractionApi) ApiDataRefs() *apiz.DataRefs {
 	if f.Req == nil {
 		f.Req = &FractionReq{}
 	}

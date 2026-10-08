@@ -45,7 +45,7 @@ func Do(ctx context.Context, client *httpzclient.Client, reqResp apiz.Api) (int,
 }
 
 func writeResponse[T apiz.Api](nResp *httpzclient.Resp, api T) error {
-	refs := api.GetDataRefs()
+	refs := api.ApiDataRefs()
 	if refs.RespHeaders != nil {
 		convertedHeaders := converter.Header2Json(nResp.Headers)
 		_, err := jsonz.Copy(convertedHeaders, refs.RespHeaders)
@@ -65,7 +65,7 @@ func writeResponse[T apiz.Api](nResp *httpzclient.Resp, api T) error {
 func parseRequest[T apiz.Api](ctx context.Context, api T) (*httpzrequest.Req, io.Closer, error) {
 	dfz := deferz.New(ctx)
 	defer dfz.Close()
-	refs := api.GetDataRefs()
+	refs := api.ApiDataRefs()
 	var p map[string]string
 	var q, h map[string][]string
 	if refs.PathParams != nil {

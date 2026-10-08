@@ -24,7 +24,7 @@ type ApiSpec struct {
 
 type Api interface {
 	ApiSpec() ApiSpec
-	GetDataRefs() *DataRefs
+	ApiDataRefs() *DataRefs
 }
 
 type Handler[T Api] func(ctx context.Context, reqResp T) (int, error)
@@ -43,7 +43,7 @@ type ServiceT[A Api] interface {
 func Do[S ServiceT[A], A Api](ctx context.Context, service S, reqResp A) (int, error) {
 	service = service.New().(S)
 	service.SetApi(reqResp)
-	reqResp.GetDataRefs()
+	reqResp.ApiDataRefs()
 
 	ret, err := service.Handler(ctx)
 	return ret, err
