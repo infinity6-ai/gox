@@ -3,6 +3,7 @@ package camelz
 import (
 	"errors"
 	"fmt"
+	"strings"
 )
 
 var ErrUnsupported = errors.New("unsupported")
@@ -43,5 +44,5 @@ func (p *Parsed) QU() string {
 
 // To kebab lower string
 func (p *Parsed) QL() string {
-	panic("implement")
+	return strings.Join(p.parts, "-")
 }
