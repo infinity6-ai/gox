@@ -369,8 +369,6 @@ func TestUnitNilAndEmpty(t *testing.T) {
 		require.Equal(t, "", p.QU())
 		require.Equal(t, "", p.String())
 		require.Equal(t, 0, p.Len())
-		require.Equal(t, "", p.Get(0))
-		require.Equal(t, "", p.Get(-1))
 		require.Nil(t, p.Parts())
 	})
 
@@ -384,8 +382,6 @@ func TestUnitNilAndEmpty(t *testing.T) {
 		require.Equal(t, "", p.QU())
 		require.Equal(t, "", p.String())
 		require.Equal(t, 0, p.Len())
-		require.Equal(t, "", p.Get(0))
-		require.Equal(t, "", p.Get(-1))
 		require.Empty(t, p.Parts())
 	})
 }
@@ -401,21 +397,21 @@ func TestUnitGetAndLen(t *testing.T) {
 		require.Equal(t, "ui", p.Get(4))
 	})
 
-	t.Run("out of bounds returns empty string", func(t *testing.T) {
+	t.Run("out of bounds panics", func(t *testing.T) {
 		p := camelz.P("foo_bar")
 		require.Equal(t, 2, p.Len())
 		require.Equal(t, "foo", p.Get(0))
 		require.Equal(t, "bar", p.Get(1))
-		require.Equal(t, "", p.Get(-1))
-		require.Equal(t, "", p.Get(2))
-		require.Equal(t, "", p.Get(100))
+		require.Panics(t, func() { p.Get(-1) })
+		require.Panics(t, func() { p.Get(2) })
+		require.Panics(t, func() { p.Get(100) })
 	})
 
-	t.Run("empty parsed returns 0 len and empty string for get", func(t *testing.T) {
+	t.Run("empty parsed panics on get", func(t *testing.T) {
 		p := camelz.P("")
 		require.Equal(t, 0, p.Len())
-		require.Equal(t, "", p.Get(0))
-		require.Equal(t, "", p.Get(-1))
+		require.Panics(t, func() { p.Get(0) })
+		require.Panics(t, func() { p.Get(-1) })
 	})
 }
 

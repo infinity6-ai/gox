@@ -122,11 +122,8 @@ func (p *Parsed) Len() int {
 	return len(p.parts)
 }
 
-// Get returns the part at index idx, or an empty string if p is nil or idx is out of bounds.
+// Get returns the part at index idx. Panics if idx is out of bounds.
 func (p *Parsed) Get(idx int) string {
-	if p == nil || idx < 0 || idx >= len(p.parts) {
-		return ""
-	}
 	return p.parts[idx]
 }
 
