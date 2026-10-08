@@ -4,6 +4,8 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+
+	"github.com/infinity6-ai/gox/commonz/errorz"
 )
 
 var ErrUnsupported = errors.New("unsupported")
@@ -12,9 +14,15 @@ type Parsed struct {
 	parts []string
 }
 
+func P(s string) *Parsed {
+	ret, err := Parse(s)
+	errorz.Check(err)
+	return ret
+}
+
 // Parse cammel, snake lower or kebab lower into lower case parts
 // Conercase: ABC = []string{"b", "b", "c"}
-func P(s string) (*Parsed, error) {
+func Parse(s string) (*Parsed, error) {
 	return nil, fmt.Errorf("%w: %s", ErrUnsupported, s)
 }
 
