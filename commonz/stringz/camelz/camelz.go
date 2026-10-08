@@ -114,6 +114,22 @@ func (p *Parsed) Parts() []string {
 	return ret
 }
 
+// Len returns the number of parts in the parsed identifier.
+func (p *Parsed) Len() int {
+	if p == nil {
+		return 0
+	}
+	return len(p.parts)
+}
+
+// Get returns the part at index idx, or an empty string if p is nil or idx is out of bounds.
+func (p *Parsed) Get(idx int) string {
+	if p == nil || idx < 0 || idx >= len(p.parts) {
+		return ""
+	}
+	return p.parts[idx]
+}
+
 // String returns the lower_snake_case representation of the parsed parts (equivalent to SL).
 func (p *Parsed) String() string {
 	return p.SL()
