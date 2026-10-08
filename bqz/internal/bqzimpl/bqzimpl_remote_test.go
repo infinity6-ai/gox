@@ -7,6 +7,7 @@ import (
 	"testing"
 	"time"
 
+	"cloud.google.com/go/bigquery"
 	"github.com/infinity6-ai/gox/bqz/bqz"
 	"github.com/infinity6-ai/gox/bqz/bqzdataset"
 	"github.com/infinity6-ai/gox/bqz/bqzerr"
@@ -17,29 +18,33 @@ import (
 	"github.com/infinity6-ai/gox/fsz/fsz"
 	"github.com/infinity6-ai/gox/fsz/fszjson"
 	"github.com/stretchr/testify/require"
-	"cloud.google.com/go/bigquery"
 )
 
 func TestRemoteExternalTable(t *testing.T) {
 	ctx := context.Background()
 
+	type ComplexField struct {
+		Id *string `json:"id" bigquery:"id,nullable"`
+	}
+
 	type SalesHistory struct {
-		ID                 string `json:"id" bigquery:"id"`
-		IngestedAt         string `json:"ingested_at" bigquery:"ingested_at"`
-		AggrQt             string `json:"aggr_qt" bigquery:"aggr_qt"`
-		GroupId            string `json:"group_id" bigquery:"group_id"`
-		ItemDs             string `json:"item_ds" bigquery:"item_ds"`
-		ItemId             string `json:"item_id" bigquery:"item_id"`
-		XConsumerPrice     string `json:"x_consumer_price" bigquery:"x_consumer_price"`
-		XPosPrice          string `json:"x_pos_price" bigquery:"x_pos_price"`
-		XRegulatedMaxPrice string `json:"x_regulated_max_price" bigquery:"x_regulated_max_price"`
+		ID                 string        `json:"id" bigquery:"id"`
+		IngestedAt         string        `json:"ingested_at" bigquery:"ingested_at"`
+		AggrQt             string        `json:"aggr_qt" bigquery:"aggr_qt"`
+		GroupId            string        `json:"group_id" bigquery:"group_id"`
+		ItemDs             string        `json:"item_ds" bigquery:"item_ds"`
+		ItemId             string        `json:"item_id" bigquery:"item_id"`
+		XConsumerPrice     string        `json:"x_consumer_price" bigquery:"x_consumer_price"`
+		XPosPrice          string        `json:"x_pos_price" bigquery:"x_pos_price"`
+		XRegulatedMaxPrice string        `json:"x_regulated_max_price" bigquery:"x_regulated_max_price"`
+		ComplexField       *ComplexField `json:"complex_field" bigquery:"complex_field,nullable"`
 	}
 
 	u := urlz.MustParse("gs://i6-rs-contint-tmp/testds/mytable/a=1/b=x/part.json.gz")
 	fsz.MustDelete(ctx, u)
 
 	fszjson.MustUploadSlice(ctx, []SalesHistory{
-		{ID: "a", ItemId: "item_a"},
+		{ID: "a", ItemId: "item_a", ComplexField: &ComplexField{Id: new("id")}},
 		{ID: "b", ItemId: "item_b"},
 	}, fszjson.UploadOptions{
 		Url:  u,
