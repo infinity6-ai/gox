@@ -1,3 +1,5 @@
+// Package camelz provides case conversion and parsing utilities for strings across
+// camelCase, PascalCase, snake_case, and kebab-case conventions.
 package camelz
 
 import (
@@ -9,105 +11,99 @@ import (
 	"github.com/infinity6-ai/gox/commonz/errorz"
 )
 
+// ErrUnsupported indicates that an input string is empty, contains invalid characters,
+// or does not yield any valid word parts.
 var ErrUnsupported = errors.New("unsupported")
 
+// Parsed holds the normalized lowercase word parts of a parsed identifier.
 type Parsed struct {
 	parts []string
 }
 
+// P parses s into a *Parsed instance, panicking via errorz.Check if parsing fails.
 func P(s string) *Parsed {
 	ret, err := Parse(s)
 	errorz.Check(err)
 	return ret
 }
 
+// MustParse parses s into a *Parsed instance, panicking if parsing fails. It is an alias for P.
 func MustParse(s string) *Parsed {
 	return P(s)
 }
 
-// Parse camel, pascal, snake lower or kebab lower into lower case parts.
-// Cornercase: ABC = []string{"a", "b", "c"}
+// Parse splits an input string into normalized lowercase word parts in a single pass.
+//
+// Splitting occurs at any hyphen ('-'), underscore ('_'), or uppercase Unicode letter.
+// Consecutive or surrounding delimiters are ignored, and mixed conventions are supported.
+//
+// Examples:
+//   - camelCase:   "fooBar"      -> ["foo", "bar"]
+//   - PascalCase:  "FooBar"      -> ["foo", "bar"]
+//   - Upper-run:   "ABC"         -> ["a", "b", "c"]
+//   - snake_case:  "foo_bar"     -> ["foo", "bar"]
+//   - kebab-case:  "foo-bar"     -> ["foo", "bar"]
+//   - Mixed:       "a_b-c-pUi"   -> ["a", "b", "c", "p", "ui"]
+//
+// Returns ErrUnsupported if s is empty, contains invalid characters (spaces, symbols),
+// or contains only delimiters without alphanumeric parts.
 func Parse(s string) (*Parsed, error) {
 	if s == "" {
 		return nil, fmt.Errorf("%w: empty string", ErrUnsupported)
 	}
 
-	hasUnderscore := strings.Contains(s, "_")
-	hasHyphen := strings.Contains(s, "-")
+	parts := make([]string, 0, 4)
+	start := -1
+	hasUpper := false
 
-	if hasUnderscore && hasHyphen {
-		return nil, fmt.Errorf("%w: mixed delimiters: %s", ErrUnsupported, s)
-	}
-
-	if hasUnderscore {
-		return parseDelimited(s, '_')
-	}
-
-	if hasHyphen {
-		return parseDelimited(s, '-')
-	}
-
-	return parseCamelOrPascal(s)
-}
-
-func parseDelimited(s string, sep rune) (*Parsed, error) {
-	runes := []rune(s)
-	if !unicode.IsLower(runes[0]) {
-		return nil, fmt.Errorf("%w: delimited lower string must start with a lowercase letter: %s", ErrUnsupported, s)
-	}
-	if runes[len(runes)-1] == sep {
-		return nil, fmt.Errorf("%w: trailing delimiter: %s", ErrUnsupported, s)
-	}
-
-	for _, r := range runes {
-		if r == sep {
-			continue
-		}
-		if !unicode.IsLower(r) && !unicode.IsDigit(r) {
-			return nil, fmt.Errorf("%w: invalid character in lower delimited string %q: %c", ErrUnsupported, s, r)
-		}
-	}
-
-	parts := strings.Split(s, string(sep))
-	for _, part := range parts {
-		if part == "" {
-			return nil, fmt.Errorf("%w: consecutive delimiters in %q", ErrUnsupported, s)
-		}
-	}
-
-	return &Parsed{parts: parts}, nil
-}
-
-func parseCamelOrPascal(s string) (*Parsed, error) {
-	runes := []rune(s)
-	if !unicode.IsLetter(runes[0]) {
-		return nil, fmt.Errorf("%w: must start with a letter: %s", ErrUnsupported, s)
-	}
-
-	for _, r := range runes {
-		if !unicode.IsLetter(r) && !unicode.IsDigit(r) {
-			return nil, fmt.Errorf("%w: invalid character in camel/pascal string %q: %c", ErrUnsupported, s, r)
-		}
-	}
-
-	var parts []string
-	var cur strings.Builder
-	for _, r := range runes {
-		if unicode.IsUpper(r) {
-			if cur.Len() > 0 {
-				parts = append(parts, strings.ToLower(cur.String()))
-				cur.Reset()
+	for i, r := range s {
+		switch {
+		case r == '-' || r == '_':
+			if start != -1 {
+				part := s[start:i]
+				if hasUpper {
+					part = strings.ToLower(part)
+				}
+				parts = append(parts, part)
+				start = -1
+				hasUpper = false
 			}
+		case unicode.IsUpper(r):
+			if start != -1 {
+				part := s[start:i]
+				if hasUpper {
+					part = strings.ToLower(part)
+				}
+				parts = append(parts, part)
+			}
+			start = i
+			hasUpper = true
+		case unicode.IsLower(r) || unicode.IsDigit(r):
+			if start == -1 {
+				start = i
+				hasUpper = false
+			}
+		default:
+			return nil, fmt.Errorf("%w: invalid character in %q: %c", ErrUnsupported, s, r)
 		}
-		cur.WriteRune(r)
 	}
-	if cur.Len() > 0 {
-		parts = append(parts, strings.ToLower(cur.String()))
+
+	if start != -1 {
+		part := s[start:]
+		if hasUpper {
+			part = strings.ToLower(part)
+		}
+		parts = append(parts, part)
+	}
+
+	if len(parts) == 0 {
+		return nil, fmt.Errorf("%w: no valid parts in %q", ErrUnsupported, s)
 	}
 
 	return &Parsed{parts: parts}, nil
 }
 
+// Parts returns a copy of the parsed lowercase word parts.
 func (p *Parsed) Parts() []string {
 	if p == nil {
 		return nil
@@ -117,11 +113,12 @@ func (p *Parsed) Parts() []string {
 	return ret
 }
 
+// String returns the lower kebab-case representation of the parsed parts (equivalent to QL).
 func (p *Parsed) String() string {
 	return p.QL()
 }
 
-// To camel string
+// C formats the parts into camelCase (e.g. "fooBar", "fooBarBaz").
 func (p *Parsed) C() string {
 	if p == nil || len(p.parts) == 0 {
 		return ""
@@ -134,7 +131,7 @@ func (p *Parsed) C() string {
 	return b.String()
 }
 
-// To pascal string
+// P formats the parts into PascalCase (e.g. "FooBar", "FooBarBaz").
 func (p *Parsed) P() string {
 	if p == nil || len(p.parts) == 0 {
 		return ""
@@ -146,7 +143,7 @@ func (p *Parsed) P() string {
 	return b.String()
 }
 
-// To snake upper string
+// SU formats the parts into UPPER_SNAKE_CASE (e.g. "FOO_BAR").
 func (p *Parsed) SU() string {
 	if p == nil || len(p.parts) == 0 {
 		return ""
@@ -154,7 +151,7 @@ func (p *Parsed) SU() string {
 	return strings.ToUpper(strings.Join(p.parts, "_"))
 }
 
-// To snake lower string
+// SL formats the parts into lower_snake_case (e.g. "foo_bar").
 func (p *Parsed) SL() string {
 	if p == nil || len(p.parts) == 0 {
 		return ""
@@ -162,7 +159,7 @@ func (p *Parsed) SL() string {
 	return strings.Join(p.parts, "_")
 }
 
-// To kebab upper string
+// QU formats the parts into UPPER-KEBAB-CASE (e.g. "FOO-BAR").
 func (p *Parsed) QU() string {
 	if p == nil || len(p.parts) == 0 {
 		return ""
@@ -170,7 +167,7 @@ func (p *Parsed) QU() string {
 	return strings.ToUpper(strings.Join(p.parts, "-"))
 }
 
-// To kebab lower string
+// QL formats the parts into lower-kebab-case (e.g. "foo-bar").
 func (p *Parsed) QL() string {
 	if p == nil || len(p.parts) == 0 {
 		return ""

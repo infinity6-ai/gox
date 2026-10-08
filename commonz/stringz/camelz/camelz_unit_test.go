@@ -30,6 +30,13 @@ func TestUnitParse(t *testing.T) {
 		require.Equal(t, s.expectedParts, got.Parts())
 	}
 
+	t.Run("mixed case and delimiters a_b-c-pUi", func(t *testing.T) {
+		check(t, testScenario{
+			input:         "a_b-c-pUi",
+			expectedParts: []string{"a", "b", "c", "p", "ui"},
+		})
+	})
+
 	t.Run("PascalCase single word", func(t *testing.T) {
 		check(t, testScenario{
 			input:         "Foo",
@@ -142,6 +149,41 @@ func TestUnitParse(t *testing.T) {
 		})
 	})
 
+	t.Run("mixed delimiters foo_bar-baz", func(t *testing.T) {
+		check(t, testScenario{
+			input:         "foo_bar-baz",
+			expectedParts: []string{"foo", "bar", "baz"},
+		})
+	})
+
+	t.Run("snake with uppercase foo_Bar", func(t *testing.T) {
+		check(t, testScenario{
+			input:         "foo_Bar",
+			expectedParts: []string{"foo", "bar"},
+		})
+	})
+
+	t.Run("kebab with uppercase foo-Bar", func(t *testing.T) {
+		check(t, testScenario{
+			input:         "foo-Bar",
+			expectedParts: []string{"foo", "bar"},
+		})
+	})
+
+	t.Run("leading and trailing delimiters", func(t *testing.T) {
+		check(t, testScenario{
+			input:         "_foo-bar_",
+			expectedParts: []string{"foo", "bar"},
+		})
+	})
+
+	t.Run("consecutive delimiters", func(t *testing.T) {
+		check(t, testScenario{
+			input:         "foo__bar--baz",
+			expectedParts: []string{"foo", "bar", "baz"},
+		})
+	})
+
 	t.Run("empty string error", func(t *testing.T) {
 		check(t, testScenario{
 			input:         "",
@@ -156,100 +198,30 @@ func TestUnitParse(t *testing.T) {
 		})
 	})
 
-	t.Run("starts with digit error", func(t *testing.T) {
+	t.Run("contains symbol error", func(t *testing.T) {
 		check(t, testScenario{
-			input:         "123",
-			expectedError: "must start with a letter",
+			input:         "foo@bar",
+			expectedError: "invalid character",
 		})
 	})
 
-	t.Run("snake starts with digit error", func(t *testing.T) {
+	t.Run("only delimiters error", func(t *testing.T) {
 		check(t, testScenario{
-			input:         "1_foo",
-			expectedError: "delimited lower string must start with a lowercase letter",
-		})
-	})
-
-	t.Run("kebab starts with digit error", func(t *testing.T) {
-		check(t, testScenario{
-			input:         "1-foo",
-			expectedError: "delimited lower string must start with a lowercase letter",
-		})
-	})
-
-	t.Run("snake with uppercase error", func(t *testing.T) {
-		check(t, testScenario{
-			input:         "foo_Bar",
-			expectedError: "invalid character in lower delimited string",
-		})
-	})
-
-	t.Run("kebab with uppercase error", func(t *testing.T) {
-		check(t, testScenario{
-			input:         "foo-Bar",
-			expectedError: "invalid character in lower delimited string",
-		})
-	})
-
-	t.Run("mixed delimiters error", func(t *testing.T) {
-		check(t, testScenario{
-			input:         "foo_bar-baz",
-			expectedError: "mixed delimiters",
-		})
-	})
-
-	t.Run("snake leading delimiter error", func(t *testing.T) {
-		check(t, testScenario{
-			input:         "_foo",
-			expectedError: "delimited lower string must start with a lowercase letter",
-		})
-	})
-
-	t.Run("snake trailing delimiter error", func(t *testing.T) {
-		check(t, testScenario{
-			input:         "foo_",
-			expectedError: "trailing delimiter",
-		})
-	})
-
-	t.Run("kebab leading delimiter error", func(t *testing.T) {
-		check(t, testScenario{
-			input:         "-foo",
-			expectedError: "delimited lower string must start with a lowercase letter",
-		})
-	})
-
-	t.Run("kebab trailing delimiter error", func(t *testing.T) {
-		check(t, testScenario{
-			input:         "foo-",
-			expectedError: "trailing delimiter",
-		})
-	})
-
-	t.Run("snake consecutive delimiter error", func(t *testing.T) {
-		check(t, testScenario{
-			input:         "foo__bar",
-			expectedError: "consecutive delimiters",
-		})
-	})
-
-	t.Run("kebab consecutive delimiter error", func(t *testing.T) {
-		check(t, testScenario{
-			input:         "foo--bar",
-			expectedError: "consecutive delimiters",
+			input:         "---___---",
+			expectedError: "no valid parts",
 		})
 	})
 }
 
 func TestUnitTransform(t *testing.T) {
 	type testScenario struct {
-		input      string
-		expectedP  string
-		expectedC  string
-		expectedSL string
-		expectedSU string
-		expectedQL string
-		expectedQU string
+		input       string
+		expectedP   string
+		expectedC   string
+		expectedSL  string
+		expectedSU  string
+		expectedQL  string
+		expectedQU  string
 		expectedStr string
 	}
 
@@ -267,6 +239,19 @@ func TestUnitTransform(t *testing.T) {
 		require.Equal(t, s.expectedQU, p.QU())
 		require.Equal(t, s.expectedStr, p.String())
 	}
+
+	t.Run("from a_b-c-pUi", func(t *testing.T) {
+		check(t, testScenario{
+			input:       "a_b-c-pUi",
+			expectedP:   "ABCPUi",
+			expectedC:   "aBCPUi",
+			expectedSL:  "a_b_c_p_ui",
+			expectedSU:  "A_B_C_P_UI",
+			expectedQL:  "a-b-c-p-ui",
+			expectedQU:  "A-B-C-P-UI",
+			expectedStr: "a-b-c-p-ui",
+		})
+	})
 
 	t.Run("from snake lower", func(t *testing.T) {
 		check(t, testScenario{
@@ -388,14 +373,15 @@ func TestUnitNilAndEmpty(t *testing.T) {
 
 func TestUnitPAndMustParse(t *testing.T) {
 	t.Run("P helper valid", func(t *testing.T) {
-		p := camelz.P("foo_bar")
+		p := camelz.P("a_b-c-pUi")
 		require.NotNil(t, p)
-		require.Equal(t, "FooBar", p.P())
+		require.Equal(t, "ABCPUi", p.P())
+		require.Equal(t, []string{"a", "b", "c", "p", "ui"}, p.Parts())
 	})
 
 	t.Run("P helper panic on error", func(t *testing.T) {
 		require.Panics(t, func() {
-			camelz.P("invalid format")
+			camelz.P("invalid format with space")
 		})
 	})
 
