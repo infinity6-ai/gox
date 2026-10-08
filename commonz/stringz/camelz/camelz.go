@@ -1,6 +1,8 @@
 package camelz
 
-type Parsed []string
+type Parsed struct {
+	parts []string
+}
 
 // Parse cammel, snake or kebab into lower case parts
 // Conercase: ABC = []string{"b", "b", "c"}
