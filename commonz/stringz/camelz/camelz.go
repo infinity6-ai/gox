@@ -4,9 +4,9 @@ type Parsed struct {
 	parts []string
 }
 
-// Parse cammel, snake or kebab into lower case parts
+// Parse cammel, snake lower or kebab lower into lower case parts
 // Conercase: ABC = []string{"b", "b", "c"}
-func P(s string) Parsed {
+func P(s string) (Parsed, error) {
 	panic("implement it")
 }
 
