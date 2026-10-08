@@ -113,9 +113,9 @@ func (p *Parsed) Parts() []string {
 	return ret
 }
 
-// String returns the lower kebab-case representation of the parsed parts (equivalent to QL).
+// String returns the lower_snake_case representation of the parsed parts (equivalent to SL).
 func (p *Parsed) String() string {
-	return p.QL()
+	return p.SL()
 }
 
 // C formats the parts into camelCase (e.g. "fooBar", "fooBarBaz").

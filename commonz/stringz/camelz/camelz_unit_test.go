@@ -249,7 +249,7 @@ func TestUnitTransform(t *testing.T) {
 			expectedSU:  "A_B_C_P_UI",
 			expectedQL:  "a-b-c-p-ui",
 			expectedQU:  "A-B-C-P-UI",
-			expectedStr: "a-b-c-p-ui",
+			expectedStr: "a_b_c_p_ui",
 		})
 	})
 
@@ -262,7 +262,7 @@ func TestUnitTransform(t *testing.T) {
 			expectedSU:  "FOO_BAR",
 			expectedQL:  "foo-bar",
 			expectedQU:  "FOO-BAR",
-			expectedStr: "foo-bar",
+			expectedStr: "foo_bar",
 		})
 	})
 
@@ -275,7 +275,7 @@ func TestUnitTransform(t *testing.T) {
 			expectedSU:  "FOO_BAR",
 			expectedQL:  "foo-bar",
 			expectedQU:  "FOO-BAR",
-			expectedStr: "foo-bar",
+			expectedStr: "foo_bar",
 		})
 	})
 
@@ -288,7 +288,7 @@ func TestUnitTransform(t *testing.T) {
 			expectedSU:  "FOO_BAR",
 			expectedQL:  "foo-bar",
 			expectedQU:  "FOO-BAR",
-			expectedStr: "foo-bar",
+			expectedStr: "foo_bar",
 		})
 	})
 
@@ -301,7 +301,7 @@ func TestUnitTransform(t *testing.T) {
 			expectedSU:  "FOO_BAR",
 			expectedQL:  "foo-bar",
 			expectedQU:  "FOO-BAR",
-			expectedStr: "foo-bar",
+			expectedStr: "foo_bar",
 		})
 	})
 
@@ -314,7 +314,7 @@ func TestUnitTransform(t *testing.T) {
 			expectedSU:  "A_B_C",
 			expectedQL:  "a-b-c",
 			expectedQU:  "A-B-C",
-			expectedStr: "a-b-c",
+			expectedStr: "a_b_c",
 		})
 	})
 
