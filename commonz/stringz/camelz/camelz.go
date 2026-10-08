@@ -18,9 +18,6 @@ func P(s string) (*Parsed, error) {
 }
 
 func (p *Parsed) String() string {
-	if p == nil {
-		return ""
-	}
 	return p.QL()
 }
 
