@@ -17,6 +17,10 @@ func P(s string) (*Parsed, error) {
 	return nil, fmt.Errorf("%w: %s", ErrUnsupported, s)
 }
 
+func (p *Parsed) String() string {
+	return p.QL()
+}
+
 // To cammel string
 func (p *Parsed) C() string {
 	panic("implement")
