@@ -4,8 +4,8 @@ go 1.26.1
 
 require (
 	cloud.google.com/go/storage v1.66.0
-	github.com/infinity6-ai/gox/commonz v0.0.43
-	github.com/infinity6-ai/gox/versionz v0.0.43
+	github.com/infinity6-ai/gox/commonz v0.0.44
+	github.com/infinity6-ai/gox/versionz v0.0.44
 	github.com/spf13/cobra v1.10.2
 	github.com/stretchr/testify v1.12.1
 	google.golang.org/api v0.299.0
