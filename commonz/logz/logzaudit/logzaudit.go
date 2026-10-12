@@ -9,15 +9,15 @@ import (
 	"net/url"
 )
 
-// LARGE_BODY_THREASHOLD defines the maximum size in bytes (64KB) of the head
+// LargeBodyThreashold defines the maximum size in bytes (64KB) of the head
 // portion of a request or response body. If the body exceeds this threshold,
 // it is flagged as large.
-const LARGE_BODY_THREASHOLD = 64 * 1024
+const LargeBodyThreashold = 64 * 1024
 
-// TAIL_BODY_THREASHOLD defines the maximum size in bytes (1KB) of the tail
+// TailBodyThreashold defines the maximum size in bytes (1KB) of the tail
 // snippet extracted from the bottom (end) of the non-head content when the body
-// is large (exceeds LARGE_BODY_THREASHOLD).
-const TAIL_BODY_THREASHOLD = 1 * 1024
+// is large (exceeds LargeBodyThreashold).
+const TailBodyThreashold = 1 * 1024
 
 // AuditService represents the identity and version of the service
 // involved in the audited interaction.
@@ -30,15 +30,15 @@ type AuditService struct {
 type AuditBody struct {
 	// Size is the total uncompressed size of the body in bytes.
 	Size int `json:"size"`
-	// Large indicates whether the total body size exceeds LARGE_BODY_THREASHOLD.
+	// Large indicates whether the total body size exceeds LargeBodyThreashold.
 	Large bool `json:"large"`
 	// CompressedSize is the size of the compressed body in bytes, if applicable.
 	CompressedSize int `json:"compressedSize"`
-	// Tail contains up to TAIL_BODY_THREASHOLD bytes sliced from the bottom (end)
-	// of the remaining non-head content when the body exceeds LARGE_BODY_THREASHOLD.
+	// Tail contains up to TailBodyThreashold bytes sliced from the bottom (end)
+	// of the remaining non-head content when the body exceeds LargeBodyThreashold.
 	// It is omitted if the body is not large.
 	Tail []byte `json:"tail,omitempty"`
-	// Payload is always the head of the body, limited to LARGE_BODY_THREASHOLD bytes.
+	// Payload is always the head of the body, limited to LargeBodyThreashold bytes.
 	// It exists and is populated unless no content exists.
 	Payload []byte `json:"payload,omitempty"`
 }
