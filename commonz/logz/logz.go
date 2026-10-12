@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"reflect"
 
+	"github.com/infinity6-ai/gox/commonz/logz/logzaudit"
 	"github.com/infinity6-ai/gox/commonz/logz/logzlast"
 	"github.com/infinity6-ai/gox/commonz/logz/logzprovider"
 	"github.com/infinity6-ai/gox/commonz/logz/logzspec"
@@ -17,6 +18,10 @@ type Logger interface {
 	Info(ctx context.Context, op string, params map[string]any, errs ...error)
 	Debug(ctx context.Context, op string, params map[string]any, errs ...error)
 	Appender() string
+}
+
+type AuditLogger interface {
+	AuditReqResp(ctx context.Context, entry *logzaudit.AuditEntryReqResp)
 }
 
 type Collector interface {
@@ -59,6 +64,15 @@ func (l *loggerImpl) Error(ctx context.Context, op string, params map[string]any
 
 func (l *loggerImpl) Info(ctx context.Context, op string, params map[string]any, errs ...error) {
 	l.send(ctx, logzspec.NewEntry(1, l.appender, logzspec.INFO, op, params, errs...))
+}
+
+func (l *loggerImpl) AuditReqResp(ctx context.Context, entryReqResp *logzaudit.AuditEntryReqResp) {
+	logEntry := logzspec.NewEntry(1, l.appender, logzspec.INFO, "audit-req-resp", nil)
+	logEntry.Stack = ""
+	logEntry.Audit = &logzaudit.Audit{
+		ReqResp: entryReqResp,
+	}
+	l.send(ctx, logEntry)
 }
 
 func Create(logger any) Logger {

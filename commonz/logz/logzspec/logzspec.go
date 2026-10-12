@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/infinity6-ai/gox/commonz/jsonz"
+	"github.com/infinity6-ai/gox/commonz/logz/logzaudit"
 )
 
 type ProviderLogger func(ctx context.Context, entry *Entry)
@@ -27,6 +28,7 @@ type Entry struct {
 	Origin    string            `json:"org,omitempty"`
 	Level     Level             `json:"lvl,omitempty"`
 	Operation string            `json:"opr,omitempty"`
+	Audit     *logzaudit.Audit  `json:"aud,omitempty"`
 	Params    map[string]string `json:"prm,omitempty"`
 	Error     string            `json:"err,omitempty"`
 	Stack     string            `json:"stk,omitempty"`
