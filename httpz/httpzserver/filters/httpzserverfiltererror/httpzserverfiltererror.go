@@ -20,13 +20,11 @@ import (
 
 type tlogger logz.Type
 
-// Logger is the default logger instance used by ErrorFilter.
-var Logger = logz.Create(tlogger(true))
-var logger = Logger
+var logger = logz.Create(tlogger(true))
 
 // Collector returns the log collector for capturing and asserting error entries in tests.
 func Collector() func() []*logzspec.Entry {
-	return Logger.(logz.Collector).Collector()
+	return logger.(logz.Collector).Collector()
 }
 
 // Filter recovers panics in downstream handlers, logs them, and formats structured error responses.

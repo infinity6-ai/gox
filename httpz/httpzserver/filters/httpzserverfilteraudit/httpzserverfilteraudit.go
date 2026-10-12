@@ -21,13 +21,11 @@ import (
 
 type tlogger logz.Type
 
-// Logger is the default logger instance used by AuditFilter.
-var Logger = logz.Create(tlogger(true))
-var logger = Logger
+var logger = logz.Create(tlogger(true))
 
 // Collector returns the log collector for capturing and asserting audit entries in tests.
 func Collector() func() []*logzspec.Entry {
-	return Logger.(logz.Collector).Collector()
+	return logger.(logz.Collector).Collector()
 }
 
 // Options configures the audit filter middleware.
