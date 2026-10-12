@@ -1,3 +1,7 @@
+// Package logzaudit provides structures and constants for defining audit log entries,
+// specifically focusing on HTTP request and response auditing. These structures are
+// used to capture and format detailed information about service interactions for
+// auditing and logging purposes.
 package logzaudit
 
 import (
@@ -5,21 +9,43 @@ import (
 	"net/url"
 )
 
+// LARGE_BODY_THREASHOLD defines the maximum size in bytes (64KB) of the head
+// portion of a request or response body. If the body exceeds this threshold,
+// it is flagged as large.
 const LARGE_BODY_THREASHOLD = 64 * 1024
 
+// TAIL_BODY_THREASHOLD defines the maximum size in bytes (1KB) of the tail
+// snippet extracted from the bottom (end) of the non-head content when the body
+// is large (exceeds LARGE_BODY_THREASHOLD).
+const TAIL_BODY_THREASHOLD = 1 * 1024
+
+// AuditService represents the identity and version of the service
+// involved in the audited interaction.
 type AuditService struct {
 	Name    string `json:"name,omitempty"`
 	Version string `json:"version,omitempty"`
 }
 
+// AuditBody encapsulates the details of a request or response body being audited.
 type AuditBody struct {
-	Size           int    `json:"size"`
-	Large          bool   `json:"large"`
-	CompressedSize int    `json:"compressedSize"`
-	Tail           []byte `json:"tail,omitempty"`
-	Payload        []byte `json:"payload,omitempty"`
+	// Size is the total uncompressed size of the body in bytes.
+	Size int `json:"size"`
+	// Large indicates whether the total body size exceeds LARGE_BODY_THREASHOLD.
+	Large bool `json:"large"`
+	// CompressedSize is the size of the compressed body in bytes, if applicable.
+	CompressedSize int `json:"compressedSize"`
+	// Tail contains up to TAIL_BODY_THREASHOLD bytes sliced from the bottom (end)
+	// of the remaining non-head content when the body exceeds LARGE_BODY_THREASHOLD.
+	// It is omitted if the body is not large.
+	Tail []byte `json:"tail,omitempty"`
+	// Payload is always the head of the body, limited to LARGE_BODY_THREASHOLD bytes.
+	// It exists and is populated unless no content exists.
+	Payload []byte `json:"payload,omitempty"`
 }
 
+// AuditResponse captures the details of an HTTP response for auditing,
+// including its status code, headers, body information, and the time
+// it was created.
 type AuditResponse struct {
 	CreatedAt int64       `json:"createdAt,omitempty"`
 	Status    int         `json:"status,omitempty"`
@@ -27,6 +53,9 @@ type AuditResponse struct {
 	Body      *AuditBody  `json:"body,omitempty"`
 }
 
+// AuditRequest captures the details of an HTTP request for auditing,
+// including the host, method, path, query parameters, headers,
+// body information, and the time it was received or created.
 type AuditRequest struct {
 	CreatedAt int64       `json:"createdAt,omitempty"`
 	Host      string      `json:"host,omitempty"`
@@ -37,6 +66,9 @@ type AuditRequest struct {
 	Body      *AuditBody  `json:"body,omitempty"`
 }
 
+// AuditEntryReqResp represents a complete audited interaction, tying
+// together a unique identifier, the service information, the incoming
+// request, and the outgoing response.
 type AuditEntryReqResp struct {
 	Id      string         `json:"id,omitempty"`
 	Service *AuditService  `json:"service,omitempty"`
@@ -44,6 +76,8 @@ type AuditEntryReqResp struct {
 	Resp    *AuditResponse `json:"resp,omitempty"`
 }
 
+// Audit serves as a top-level wrapper for different types of audit
+// records. Currently, it supports request/response audit entries.
 type Audit struct {
 	ReqResp *AuditEntryReqResp `json:"reqResp,omitempty"`
 }
