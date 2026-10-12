@@ -16,8 +16,8 @@ type AuditBody struct {
 	Size           int    `json:"size"`
 	Large          bool   `json:"large"`
 	CompressedSize int    `json:"compressedSize"`
-	Tail           []byte `json:"tail"`
-	Payload        []byte `json:"payload"`
+	Tail           []byte `json:"tail,omitempty"`
+	Payload        []byte `json:"payload,omitempty"`
 }
 
 type AuditResponse struct {
