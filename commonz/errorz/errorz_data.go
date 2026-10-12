@@ -1,6 +1,9 @@
 package errorz
 
-import "errors"
+import (
+	"errors"
+	"fmt"
+)
 
 // Data is the structured, machine-readable data of a StructuredError.
 type Data struct {
@@ -10,6 +13,35 @@ type Data struct {
 	Business bool   `json:"business,omitempty"`
 	Cause    string `json:"cause"`
 	Stack    string `json:"stack,omitempty"`
+}
+
+// Internal returns a sanitized copy of Data suitable for non-business internal errors,
+// ensuring no sensitive internal details leak to the caller.
+func (d *Data) Internal() *Data {
+	return &Data{
+		Code:     500,
+		Name:     "InternalError",
+		Cause:    "InternalError",
+		Business: false,
+	}
+}
+
+// From converts any error or panic value into structured *Data.
+// If err is nil, it returns a generic internal error Data.
+// If err is a StructuredError, it returns its Data with stack trace cleared.
+// Otherwise, it wraps err as an internal error with stack trace cleared.
+func From(err any) *Data {
+	if err == nil {
+		return (&Data{}).Internal()
+	}
+	e, ok := err.(error)
+	if !ok {
+		e = fmt.Errorf("%v", err)
+	}
+	se := As(e)
+	d := se.Data()
+	d.Stack = ""
+	return d
 }
 
 // BusinessData sanitizes an error for business-level display. It strips sensitive

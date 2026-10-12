@@ -87,3 +87,42 @@ func TestUnitBusinessDataFunction_WrappedNonBusinessStructuredError(t *testing.T
 	assert.Equal(t, errors.New("InternalError").Error(), result.Cause)
 	assert.Empty(t, result.Stack) // Stack is always empty in BusinessData output
 }
+
+func TestUnitFrom(t *testing.T) {
+	t.Run("nil error", func(t *testing.T) {
+		d := errorz.From(nil)
+		assert.NotNil(t, d)
+		assert.Equal(t, 500, d.Code)
+		assert.Equal(t, "InternalError", d.Name)
+	})
+
+	t.Run("string panic value", func(t *testing.T) {
+		d := errorz.From("something went wrong")
+		assert.NotNil(t, d)
+		assert.False(t, d.Business)
+		assert.Equal(t, 500, d.Code)
+		assert.Equal(t, "InternalError", d.Name)
+		assert.Equal(t, "something went wrong", d.Cause)
+	})
+
+	t.Run("business structured error", func(t *testing.T) {
+		err := errorz.Detail(404, "NotFound", "user-1", true, errors.New("user not found"))
+		d := errorz.From(err)
+		assert.NotNil(t, d)
+		assert.True(t, d.Business)
+		assert.Equal(t, 404, d.Code)
+		assert.Equal(t, "NotFound", d.Name)
+		assert.Equal(t, "user-1", d.Payload)
+		assert.Equal(t, "user not found", d.Cause)
+	})
+
+	t.Run("Data.Internal sanitizes", func(t *testing.T) {
+		err := errorz.Detail(500, "DBError", "secret", false, errors.New("connection failed"))
+		d := errorz.From(err)
+		internal := d.Internal()
+		assert.Equal(t, 500, internal.Code)
+		assert.Equal(t, "InternalError", internal.Name)
+		assert.Equal(t, "InternalError", internal.Cause)
+		assert.False(t, internal.Business)
+	})
+}

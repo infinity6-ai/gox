@@ -174,7 +174,7 @@ func TestUnitGzipFilterStandalone(t *testing.T) {
 			requestMethod: "POST",
 			requestPath:   "/spoofed-replace",
 			requestHeaders: map[string]string{
-				"Content-Encoding":                             "gzip",
+				"Content-Encoding": "gzip",
 				httpzserverfiltergzip.HeaderContentEncodingWas: "fake-value",
 			},
 			requestBody:          gzipCompress(t, plainPayload),
