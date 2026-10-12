@@ -20,10 +20,8 @@ import (
 // ErrStatus is returned when an HTTP response status code indicates an error (outside the 200-299 range).
 var ErrStatus = errors.New("Http Status Error")
 
-var errStatus = ErrStatus
-
 // HEADER_ERRORZ is the HTTP header key indicating an errorz structured error response.
-const HEADER_ERRORZ = "X-Errorz"
+const HEADER_ERRORZ = "X-I6-Error"
 
 // ValidateRespSuccess verifies that the HTTP response has a 2xx status code.
 // It returns ErrStatus if the status code is less than 200 or greater than or equal to 300.
