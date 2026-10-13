@@ -33,6 +33,10 @@ func (a *AuditFilter) WriterFilter() httpzserver.Filter {
 	return func(ctx context.Context, resp httpzserver.Resp, req *httpzrequest.Req, next httpzserver.Handler) {
 		checker.Nil(ctx.Value(k), "wrong")
 		entry := &Entry{}
+
+		entry.ReqResp.Req = &logzaudit.AuditRequest{}
+		entry.ReqResp.Resp = &logzaudit.AuditResponse{}
+
 		req.Body = entry.CreateReqBody(req.Body)
 		defer func() {
 			logger.(logz.AuditLogger).AuditReqResp(ctx, entry.BuildReqResp())

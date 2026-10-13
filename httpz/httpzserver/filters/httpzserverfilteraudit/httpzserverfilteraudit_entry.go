@@ -36,7 +36,8 @@ func setBody(auditBody *logzaudit.AuditBody, compressed bool, raw ioz.Countable,
 }
 
 func (e *Entry) BuildReqResp() *logzaudit.AuditEntryReqResp {
-
+	e.ReqResp.Req.Body = &logzaudit.AuditBody{}
+	e.ReqResp.Resp.Body = &logzaudit.AuditBody{}
 	setBody(e.ReqResp.Req.Body, e.ReqCompressed, e.rawReqBody, e.headTailReqBody)
 	setBody(e.ReqResp.Resp.Body, e.RespCompressed, e.rawRespBody, e.headTailRespBody)
 
