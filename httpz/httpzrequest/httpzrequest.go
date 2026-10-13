@@ -16,6 +16,8 @@ import (
 
 // Req represents an HTTP request definition with structured path or URL, query parameters, headers, and body.
 type Req struct {
+	// Request Id. Server-side only.
+	Id string
 	// Method is the HTTP method (e.g. GET, POST).
 	Method string
 	// Path is the parsed relative or absolute request path.
