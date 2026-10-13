@@ -15,6 +15,7 @@ import (
 	"github.com/infinity6-ai/gox/commonz/logz"
 	"github.com/infinity6-ai/gox/commonz/logz/logzaudit"
 	"github.com/infinity6-ai/gox/commonz/logz/logzspec"
+	"github.com/infinity6-ai/gox/httpz/httpz"
 	"github.com/infinity6-ai/gox/httpz/httpzrequest"
 	"github.com/infinity6-ai/gox/httpz/httpzserver"
 )
@@ -116,7 +117,10 @@ func (f *filterImpl) filter(ctx context.Context, resp httpzserver.Resp, req *htt
 			reqHeaders = req.Headers.Clone()
 		}
 
-		reqId := req.Headers.Get("X-Request-Id")
+		reqId := req.Headers.Get(httpz.HeaderReqId)
+		if reqId == "" {
+			reqId = req.Headers.Get("X-Request-Id")
+		}
 		if reqId == "" {
 			reqId = idgen.String()
 		}
