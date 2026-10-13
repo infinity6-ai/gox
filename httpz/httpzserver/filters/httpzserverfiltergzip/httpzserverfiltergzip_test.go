@@ -37,7 +37,7 @@ func gzipDecompress(t *testing.T, data []byte) []byte {
 	return decompressed
 }
 
-func TestUnitGzipFilterStandalone(t *testing.T) {
+func TestManualGzipFilterStandalone(t *testing.T) {
 	type testScenario struct {
 		name                   string
 		requestMethod          string
