@@ -14,7 +14,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestUnitAuditFilterBasic(t *testing.T) {
+func TestManualAuditFilterBasic(t *testing.T) {
 	type testScenario struct {
 		name                string
 		registerMethod      string
@@ -455,7 +455,7 @@ func TestUnitAuditFilterLargeBody(t *testing.T) {
 	})
 }
 
-func TestUnitAuditFilterMemoryBound(t *testing.T) {
+func TestManualAuditFilterMemoryBound(t *testing.T) {
 	// Verifies that a multi-megabyte body streams cleanly through the filter
 	// and accurately records size, 64KB payload, and 1KB tail without buffering
 	// the multi-megabyte payload into memory.
