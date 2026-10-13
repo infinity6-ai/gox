@@ -43,6 +43,16 @@ type AuditBody struct {
 	Payload []byte `json:"payload,omitempty"`
 }
 
+func (a *AuditBody) SetPayload(head []byte) {
+	if len(head) >= LargeBodyThreashold {
+		a.Large = true
+		a.Payload = head[:LargeBodyThreashold]
+	} else {
+		a.Large = false
+		a.Payload = head
+	}
+}
+
 // AuditResponse captures the details of an HTTP response for auditing,
 // including its status code, headers, body information, and the time
 // it was created.
