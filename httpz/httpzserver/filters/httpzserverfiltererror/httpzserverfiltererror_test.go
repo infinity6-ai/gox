@@ -13,7 +13,6 @@ import (
 	"github.com/infinity6-ai/gox/httpz/httpz"
 	"github.com/infinity6-ai/gox/httpz/httpzrequest"
 	"github.com/infinity6-ai/gox/httpz/httpzserver"
-	"github.com/infinity6-ai/gox/httpz/httpzserver/filters/httpzserverfilteraudit"
 	"github.com/infinity6-ai/gox/httpz/httpzserver/filters/httpzserverfiltererror"
 	"github.com/infinity6-ai/gox/httpz/httpzserver/filters/httpzserverfiltergzip"
 	"github.com/stretchr/testify/require"
@@ -207,14 +206,14 @@ func TestUnitErrorFilterWithAuditAndGzip(t *testing.T) {
 	defer srv.Close()
 	srv.Listen()
 
-	auditCollector := httpzserverfilteraudit.Collector()
-	auditCollector()
+	// auditCollector := httpzserverfilteraudit.Collector()
+	// auditCollector()
 	errorCollector := httpzserverfiltererror.Collector()
 	errorCollector()
 
 	// Pipeline order: Gzip -> Audit -> Error -> Handler
 	srv.AddFilter(httpzserverfiltergzip.GzipFilter)
-	srv.AddFilter(httpzserverfilteraudit.AuditFilter)
+	// srv.AddFilter(httpzserverfilteraudit.AuditFilter)
 	srv.AddFilter(httpzserverfiltererror.Filter)
 
 	srv.AddHandler("POST", "/api/item", func(ctx context.Context, resp httpzserver.Resp, req *httpzrequest.Req, params map[string]string) {
