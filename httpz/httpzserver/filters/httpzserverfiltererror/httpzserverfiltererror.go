@@ -52,7 +52,7 @@ func Filter(ctx context.Context, resp httpzserver.Resp, req *httpzrequest.Req, n
 		logger.Error(ctx, "http handler panic", map[string]any{"err": formattedError, "stack": formattedStack, "resp_started": responseStarted}, errError)
 
 		if responseStarted {
-			panic(fmt.Errorf("response already started: %w", errError))
+			panic("we got a panic, but response was already started")
 		}
 
 		code, payload := formatErrorz(r)
