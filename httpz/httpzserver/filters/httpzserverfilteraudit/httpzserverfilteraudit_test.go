@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/infinity6-ai/gox/commonz/logz/logzaudit"
+	"github.com/infinity6-ai/gox/httpz/httpz"
 	"github.com/infinity6-ai/gox/httpz/httpzrequest"
 	"github.com/infinity6-ai/gox/httpz/httpzserver"
 	"github.com/infinity6-ai/gox/httpz/httpzserver/filters/httpzserverfilteraudit"
@@ -105,7 +106,7 @@ func TestUnitAuditFilterBasic(t *testing.T) {
 		require.NotEmpty(t, audit.Id)
 
 		// Verify custom request ID propagation if provided
-		if customID, ok := s.requestHeaders["X-Request-Id"]; ok {
+		if customID, ok := s.requestHeaders[httpz.HeaderReqId]; ok {
 			require.Equal(t, customID, audit.Id)
 		}
 
@@ -215,13 +216,31 @@ func TestUnitAuditFilterBasic(t *testing.T) {
 			requestQuery:   "?q=test&limit=10",
 			requestHeaders: map[string]string{
 				"X-Custom-Header": "header-value",
-				"X-Request-Id":    "req-uuid-12345",
+				httpz.HeaderReqId: "req-uuid-12345",
 			},
 			handlerStatus:       http.StatusOK,
 			handlerHeaders:      map[string]string{"X-Server-Resp": "resp-value"},
 			handlerBody:         []byte("search-results"),
 			expectedStatus:      http.StatusOK,
 			expectedRespBody:    []byte("search-results"),
+			expectedReqBodyNil:  true,
+			expectedRespBodyNil: false,
+		})
+	})
+
+	t.Run("Request with X-I6-Req-Id header propagates to audit log", func(t *testing.T) {
+		check(t, testScenario{
+			registerMethod: "GET",
+			registerPath:   "/items",
+			requestMethod:  "GET",
+			requestPath:    "/items",
+			requestHeaders: map[string]string{
+				httpz.HeaderReqId: "custom-i6-req-id-789",
+			},
+			handlerStatus:       http.StatusOK,
+			handlerBody:         []byte("items-list"),
+			expectedStatus:      http.StatusOK,
+			expectedRespBody:    []byte("items-list"),
 			expectedReqBodyNil:  true,
 			expectedRespBodyNil: false,
 		})
