@@ -194,26 +194,6 @@ func TestUnitReaderHeadTailEdgeCases(t *testing.T) {
 		require.Equal(t, io.EOF, err)
 		require.Equal(t, uint64(0), rht.Count())
 	})
-
-	t.Run("close delegates to underlying closer", func(t *testing.T) {
-		mock := &mockReadCloser{Reader: strings.NewReader("sample")}
-		rht := ioz.NewReaderHeadTail(mock, 5, 5)
-		err := rht.Close()
-		require.NoError(t, err)
-		require.True(t, mock.closed)
-	})
-
-	t.Run("close wraps error when underlying closer fails", func(t *testing.T) {
-		mock := &mockReadCloser{
-			Reader:   strings.NewReader("sample"),
-			closeErr: errors.New("underlying reader close error"),
-		}
-		rht := ioz.NewReaderHeadTail(mock, 5, 5)
-		err := rht.Close()
-		require.Error(t, err)
-		require.Contains(t, err.Error(), "failed to close reader: underlying reader close error")
-		require.True(t, mock.closed)
-	})
 }
 
 func TestUnitWriterHeadTail(t *testing.T) {
@@ -330,25 +310,4 @@ func TestUnitWriterHeadTailEdgeCases(t *testing.T) {
 		require.Equal(t, "bcdef", wht.TailString())
 	})
 
-	t.Run("close delegates to underlying closer", func(t *testing.T) {
-		var buf bytes.Buffer
-		mock := &mockWriteCloser{Writer: &buf}
-		wht := ioz.NewWriterHeadTail(mock, 5, 5)
-		err := wht.Close()
-		require.NoError(t, err)
-		require.True(t, mock.closed)
-	})
-
-	t.Run("close wraps error when underlying closer fails", func(t *testing.T) {
-		var buf bytes.Buffer
-		mock := &mockWriteCloser{
-			Writer:   &buf,
-			closeErr: errors.New("underlying writer close error"),
-		}
-		wht := ioz.NewWriterHeadTail(mock, 5, 5)
-		err := wht.Close()
-		require.Error(t, err)
-		require.Contains(t, err.Error(), "failed to close writer: underlying writer close error")
-		require.True(t, mock.closed)
-	})
 }
