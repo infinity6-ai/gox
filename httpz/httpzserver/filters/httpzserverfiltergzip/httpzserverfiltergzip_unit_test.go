@@ -1,0 +1,328 @@
+package httpzserverfiltergzip_test
+
+import (
+	"bytes"
+	"compress/gzip"
+	"context"
+	"io"
+	"net/http"
+	"strings"
+	"testing"
+
+	"github.com/infinity6-ai/gox/httpz/httpzrequest"
+	"github.com/infinity6-ai/gox/httpz/httpzserver"
+	"github.com/infinity6-ai/gox/httpz/httpzserver/filters/httpzserverfiltergzip"
+	"github.com/stretchr/testify/require"
+)
+
+func compressString(s string, level int) []byte {
+	var b bytes.Buffer
+	w, err := gzip.NewWriterLevel(&b, level)
+	if err != nil {
+		panic(err)
+	}
+	_, err = w.Write([]byte(s))
+	if err != nil {
+		panic(err)
+	}
+	w.Close()
+	return b.Bytes()
+}
+
+func decompressBytes(b []byte) (string, error) {
+	r, err := gzip.NewReader(bytes.NewReader(b))
+	if err != nil {
+		return "", err
+	}
+	defer r.Close()
+	out, err := io.ReadAll(r)
+	if err != nil {
+		return "", err
+	}
+	return string(out), nil
+}
+
+func TestUnitFilterGzip(t *testing.T) {
+	type testScenario struct {
+		name                 string
+		reqMethod            string
+		reqBody              []byte
+		reqHeaders           map[string]string
+		handlerResponseStatus int
+		handlerResponseBody   string
+		handlerResponseHeaders map[string]string
+
+		expectedHandlerReqBody string
+		expectedHandlerReqHeaders map[string]string
+		
+		expectedRespStatus   int
+		expectedRespHeaders  map[string]string
+		expectedRespIsGzip   bool
+		expectedRespBodyStr  string
+	}
+
+	check := func(t *testing.T, s testScenario) {
+		t.Helper()
+		ctx := t.Context()
+		srv := httpzserver.New(ctx, httpzserver.Options{LocalAddress: "localhost:0"})
+		defer srv.Close()
+		srv.Listen()
+
+		srv.AddFilter(httpzserverfiltergzip.GzipFilter)
+
+		var actualHandlerReqBody string
+		var actualHandlerReqHeaders http.Header
+
+		srv.AddHandler(s.reqMethod, "/test", func(ctx context.Context, resp httpzserver.Resp, req *httpzrequest.Req, params map[string]string) {
+			actualHandlerReqHeaders = req.Headers.Clone()
+			if req.Body != nil {
+				b, err := io.ReadAll(req.Body)
+				require.NoError(t, err)
+				actualHandlerReqBody = string(b)
+			}
+			
+			h := make(http.Header)
+			for k, v := range s.handlerResponseHeaders {
+				h.Set(k, v)
+			}
+			w := resp(s.handlerResponseStatus, h)
+			if s.handlerResponseBody != "" {
+				_, err := w.Write([]byte(s.handlerResponseBody))
+				require.NoError(t, err)
+			}
+		})
+
+		srv.Start()
+
+		var reqBodyReader io.Reader
+		if s.reqBody != nil {
+			reqBodyReader = bytes.NewReader(s.reqBody)
+		}
+		
+		req, err := http.NewRequest(s.reqMethod, srv.Base().MustJoinPathString("/test").String(), reqBodyReader)
+		require.NoError(t, err)
+		for k, v := range s.reqHeaders {
+			req.Header.Set(k, v)
+		}
+
+		httpResp, err := http.DefaultClient.Do(req)
+		require.NoError(t, err)
+		defer httpResp.Body.Close()
+
+		require.Equal(t, s.expectedRespStatus, httpResp.StatusCode)
+
+		for k, expectedVal := range s.expectedRespHeaders {
+			require.Equal(t, expectedVal, httpResp.Header.Get(k), "Mismatch for response header: "+k)
+		}
+
+		respBodyBytes, err := io.ReadAll(httpResp.Body)
+		require.NoError(t, err)
+
+		if s.expectedRespStatus == 400 && string(respBodyBytes) == "invalid gzip body" {
+			// Early exit for invalid gzip body case
+			return
+		}
+
+		if s.expectedHandlerReqBody != "" {
+			require.Equal(t, s.expectedHandlerReqBody, actualHandlerReqBody)
+		}
+
+		for k, expectedVal := range s.expectedHandlerReqHeaders {
+			require.Equal(t, expectedVal, actualHandlerReqHeaders.Get(k), "Mismatch for handler req header: "+k)
+			if expectedVal == "" {
+				require.Empty(t, actualHandlerReqHeaders.Get(k))
+			}
+		}
+
+		if s.expectedRespIsGzip {
+			require.Equal(t, "gzip", httpResp.Header.Get("Content-Encoding"))
+			decompressed, err := decompressBytes(respBodyBytes)
+			require.NoError(t, err)
+			require.Equal(t, s.expectedRespBodyStr, decompressed)
+		} else {
+			require.NotEqual(t, "gzip", httpResp.Header.Get("Content-Encoding"))
+			require.Equal(t, s.expectedRespBodyStr, string(respBodyBytes))
+		}
+	}
+
+	t.Run("No compression requested, no compression applied", func(t *testing.T) {
+		check(t, testScenario{
+			name:                 "No compression requested, no compression applied",
+			reqMethod:            "GET",
+			reqHeaders:           nil,
+			handlerResponseStatus: 200,
+			handlerResponseBody:   "hello world",
+			expectedRespStatus:   200,
+			expectedRespIsGzip:   false,
+			expectedRespBodyStr:  "hello world",
+		})
+	})
+
+	t.Run("Client accepts gzip, server compresses response", func(t *testing.T) {
+		check(t, testScenario{
+			name:                 "Client accepts gzip, server compresses response",
+			reqMethod:            "GET",
+			reqHeaders:           map[string]string{"Accept-Encoding": "gzip, deflate, br"},
+			handlerResponseStatus: 200,
+			handlerResponseBody:   "hello compressible world",
+			expectedRespStatus:   200,
+			expectedRespIsGzip:   true,
+			expectedRespBodyStr:  "hello compressible world",
+			expectedRespHeaders: map[string]string{
+				"Vary": "Accept-Encoding",
+			},
+		})
+	})
+
+	t.Run("Client accepts gzip with wildcard, server compresses response", func(t *testing.T) {
+		check(t, testScenario{
+			name:                 "Client accepts gzip with wildcard, server compresses response",
+			reqMethod:            "GET",
+			reqHeaders:           map[string]string{"Accept-Encoding": "*"},
+			handlerResponseStatus: 200,
+			handlerResponseBody:   "hello compressible world",
+			expectedRespStatus:   200,
+			expectedRespIsGzip:   true,
+			expectedRespBodyStr:  "hello compressible world",
+		})
+	})
+
+	t.Run("Client accepts gzip but with q=0, server does NOT compress", func(t *testing.T) {
+		check(t, testScenario{
+			name:                 "Client accepts gzip but with q=0, server does NOT compress",
+			reqMethod:            "GET",
+			reqHeaders:           map[string]string{"Accept-Encoding": "gzip;q=0"},
+			handlerResponseStatus: 200,
+			handlerResponseBody:   "hello world",
+			expectedRespStatus:   200,
+			expectedRespIsGzip:   false,
+			expectedRespBodyStr:  "hello world",
+		})
+	})
+
+	t.Run("Status 204 No Content is not compressed", func(t *testing.T) {
+		check(t, testScenario{
+			name:                 "Status 204 No Content is not compressed",
+			reqMethod:            "GET",
+			reqHeaders:           map[string]string{"Accept-Encoding": "gzip"},
+			handlerResponseStatus: 204,
+			handlerResponseBody:   "",
+			expectedRespStatus:   204,
+			expectedRespIsGzip:   false,
+			expectedRespBodyStr:  "",
+		})
+	})
+
+	t.Run("Status 304 Not Modified is not compressed", func(t *testing.T) {
+		check(t, testScenario{
+			name:                 "Status 304 Not Modified is not compressed",
+			reqMethod:            "GET",
+			reqHeaders:           map[string]string{"Accept-Encoding": "gzip"},
+			handlerResponseStatus: 304,
+			handlerResponseBody:   "",
+			expectedRespStatus:   304,
+			expectedRespIsGzip:   false,
+			expectedRespBodyStr:  "",
+		})
+	})
+
+	t.Run("Response with Content-Encoding already set is not compressed again", func(t *testing.T) {
+		check(t, testScenario{
+			name:                 "Response with Content-Encoding already set is not compressed again",
+			reqMethod:            "GET",
+			reqHeaders:           map[string]string{"Accept-Encoding": "gzip"},
+			handlerResponseStatus: 200,
+			handlerResponseBody:   "already custom encoded",
+			handlerResponseHeaders: map[string]string{"Content-Encoding": "custom"},
+			expectedRespStatus:   200,
+			expectedRespIsGzip:   false,
+			expectedRespBodyStr:  "already custom encoded",
+			expectedRespHeaders: map[string]string{
+				"Content-Encoding": "custom",
+			},
+		})
+	})
+
+	t.Run("Request with gzip body is decompressed", func(t *testing.T) {
+		reqBodyStr := "this is a gzipped request body"
+		gzippedBody := compressString(reqBodyStr, gzip.DefaultCompression)
+
+		check(t, testScenario{
+			name:                 "Request with gzip body is decompressed",
+			reqMethod:            "POST",
+			reqBody:              gzippedBody,
+			reqHeaders:           map[string]string{"Content-Encoding": "gzip"},
+			handlerResponseStatus: 200,
+			handlerResponseBody:   "ok",
+			expectedHandlerReqBody: reqBodyStr,
+			expectedHandlerReqHeaders: map[string]string{
+				httpzserverfiltergzip.HeaderContentEncodingWas: "gzip",
+				"Content-Encoding": "",
+			},
+			expectedRespStatus:   200,
+			expectedRespIsGzip:   false,
+			expectedRespBodyStr:  "ok",
+		})
+	})
+
+	t.Run("Invalid gzip request body returns 400 Bad Request", func(t *testing.T) {
+		check(t, testScenario{
+			name:                 "Invalid gzip request body returns 400 Bad Request",
+			reqMethod:            "POST",
+			reqBody:              []byte("not a valid gzip body"),
+			reqHeaders:           map[string]string{"Content-Encoding": "gzip"},
+			expectedRespStatus:   400,
+		})
+	})
+
+	t.Run("Malicious incoming X-I6-Content-Encoding-Was header is removed", func(t *testing.T) {
+		check(t, testScenario{
+			name:                 "Malicious incoming X-I6-Content-Encoding-Was header is removed",
+			reqMethod:            "GET",
+			reqHeaders:           map[string]string{httpzserverfiltergzip.HeaderContentEncodingWas: "fake"},
+			handlerResponseStatus: 200,
+			expectedHandlerReqHeaders: map[string]string{
+				httpzserverfiltergzip.HeaderContentEncodingWas: "",
+			},
+			expectedRespStatus:   200,
+		})
+	})
+}
+
+func TestUnitFilterGzipCustomLevel(t *testing.T) {
+	ctx := t.Context()
+	srv := httpzserver.New(ctx, httpzserver.Options{LocalAddress: "localhost:0"})
+	defer srv.Close()
+	srv.Listen()
+
+	srv.AddFilter(httpzserverfiltergzip.New(httpzserverfiltergzip.Options{CompressionLevel: gzip.BestCompression}))
+
+	srv.AddHandler("GET", "/best", func(ctx context.Context, resp httpzserver.Resp, req *httpzrequest.Req, params map[string]string) {
+		w := resp(http.StatusOK, nil)
+		_, err := w.Write([]byte(strings.Repeat("a", 1000))) // Highly compressible
+		require.NoError(t, err)
+	})
+
+	srv.Start()
+
+	req, err := http.NewRequest("GET", srv.Base().MustJoinPathString("/best").String(), nil)
+	require.NoError(t, err)
+	req.Header.Set("Accept-Encoding", "gzip")
+
+	httpResp, err := http.DefaultClient.Do(req)
+	require.NoError(t, err)
+	defer httpResp.Body.Close()
+
+	require.Equal(t, http.StatusOK, httpResp.StatusCode)
+	require.Equal(t, "gzip", httpResp.Header.Get("Content-Encoding"))
+
+	body, err := io.ReadAll(httpResp.Body)
+	require.NoError(t, err)
+
+	decompressed, err := decompressBytes(body)
+	require.NoError(t, err)
+	require.Equal(t, strings.Repeat("a", 1000), decompressed)
+	// The length of body should be very small since it's repeating 'a's and BestCompression is used.
+	// BestCompression usually yields around 20-30 bytes for 1000 'a's.
+	require.Less(t, len(body), 50)
+}
