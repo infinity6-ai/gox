@@ -5,6 +5,12 @@ import (
 	"io"
 )
 
+type HeadTail interface {
+	Countable
+	HeadBytes() []byte
+	TailBytes() []byte
+}
+
 type ReaderHeadTail struct {
 	ReaderCounter
 	HeadMaxSize int
@@ -19,6 +25,14 @@ func NewReaderHeadTail(r io.Reader, headMaxSize int, tailMaxSize int) *ReaderHea
 		HeadMaxSize:   headMaxSize,
 		TailMaxSize:   tailMaxSize,
 	}
+}
+
+func (r *ReaderHeadTail) GetHead() bytes.Buffer {
+	return r.Head
+}
+
+func (r *ReaderHeadTail) GetTail() bytes.Buffer {
+	return r.Tail
 }
 
 func (r *ReaderHeadTail) Read(p []byte) (n int, err error) {
@@ -71,6 +85,14 @@ func NewWriterHeadTail(w io.Writer, headMaxSize int, tailMaxSize int) *WriterHea
 		HeadMaxSize:   headMaxSize,
 		TailMaxSize:   tailMaxSize,
 	}
+}
+
+func (w *WriterHeadTail) GetHead() bytes.Buffer {
+	return w.Head
+}
+
+func (w *WriterHeadTail) GetTail() bytes.Buffer {
+	return w.Tail
 }
 
 func (w *WriterHeadTail) Write(p []byte) (n int, err error) {

@@ -47,7 +47,7 @@ func TestUnitReaderHeadTail(t *testing.T) {
 		}
 
 		require.Equal(t, s.expectedStream, string(readBytes))
-		require.Equal(t, s.expectedCount, rht.Count())
+		require.Equal(t, s.expectedCount, rht.GetCount())
 		require.Equal(t, s.expectedHead, rht.HeadString())
 		require.Equal(t, s.expectedTail, rht.TailString())
 		require.Equal(t, []byte(s.expectedHead), rht.HeadBytes())
@@ -192,7 +192,7 @@ func TestUnitReaderHeadTailEdgeCases(t *testing.T) {
 		n, err := rht.Read(buf)
 		require.Equal(t, 0, n)
 		require.Equal(t, io.EOF, err)
-		require.Equal(t, uint64(0), rht.Count())
+		require.Equal(t, uint64(0), rht.GetCount())
 	})
 }
 
@@ -219,7 +219,7 @@ func TestUnitWriterHeadTail(t *testing.T) {
 		}
 
 		require.Equal(t, s.expectedTotal, out.String())
-		require.Equal(t, s.expectedCount, wht.Count())
+		require.Equal(t, s.expectedCount, wht.GetCount())
 		require.Equal(t, s.expectedHead, wht.HeadString())
 		require.Equal(t, s.expectedTail, wht.TailString())
 		require.Equal(t, []byte(s.expectedHead), wht.HeadBytes())
@@ -305,7 +305,7 @@ func TestUnitWriterHeadTailEdgeCases(t *testing.T) {
 		n, err := wht.Write([]byte("0123456789abcdef"))
 		require.NoError(t, err)
 		require.Equal(t, 16, n)
-		require.Equal(t, uint64(16), wht.Count())
+		require.Equal(t, uint64(16), wht.GetCount())
 		require.Equal(t, "01234", wht.HeadString())
 		require.Equal(t, "bcdef", wht.TailString())
 	})

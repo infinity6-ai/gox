@@ -14,15 +14,32 @@ type kt int
 const k kt = 1
 
 type Entry struct {
-	ReqResp logzaudit.AuditEntryReqResp
+	ReqResp        logzaudit.AuditEntryReqResp
+	ReqCompressed  bool
+	RespCompressed bool
 
-	rawReqBody       *ioz.ReaderCounter
-	rawRespBody      *ioz.WriterCounter
+	rawReqBody  *ioz.ReaderCounter
+	rawRespBody *ioz.WriterCounter
+
 	headTailReqBody  *ioz.ReaderHeadTail
 	headTailRespBody *ioz.WriterHeadTail
 }
 
+func setBody(auditBody *logzaudit.AuditBody, compressed bool, raw ioz.Countable, body ioz.HeadTail) {
+	auditBody.Payload = body.HeadBytes()
+	auditBody.Tail = body.TailBytes()
+	auditBody.Size = int(body.GetCount())
+	auditBody.Large = body.GetCount() >= logzaudit.LargeBodyThreashold
+	if compressed {
+		auditBody.CompressedSize = int(raw.GetCount())
+	}
+}
+
 func (e *Entry) BuildReqResp() *logzaudit.AuditEntryReqResp {
+
+	setBody(e.ReqResp.Req.Body, e.ReqCompressed, e.rawReqBody, e.headTailReqBody)
+	setBody(e.ReqResp.Resp.Body, e.RespCompressed, e.rawRespBody, e.headTailRespBody)
+
 	return &e.ReqResp
 }
 

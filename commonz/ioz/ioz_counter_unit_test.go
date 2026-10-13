@@ -58,7 +58,7 @@ func TestUnitReaderCounter(t *testing.T) {
 		}
 
 		require.Equal(t, s.expectedData, string(readBytes))
-		require.Equal(t, s.expectedCount, rc.Count())
+		require.Equal(t, s.expectedCount, rc.GetCount())
 	}
 
 	t.Run("single read reads full content and updates count", func(t *testing.T) {
@@ -100,12 +100,12 @@ func TestUnitReaderCounter(t *testing.T) {
 		n, err := rc.Read(buf)
 		require.Equal(t, 0, n)
 		require.Equal(t, io.EOF, err)
-		require.Equal(t, uint64(0), rc.Count())
+		require.Equal(t, uint64(0), rc.GetCount())
 	})
 
 	t.Run("nil receiver handles Read and Count safely", func(t *testing.T) {
 		var nilRC *ioz.ReaderCounter
-		require.Equal(t, uint64(0), nilRC.Count())
+		require.Equal(t, uint64(0), nilRC.GetCount())
 		buf := make([]byte, 10)
 		n, err := nilRC.Read(buf)
 		require.Equal(t, 0, n)
@@ -133,7 +133,7 @@ func TestUnitWriterCounter(t *testing.T) {
 		}
 
 		require.Equal(t, s.expectedData, out.String())
-		require.Equal(t, s.expectedCount, wc.Count())
+		require.Equal(t, s.expectedCount, wc.GetCount())
 	}
 
 	t.Run("single write writes data and updates count", func(t *testing.T) {
@@ -157,7 +157,7 @@ func TestUnitWriterCounter(t *testing.T) {
 		n, err := wc.Write([]byte("counting bytes"))
 		require.NoError(t, err)
 		require.Equal(t, 14, n)
-		require.Equal(t, uint64(14), wc.Count())
+		require.Equal(t, uint64(14), wc.GetCount())
 	})
 
 	t.Run("writer error returns wrapped error", func(t *testing.T) {
@@ -166,12 +166,12 @@ func TestUnitWriterCounter(t *testing.T) {
 		require.Error(t, err)
 		require.Contains(t, err.Error(), "failed to write: write failure")
 		require.Equal(t, 0, n)
-		require.Equal(t, uint64(0), wc.Count())
+		require.Equal(t, uint64(0), wc.GetCount())
 	})
 
 	t.Run("nil receiver handles Write and Count safely", func(t *testing.T) {
 		var nilWC *ioz.WriterCounter
-		require.Equal(t, uint64(0), nilWC.Count())
+		require.Equal(t, uint64(0), nilWC.GetCount())
 		n, err := nilWC.Write([]byte("data"))
 		require.NoError(t, err)
 		require.Equal(t, 0, n)

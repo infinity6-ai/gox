@@ -5,6 +5,10 @@ import (
 	"io"
 )
 
+type Countable interface {
+	GetCount() uint64
+}
+
 type ReaderCounter struct {
 	io.Reader
 	count uint64
@@ -26,7 +30,7 @@ func (r *ReaderCounter) Read(p []byte) (n int, err error) {
 	return n, err
 }
 
-func (r *ReaderCounter) Count() uint64 {
+func (r *ReaderCounter) GetCount() uint64 {
 	if r == nil {
 		return 0
 	}
@@ -58,7 +62,7 @@ func (w *WriterCounter) Write(p []byte) (n int, err error) {
 	return n, nil
 }
 
-func (w *WriterCounter) Count() uint64 {
+func (w *WriterCounter) GetCount() uint64 {
 	if w == nil {
 		return 0
 	}
