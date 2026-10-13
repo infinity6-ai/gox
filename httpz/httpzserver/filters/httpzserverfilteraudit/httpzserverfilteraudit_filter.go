@@ -35,14 +35,14 @@ func (a *AuditFilter) WriterFilter() httpzserver.Filter {
 		entry := &Entry{
 			ReqResp: &logzaudit.AuditEntryReqResp{},
 		}
+		req.Body = entry.CreateReqBody(req.Body)
 		defer func() {
 			logger.(logz.AuditLogger).AuditReqResp(ctx, entry.ReqResp)
 		}()
 		ctx = context.WithValue(ctx, k, entry.ReqResp)
-		req.Body = AuditRequestBody(ctx, req.Body)
 		next(ctx, func(status int, headers http.Header) io.Writer {
 			w := resp(status, headers)
-			w = AuditResponseBody(ctx, w)
+			w = entry.CreateRespBody(w)
 			return w
 		}, req)
 	}
