@@ -1,17 +1,22 @@
 package ioz
 
-import "io"
+import (
+	"fmt"
+	"io"
+)
 
 type closer struct {
-	io.Closer
 	f func() error
 }
 
 func (c *closer) Close() error {
-	if c.f == nil {
+	if c == nil || c.f == nil {
 		return nil
 	}
-	return c.f()
+	if err := c.f(); err != nil {
+		return fmt.Errorf("failed to close: %w", err)
+	}
+	return nil
 }
 
 func Closer(f func() error) io.Closer {
@@ -20,7 +25,9 @@ func Closer(f func() error) io.Closer {
 
 func CloserV(f func()) io.Closer {
 	return &closer{f: func() error {
-		f()
+		if f != nil {
+			f()
+		}
 		return nil
 	}}
 }
