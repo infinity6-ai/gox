@@ -37,7 +37,7 @@ func (a *AuditFilter) WriterFilter() httpzserver.Filter {
 		}
 		req.Body = entry.CreateReqBody(req.Body)
 		defer func() {
-			logger.(logz.AuditLogger).AuditReqResp(ctx, entry.ReqResp)
+			logger.(logz.AuditLogger).AuditReqResp(ctx, entry.BuildReqResp())
 		}()
 		ctx = context.WithValue(ctx, k, entry.ReqResp)
 		next(ctx, func(status int, headers http.Header) io.Writer {

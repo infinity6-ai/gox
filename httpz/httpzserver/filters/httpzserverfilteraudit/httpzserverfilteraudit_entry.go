@@ -22,6 +22,10 @@ type Entry struct {
 	headTailRespBody *ioz.WriterHeadTail
 }
 
+func (e *Entry) BuildReqResp() *logzaudit.AuditEntryReqResp {
+	return e.ReqResp
+}
+
 func (e *Entry) CreateReqBody(r io.Reader) io.Reader {
 	checker.NotNil(r, "wrong")
 	if e.rawReqBody == nil {
