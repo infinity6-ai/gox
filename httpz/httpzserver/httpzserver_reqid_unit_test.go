@@ -80,15 +80,4 @@ func TestUnitServerReqId(t *testing.T) {
 			validateGenerated: false,
 		})
 	})
-
-	t.Run("Custom X-Request-Id header preserved and propagated as X-I6-Req-Id", func(t *testing.T) {
-		check(t, testScenario{
-			name: "Custom X-Request-Id header preserved and propagated as X-I6-Req-Id",
-			requestHeaders: map[string]string{
-				"X-Request-Id": "legacy-req-id-67890",
-			},
-			expectedReqId:     "legacy-req-id-67890",
-			validateGenerated: false,
-		})
-	})
 }

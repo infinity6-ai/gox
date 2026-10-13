@@ -119,10 +119,7 @@ func (f *filterImpl) filter(ctx context.Context, resp httpzserver.Resp, req *htt
 
 		reqId := req.Headers.Get(httpz.HeaderReqId)
 		if reqId == "" {
-			reqId = req.Headers.Get("X-Request-Id")
-		}
-		if reqId == "" {
-			reqId = idgen.String()
+			reqId = idgen.B64()
 		}
 
 		entry := &logzaudit.AuditEntryReqResp{

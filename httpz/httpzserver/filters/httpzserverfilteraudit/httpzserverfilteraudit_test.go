@@ -108,8 +108,6 @@ func TestUnitAuditFilterBasic(t *testing.T) {
 		// Verify custom request ID propagation if provided
 		if customID, ok := s.requestHeaders[httpz.HeaderReqId]; ok {
 			require.Equal(t, customID, audit.Id)
-		} else if customID, ok := s.requestHeaders["X-Request-Id"]; ok {
-			require.Equal(t, customID, audit.Id)
 		}
 
 		// Verify service
@@ -218,7 +216,7 @@ func TestUnitAuditFilterBasic(t *testing.T) {
 			requestQuery:   "?q=test&limit=10",
 			requestHeaders: map[string]string{
 				"X-Custom-Header": "header-value",
-				"X-Request-Id":    "req-uuid-12345",
+				httpz.HeaderReqId: "req-uuid-12345",
 			},
 			handlerStatus:       http.StatusOK,
 			handlerHeaders:      map[string]string{"X-Server-Resp": "resp-value"},

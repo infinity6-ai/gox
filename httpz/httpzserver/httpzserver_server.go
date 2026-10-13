@@ -145,9 +145,6 @@ func (s *Server) startServer() {
 			}
 			reqId := req.Headers.Get(httpz.HeaderReqId)
 			if reqId == "" {
-				reqId = req.Headers.Get("X-Request-Id")
-			}
-			if reqId == "" {
 				reqId = idgen.B64()
 			}
 			req.Headers.Set(httpz.HeaderReqId, reqId)
