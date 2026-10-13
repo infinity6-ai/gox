@@ -32,9 +32,7 @@ func New(as *logzaudit.AuditService) *AuditFilter {
 func (a *AuditFilter) WriterFilter() httpzserver.Filter {
 	return func(ctx context.Context, resp httpzserver.Resp, req *httpzrequest.Req, next httpzserver.Handler) {
 		checker.Nil(ctx.Value(k), "wrong")
-		entry := &Entry{
-			ReqResp: &logzaudit.AuditEntryReqResp{},
-		}
+		entry := &Entry{}
 		req.Body = entry.CreateReqBody(req.Body)
 		defer func() {
 			logger.(logz.AuditLogger).AuditReqResp(ctx, entry.BuildReqResp())

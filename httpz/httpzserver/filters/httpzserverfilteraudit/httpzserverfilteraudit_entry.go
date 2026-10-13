@@ -14,7 +14,7 @@ type kt int
 const k kt = 1
 
 type Entry struct {
-	ReqResp *logzaudit.AuditEntryReqResp
+	ReqResp logzaudit.AuditEntryReqResp
 
 	rawReqBody       *ioz.ReaderCounter
 	rawRespBody      *ioz.WriterCounter
@@ -23,7 +23,7 @@ type Entry struct {
 }
 
 func (e *Entry) BuildReqResp() *logzaudit.AuditEntryReqResp {
-	return e.ReqResp
+	return &e.ReqResp
 }
 
 func (e *Entry) CreateReqBody(r io.Reader) io.Reader {
