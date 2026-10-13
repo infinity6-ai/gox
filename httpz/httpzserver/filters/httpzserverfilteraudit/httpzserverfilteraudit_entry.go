@@ -90,6 +90,8 @@ func (e *Entry) CreateRespBody(w io.Writer) io.Writer {
 func GetEntry(ctx context.Context) *Entry {
 	checker.NotNil(ctx, "context cannot be nil")
 	ret := ctx.Value(k)
-	checker.NotNil(ret, "AuditEntryReqResp not found")
+	if ret == nil {
+		return nil
+	}
 	return ret.(*Entry)
 }
