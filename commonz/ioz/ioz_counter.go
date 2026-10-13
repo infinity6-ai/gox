@@ -2,23 +2,22 @@ package ioz
 
 import (
 	"io"
-	"sync/atomic"
 )
 
 type ReaderCounter struct {
 	io.Reader
-	count atomic.Uint64
+	count uint64
 }
 
 func (r *ReaderCounter) Count() uint64 {
-	return r.count.Load()
+	return r.count
 }
 
 type WriterCounter struct {
 	io.Writer
-	count atomic.Uint64
+	count uint64
 }
 
 func (w *WriterCounter) Count() uint64 {
-	return w.count.Load()
+	return w.count
 }
