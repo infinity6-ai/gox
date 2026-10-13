@@ -44,7 +44,7 @@ func TestUnitErrorFilterBasic(t *testing.T) {
 		collector := httpzserverfiltererror.Collector()
 		collector() // clear prior entries
 
-		srv.AddFilter(httpzserverfiltererror.ErrorFilter)
+		srv.AddFilter(httpzserverfiltererror.Filter)
 
 		srv.AddHandler("GET", "/test", func(ctx context.Context, resp httpzserver.Resp, req *httpzrequest.Req, params map[string]string) {
 			if s.panicVal != nil {
@@ -215,7 +215,7 @@ func TestUnitErrorFilterWithAuditAndGzip(t *testing.T) {
 	// Pipeline order: Gzip -> Audit -> Error -> Handler
 	srv.AddFilter(httpzserverfiltergzip.GzipFilter)
 	srv.AddFilter(httpzserverfilteraudit.AuditFilter)
-	srv.AddFilter(httpzserverfiltererror.ErrorFilter)
+	srv.AddFilter(httpzserverfiltererror.Filter)
 
 	srv.AddHandler("POST", "/api/item", func(ctx context.Context, resp httpzserver.Resp, req *httpzrequest.Req, params map[string]string) {
 		panic(errorz.Detail(422, "ValidationFailed", "name too short", true, errors.New("validation failed")))

@@ -28,13 +28,8 @@ func Collector() func() []*logzspec.Entry {
 }
 
 // Filter recovers panics in downstream handlers, logs them, and formats structured error responses.
-func Filter(ctx context.Context, resp httpzserver.Resp, req *httpzrequest.Req, next httpzserver.Handler) {
-	ErrorFilter(ctx, resp, req, next)
-}
-
-// ErrorFilter recovers panics in downstream handlers, logs them, and formats structured error responses.
 // If the response was already started when the panic occurred, it logs and re-panics with fmt.Errorf.
-func ErrorFilter(ctx context.Context, resp httpzserver.Resp, req *httpzrequest.Req, next httpzserver.Handler) {
+func Filter(ctx context.Context, resp httpzserver.Resp, req *httpzrequest.Req, next httpzserver.Handler) {
 	responseStarted := false
 
 	nResp := func(status int, headers http.Header) io.Writer {
