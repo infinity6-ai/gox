@@ -67,7 +67,7 @@ func TestUnitErrorFilterBasic(t *testing.T) {
 		require.Equal(t, s.expectedStatus, httpResp.StatusCode)
 
 		if s.expectedErrorzHdr {
-			require.Equal(t, "true", httpResp.Header.Get(httpz.HEADER_ERRORZ))
+			require.Equal(t, "true", httpResp.Header.Get(httpz.HeaderError))
 			require.Equal(t, "application/json", httpResp.Header.Get("Content-Type"))
 
 			var data errorz.Data
@@ -85,7 +85,7 @@ func TestUnitErrorFilterBasic(t *testing.T) {
 			require.Len(t, entries, 1)
 			require.Equal(t, "http handler panic", entries[0].Operation)
 		} else {
-			require.Empty(t, httpResp.Header.Get(httpz.HEADER_ERRORZ))
+			require.Empty(t, httpResp.Header.Get(httpz.HeaderError))
 			bodyBytes, err := io.ReadAll(httpResp.Body)
 			require.NoError(t, err)
 			require.Equal(t, s.normalBody, string(bodyBytes))
@@ -232,7 +232,7 @@ func TestUnitErrorFilterWithAuditAndGzip(t *testing.T) {
 	defer httpResp.Body.Close()
 
 	require.Equal(t, 422, httpResp.StatusCode)
-	require.Equal(t, "true", httpResp.Header.Get(httpz.HEADER_ERRORZ))
+	require.Equal(t, "true", httpResp.Header.Get(httpz.HeaderError))
 	require.Equal(t, "gzip", httpResp.Header.Get("Content-Encoding"))
 
 	// Decompress and verify JSON payload
@@ -255,7 +255,7 @@ func TestUnitErrorFilterWithAuditAndGzip(t *testing.T) {
 	require.NotNil(t, audit)
 	require.NotNil(t, audit.Resp)
 	require.Equal(t, 422, audit.Resp.Status)
-	require.Equal(t, "true", audit.Resp.Headers.Get(httpz.HEADER_ERRORZ))
+	require.Equal(t, "true", audit.Resp.Headers.Get(httpz.HeaderError))
 	require.NotNil(t, audit.Resp.Body)
 	require.Contains(t, string(audit.Resp.Body.Payload), "ValidationFailed")
 	require.Contains(t, string(audit.Resp.Body.Payload), "name too short")

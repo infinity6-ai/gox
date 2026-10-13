@@ -18,6 +18,7 @@ import (
 	"github.com/infinity6-ai/gox/commonz/pathz"
 	"github.com/infinity6-ai/gox/commonz/syncz/promise"
 	"github.com/infinity6-ai/gox/commonz/urlz"
+	"github.com/infinity6-ai/gox/httpz/httpz"
 	"github.com/infinity6-ai/gox/httpz/httpzrequest"
 	"github.com/infinity6-ai/gox/httpz/internal/httpzhelper"
 )
@@ -137,7 +138,10 @@ func (s *Server) startServer() {
 
 	s.httpServer = &http.Server{
 		Handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			req := &httpzrequest.Req{Id: idgen.B64()}
+			reqId := idgen.B64()
+			req := &httpzrequest.Req{}
+			req.Headers.Set(httpz.HeaderReqId, reqId)
+			w.Header().Set(httpz.HeaderReqId, reqId)
 			httpzhelper.FromHttpRequest(r, req)
 			resp := func(status int, headers http.Header) io.Writer {
 				for k, v := range headers {

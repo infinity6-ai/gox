@@ -62,7 +62,7 @@ func ErrorFilter(ctx context.Context, resp httpzserver.Resp, req *httpzrequest.R
 
 		code, payload := formatErrorz(r)
 		h := make(http.Header)
-		h.Add(httpz.HEADER_ERRORZ, "true")
+		h.Add(httpz.HeaderError, "true")
 		h.Set("Content-Type", "application/json")
 		w := resp(code, h)
 		_ = jsonz.FormatWriter(w, payload)
