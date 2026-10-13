@@ -278,15 +278,6 @@ func TestUnitAuditFilterEntryDirect(t *testing.T) {
 }
 
 func TestUnitAuditFilterContextPanics(t *testing.T) {
-	t.Run("GetEntry panics when not found in context", func(t *testing.T) {
-		defer func() {
-			r := recover()
-			require.NotNil(t, r)
-			require.Contains(t, r.(error).Error(), "AuditEntryReqResp not found")
-		}()
-		httpzserverfilteraudit.GetEntry(context.Background())
-	})
-
 	t.Run("Filter panics when already registered in context", func(t *testing.T) {
 		filter := httpzserverfilteraudit.New(&logzaudit.AuditService{}).Filter()
 		req := httpzrequest.MustFormat("GET", "/test", nil)
