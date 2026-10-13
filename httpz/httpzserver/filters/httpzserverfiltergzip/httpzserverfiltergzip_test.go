@@ -63,6 +63,7 @@ func TestUnitGzipFilterStandalone(t *testing.T) {
 		defer srv.Close()
 		srv.Listen()
 
+		srv.AddFilter(httpzserverfilteraudit.New(&logzaudit.AuditService{}).WriterFilter())
 		srv.AddFilter(httpzserverfiltergzip.GzipFilter)
 
 		var receivedReqBody []byte
