@@ -7,6 +7,7 @@ import (
 
 	"github.com/infinity6-ai/gox/commonz/logz"
 	"github.com/infinity6-ai/gox/commonz/logz/logzaudit"
+	"github.com/infinity6-ai/gox/commonz/logz/logzspec"
 	"github.com/infinity6-ai/gox/commonz/validation/checker"
 	"github.com/infinity6-ai/gox/httpz/httpzrequest"
 	"github.com/infinity6-ai/gox/httpz/httpzserver"
@@ -15,6 +16,10 @@ import (
 type tlogger logz.Type
 
 var logger = logz.Create(tlogger(true))
+
+func Collector() func() []*logzspec.Entry {
+	return logger.(logz.Collector).Collector()
+}
 
 type AuditFilter struct {
 	as *logzaudit.AuditService

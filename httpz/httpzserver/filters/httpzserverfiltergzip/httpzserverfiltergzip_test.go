@@ -11,6 +11,7 @@ import (
 	"github.com/infinity6-ai/gox/commonz/logz/logzaudit"
 	"github.com/infinity6-ai/gox/httpz/httpzrequest"
 	"github.com/infinity6-ai/gox/httpz/httpzserver"
+	"github.com/infinity6-ai/gox/httpz/httpzserver/filters/httpzserverfilteraudit"
 	"github.com/infinity6-ai/gox/httpz/httpzserver/filters/httpzserverfiltergzip"
 	"github.com/stretchr/testify/require"
 )
@@ -308,8 +309,8 @@ func TestUnitGzipFilterWithAuditFilter(t *testing.T) {
 		defer srv.Close()
 		srv.Listen()
 
-		// collector := httpzserverfilterauditv2.Collector()
-		// collector() // clear prior entries
+		auditCollector := httpzserverfilteraudit.Collector()
+		auditCollector() // clear prior entries
 
 		// Register GzipFilter BEFORE AuditFilter
 		srv.AddFilter(httpzserverfiltergzip.GzipFilter)
@@ -373,10 +374,10 @@ func TestUnitGzipFilterWithAuditFilter(t *testing.T) {
 		}
 
 		// Verify AuditFilter captured uncompressed request and response payloads!
-		// entries := collector()
-		// require.Len(t, entries, 1)
-		// audit := entries[0].Audit.ReqResp
-		// require.NotNil(t, audit)
+		entries := auditCollector()
+		require.Len(t, entries, 1)
+		audit := entries[0].Audit.ReqResp
+		require.NotNil(t, audit)
 
 		// Request audit asserts
 		if s.plainReqBody != nil {
