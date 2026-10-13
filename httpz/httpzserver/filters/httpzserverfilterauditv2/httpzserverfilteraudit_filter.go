@@ -2,6 +2,8 @@ package httpzserverfilterauditv2
 
 import (
 	"context"
+	"io"
+	"net/http"
 
 	"github.com/infinity6-ai/gox/commonz/logz"
 	"github.com/infinity6-ai/gox/commonz/logz/logzaudit"
@@ -33,14 +35,10 @@ func (a *AuditFilter) WriterFilter() httpzserver.Filter {
 		}()
 		ctx = context.WithValue(ctx, k, entry.ReqResp)
 		req.Body = AuditRequestBody(ctx, req.Body)
-		// head, err := ioz.ReadFull(req.Body, logzaudit.LargeBodyThreashold)
-		// if err != nil {
-		// 	logger.Error(ctx, "audit error", nil, fmt.Errorf("error reading body head: %w", err))
-		// 	resp(http.StatusBadRequest, nil).Write([]byte("error reading body head"))
-		// 	return
-		// }
-		// reqResp.Req.Body.SetPayload(head)
-		// req.Body = io.MultiReader(bytes.NewBuffer(head), req.Body)
-		// next(ctx, resp, req)
+		next(ctx, func(status int, headers http.Header) io.Writer {
+			w := resp(status, headers)
+			w = AuditResponseBody(ctx, w)
+			return w
+		}, req)
 	}
 }
