@@ -14,6 +14,8 @@ import (
 	"github.com/infinity6-ai/gox/commonz/logz"
 	"github.com/infinity6-ai/gox/commonz/logz/logzaudit"
 	"github.com/infinity6-ai/gox/commonz/logz/logzctx"
+	"github.com/infinity6-ai/gox/commonz/logz/logzprovider"
+	"github.com/infinity6-ai/gox/commonz/logz/logzprovider/logzproviderstructured"
 	"github.com/infinity6-ai/gox/commonz/logz/logzspec"
 )
 
@@ -640,5 +642,26 @@ func TestUnitLogzAuditBodySetPayload(t *testing.T) {
 			wantLen:     logzaudit.LargeBodyThreashold,
 			wantPayload: large[:logzaudit.LargeBodyThreashold],
 		})
+	})
+}
+
+func TestUnitLoggerStructuredProvider(t *testing.T) {
+	origProvider := logzprovider.GetDefaultProvider()
+	t.Cleanup(func() {
+		logzprovider.SetDefaultProvider(origProvider)
+	})
+
+	// Set to structured provider
+	logzprovider.SetDefaultProvider(logzproviderstructured.Post)
+
+	// Since structured provider writes to stderr via its own logger,
+	// we just ensure it doesn't panic when fully integrated with logz.Logger.
+	logger := logz.Create(tlogger(true))
+	ctx := logzctx.Prepare(context.Background())
+	logz.SetAttr(ctx, "integration", "true")
+
+	require.NotPanics(t, func() {
+		logger.Info(ctx, "structured-integration", map[string]any{"key": "value"})
+		logger.Error(ctx, "structured-error", nil, errors.New("some error"))
 	})
 }
