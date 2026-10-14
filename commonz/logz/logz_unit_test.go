@@ -286,18 +286,23 @@ func TestUnitLogzCtx(t *testing.T) {
 		})
 	})
 
-	t.Run("Prepare is idempotent and preserves existing attributes", func(t *testing.T) {
+	t.Run("Prepare copies existing attributes to new context without mutating original", func(t *testing.T) {
 		check(t, testScenario{
-			name: "Prepare idempotent",
+			name: "Prepare copies and isolates attributes",
 			action: func(t *testing.T) {
 				t.Helper()
-				ctx := logzctx.Prepare(context.Background())
-				logz.SetAttr(ctx, "existingKey", "existingVal")
+				parentCtx := logzctx.Prepare(context.Background())
+				logz.SetAttr(parentCtx, "parentKey", "parentVal")
 
-				ctxAgain := logzctx.Prepare(ctx)
-				attrs := logzctx.Get(ctxAgain)
-				require.NotNil(t, attrs)
-				require.Equal(t, "existingVal", attrs["existingKey"])
+				childCtx := logzctx.Prepare(parentCtx)
+				childAttrs := logzctx.Get(childCtx)
+				require.NotNil(t, childAttrs)
+				require.Equal(t, "parentVal", childAttrs["parentKey"])
+
+				// Mutating child context does not affect parent context
+				logz.SetAttr(childCtx, "childKey", "childVal")
+				require.Equal(t, "childVal", logzctx.Get(childCtx)["childKey"])
+				require.NotContains(t, logzctx.Get(parentCtx), "childKey")
 			},
 			expectPanic: false,
 		})
@@ -418,7 +423,26 @@ func TestUnitLogzCtxPropagation(t *testing.T) {
 		require.Equal(t, map[string]string{"step": "2", "userId": "user-42"}, entries[1].Context)
 	})
 
-	t.Run("Context map is shared reference within the same context", func(t *testing.T) {
+	t.Run("Child context prepared from parent preserves parent attributes and isolates mutations", func(t *testing.T) {
+		parentCtx := logzctx.Prepare(context.Background())
+		logz.SetAttr(parentCtx, "parentKey", "parentVal")
+
+		childCtx := logzctx.Prepare(parentCtx)
+		logz.SetAttr(childCtx, "childKey", "childVal")
+
+		logger := logz.Create(tlogger(true))
+		collector := logger.(logz.Collector).Collector()
+
+		logger.Info(parentCtx, "parent-op", nil)
+		logger.Info(childCtx, "child-op", nil)
+
+		entries := collector()
+		require.Len(t, entries, 2)
+		require.Equal(t, map[string]string{"parentKey": "parentVal"}, entries[0].Context)
+		require.Equal(t, map[string]string{"parentKey": "parentVal", "childKey": "childVal"}, entries[1].Context)
+	})
+
+	t.Run("Log entries are immutable snapshots and unaffected by subsequent SetAttr", func(t *testing.T) {
 		ctx := logzctx.Prepare(context.Background())
 		logger := logz.Create(tlogger(true))
 		collector := logger.(logz.Collector).Collector()
@@ -431,7 +455,7 @@ func TestUnitLogzCtxPropagation(t *testing.T) {
 
 		entries := collector()
 		require.Len(t, entries, 2)
-		require.Equal(t, "v2", entries[0].Context["k"])
+		require.Equal(t, "v1", entries[0].Context["k"])
 		require.Equal(t, "v2", entries[1].Context["k"])
 	})
 

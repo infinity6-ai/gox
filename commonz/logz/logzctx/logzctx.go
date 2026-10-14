@@ -2,6 +2,7 @@ package logzctx
 
 import (
 	"context"
+	"maps"
 )
 
 type kt int
@@ -9,11 +10,12 @@ type kt int
 const t kt = 1
 
 func Prepare(ctx context.Context) context.Context {
-	m := ctx.Value(t)
-	if m == nil {
-		ctx = context.WithValue(ctx, t, make(map[string]string))
+	m := Get(ctx)
+	newMap := make(map[string]string, len(m))
+	if m != nil {
+		maps.Copy(newMap, m)
 	}
-	return ctx
+	return context.WithValue(ctx, t, newMap)
 }
 
 func Get(ctx context.Context) map[string]string {

@@ -5,6 +5,7 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
+	"maps"
 	"path/filepath"
 	"runtime"
 	"runtime/debug"
@@ -46,7 +47,7 @@ func NewEntry(ctx context.Context, originSkil int, appender string, level Level,
 		Level:     level,
 		Operation: op,
 		Params:    parseParams(params),
-		Context:   logzctx.Get(ctx),
+		Context:   maps.Clone(logzctx.Get(ctx)),
 	}
 	if len(errs) > 0 {
 		entry.Error = formatError(errors.Join(errs...))
