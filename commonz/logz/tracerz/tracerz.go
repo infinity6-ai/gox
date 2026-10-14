@@ -10,6 +10,7 @@ import (
 	"sync"
 
 	"github.com/infinity6-ai/gox/commonz/constraintz/blobz"
+	"github.com/infinity6-ai/gox/commonz/deferz"
 	"github.com/infinity6-ai/gox/commonz/errorz"
 	"github.com/infinity6-ai/gox/commonz/filez"
 	"github.com/infinity6-ai/gox/commonz/ioz"
@@ -26,7 +27,7 @@ var lock sync.Mutex
 var appTracer trace.Tracer
 var appName string
 
-func StartDump() io.Closer {
+func StartDump(ctx context.Context) io.Closer {
 	traceFile := os.Getenv("I6_GO_RUNTIME_TRACE_DUMP")
 	if traceFile == "" {
 		return ioz.CloserV(func() {})
@@ -34,22 +35,21 @@ func StartDump() io.Closer {
 
 	filez.CreateParentDirs(traceFile)
 
+	dfz := deferz.New(ctx)
+	defer dfz.Close()
+
 	f, err := os.OpenFile(traceFile, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, os.ModePerm)
 	errorz.Check(err)
+	dfz.AddCloserS(f)
 
 	gz := gzip.NewWriter(f)
+	dfz.AddCloserS(gz)
 
 	err = runtimeTrace.Start(gz)
-	if err != nil {
-		gz.Close()
-		errorz.Check(err)
-	}
+	errorz.Check(err)
+	dfz.Add(runtimeTrace.Stop)
 
-	// Return a closer that stops the trace and then closes the file.
-	return ioz.CloserV(func() {
-		defer gz.Close()
-		runtimeTrace.Stop()
-	})
+	return dfz.Detach()
 }
 
 func Init(name string) {
