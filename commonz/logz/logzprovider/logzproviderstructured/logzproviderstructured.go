@@ -21,12 +21,12 @@ var mlogger *log.Logger
 
 type Severity string
 
-const CTX_KEY_GAE_PROJECT_NAME = "gae.project.name"
+const CtxKeyGaeProjectName = "gae.project.name"
 
-const SEVERITY_DEBUG Severity = "DEBUG"
-const SEVERITY_INFO Severity = "INFO"
-const SEVERITY_NOTICE Severity = "NOTICE"
-const SEVERITY_ERROR Severity = "ERROR"
+const SeverityDebug Severity = "DEBUG"
+const SeverityInfo Severity = "INFO"
+const SeverityNotice Severity = "NOTICE"
+const SeverityError Severity = "ERROR"
 
 type SourceLocationType struct {
 	File string `json:"file,omitempty"`
@@ -62,11 +62,11 @@ func init() {
 func parseSeverity(l logzspec.Level) Severity {
 	switch l {
 	case logzspec.DEBUG:
-		return SEVERITY_DEBUG
+		return SeverityDebug
 	case logzspec.INFO:
-		return SEVERITY_INFO
+		return SeverityInfo
 	case logzspec.ERROR:
-		return SEVERITY_ERROR
+		return SeverityError
 	}
 	panic(fmt.Sprintf("Unknown level: %s", l))
 }
@@ -130,7 +130,7 @@ func getTraceFullId(traceId string, entryContext map[string]string) string {
 	if traceId == "" {
 		return ""
 	}
-	projectName := entryContext[CTX_KEY_GAE_PROJECT_NAME]
+	projectName := entryContext[CtxKeyGaeProjectName]
 	if projectName == "" {
 		return traceId
 	}
