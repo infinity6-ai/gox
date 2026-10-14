@@ -10,8 +10,11 @@ import (
 	"slices"
 	"time"
 
+	"github.com/infinity6-ai/gox/commonz/logz/logzaudit"
 	"github.com/infinity6-ai/gox/commonz/logz/logzcolor"
 	"github.com/infinity6-ai/gox/commonz/logz/logzspec"
+	"go.code.infinity6.ai/platform/util"
+	"go.code.infinity6.ai/platform/util/mapz"
 	"golang.org/x/term"
 )
 
@@ -46,7 +49,7 @@ func SimpleProvider(ctx context.Context, entry *logzspec.Entry) {
 	msg += " " + apply(logzcolor.WHITE, "%s", entry.Operation)
 	msg += " " + paramsFormatted
 
-	// msg += applyAudit(logzcolor.BOLD_BRIGHT_BLUE, logzcolor.CYAN, entry.Audit)
+	msg += applyAudit(logzcolor.BOLD_BRIGHT_BLUE, logzcolor.CYAN, entry.Audit)
 
 	if len(entry.Context) > 0 {
 		msg += ", " + apply(logzcolor.BRIGHT_BLACK, "ctx:")
@@ -78,47 +81,47 @@ func apply(color logzcolor.Color, format string, a ...any) string {
 	return color.Apply(ret)
 }
 
-// func applyAudit(ck logzcolor.Color, cv logzcolor.Color, audit *logzauditdata.Audit) string {
-// 	if audit == nil {
-// 		return ""
-// 	}
-// 	if audit.ReqResp == nil {
-// 		return ""
-// 	}
-// 	ret := " [" + apply(ck, "%s", audit.ReqResp.Req.Method)
-// 	ret += " " + apply(cv, "%s", audit.ReqResp.Req.Path)
-// 	if len(audit.ReqResp.Req.Query) > 0 {
-// 		ret += "?" + applyQuery(ck, cv, audit.ReqResp.Req.Query)
-// 	}
-// 	if audit.ReqResp.Resp != nil {
-// 		ret += " " + apply(ck, "%d", audit.ReqResp.Resp.Status)
-// 	}
-// 	ret += "]"
-// 	return ret
-// }
+func applyAudit(ck logzcolor.Color, cv logzcolor.Color, audit *logzaudit.Audit) string {
+	if audit == nil {
+		return ""
+	}
+	if audit.ReqResp == nil {
+		return ""
+	}
+	ret := " [" + apply(ck, "%s", audit.ReqResp.Req.Method)
+	ret += " " + apply(cv, "%s", audit.ReqResp.Req.Path)
+	if len(audit.ReqResp.Req.Query) > 0 {
+		ret += "?" + applyQuery(ck, cv, audit.ReqResp.Req.Query)
+	}
+	if audit.ReqResp.Resp != nil {
+		ret += " " + apply(ck, "%d", audit.ReqResp.Resp.Status)
+	}
+	ret += "]"
+	return ret
+}
 
-// func applyQuery(ck logzcolor.Color, cv logzcolor.Color, m map[string][]string) string {
-// 	ret := ""
-// 	maxv := 15
-// 	first := true
+func applyQuery(ck logzcolor.Color, cv logzcolor.Color, m map[string][]string) string {
+	ret := ""
+	maxv := 15
+	first := true
 
-// 	for _, k := range mapz.SortedKeys(m) {
-// 		varray := m[k]
-// 		for _, v := range varray {
-// 			v = util.Ascii([]byte(v), maxv+1)
-// 			if len(v) > maxv {
-// 				v += "..."
-// 			}
-// 			if !first {
-// 				ret += "&"
-// 			}
-// 			first = false
-// 			ret += apply(ck, "%s", k)
-// 			ret += "=" + apply(cv, "%s", v)
-// 		}
-// 	}
-// 	return ret
-// }
+	for _, k := range mapz.SortedKeys(m) {
+		varray := m[k]
+		for _, v := range varray {
+			v = util.Ascii([]byte(v), maxv+1)
+			if len(v) > maxv {
+				v += "..."
+			}
+			if !first {
+				ret += "&"
+			}
+			first = false
+			ret += apply(ck, "%s", k)
+			ret += "=" + apply(cv, "%s", v)
+		}
+	}
+	return ret
+}
 
 func applyMap(ck logzcolor.Color, cv logzcolor.Color, m map[string]string) string {
 	ret := "["

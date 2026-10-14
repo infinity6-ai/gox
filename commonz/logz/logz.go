@@ -3,6 +3,7 @@ package logz
 import (
 	"context"
 	"fmt"
+	"maps"
 	"reflect"
 
 	"github.com/infinity6-ai/gox/commonz/logz/logzaudit"
@@ -95,5 +96,5 @@ func SetAttr(ctx context.Context, k string, v string) {
 }
 
 func SetAttrs(ctx context.Context, m map[string]string) {
-	logzctx.Set(ctx, m)
+	maps.Copy(logzctx.Get(ctx), m)
 }
