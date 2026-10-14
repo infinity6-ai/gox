@@ -39,8 +39,8 @@ func TestUnitSetLen(t *testing.T) {
 
 	t.Run("shrink", func(t *testing.T) {
 		run(t, testScenario{
-			initial: func() []int { return []int{1, 2, 3, 4, 5} },
-			newLen:  3,
+			initial:  func() []int { return []int{1, 2, 3, 4, 5} },
+			newLen:   3,
 			expected: []int{1, 2, 3},
 			check: func(t *testing.T, initial, result []int) {
 				if len(result) > 0 {

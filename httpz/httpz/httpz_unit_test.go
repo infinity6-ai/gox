@@ -149,11 +149,11 @@ func TestUnitDoValidation(t *testing.T) {
 	client := httpzclient.New(ctx, httpzclient.Options{BaseUrl: server.Base()})
 
 	type testScenario struct {
-		name          string
-		path          string
+		name           string
+		path           string
 		customValidate func(resp *httpzclient.Resp) error
 		expectedErrMsg string
-		expectErrIs   error
+		expectErrIs    error
 	}
 
 	check := func(t *testing.T, s testScenario) {

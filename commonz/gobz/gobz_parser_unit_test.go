@@ -42,7 +42,6 @@ func TestUnitParseReaderAndFormatWriter(t *testing.T) {
 		require.NoError(t, err)
 		require.Equal(t, &s.data, resultGot)
 
-
 	}
 
 	t.Run("Valid data", func(t *testing.T) {

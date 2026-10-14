@@ -526,8 +526,8 @@ func TestUnitNew(t *testing.T) {
 
 func TestUnitFrom(t *testing.T) {
 	type testScenario struct {
-		args      []string
-		wantHP    *HiveParts
+		args        []string
+		wantHP      *HiveParts
 		expectPanic bool
 	}
 

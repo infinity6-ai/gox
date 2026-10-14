@@ -19,9 +19,9 @@ func TestUnitDefaultProvider(t *testing.T) {
 	t.Run("default is simple provider", func(t *testing.T) {
 		p := logzprovider.GetDefaultProvider()
 		require.NotNil(t, p)
-		
+
 		// To assert it's the SimpleProvider, we can check function pointers
-		// Note: In Go, comparing funcs directly isn't allowed, but we can verify it's not nil 
+		// Note: In Go, comparing funcs directly isn't allowed, but we can verify it's not nil
 		// and we can verify SetDefaultProvider changes it.
 	})
 

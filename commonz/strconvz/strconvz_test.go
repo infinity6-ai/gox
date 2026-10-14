@@ -326,4 +326,3 @@ func TestUnitParseBool(t *testing.T) {
 		check(t, testScenario{input: " true ", wantErrMsg: "could not parse bool:  true , strconv.ParseBool: parsing \" true \": invalid syntax"})
 	})
 }
-

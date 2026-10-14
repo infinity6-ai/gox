@@ -450,7 +450,7 @@ func TestUnitFormatReader(t *testing.T) {
 	t.Run("Format struct to JSON reader callback", func(t *testing.T) {
 		input := MyStruct{Name: "Alice", Age: 40}
 		var result []byte
-		
+
 		err := FormatReader(input, func(r io.Reader) error {
 			var readErr error
 			result, readErr = io.ReadAll(r)

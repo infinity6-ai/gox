@@ -154,7 +154,7 @@ func TestUnitPost(t *testing.T) {
 		require.Empty(t, se.Labels)
 		require.Empty(t, se.TraceId)
 		require.Empty(t, se.SpanId)
-		
+
 		expectedTimes := convertTimestamp(nowMillis)
 		require.Equal(t, expectedTimes, se.Times)
 	})

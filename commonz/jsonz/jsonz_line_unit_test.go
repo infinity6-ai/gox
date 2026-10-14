@@ -385,7 +385,7 @@ func TestUnitLineFormatReaderStream(t *testing.T) {
 			return item, true, nil
 		})
 		defer rc.Close()
-		
+
 		data, err := io.ReadAll(rc)
 		require.NoError(t, err)
 		require.Equal(t, "{\"id\":1,\"name\":\"A\"}\n{\"id\":2,\"name\":\"B\"}\n", string(data))
@@ -404,7 +404,7 @@ func TestUnitLineFormatReaderStream(t *testing.T) {
 			return badItem{Ch: make(chan int)}, true, nil
 		})
 		defer rc.Close()
-		
+
 		_, err := io.ReadAll(rc)
 		require.Error(t, err)
 		require.Contains(t, err.Error(), "failed to encode item at index 0")

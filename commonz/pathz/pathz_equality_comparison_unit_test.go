@@ -9,9 +9,9 @@ import (
 
 func TestUnitPathEquality(t *testing.T) {
 	type testScenario struct {
-		name       string
-		path1      *pathz.Path
-		path2      *pathz.Path
+		name        string
+		path1       *pathz.Path
+		path2       *pathz.Path
 		expectEqual bool
 	}
 
@@ -26,9 +26,9 @@ func TestUnitPathEquality(t *testing.T) {
 		p1 := pathz.New(-1, []string{"a", "b", "c"}, false)
 		p2 := pathz.New(-1, []string{"a", "b", "c"}, false)
 		check(t, testScenario{
-			name:       "identical absolute paths",
-			path1:      p1,
-			path2:      p2,
+			name:        "identical absolute paths",
+			path1:       p1,
+			path2:       p2,
 			expectEqual: true,
 		})
 	})
@@ -37,9 +37,9 @@ func TestUnitPathEquality(t *testing.T) {
 		p1 := pathz.New(-1, []string{"a", "b", "c"}, false)
 		p2 := pathz.New(-1, []string{"a", "b", "d"}, false)
 		check(t, testScenario{
-			name:       "different absolute paths",
-			path1:      p1,
-			path2:      p2,
+			name:        "different absolute paths",
+			path1:       p1,
+			path2:       p2,
 			expectEqual: false,
 		})
 	})
@@ -48,9 +48,9 @@ func TestUnitPathEquality(t *testing.T) {
 		p1 := pathz.New(0, []string{"a", "b"}, false)
 		p2 := pathz.New(0, []string{"a", "b"}, false)
 		check(t, testScenario{
-			name:       "identical relative paths",
-			path1:      p1,
-			path2:      p2,
+			name:        "identical relative paths",
+			path1:       p1,
+			path2:       p2,
 			expectEqual: true,
 		})
 	})
@@ -59,20 +59,20 @@ func TestUnitPathEquality(t *testing.T) {
 		p1 := pathz.New(0, []string{"a", "b"}, false)
 		p2 := pathz.New(0, []string{"x", "y"}, false)
 		check(t, testScenario{
-			name:       "different relative paths",
-			path1:      p1,
-			path2:      p2,
+			name:        "different relative paths",
+			path1:       p1,
+			path2:       p2,
 			expectEqual: false,
 		})
 	})
 
 	t.Run("same parts, different parents count", func(t *testing.T) {
-		p1 := pathz.New(0, []string{"a", "b"}, false) // relative
+		p1 := pathz.New(0, []string{"a", "b"}, false)  // relative
 		p2 := pathz.New(-1, []string{"a", "b"}, false) // absolute
 		check(t, testScenario{
-			name:       "same parts, different parents count",
-			path1:      p1,
-			path2:      p2,
+			name:        "same parts, different parents count",
+			path1:       p1,
+			path2:       p2,
 			expectEqual: false,
 		})
 	})
@@ -81,9 +81,9 @@ func TestUnitPathEquality(t *testing.T) {
 		p1 := pathz.New(0, []string{"a", "b"}, false)
 		p2 := pathz.New(0, []string{"a"}, false)
 		check(t, testScenario{
-			name:       "same parents count, different parts length",
-			path1:      p1,
-			path2:      p2,
+			name:        "same parents count, different parts length",
+			path1:       p1,
+			path2:       p2,
 			expectEqual: false,
 		})
 	})
@@ -92,9 +92,9 @@ func TestUnitPathEquality(t *testing.T) {
 		p1 := pathz.New(0, []string{"a", "b"}, false)
 		p2 := pathz.New(0, []string{"a", "b"}, true)
 		check(t, testScenario{
-			name:       "one path has ending slash, other does not",
-			path1:      p1,
-			path2:      p2,
+			name:        "one path has ending slash, other does not",
+			path1:       p1,
+			path2:       p2,
 			expectEqual: false,
 		})
 	})
@@ -103,9 +103,9 @@ func TestUnitPathEquality(t *testing.T) {
 		p1 := pathz.New(0, []string{"a", "b"}, true)
 		p2 := pathz.New(0, []string{"a", "b"}, true)
 		check(t, testScenario{
-			name:       "both paths have ending slash",
-			path1:      p1,
-			path2:      p2,
+			name:        "both paths have ending slash",
+			path1:       p1,
+			path2:       p2,
 			expectEqual: true,
 		})
 	})
@@ -114,30 +114,30 @@ func TestUnitPathEquality(t *testing.T) {
 		p1 := pathz.New(0, nil, false)
 		p2 := pathz.New(0, nil, false)
 		check(t, testScenario{
-			name:       "empty paths",
-			path1:      p1,
-			path2:      p2,
+			name:        "empty paths",
+			path1:       p1,
+			path2:       p2,
 			expectEqual: true,
 		})
 	})
 
 	t.Run("nil paths", func(t *testing.T) {
 		check(t, testScenario{
-			name:       "both nil paths",
-			path1:      nil,
-			path2:      nil,
+			name:        "both nil paths",
+			path1:       nil,
+			path2:       nil,
 			expectEqual: true,
 		})
 		check(t, testScenario{
-			name:       "one nil path",
-			path1:      pathz.New(0, nil, false),
-			path2:      nil,
+			name:        "one nil path",
+			path1:       pathz.New(0, nil, false),
+			path2:       nil,
 			expectEqual: false,
 		})
 		check(t, testScenario{
-			name:       "other nil path",
-			path1:      nil,
-			path2:      pathz.New(0, nil, false),
+			name:        "other nil path",
+			path1:       nil,
+			path2:       pathz.New(0, nil, false),
 			expectEqual: false,
 		})
 	})
@@ -146,9 +146,9 @@ func TestUnitPathEquality(t *testing.T) {
 		p1 := pathz.New(1, []string{"a", "b"}, false) // ../a/b
 		p2 := pathz.New(2, []string{"a", "b"}, false) // ../../a/b
 		check(t, testScenario{
-			name:       "path with different escape parents",
-			path1:      p1,
-			path2:      p2,
+			name:        "path with different escape parents",
+			path1:       p1,
+			path2:       p2,
 			expectEqual: false,
 		})
 	})
@@ -206,7 +206,7 @@ func TestUnitPathComparison(t *testing.T) {
 			name:     "different schemes (absolute vs relative)",
 			path1:    p("/a/b/c"), // "/a/b/c"
 			path2:    p("a/b/c"),  // "a/b/c"
-			expected: -1, // "/" < "a"
+			expected: -1,          // "/" < "a"
 		})
 	})
 
@@ -234,15 +234,15 @@ func TestUnitPathComparison(t *testing.T) {
 		})
 		check(t, testScenario{
 			name:     "paths with parent navigation - different levels",
-			path1:    p("../a"),   // "../a"
+			path1:    p("../a"),    // "../a"
 			path2:    p("../../a"), // "../../a"
-			expected: 1, // "../a" > "../../a"
+			expected: 1,            // "../a" > "../../a"
 		})
 		check(t, testScenario{
 			name:     "paths with parent navigation - different levels, reversed",
 			path1:    p("../../a"), // "../../a"
-			path2:    p("../a"),   // "../a"
-			expected: -1, // "../../a" < "../a"
+			path2:    p("../a"),    // "../a"
+			expected: -1,           // "../../a" < "../a"
 		})
 	})
 
@@ -264,15 +264,15 @@ func TestUnitPathComparison(t *testing.T) {
 	t.Run("empty path vs root path", func(t *testing.T) {
 		check(t, testScenario{
 			name:     "empty path vs root path",
-			path1:    p(""), // ""
+			path1:    p(""),  // ""
 			path2:    p("/"), // "/"
-			expected: -1, // "" < "/"
+			expected: -1,     // "" < "/"
 		})
 		check(t, testScenario{
 			name:     "root path vs empty path",
 			path1:    p("/"), // "/"
 			path2:    p(""),  // ""
-			expected: 1, // "/" > ""
+			expected: 1,      // "/" > ""
 		})
 	})
 

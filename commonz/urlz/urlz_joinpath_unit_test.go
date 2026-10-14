@@ -10,11 +10,11 @@ import (
 
 func TestUnitUrlJoinPath(t *testing.T) {
 	type testScenario struct {
-		name string
-		originalUrl *urlz.Url
-		joinPaths []*pathz.Path
-		expectedUrl string
-		expectedErr string
+		name               string
+		originalUrl        *urlz.Url
+		joinPaths          []*pathz.Path
+		expectedUrl        string
+		expectedErr        string
 		expectedUrlOnError *urlz.Url // New field for error-case URL assertion
 	}
 
@@ -50,7 +50,7 @@ func TestUnitUrlJoinPath(t *testing.T) {
 		check(t, testScenario{
 			name:        "join single relative path",
 			originalUrl: originalUrl,
-			joinPaths: []*pathz.Path{pathz.MustParse("segment")},
+			joinPaths:   []*pathz.Path{pathz.MustParse("segment")},
 			expectedUrl: "http://example.com/base/segment",
 		})
 	})
@@ -60,7 +60,7 @@ func TestUnitUrlJoinPath(t *testing.T) {
 		check(t, testScenario{
 			name:        "join multiple relative paths",
 			originalUrl: originalUrl,
-			joinPaths: []*pathz.Path{pathz.MustParse("sub"), pathz.MustParse("file.txt")},
+			joinPaths:   []*pathz.Path{pathz.MustParse("sub"), pathz.MustParse("file.txt")},
 			expectedUrl: "http://example.com/base/folder/sub/file.txt",
 		})
 	})
@@ -70,7 +70,7 @@ func TestUnitUrlJoinPath(t *testing.T) {
 		check(t, testScenario{
 			name:        "join with parent traversal",
 			originalUrl: originalUrl,
-			joinPaths: []*pathz.Path{pathz.MustParse("../share")},
+			joinPaths:   []*pathz.Path{pathz.MustParse("../share")},
 			expectedErr: "path escaped error: joining '/usr/local/bin' to '[../share]' results in '/usr/local/share' which is outside the base: error joining path to url file:///usr/local/bin: [../share]",
 			expectedUrlOnError: &urlz.Url{
 				Scheme: "file",
@@ -94,7 +94,7 @@ func TestUnitUrlJoinPath(t *testing.T) {
 		check(t, testScenario{
 			name:        "join resulting in escaped path",
 			originalUrl: originalUrl,
-			joinPaths: []*pathz.Path{pathz.MustParse("../../c")},
+			joinPaths:   []*pathz.Path{pathz.MustParse("../../c")},
 			expectedErr: "path escaped error: joining '/a/b' to '[../../c]' results in '/c' which is outside the base: error joining path to url http://example.com/a/b: [../../c]",
 			expectedUrlOnError: &urlz.Url{
 				Scheme: "http",
@@ -109,7 +109,7 @@ func TestUnitUrlJoinPath(t *testing.T) {
 		check(t, testScenario{
 			name:        "join empty path",
 			originalUrl: originalUrl,
-			joinPaths: []*pathz.Path{pathz.MustParse("")},
+			joinPaths:   []*pathz.Path{pathz.MustParse("")},
 			expectedUrl: "http://example.com/base",
 		})
 	})
@@ -119,7 +119,7 @@ func TestUnitUrlJoinPath(t *testing.T) {
 		check(t, testScenario{
 			name:        "join to root path",
 			originalUrl: originalUrl,
-			joinPaths: []*pathz.Path{pathz.MustParse("folder/file.txt")},
+			joinPaths:   []*pathz.Path{pathz.MustParse("folder/file.txt")},
 			expectedUrl: "file:///folder/file.txt",
 		})
 	})
@@ -129,7 +129,7 @@ func TestUnitUrlJoinPath(t *testing.T) {
 		check(t, testScenario{
 			name:        "join absolute path should discard previous and return escaped error",
 			originalUrl: originalUrl,
-			joinPaths: []*pathz.Path{pathz.MustParse("/new/absolute/path")},
+			joinPaths:   []*pathz.Path{pathz.MustParse("/new/absolute/path")},
 			expectedErr: "path escaped error: joining '/base' to '[/new/absolute/path]' results in '/new/absolute/path' which is outside the base: error joining path to url http://example.com/base: [/new/absolute/path]",
 			expectedUrlOnError: &urlz.Url{
 				Scheme: "http",
@@ -144,7 +144,7 @@ func TestUnitUrlJoinPath(t *testing.T) {
 		check(t, testScenario{
 			name:        "join with query parameters",
 			originalUrl: originalUrl,
-			joinPaths: []*pathz.Path{pathz.MustParse("segment")},
+			joinPaths:   []*pathz.Path{pathz.MustParse("segment")},
 			expectedUrl: "http://example.com/base/segment?q=test",
 		})
 	})
@@ -154,7 +154,7 @@ func TestUnitUrlJoinPath(t *testing.T) {
 		check(t, testScenario{
 			name:        "join with fragment",
 			originalUrl: originalUrl,
-			joinPaths: []*pathz.Path{pathz.MustParse("segment")},
+			joinPaths:   []*pathz.Path{pathz.MustParse("segment")},
 			expectedUrl: "http://example.com/base/segment#anchor",
 		})
 	})

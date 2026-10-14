@@ -444,7 +444,7 @@ func TestUnitFilterGzipWithAudit(t *testing.T) {
 
 	t.Run("Large compressed response exceeding threshold flags Large and captures uncompressed head and tail", func(t *testing.T) {
 		chunk := "Large-Response-Body-Chunk-9876543210-" // 37 bytes
-		repeatCount := 2000                               // 74,000 bytes > 64KB (65,536)
+		repeatCount := 2000                              // 74,000 bytes > 64KB (65,536)
 		plainResp := []byte(strings.Repeat(chunk, repeatCount))
 
 		expectedHead := plainResp[:logzaudit.LargeBodyThreashold]

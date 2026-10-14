@@ -106,4 +106,3 @@ func TestUnitExtractTo(t *testing.T) {
 	err = staticz.ExtractTo(ctx, invalidDestPath, stzfiles.Name)
 	require.Error(t, err)
 }
-
