@@ -6,6 +6,7 @@ import (
 	"reflect"
 
 	"github.com/infinity6-ai/gox/commonz/logz/logzaudit"
+	"github.com/infinity6-ai/gox/commonz/logz/logzctx"
 	"github.com/infinity6-ai/gox/commonz/logz/logzlast"
 	"github.com/infinity6-ai/gox/commonz/logz/logzprovider"
 	"github.com/infinity6-ai/gox/commonz/logz/logzspec"
@@ -91,4 +92,12 @@ func Create(logger any) Logger {
 	// ret := prv(t.PkgPath())
 	// ret = logzlast.New(ret)
 	// return ret
+}
+
+func SetAttr(ctx context.Context, k string, v string) {
+	SetAttrs(ctx, map[string]string{k: v})
+}
+
+func SetAttrs(ctx context.Context, m map[string]string) {
+	logzctx.Set(ctx, m)
 }
