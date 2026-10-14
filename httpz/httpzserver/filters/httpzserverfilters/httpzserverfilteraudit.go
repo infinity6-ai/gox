@@ -1,0 +1,33 @@
+package httpzserverfilters
+
+import (
+	"github.com/infinity6-ai/gox/commonz/logz/logzaudit"
+	"github.com/infinity6-ai/gox/httpz/httpzserver"
+	"github.com/infinity6-ai/gox/httpz/httpzserver/filters/httpzserverfilteraudit"
+	"github.com/infinity6-ai/gox/httpz/httpzserver/filters/httpzserverfiltererror"
+	"github.com/infinity6-ai/gox/httpz/httpzserver/filters/httpzserverfiltergzip"
+	"github.com/infinity6-ai/gox/httpz/httpzserver/filters/httpzserverfilterlogz"
+)
+
+func BasicFilters(app string, version string) []httpzserver.Filter {
+	logzFilter := &httpzserverfilterlogz.LogzFilter{
+		ServName: app,
+		Attrs:    map[string]string{"server.version": version},
+	}
+	return []httpzserver.Filter{
+		logzFilter.Filter,
+		httpzserverfilteraudit.New(&logzaudit.AuditService{
+			Name:    app,
+			Version: version,
+		}).Filter(),
+		httpzserverfiltergzip.GzipFilter,
+		httpzserverfiltererror.Filter,
+	}
+}
+
+func Config(s *httpzserver.Server, app string, version string) {
+	filters := BasicFilters(app, version)
+	for _, f := range filters {
+		s.AddFilter(f)
+	}
+}
