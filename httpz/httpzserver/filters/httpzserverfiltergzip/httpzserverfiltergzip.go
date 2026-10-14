@@ -116,13 +116,6 @@ func (f *filterImpl) filter(ctx context.Context, resp httpzserver.Resp, req *htt
 			return resp(nStatus, nHeaders)
 		}
 
-		// shouldCompress := clientAcceptsGzip &&
-		// 	nStatus != http.StatusNoContent &&
-		// 	nStatus != http.StatusNotModified &&
-		// 	!(nStatus >= 100 && nStatus < 200) &&
-		// 	nHeaders.Get("Content-Encoding") == ""
-
-		// if shouldCompress {
 		nHeaders.Set("Content-Encoding", "gzip")
 		nHeaders.Del("Content-Length")
 		vary := nHeaders.Get("Vary")
@@ -131,11 +124,9 @@ func (f *filterImpl) filter(ctx context.Context, resp httpzserver.Resp, req *htt
 		} else if !strings.Contains(strings.ToLower(vary), "accept-encoding") {
 			nHeaders.Set("Vary", vary+", Accept-Encoding")
 		}
-		// }
 
 		outWriter := resp(nStatus, nHeaders)
 
-		// if shouldCompress {
 		var err error
 		if f.level != gzip.DefaultCompression {
 			gzWriter, err = gzip.NewWriterLevel(outWriter, f.level)
@@ -143,14 +134,7 @@ func (f *filterImpl) filter(ctx context.Context, resp httpzserver.Resp, req *htt
 		if gzWriter == nil || err != nil {
 			gzWriter = gzip.NewWriter(outWriter)
 		}
-		// return &gzipResponseWriter{
-		// 	gw: gzWriter,
-		// 	w:  outWriter,
-		// }
 		return gzWriter
-		// }
-
-		// return outWriter
 	}
 
 	next(ctx, nResp, req)
@@ -166,64 +150,4 @@ func isGzipEncoding(contentEncoding string) bool {
 		}
 	}
 	return false
-}
-
-func acceptsGzip(acceptEncoding string) bool {
-	if acceptEncoding == "" {
-		return false
-	}
-	for _, part := range strings.Split(acceptEncoding, ",") {
-		part = strings.TrimSpace(strings.ToLower(part))
-		if strings.HasPrefix(part, "gzip") {
-			if strings.Contains(part, ";q=0") {
-				return false
-			}
-			return true
-		}
-		if part == "*" {
-			return true
-		}
-	}
-	return false
-}
-
-type gzipReadCloser struct {
-	gzReader   *gzip.Reader
-	underlying io.Reader
-}
-
-func (g *gzipReadCloser) Read(p []byte) (int, error) {
-	return g.gzReader.Read(p)
-}
-
-func (g *gzipReadCloser) Close() error {
-	err1 := g.gzReader.Close()
-	var err2 error
-	if c, ok := g.underlying.(io.Closer); ok {
-		err2 = c.Close()
-	}
-	if err1 != nil {
-		return err1
-	}
-	return err2
-}
-
-type gzipResponseWriter struct {
-	gw *gzip.Writer
-	w  io.Writer
-}
-
-func (g *gzipResponseWriter) Write(p []byte) (int, error) {
-	return g.gw.Write(p)
-}
-
-func (g *gzipResponseWriter) WriteString(s string) (int, error) {
-	return g.gw.Write([]byte(s))
-}
-
-func (g *gzipResponseWriter) Flush() {
-	_ = g.gw.Flush()
-	if f, ok := g.w.(http.Flusher); ok {
-		f.Flush()
-	}
 }
