@@ -14,7 +14,6 @@ import (
 	"github.com/infinity6-ai/gox/httpz/httpz"
 	"github.com/infinity6-ai/gox/httpz/httpzrequest"
 	"github.com/infinity6-ai/gox/httpz/httpzserver"
-	"go.code.infinity6.ai/boxservice/boxservice"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/propagation"
 )
@@ -26,8 +25,9 @@ const LOGZ_CTX_SERVER_VERSION = "http.server.version"
 var I6_LOGZ_FILTER_GAE = configz.Create("I6_LOGZ_FILTER_GAE", "false")
 
 type LogzFilter struct {
-	ServName string
-	Attrs    map[string]string
+	ServName  string
+	ProjectId string
+	Attrs     map[string]string
 }
 
 func (me *LogzFilter) Filter(ctx context.Context, resp httpzserver.Resp, req *httpzrequest.Req, next httpzserver.Handler) {
@@ -35,9 +35,7 @@ func (me *LogzFilter) Filter(ctx context.Context, resp httpzserver.Resp, req *ht
 	m := map[string]string{
 		LOGZ_CTX_REQ_ID: reqId,
 	}
-	if I6_LOGZ_FILTER_GAE.Req(ctx) == "true" {
-		m[logzproviderstructured.CtxKeyGaeProjectName] = boxservice.Config(ctx).MainProject()
-	}
+	m[logzproviderstructured.CtxKeyGaeProjectName] = me.ProjectId
 	ctx = logz.SetAttrs(ctx, m)
 
 	tracerInfoHeader := propagation.HeaderCarrier(req.Headers)
