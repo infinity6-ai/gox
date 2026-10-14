@@ -71,10 +71,10 @@ func GzipFilter(ctx context.Context, resp httpzserver.Resp, req *httpzrequest.Re
 			return
 		}
 		defer gzReader.Close()
-		req.Body = gzReader
 		req.Headers.Set(HeaderContentEncodingWas, origEncoding)
 		req.Headers.Del("Content-Encoding")
 		req.Headers.Del("Content-Length")
+		req.Body = gzReader
 	}
 
 	if !acceptsGzip(req) {
