@@ -6,7 +6,6 @@ import (
 	"context"
 	"io"
 	"net/http"
-	"strings"
 	"testing"
 
 	"github.com/infinity6-ai/gox/commonz/logz/logzaudit"
@@ -289,44 +288,6 @@ func TestUnitFilterGzip(t *testing.T) {
 			expectedRespStatus: 200,
 		})
 	})
-}
-
-func TestUnitFilterGzipCustomLevel(t *testing.T) {
-	ctx := t.Context()
-	srv := httpzserver.New(ctx, httpzserver.Options{LocalAddress: "localhost:0"})
-	defer srv.Close()
-	srv.Listen()
-
-	srv.AddFilter(httpzserverfiltergzip.New(httpzserverfiltergzip.Options{CompressionLevel: gzip.BestCompression}))
-
-	srv.AddHandler("GET", "/best", func(ctx context.Context, resp httpzserver.Resp, req *httpzrequest.Req, params map[string]string) {
-		w := resp(http.StatusOK, nil)
-		_, err := w.Write([]byte(strings.Repeat("a", 1000))) // Highly compressible
-		require.NoError(t, err)
-	})
-
-	srv.Start()
-
-	req, err := http.NewRequest("GET", srv.Base().MustJoinPathString("/best").String(), nil)
-	require.NoError(t, err)
-	req.Header.Set("Accept-Encoding", "gzip")
-
-	httpResp, err := http.DefaultClient.Do(req)
-	require.NoError(t, err)
-	defer httpResp.Body.Close()
-
-	require.Equal(t, http.StatusOK, httpResp.StatusCode)
-	require.Equal(t, "gzip", httpResp.Header.Get("Content-Encoding"))
-
-	body, err := io.ReadAll(httpResp.Body)
-	require.NoError(t, err)
-
-	decompressed, err := decompressBytes(body)
-	require.NoError(t, err)
-	require.Equal(t, strings.Repeat("a", 1000), decompressed)
-	// The length of body should be very small since it's repeating 'a's and BestCompression is used.
-	// BestCompression usually yields around 20-30 bytes for 1000 'a's.
-	require.Less(t, len(body), 50)
 }
 
 func gzipCompress(t *testing.T, data []byte) []byte {

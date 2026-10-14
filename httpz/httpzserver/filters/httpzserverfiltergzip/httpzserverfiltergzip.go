@@ -18,38 +18,6 @@ import (
 // and decompressed by the gzip filter.
 const HeaderContentEncodingWas = "X-I6-Content-Encoding-Was"
 
-// Options configures the gzip filter middleware.
-type Options struct {
-	// CompressionLevel specifies the gzip compression level
-	// (e.g. gzip.DefaultCompression, gzip.BestSpeed, gzip.BestCompression).
-	// If 0, gzip.DefaultCompression is used.
-	CompressionLevel int
-}
-
-type filterImpl struct {
-	level int
-}
-
-// New creates a new gzip filter middleware with the specified options.
-func New(opts Options) httpzserver.Filter {
-	level := opts.CompressionLevel
-	if level == 0 {
-		level = gzip.DefaultCompression
-	}
-	f := &filterImpl{
-		level: level,
-	}
-	return f.filter
-}
-
-var defaultFilter = New(Options{})
-
-// GzipFilter is the default gzip filter middleware that decompresses incoming
-// gzip request bodies and compresses outgoing response bodies when requested by the client.
-func GzipFilter(ctx context.Context, resp httpzserver.Resp, req *httpzrequest.Req, next httpzserver.Handler) {
-	defaultFilter(ctx, resp, req, next)
-}
-
 func acceptsGzip(req *httpzrequest.Req) bool {
 	if req == nil || req.Headers == nil {
 		return false
@@ -89,7 +57,7 @@ func shouldCompress(status int, headers http.Header) bool {
 	return true
 }
 
-func (f *filterImpl) filter(ctx context.Context, resp httpzserver.Resp, req *httpzrequest.Req, next httpzserver.Handler) {
+func GzipFilter(ctx context.Context, resp httpzserver.Resp, req *httpzrequest.Req, next httpzserver.Handler) {
 	if req.Headers == nil {
 		req.Headers = make(http.Header)
 	}
@@ -141,13 +109,8 @@ func (f *filterImpl) filter(ctx context.Context, resp httpzserver.Resp, req *htt
 
 		outWriter := resp(nStatus, nHeaders)
 
-		var err error
-		if f.level != gzip.DefaultCompression {
-			gzWriter, err = gzip.NewWriterLevel(outWriter, f.level)
-		}
-		if gzWriter == nil || err != nil {
-			gzWriter = gzip.NewWriter(outWriter)
-		}
+		gzWriter = gzip.NewWriter(outWriter)
+
 		audit := httpzserverfilteraudit.GetEntry(ctx)
 		if audit != nil {
 			audit.RespCompressed = true
