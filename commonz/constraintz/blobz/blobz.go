@@ -28,11 +28,22 @@ type Blob interface {
 	IsString() bool
 	Len() int
 	Ascii() string
+	Limited(max int) Blob
 }
 
 // wrapper is a non-generic struct holding either a string or []byte
 type wrapper struct {
 	data any
+}
+
+func (b *wrapper) Limited(max int) Blob {
+	if max <= 0 || b.Len() <= max {
+		return b
+	}
+	if s, ok := b.data.(string); ok {
+		return New(s[:max])
+	}
+	return New(b.data.([]byte)[:max])
 }
 
 func (b *wrapper) Ascii() string {

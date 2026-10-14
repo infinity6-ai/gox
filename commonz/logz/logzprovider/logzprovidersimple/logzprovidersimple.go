@@ -10,11 +10,11 @@ import (
 	"slices"
 	"time"
 
+	"github.com/infinity6-ai/gox/commonz/constraintz/blobz"
 	"github.com/infinity6-ai/gox/commonz/logz/logzaudit"
 	"github.com/infinity6-ai/gox/commonz/logz/logzcolor"
 	"github.com/infinity6-ai/gox/commonz/logz/logzspec"
-	"go.code.infinity6.ai/platform/util"
-	"go.code.infinity6.ai/platform/util/mapz"
+	"github.com/infinity6-ai/gox/commonz/mapz"
 	"golang.org/x/term"
 )
 
@@ -113,7 +113,7 @@ func applyQuery(ck logzcolor.Color, cv logzcolor.Color, m map[string][]string) s
 	for _, k := range mapz.SortedKeys(m) {
 		varray := m[k]
 		for _, v := range varray {
-			v = util.Ascii([]byte(v), maxv+1)
+			v = blobz.New(v).Limited(maxv + 1).Ascii()
 			if len(v) > maxv {
 				v += "..."
 			}
