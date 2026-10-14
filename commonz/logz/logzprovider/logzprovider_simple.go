@@ -22,6 +22,11 @@ var I6_LOGZ_NO_COLOR = false
 var mlogger *log.Logger
 
 func initColor() {
+	noColorConfig := os.Getenv("I6_LOGZ_NO_COLOR")
+	if noColorConfig != "" {
+		I6_LOGZ_NO_COLOR = noColorConfig == "true"
+		return
+	}
 	if !term.IsTerminal(int(os.Stderr.Fd())) {
 		I6_LOGZ_NO_COLOR = true
 	}
