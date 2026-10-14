@@ -9,7 +9,7 @@ type kt int
 
 const t kt = 1
 
-func get(ctx context.Context) map[string]string {
+func Get(ctx context.Context) map[string]string {
 	ret := ctx.Value(t)
 	if ret == nil {
 		return nil

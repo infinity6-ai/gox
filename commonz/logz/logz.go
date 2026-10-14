@@ -3,7 +3,6 @@ package logz
 import (
 	"context"
 	"fmt"
-	"maps"
 	"reflect"
 
 	"github.com/infinity6-ai/gox/commonz/logz/logzaudit"
@@ -91,14 +90,14 @@ func Create(logger any) Logger {
 	return impl
 }
 
-func SetAttr(ctx context.Context, k string, v string) {
-	SetAttrs(ctx, map[string]string{k: v})
+func Set(ctx context.Context, attrs map[string]string) context.Context {
+	return logzctx.Set(ctx, attrs)
 }
 
-func SetAttrs(ctx context.Context, m map[string]string) {
-	c := logzctx.Get(ctx)
-	if c == nil {
-		panic("logz not configured")
-	}
-	maps.Copy(c, m)
+func SetAttr(ctx context.Context, k string, v string) context.Context {
+	return SetAttrs(ctx, map[string]string{k: v})
+}
+
+func SetAttrs(ctx context.Context, m map[string]string) context.Context {
+	return logzctx.Set(ctx, m)
 }

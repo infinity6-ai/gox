@@ -83,7 +83,7 @@ func TestUnitLoggerLevels(t *testing.T) {
 
 	check := func(t *testing.T, s testScenario) {
 		t.Helper()
-		ctx := logzctx.Prepare(t.Context())
+		ctx := t.Context()
 		logger := logz.Create(tlogger(true))
 		collector := logger.(logz.Collector).Collector()
 
@@ -144,7 +144,7 @@ func TestUnitLoggerParams(t *testing.T) {
 
 	check := func(t *testing.T, s testScenario) {
 		t.Helper()
-		ctx := logzctx.Prepare(t.Context())
+		ctx := t.Context()
 		logger := logz.Create(tlogger(true))
 		collector := logger.(logz.Collector).Collector()
 
@@ -191,7 +191,7 @@ func TestUnitLoggerCollector(t *testing.T) {
 	}
 
 	t.Run("Entries logged before Collector initialization are not recorded", func(t *testing.T) {
-		ctx := logzctx.Prepare(t.Context())
+		ctx := t.Context()
 		logger := logz.Create(tlogger(true))
 
 		logger.Info(ctx, "before-collector", nil)
@@ -205,7 +205,7 @@ func TestUnitLoggerCollector(t *testing.T) {
 	})
 
 	t.Run("Collector drains entries on retrieval", func(t *testing.T) {
-		ctx := logzctx.Prepare(t.Context())
+		ctx := t.Context()
 		logger := logz.Create(tlogger(true))
 		collector := logger.(logz.Collector).Collector()
 
@@ -222,7 +222,7 @@ func TestUnitLoggerCollector(t *testing.T) {
 	})
 
 	t.Run("Collector retains at most 5 entries in ring buffer", func(t *testing.T) {
-		ctx := logzctx.Prepare(t.Context())
+		ctx := t.Context()
 		logger := logz.Create(tlogger(true))
 		collector := logger.(logz.Collector).Collector()
 
@@ -274,37 +274,52 @@ func TestUnitLogzCtx(t *testing.T) {
 		})
 	})
 
-	t.Run("Prepare initializes empty context attributes map", func(t *testing.T) {
+	t.Run("Set with empty attributes returns original context", func(t *testing.T) {
 		check(t, testScenario{
-			name: "Prepare fresh context",
+			name: "Set empty attributes",
 			action: func(t *testing.T) {
 				t.Helper()
-				ctx := logzctx.Prepare(context.Background())
-				attrs := logzctx.Get(ctx)
-				require.NotNil(t, attrs)
-				require.Empty(t, attrs)
+				ctx := context.Background()
+				require.Equal(t, ctx, logzctx.Set(ctx, nil))
+				require.Equal(t, ctx, logzctx.Set(ctx, map[string]string{}))
 			},
 			expectPanic: false,
 		})
 	})
 
-	t.Run("Prepare copies existing attributes to new context without mutating original", func(t *testing.T) {
+	t.Run("Set creates attributes on context", func(t *testing.T) {
 		check(t, testScenario{
-			name: "Prepare copies and isolates attributes",
+			name: "Set attributes",
 			action: func(t *testing.T) {
 				t.Helper()
-				parentCtx := logzctx.Prepare(context.Background())
-				logz.SetAttr(parentCtx, "parentKey", "parentVal")
+				ctx := logzctx.Set(context.Background(), map[string]string{
+					"key": "val",
+				})
+				attrs := logzctx.Get(ctx)
+				require.NotNil(t, attrs)
+				require.Equal(t, map[string]string{"key": "val"}, attrs)
+			},
+			expectPanic: false,
+		})
+	})
 
-				childCtx := logzctx.Prepare(parentCtx)
+	t.Run("Set copies existing attributes to new context without mutating original", func(t *testing.T) {
+		check(t, testScenario{
+			name: "Set copies and isolates attributes",
+			action: func(t *testing.T) {
+				t.Helper()
+				parentCtx := logz.SetAttr(context.Background(), "parentKey", "parentVal")
+				childCtx := logz.SetAttr(parentCtx, "childKey", "childVal")
+
 				childAttrs := logzctx.Get(childCtx)
 				require.NotNil(t, childAttrs)
 				require.Equal(t, "parentVal", childAttrs["parentKey"])
+				require.Equal(t, "childVal", childAttrs["childKey"])
 
-				// Mutating child context does not affect parent context
-				logz.SetAttr(childCtx, "childKey", "childVal")
-				require.Equal(t, "childVal", logzctx.Get(childCtx)["childKey"])
-				require.NotContains(t, logzctx.Get(parentCtx), "childKey")
+				// Parent context remains unchanged
+				parentAttrs := logzctx.Get(parentCtx)
+				require.Equal(t, "parentVal", parentAttrs["parentKey"])
+				require.NotContains(t, parentAttrs, "childKey")
 			},
 			expectPanic: false,
 		})
@@ -315,8 +330,7 @@ func TestUnitLogzCtx(t *testing.T) {
 			name: "SetAttr single",
 			action: func(t *testing.T) {
 				t.Helper()
-				ctx := logzctx.Prepare(context.Background())
-				logz.SetAttr(ctx, "env", "production")
+				ctx := logz.SetAttr(context.Background(), "env", "production")
 
 				attrs := logzctx.Get(ctx)
 				require.Equal(t, "production", attrs["env"])
@@ -330,8 +344,7 @@ func TestUnitLogzCtx(t *testing.T) {
 			name: "SetAttrs map",
 			action: func(t *testing.T) {
 				t.Helper()
-				ctx := logzctx.Prepare(context.Background())
-				logz.SetAttrs(ctx, map[string]string{
+				ctx := logz.SetAttrs(context.Background(), map[string]string{
 					"service": "billing",
 					"region":  "us-east-1",
 				})
@@ -344,27 +357,18 @@ func TestUnitLogzCtx(t *testing.T) {
 		})
 	})
 
-	t.Run("SetAttr panics when context is not prepared", func(t *testing.T) {
+	t.Run("SetAttr overwrites existing key in new context", func(t *testing.T) {
 		check(t, testScenario{
-			name: "SetAttr panic on unprepared context",
+			name: "SetAttr overwrite",
 			action: func(t *testing.T) {
 				t.Helper()
-				logz.SetAttr(context.Background(), "key", "val")
-			},
-			expectPanic: true,
-			panicMsg:    "logz not configured",
-		})
-	})
+				ctx1 := logz.SetAttr(context.Background(), "k", "v1")
+				ctx2 := logz.SetAttr(ctx1, "k", "v2")
 
-	t.Run("SetAttrs panics when context is not prepared", func(t *testing.T) {
-		check(t, testScenario{
-			name: "SetAttrs panic on unprepared context",
-			action: func(t *testing.T) {
-				t.Helper()
-				logz.SetAttrs(context.Background(), map[string]string{"key": "val"})
+				require.Equal(t, "v1", logzctx.Get(ctx1)["k"])
+				require.Equal(t, "v2", logzctx.Get(ctx2)["k"])
 			},
-			expectPanic: true,
-			panicMsg:    "logz not configured",
+			expectPanic: false,
 		})
 	})
 }
@@ -373,7 +377,7 @@ func TestUnitLogzCtxPropagation(t *testing.T) {
 	type testScenario struct {
 		name            string
 		setupCtx        func() context.Context
-		mutateCtx       func(ctx context.Context)
+		mutateCtx       func(ctx context.Context) context.Context
 		expectedContext map[string]string
 	}
 
@@ -384,7 +388,7 @@ func TestUnitLogzCtxPropagation(t *testing.T) {
 		collector := logger.(logz.Collector).Collector()
 
 		if s.mutateCtx != nil {
-			s.mutateCtx(ctx)
+			ctx = s.mutateCtx(ctx)
 		}
 
 		logger.Info(ctx, "ctx-propagation-op", nil)
@@ -398,20 +402,15 @@ func TestUnitLogzCtxPropagation(t *testing.T) {
 		check(t, testScenario{
 			name: "Context attributes included in entry",
 			setupCtx: func() context.Context {
-				ctx := logzctx.Prepare(context.Background())
-				logz.SetAttr(ctx, "reqId", "req-1234")
-				return ctx
+				return logz.SetAttr(context.Background(), "reqId", "req-1234")
 			},
 			expectedContext: map[string]string{"reqId": "req-1234"},
 		})
 	})
 
 	t.Run("Independent contexts maintain isolated attributes", func(t *testing.T) {
-		ctx1 := logzctx.Prepare(context.Background())
-		logz.SetAttr(ctx1, "step", "1")
-
-		ctx2 := logzctx.Prepare(context.Background())
-		logz.SetAttrs(ctx2, map[string]string{"step": "2", "userId": "user-42"})
+		ctx1 := logz.SetAttr(context.Background(), "step", "1")
+		ctx2 := logz.SetAttrs(context.Background(), map[string]string{"step": "2", "userId": "user-42"})
 
 		logger := logz.Create(tlogger(true))
 		collector := logger.(logz.Collector).Collector()
@@ -426,11 +425,8 @@ func TestUnitLogzCtxPropagation(t *testing.T) {
 	})
 
 	t.Run("Child context prepared from parent preserves parent attributes and isolates mutations", func(t *testing.T) {
-		parentCtx := logzctx.Prepare(context.Background())
-		logz.SetAttr(parentCtx, "parentKey", "parentVal")
-
-		childCtx := logzctx.Prepare(parentCtx)
-		logz.SetAttr(childCtx, "childKey", "childVal")
+		parentCtx := logz.SetAttr(context.Background(), "parentKey", "parentVal")
+		childCtx := logz.SetAttr(parentCtx, "childKey", "childVal")
 
 		logger := logz.Create(tlogger(true))
 		collector := logger.(logz.Collector).Collector()
@@ -445,15 +441,14 @@ func TestUnitLogzCtxPropagation(t *testing.T) {
 	})
 
 	t.Run("Log entries are immutable snapshots and unaffected by subsequent SetAttr", func(t *testing.T) {
-		ctx := logzctx.Prepare(context.Background())
+		ctx := logz.SetAttr(context.Background(), "k", "v1")
 		logger := logz.Create(tlogger(true))
 		collector := logger.(logz.Collector).Collector()
 
-		logz.SetAttr(ctx, "k", "v1")
 		logger.Info(ctx, "op1", nil)
 
-		logz.SetAttr(ctx, "k", "v2")
-		logger.Info(ctx, "op2", nil)
+		ctx2 := logz.SetAttr(ctx, "k", "v2")
+		logger.Info(ctx2, "op2", nil)
 
 		entries := collector()
 		require.Len(t, entries, 2)
@@ -476,16 +471,16 @@ func TestUnitLogzAudit(t *testing.T) {
 	type testScenario struct {
 		name          string
 		auditEntry    *logzaudit.AuditEntryReqResp
-		setupContext  func(ctx context.Context)
+		setupContext  func(ctx context.Context) context.Context
 		expectedOp    string
 		expectedLevel logzspec.Level
 	}
 
 	check := func(t *testing.T, s testScenario) {
 		t.Helper()
-		ctx := logzctx.Prepare(t.Context())
+		ctx := t.Context()
 		if s.setupContext != nil {
-			s.setupContext(ctx)
+			ctx = s.setupContext(ctx)
 		}
 
 		logger := logz.Create(tlogger(true))
@@ -572,9 +567,10 @@ func TestUnitLogzAudit(t *testing.T) {
 		check(t, testScenario{
 			name:       "Full request and response audit with context",
 			auditEntry: auditReqResp,
-			setupContext: func(ctx context.Context) {
-				logz.SetAttr(ctx, "session_id", "sess-999")
-				logz.SetAttr(ctx, "client_ip", "192.168.1.1")
+			setupContext: func(ctx context.Context) context.Context {
+				ctx = logz.SetAttr(ctx, "session_id", "sess-999")
+				ctx = logz.SetAttr(ctx, "client_ip", "192.168.1.1")
+				return ctx
 			},
 			expectedOp:    "audit-req-resp",
 			expectedLevel: logzspec.INFO,
@@ -657,8 +653,7 @@ func TestUnitLoggerStructuredProvider(t *testing.T) {
 	// Since structured provider writes to stderr via its own logger,
 	// we just ensure it doesn't panic when fully integrated with logz.Logger.
 	logger := logz.Create(tlogger(true))
-	ctx := logzctx.Prepare(context.Background())
-	logz.SetAttr(ctx, "integration", "true")
+	ctx := logz.SetAttr(context.Background(), "integration", "true")
 
 	require.NotPanics(t, func() {
 		logger.Info(ctx, "structured-integration", map[string]any{"key": "value"})
