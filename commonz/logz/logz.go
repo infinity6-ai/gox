@@ -96,5 +96,9 @@ func SetAttr(ctx context.Context, k string, v string) {
 }
 
 func SetAttrs(ctx context.Context, m map[string]string) {
-	maps.Copy(logzctx.Get(ctx), m)
+	c := logzctx.Get(ctx)
+	if c == nil {
+		panic("logz not configured")
+	}
+	maps.Copy(c, m)
 }

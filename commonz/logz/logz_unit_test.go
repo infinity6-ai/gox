@@ -4,11 +4,13 @@ import (
 	"testing"
 
 	"github.com/infinity6-ai/gox/commonz/logz"
+	"github.com/infinity6-ai/gox/commonz/logz/logzctx"
 	"github.com/stretchr/testify/require"
 )
 
 func TestManualSample(t *testing.T) {
 	ctx := t.Context()
+	ctx = logzctx.Prepare(ctx)
 
 	type tlogger logz.Type
 
@@ -18,6 +20,7 @@ func TestManualSample(t *testing.T) {
 
 	collector := logger.(logz.Collector).Collector()
 
+	logz.SetAttr(ctx, "ctx1", "ctx v1")
 	logger.Info(ctx, "a2", nil)
 	logger.Info(ctx, "a3", nil)
 
