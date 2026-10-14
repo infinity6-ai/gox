@@ -37,7 +37,7 @@ func init() {
 	mlogger = log.New(os.Stderr, "", 0)
 }
 
-func SimpleProvider(ctx context.Context, entry *logzspec.Entry) {
+func Post(ctx context.Context, entry *logzspec.Entry) {
 	paramsFormatted := applyMap(logzcolor.BLUE, logzcolor.CYAN, entry.Params)
 	logContext := applyMap(logzcolor.YELLOW, logzcolor.CYAN, entry.Context)
 	appender := entry.Appender
