@@ -49,6 +49,31 @@ func GzipFilter(ctx context.Context, resp httpzserver.Resp, req *httpzrequest.Re
 	defaultFilter(ctx, resp, req, next)
 }
 
+func supportGzip(req *httpzrequest.Req) bool {
+	acceptEncodings := strings.Split(req.Headers.Get("Accept-Encoding"), ",")
+	for _, acceptEncoding := range acceptEncodings {
+		if strings.TrimSpace(acceptEncoding) == "gzip" {
+			return true
+		}
+	}
+	return false
+}
+
+func isCompressible(respHeaders http.Header) bool {
+	ct := respHeaders.Get("Content-Type")
+	return strings.Contains(ct, "text/") || strings.Contains(ct, "json") || strings.Contains(ct, "xml")
+}
+
+func shouldCompress(status int) bool {
+	if status == http.StatusNoContent || status == http.StatusNotModified {
+		return false
+	}
+	if status >= 100 && status < 200 {
+		return false
+	}
+	return true
+}
+
 func (f *filterImpl) filter(ctx context.Context, resp httpzserver.Resp, req *httpzrequest.Req, next httpzserver.Handler) {
 	req.Headers.Del(HeaderContentEncodingWas)
 
@@ -66,7 +91,10 @@ func (f *filterImpl) filter(ctx context.Context, resp httpzserver.Resp, req *htt
 		req.Headers.Del("Content-Length")
 	}
 
-	clientAcceptsGzip := acceptsGzip(req.Headers.Get("Accept-Encoding"))
+	if !supportGzip(req) {
+		next(ctx, resp, req)
+		return
+	}
 
 	var gzWriter *gzip.Writer
 	defer func() {
@@ -80,41 +108,49 @@ func (f *filterImpl) filter(ctx context.Context, resp httpzserver.Resp, req *htt
 			nHeaders = make(http.Header)
 		}
 
-		shouldCompress := clientAcceptsGzip &&
-			nStatus != http.StatusNoContent &&
-			nStatus != http.StatusNotModified &&
-			!(nStatus >= 100 && nStatus < 200) &&
-			nHeaders.Get("Content-Encoding") == ""
-
-		if shouldCompress {
-			nHeaders.Set("Content-Encoding", "gzip")
-			nHeaders.Del("Content-Length")
-			vary := nHeaders.Get("Vary")
-			if vary == "" {
-				nHeaders.Set("Vary", "Accept-Encoding")
-			} else if !strings.Contains(strings.ToLower(vary), "accept-encoding") {
-				nHeaders.Set("Vary", vary+", Accept-Encoding")
-			}
+		if !shouldCompress(nStatus) {
+			return resp(nStatus, nHeaders)
 		}
+
+		if !isCompressible(nHeaders) {
+			return resp(nStatus, nHeaders)
+		}
+
+		// shouldCompress := clientAcceptsGzip &&
+		// 	nStatus != http.StatusNoContent &&
+		// 	nStatus != http.StatusNotModified &&
+		// 	!(nStatus >= 100 && nStatus < 200) &&
+		// 	nHeaders.Get("Content-Encoding") == ""
+
+		// if shouldCompress {
+		nHeaders.Set("Content-Encoding", "gzip")
+		nHeaders.Del("Content-Length")
+		vary := nHeaders.Get("Vary")
+		if vary == "" {
+			nHeaders.Set("Vary", "Accept-Encoding")
+		} else if !strings.Contains(strings.ToLower(vary), "accept-encoding") {
+			nHeaders.Set("Vary", vary+", Accept-Encoding")
+		}
+		// }
 
 		outWriter := resp(nStatus, nHeaders)
 
-		if shouldCompress {
-			var err error
-			if f.level != gzip.DefaultCompression {
-				gzWriter, err = gzip.NewWriterLevel(outWriter, f.level)
-			}
-			if gzWriter == nil || err != nil {
-				gzWriter = gzip.NewWriter(outWriter)
-			}
-			// return &gzipResponseWriter{
-			// 	gw: gzWriter,
-			// 	w:  outWriter,
-			// }
-			return gzWriter
+		// if shouldCompress {
+		var err error
+		if f.level != gzip.DefaultCompression {
+			gzWriter, err = gzip.NewWriterLevel(outWriter, f.level)
 		}
+		if gzWriter == nil || err != nil {
+			gzWriter = gzip.NewWriter(outWriter)
+		}
+		// return &gzipResponseWriter{
+		// 	gw: gzWriter,
+		// 	w:  outWriter,
+		// }
+		return gzWriter
+		// }
 
-		return outWriter
+		// return outWriter
 	}
 
 	next(ctx, nResp, req)
