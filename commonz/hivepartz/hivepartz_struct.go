@@ -98,7 +98,7 @@ func ParseString(s string) (*HiveParts, *pathz.Path, error) {
 	if err != nil {
 		return nil, nil, err
 	}
-	if r.Parents() != 0 || r.HasEndingSlash() || r.PartsLen() != 0 {
+	if r.Parents() != 0 || r.PartsLen() != 0 {
 		return nil, nil, fmt.Errorf("path unsupported: %s, remaning: %s", s, r)
 	}
 	return np, r, nil
@@ -113,9 +113,9 @@ func (h *HiveParts) Parse(p *pathz.Path) (*pathz.Path, error) {
 	if err != nil {
 		return nil, fmt.Errorf("path unsupported: %w", err)
 	}
-	if p.HasEndingSlash() {
-		return nil, fmt.Errorf("path unsupported: cannot end with slash")
-	}
+	// if p.HasEndingSlash() {
+	// 	return nil, fmt.Errorf("path unsupported: cannot end with slash")
+	// }
 	if p.PartsLen() == 0 {
 		return p, nil
 	}
