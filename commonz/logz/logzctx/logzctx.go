@@ -14,7 +14,7 @@ func Get(ctx context.Context) map[string]string {
 	if ret == nil {
 		return nil
 	}
-	return ret.(map[string]string)
+	return maps.Clone(ret.(map[string]string))
 }
 
 func Set(ctx context.Context, attrs map[string]string) context.Context {
