@@ -88,10 +88,6 @@ func Create(logger any) Logger {
 	impl.appender = t.PkgPath()
 	impl.provider = logzprovider.GetDefaultProvider()
 	return impl
-	// prv := logzprovider.GetDefaultProvider()
-	// ret := prv(t.PkgPath())
-	// ret = logzlast.New(ret)
-	// return ret
 }
 
 func SetAttr(ctx context.Context, k string, v string) {
