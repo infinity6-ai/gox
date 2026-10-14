@@ -75,15 +75,15 @@ func (e *Entry) CreateReqBody(r io.Reader) io.Reader {
 }
 
 func (e *Entry) CreateRespBody(w io.Writer) io.Writer {
-	if w == nil {
-		return nil
+	ret := w
+	if ret == nil {
+		return ret
 	}
 	if e.rawRespBody == nil {
-		e.rawRespBody = ioz.NewWriterCounter(w)
+		e.rawRespBody = ioz.NewWriterCounter(ret)
+		ret = e.rawRespBody
 	}
-	if e.headTailRespBody == nil {
-		e.headTailRespBody = ioz.NewWriterHeadTail(e.rawRespBody, logzaudit.LargeBodyThreashold, logzaudit.TailBodyThreashold)
-	}
+	e.headTailRespBody = ioz.NewWriterHeadTail(ret, logzaudit.LargeBodyThreashold, logzaudit.TailBodyThreashold)
 	return e.headTailRespBody
 }
 

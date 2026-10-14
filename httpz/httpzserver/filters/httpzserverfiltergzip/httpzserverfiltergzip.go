@@ -11,6 +11,7 @@ import (
 
 	"github.com/infinity6-ai/gox/httpz/httpzrequest"
 	"github.com/infinity6-ai/gox/httpz/httpzserver"
+	"github.com/infinity6-ai/gox/httpz/httpzserver/filters/httpzserverfilteraudit"
 )
 
 // HeaderContentEncodingWas indicates that the incoming request body was compressed
@@ -146,6 +147,11 @@ func (f *filterImpl) filter(ctx context.Context, resp httpzserver.Resp, req *htt
 		}
 		if gzWriter == nil || err != nil {
 			gzWriter = gzip.NewWriter(outWriter)
+		}
+		audit := httpzserverfilteraudit.GetEntry(ctx)
+		if audit != nil {
+			audit.RespCompressed = true
+			return audit.CreateRespBody(gzWriter)
 		}
 		return gzWriter
 	}
