@@ -2,6 +2,7 @@ package logzspec
 
 import (
 	"context"
+	"encoding/base64"
 	"errors"
 	"fmt"
 	"path/filepath"
@@ -9,6 +10,9 @@ import (
 	"runtime/debug"
 	"time"
 
+	"github.com/google/uuid"
+
+	"github.com/infinity6-ai/gox/commonz/errorz"
 	"github.com/infinity6-ai/gox/commonz/jsonz"
 	"github.com/infinity6-ai/gox/commonz/logz/logzaudit"
 )
@@ -28,10 +32,11 @@ type Entry struct {
 	Origin    string            `json:"org,omitempty"`
 	Level     Level             `json:"lvl,omitempty"`
 	Operation string            `json:"opr,omitempty"`
-	Audit     *logzaudit.Audit  `json:"aud,omitempty"`
-	Params    map[string]string `json:"prm,omitempty"`
-	Error     string            `json:"err,omitempty"`
-	Stack     string            `json:"stk,omitempty"`
+	Audit     *logzaudit.Audit  `json:"prm,omitempty"`
+	Params    map[string]string `json:"ctx,omitempty"`
+	Context   map[string]string `json:"err,omitempty"`
+	Error     string            `json:"stk,omitempty"`
+	Stack     string            `json:"aud,omitempty"`
 }
 
 func NewEntry(originSkil int, appender string, level Level, op string, params map[string]any, errs ...error) *Entry {
@@ -49,7 +54,9 @@ func NewEntry(originSkil int, appender string, level Level, op string, params ma
 }
 
 func (entry *Entry) fill(originSkip int) {
-	// entry.Id = uuid.NewRandom() // FIXME: id
+	id, err := uuid.NewV7()
+	errorz.Check(err)
+	entry.Id = base64.URLEncoding.WithPadding(base64.NoPadding).EncodeToString(id[:])
 	entry.CreatedAt = time.Now().UTC().UnixMilli()
 	entry.Origin = getCaller(originSkip)
 
