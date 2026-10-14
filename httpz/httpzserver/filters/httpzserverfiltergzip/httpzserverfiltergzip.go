@@ -49,32 +49,49 @@ func GzipFilter(ctx context.Context, resp httpzserver.Resp, req *httpzrequest.Re
 	defaultFilter(ctx, resp, req, next)
 }
 
-func supportGzip(req *httpzrequest.Req) bool {
-	acceptEncodings := strings.Split(req.Headers.Get("Accept-Encoding"), ",")
-	for _, acceptEncoding := range acceptEncodings {
-		if strings.TrimSpace(acceptEncoding) == "gzip" {
-			return true
+func acceptsGzip(req *httpzrequest.Req) bool {
+	if req == nil || req.Headers == nil {
+		return false
+	}
+	acceptEncoding := req.Headers.Get("Accept-Encoding")
+	if acceptEncoding == "" {
+		return false
+	}
+	hasGzip := false
+	hasWildcard := false
+	for _, part := range strings.Split(acceptEncoding, ",") {
+		part = strings.TrimSpace(strings.ToLower(part))
+		if strings.HasPrefix(part, "gzip") {
+			if strings.Contains(part, ";q=0") {
+				return false
+			}
+			hasGzip = true
+		} else if strings.HasPrefix(part, "*") {
+			if !strings.Contains(part, ";q=0") {
+				hasWildcard = true
+			}
 		}
 	}
-	return false
+	return hasGzip || hasWildcard
 }
 
-func isCompressible(respHeaders http.Header) bool {
-	ct := respHeaders.Get("Content-Type")
-	return strings.Contains(ct, "text/") || strings.Contains(ct, "json") || strings.Contains(ct, "xml")
-}
-
-func shouldCompress(status int) bool {
+func shouldCompress(status int, headers http.Header) bool {
 	if status == http.StatusNoContent || status == http.StatusNotModified {
 		return false
 	}
 	if status >= 100 && status < 200 {
 		return false
 	}
+	if headers != nil && headers.Get("Content-Encoding") != "" {
+		return false
+	}
 	return true
 }
 
 func (f *filterImpl) filter(ctx context.Context, resp httpzserver.Resp, req *httpzrequest.Req, next httpzserver.Handler) {
+	if req.Headers == nil {
+		req.Headers = make(http.Header)
+	}
 	req.Headers.Del(HeaderContentEncodingWas)
 
 	origEncoding := req.Headers.Get("Content-Encoding")
@@ -91,7 +108,7 @@ func (f *filterImpl) filter(ctx context.Context, resp httpzserver.Resp, req *htt
 		req.Headers.Del("Content-Length")
 	}
 
-	if !supportGzip(req) {
+	if !acceptsGzip(req) {
 		next(ctx, resp, req)
 		return
 	}
@@ -108,11 +125,7 @@ func (f *filterImpl) filter(ctx context.Context, resp httpzserver.Resp, req *htt
 			nHeaders = make(http.Header)
 		}
 
-		if !shouldCompress(nStatus) {
-			return resp(nStatus, nHeaders)
-		}
-
-		if !isCompressible(nHeaders) {
+		if !shouldCompress(nStatus, nHeaders) {
 			return resp(nStatus, nHeaders)
 		}
 
