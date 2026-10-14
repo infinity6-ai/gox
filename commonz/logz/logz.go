@@ -56,19 +56,19 @@ func (l *loggerImpl) send(ctx context.Context, entry *logzspec.Entry) {
 }
 
 func (l *loggerImpl) Debug(ctx context.Context, op string, params map[string]any, errs ...error) {
-	l.send(ctx, logzspec.NewEntry(1, l.appender, logzspec.DEBUG, op, params, errs...))
+	l.send(ctx, logzspec.NewEntry(ctx, 1, l.appender, logzspec.DEBUG, op, params, errs...))
 }
 
 func (l *loggerImpl) Error(ctx context.Context, op string, params map[string]any, errs ...error) {
-	l.send(ctx, logzspec.NewEntry(1, l.appender, logzspec.ERROR, op, params, errs...))
+	l.send(ctx, logzspec.NewEntry(ctx, 1, l.appender, logzspec.ERROR, op, params, errs...))
 }
 
 func (l *loggerImpl) Info(ctx context.Context, op string, params map[string]any, errs ...error) {
-	l.send(ctx, logzspec.NewEntry(1, l.appender, logzspec.INFO, op, params, errs...))
+	l.send(ctx, logzspec.NewEntry(ctx, 1, l.appender, logzspec.INFO, op, params, errs...))
 }
 
 func (l *loggerImpl) AuditReqResp(ctx context.Context, entryReqResp *logzaudit.AuditEntryReqResp) {
-	logEntry := logzspec.NewEntry(1, l.appender, logzspec.INFO, "audit-req-resp", nil)
+	logEntry := logzspec.NewEntry(ctx, 1, l.appender, logzspec.INFO, "audit-req-resp", nil)
 	logEntry.Stack = ""
 	logEntry.Audit = &logzaudit.Audit{
 		ReqResp: entryReqResp,

@@ -15,6 +15,7 @@ import (
 	"github.com/infinity6-ai/gox/commonz/errorz"
 	"github.com/infinity6-ai/gox/commonz/jsonz"
 	"github.com/infinity6-ai/gox/commonz/logz/logzaudit"
+	"github.com/infinity6-ai/gox/commonz/logz/logzctx"
 )
 
 type ProviderLogger func(ctx context.Context, entry *Entry)
@@ -39,12 +40,13 @@ type Entry struct {
 	Stack     string            `json:"aud,omitempty"`
 }
 
-func NewEntry(originSkil int, appender string, level Level, op string, params map[string]any, errs ...error) *Entry {
+func NewEntry(ctx context.Context, originSkil int, appender string, level Level, op string, params map[string]any, errs ...error) *Entry {
 	entry := &Entry{
 		Appender:  appender,
 		Level:     level,
 		Operation: op,
 		Params:    parseParams(params),
+		Context:   logzctx.Get(ctx),
 	}
 	if len(errs) > 0 {
 		entry.Error = formatError(errors.Join(errs...))
