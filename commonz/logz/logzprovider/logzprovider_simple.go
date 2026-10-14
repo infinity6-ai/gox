@@ -31,7 +31,7 @@ func init() {
 
 func SimpleProvider(ctx context.Context, entry *logzspec.Entry) {
 	paramsFormatted := applyMap(logzcolor.BLUE, logzcolor.CYAN, entry.Params)
-	// logContext := applyMap(logzcolor.YELLOW, logzcolor.CYAN, entry.Context)
+	logContext := applyMap(logzcolor.YELLOW, logzcolor.CYAN, entry.Context)
 	appender := entry.Appender
 
 	levelColor := getLevelColor(entry.Level)
@@ -48,10 +48,10 @@ func SimpleProvider(ctx context.Context, entry *logzspec.Entry) {
 
 	// msg += applyAudit(logzcolor.BOLD_BRIGHT_BLUE, logzcolor.CYAN, entry.Audit)
 
-	// if len(entry.Context) > 0 {
-	// 	msg += ", " + apply(logzcolor.BRIGHT_BLACK, "ctx:")
-	// 	msg += " " + logContext
-	// }
+	if len(entry.Context) > 0 {
+		msg += ", " + apply(logzcolor.BRIGHT_BLACK, "ctx:")
+		msg += " " + logContext
+	}
 
 	if entry.Error != "" {
 		errorFormatted := Format(entry.Error)
