@@ -50,30 +50,22 @@ func GzipFilter(ctx context.Context, resp httpzserver.Resp, req *httpzrequest.Re
 }
 
 func (f *filterImpl) filter(ctx context.Context, resp httpzserver.Resp, req *httpzrequest.Req, next httpzserver.Handler) {
-	// Sanitize any untrusted incoming X-I6-Content-Encoding-Was header for security
 	req.Headers.Del(HeaderContentEncodingWas)
 
-	// 1. Handle incoming request decompression if Content-Encoding is gzip
 	origEncoding := req.Headers.Get("Content-Encoding")
-	if isGzipEncoding(origEncoding) {
-		if req.Body != nil && req.Body != http.NoBody {
-			gzReader, err := gzip.NewReader(req.Body)
-			if err != nil {
-				w := resp(http.StatusBadRequest, nil)
-				_, _ = w.Write([]byte("invalid gzip body"))
-				return
-			}
-			req.Body = &gzipReadCloser{
-				gzReader:   gzReader,
-				underlying: req.Body,
-			}
-			req.Headers.Set(HeaderContentEncodingWas, origEncoding)
-			req.Headers.Del("Content-Encoding")
-			req.Headers.Del("Content-Length")
+	if req.Body != nil && req.Body != http.NoBody && isGzipEncoding(origEncoding) {
+		gzReader, err := gzip.NewReader(req.Body)
+		if err != nil {
+			resp(http.StatusBadRequest, nil).Write([]byte("invalid gzip body"))
+			return
 		}
+		defer gzReader.Close()
+		req.Body = gzReader
+		req.Headers.Set(HeaderContentEncodingWas, origEncoding)
+		req.Headers.Del("Content-Encoding")
+		req.Headers.Del("Content-Length")
 	}
 
-	// 2. Check if client accepts gzip for response compression
 	clientAcceptsGzip := acceptsGzip(req.Headers.Get("Accept-Encoding"))
 
 	var gzWriter *gzip.Writer
@@ -115,10 +107,11 @@ func (f *filterImpl) filter(ctx context.Context, resp httpzserver.Resp, req *htt
 			if gzWriter == nil || err != nil {
 				gzWriter = gzip.NewWriter(outWriter)
 			}
-			return &gzipResponseWriter{
-				gw: gzWriter,
-				w:  outWriter,
-			}
+			// return &gzipResponseWriter{
+			// 	gw: gzWriter,
+			// 	w:  outWriter,
+			// }
+			return gzWriter
 		}
 
 		return outWriter
