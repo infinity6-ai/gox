@@ -62,15 +62,15 @@ func (e *Entry) BuildReqResp() *logzaudit.AuditEntryReqResp {
 }
 
 func (e *Entry) CreateReqBody(r io.Reader) io.Reader {
-	if r == nil {
-		return nil
+	ret := r
+	if ret == nil {
+		return ret
 	}
 	if e.rawReqBody == nil {
 		e.rawReqBody = ioz.NewReaderCounter(r)
+		ret = e.rawReqBody
 	}
-	if e.headTailReqBody == nil {
-		e.headTailReqBody = ioz.NewReaderHeadTail(e.rawReqBody, logzaudit.LargeBodyThreashold, logzaudit.TailBodyThreashold)
-	}
+	e.headTailReqBody = ioz.NewReaderHeadTail(ret, logzaudit.LargeBodyThreashold, logzaudit.TailBodyThreashold)
 	return e.headTailReqBody
 }
 

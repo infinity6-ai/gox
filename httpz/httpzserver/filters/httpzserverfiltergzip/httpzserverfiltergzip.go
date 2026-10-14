@@ -75,6 +75,11 @@ func GzipFilter(ctx context.Context, resp httpzserver.Resp, req *httpzrequest.Re
 		req.Headers.Del("Content-Encoding")
 		req.Headers.Del("Content-Length")
 		req.Body = gzReader
+		audit := httpzserverfilteraudit.GetEntry(ctx)
+		if audit != nil {
+			audit.ReqCompressed = true
+			req.Body = audit.CreateReqBody(req.Body)
+		}
 	}
 
 	if !acceptsGzip(req) {
