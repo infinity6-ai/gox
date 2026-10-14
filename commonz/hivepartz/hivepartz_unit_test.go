@@ -286,9 +286,9 @@ func TestUnitParseString(t *testing.T) {
 
 	t.Run("Path with ending slash", func(t *testing.T) {
 		check(t, testScenario{
-			input:     "region=us-east-1/",
-			expectErr: true,
-			errMsg:    "path unsupported: cannot end with slash",
+			input:    "region=us-east-1/",
+			wantHP:   From("region", "us-east-1"),
+			wantPath: pathz.MustParse(""),
 		})
 	})
 
@@ -366,13 +366,6 @@ func TestUnitParse(t *testing.T) {
 		})
 	})
 
-	t.Run("Path with ending slash is unsupported", func(t *testing.T) {
-		check(t, testScenario{
-			input:     pathz.MustParse("region=us-east-1/"),
-			expectErr: true,
-			errMsg:    "path unsupported: cannot end with slash",
-		})
-	})
 	t.Run("Path with parent directory is unsupported", func(t *testing.T) {
 		check(t, testScenario{
 			input:     pathz.MustParse("../region=us-east-1"),
