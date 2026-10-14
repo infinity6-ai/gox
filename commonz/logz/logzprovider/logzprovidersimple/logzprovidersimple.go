@@ -1,4 +1,4 @@
-package logzprovider
+package logzprovidersimple
 
 import (
 	"context"
