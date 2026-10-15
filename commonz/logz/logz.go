@@ -9,10 +9,15 @@ import (
 	"github.com/infinity6-ai/gox/commonz/logz/logzctx"
 	"github.com/infinity6-ai/gox/commonz/logz/logzlast"
 	"github.com/infinity6-ai/gox/commonz/logz/logzprovider"
+	"github.com/infinity6-ai/gox/commonz/logz/logzprovider/logzproviderstructured"
 	"github.com/infinity6-ai/gox/commonz/logz/logzspec"
 )
 
 type Type bool
+
+const CtxKeyGaeProjectName = logzproviderstructured.CtxKeyGaeProjectName
+const CtxKeyAppName = "app.name"
+const CtxKeyAppVersion = "app.version"
 
 type Logger interface {
 	Error(ctx context.Context, op string, params map[string]any, errs ...error)

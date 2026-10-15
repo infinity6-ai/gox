@@ -43,10 +43,11 @@ func (me *LogzFilter) Filter(ctx context.Context, resp httpzserver.Resp, req *ht
 	ctx = propagator.Extract(ctx, tracerInfoHeader)
 
 	m = logzctx.Get(ctx)
-	ctx, span := tracerz.Span(ctx, "httpz.server", me.ServName, req.Method, req.Path.String())
+	appName := m[logz.CtxKeyAppName]
+
+	ctx, span := tracerz.Span(ctx, "httpz.server", appName, req.Method, req.Path.String())
 	defer span.Close()
 
-	tracerz.AttrString(ctx, "server.name", me.ServName)
 	for k, v := range me.Attrs {
 		tracerz.AttrString(ctx, k, v)
 	}
