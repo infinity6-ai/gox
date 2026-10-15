@@ -143,10 +143,7 @@ func (s *Server) startServer() {
 			if req.Headers == nil {
 				req.Headers = make(http.Header)
 			}
-			reqId := req.Headers.Get(httpz.HeaderReqId)
-			if reqId == "" {
-				reqId = idgen.B64()
-			}
+			reqId := idgen.B64()
 			req.Headers.Set(httpz.HeaderReqId, reqId)
 			w.Header().Set(httpz.HeaderReqId, reqId)
 			resp := func(status int, headers http.Header) io.Writer {

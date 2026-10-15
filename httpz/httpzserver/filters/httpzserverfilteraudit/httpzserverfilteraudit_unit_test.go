@@ -10,7 +10,6 @@ import (
 
 	"github.com/infinity6-ai/gox/commonz/logz"
 	"github.com/infinity6-ai/gox/commonz/logz/logzaudit"
-	"github.com/infinity6-ai/gox/httpz/httpz"
 	"github.com/infinity6-ai/gox/httpz/httpzrequest"
 	"github.com/infinity6-ai/gox/httpz/httpzserver"
 	"github.com/infinity6-ai/gox/httpz/httpzserver/filters/httpzserverfilteraudit"
@@ -183,16 +182,12 @@ func TestUnitAuditFilterScenarios(t *testing.T) {
 			auditService: &logzaudit.AuditService{
 				Name: "checkout-api",
 			},
-			requestMethod: http.MethodPost,
-			requestPath:   "/orders",
-			requestHeaders: map[string]string{
-				httpz.HeaderReqId: "custom-req-id-777",
-			},
+			requestMethod:       http.MethodPost,
+			requestPath:         "/orders",
 			requestBody:         reqPayload,
 			handlerStatus:       http.StatusCreated,
 			handlerBody:         respPayload,
 			expectedStatus:      http.StatusCreated,
-			expectedReqId:       "custom-req-id-777",
 			expectedServiceName: "checkout-api",
 			expectedReqMethod:   http.MethodPost,
 			expectedReqPath:     "/orders",

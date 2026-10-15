@@ -10,7 +10,6 @@ import (
 
 	"github.com/infinity6-ai/gox/commonz/logz"
 	"github.com/infinity6-ai/gox/commonz/logz/logzaudit"
-	"github.com/infinity6-ai/gox/httpz/httpz"
 	"github.com/infinity6-ai/gox/httpz/httpzrequest"
 	"github.com/infinity6-ai/gox/httpz/httpzserver"
 	"github.com/infinity6-ai/gox/httpz/httpzserver/filters/httpzserverfilteraudit"
@@ -204,12 +203,10 @@ func TestUnitFilterGzipWithAudit(t *testing.T) {
 		check(t, testScenario{
 			auditService:        testService,
 			expectedServiceName: "audit-gzip-service",
-			expectedReqId:       "req-audit-gzip-1",
 			requestMethod:       http.MethodPost,
 			requestPath:         "/upload",
 			requestHeaders: map[string]string{
 				"Content-Encoding": "gzip",
-				httpz.HeaderReqId:  "req-audit-gzip-1",
 			},
 			requestBody: compressedPayload,
 			verifyInHandler: func(t *testing.T, req *httpzrequest.Req, entry *httpzserverfilteraudit.Entry) {
