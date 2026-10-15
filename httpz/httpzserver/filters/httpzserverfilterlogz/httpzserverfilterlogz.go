@@ -25,16 +25,13 @@ const logzCtxKeyReqId = "http.server.req.id"
 
 func Filter(ctx context.Context, resp httpzserver.Resp, req *httpzrequest.Req, next httpzserver.Handler) {
 	reqId := req.Headers.Get(httpz.HeaderReqId)
-	m := map[string]string{
-		logzCtxKeyReqId: reqId,
-	}
 	ctx = logz.SetAttr(ctx, logzCtxKeyReqId, reqId)
 
 	tracerInfoHeader := propagation.HeaderCarrier(req.Headers)
 	propagator := otel.GetTextMapPropagator()
 	ctx = propagator.Extract(ctx, tracerInfoHeader)
 
-	m = logzctx.Get(ctx)
+	m := logzctx.Get(ctx)
 	appName := m[logz.CtxKeyAppName]
 	appVersion := m[logz.CtxKeyAppVersion]
 
