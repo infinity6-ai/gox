@@ -117,7 +117,7 @@ func TestRemoteGsLs(t *testing.T) {
 	err = fsz.Upload(ctx, file3URL, nil, strings.NewReader("content3"))
 	require.NoError(t, err)
 
-	prefixURL, err := urlz.Parse(fmt.Sprintf("gs://%s/%s/dir1/", testBucket, basePath))
+	prefixURL, err := urlz.Parse(fmt.Sprintf("gs://%s/%s/dir1", testBucket, basePath))
 	require.NoError(t, err)
 
 	paginator, err := fsz.Ls(ctx, prefixURL)
