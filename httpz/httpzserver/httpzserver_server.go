@@ -153,6 +153,7 @@ func (s *Server) startServer() {
 				for k, v := range headers {
 					w.Header()[k] = v
 				}
+				w.Header().Set(httpz.HeaderReqId, reqId)
 				w.WriteHeader(status)
 				return w
 			}
