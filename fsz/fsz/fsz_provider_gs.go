@@ -116,14 +116,16 @@ func (gf *gsFs) Delete(ctx context.Context, url *urlz.Url) error {
 
 func (gf *gsFs) Lister(ctx context.Context, prefix *urlz.Url, walker Walker) error {
 	bucket := prefix.Host
-	path := strings.TrimPrefix(prefix.Path.String(), "/")
+	// path := strings.TrimPrefix(prefix.Path.String(), "/")
+	path := prefix.Path.ForceCurrent().SetEndingSlash(true).String()
 	q := &storage.Query{Prefix: path, Delimiter: "/"}
 	return gf.runGsWalker(ctx, bucket, q, false, walker)
 }
 
 func (gf *gsFs) Finder(ctx context.Context, prefix *urlz.Url, walker Walker) error {
 	bucket := prefix.Host
-	path := strings.TrimPrefix(prefix.Path.String(), "/")
+	// path := strings.TrimPrefix(prefix.Path.String(), "/")
+	path := prefix.Path.ForceCurrent().SetEndingSlash(true).String()
 	q := &storage.Query{Prefix: path}
 	return gf.runGsWalker(ctx, bucket, q, true, walker)
 }
