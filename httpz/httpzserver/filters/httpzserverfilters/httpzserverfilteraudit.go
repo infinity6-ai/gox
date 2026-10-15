@@ -10,12 +10,8 @@ import (
 )
 
 func BasicFilters(app string, version string) []httpzserver.Filter {
-	logzFilter := &httpzserverfilterlogz.LogzFilter{
-		ServName: app,
-		Attrs:    map[string]string{"server.version": version},
-	}
 	return []httpzserver.Filter{
-		logzFilter.Filter,
+		httpzserverfilterlogz.Filter,
 		httpzserverfilteraudit.New(&logzaudit.AuditService{
 			Name:    app,
 			Version: version,

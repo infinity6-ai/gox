@@ -6,10 +6,8 @@ import (
 	"io"
 	"net/http"
 
-	"github.com/infinity6-ai/gox/commonz/configz"
 	"github.com/infinity6-ai/gox/commonz/logz"
 	"github.com/infinity6-ai/gox/commonz/logz/logzctx"
-	"github.com/infinity6-ai/gox/commonz/logz/logzprovider/logzproviderstructured"
 	"github.com/infinity6-ai/gox/commonz/logz/tracerz"
 	"github.com/infinity6-ai/gox/httpz/httpz"
 	"github.com/infinity6-ai/gox/httpz/httpzrequest"
@@ -18,25 +16,19 @@ import (
 	"go.opentelemetry.io/otel/propagation"
 )
 
-const LOGZ_CTX_REQ_ID = "http.server.req.id"
-const LOGZ_CTX_SERVER_NAME = "http.server.name"
-const LOGZ_CTX_SERVER_VERSION = "http.server.version"
+const logzCtxKeyReqId = "http.server.req.id"
 
-var I6_LOGZ_FILTER_GAE = configz.Create("I6_LOGZ_FILTER_GAE", "false")
+// const LogzCtxKeyServerName = "http.server.name"
+// const LogzCtxKeyServerVersion = "http.server.version"
 
-type LogzFilter struct {
-	ServName  string
-	ProjectId string
-	Attrs     map[string]string
-}
+// var I6_LOGZ_FILTER_GAE = configz.Create("I6_LOGZ_FILTER_GAE", "false")
 
-func (me *LogzFilter) Filter(ctx context.Context, resp httpzserver.Resp, req *httpzrequest.Req, next httpzserver.Handler) {
+func Filter(ctx context.Context, resp httpzserver.Resp, req *httpzrequest.Req, next httpzserver.Handler) {
 	reqId := req.Headers.Get(httpz.HeaderReqId)
 	m := map[string]string{
-		LOGZ_CTX_REQ_ID: reqId,
+		logzCtxKeyReqId: reqId,
 	}
-	m[logzproviderstructured.CtxKeyGaeProjectName] = me.ProjectId
-	ctx = logz.SetAttrs(ctx, m)
+	ctx = logz.SetAttr(ctx, logzCtxKeyReqId, reqId)
 
 	tracerInfoHeader := propagation.HeaderCarrier(req.Headers)
 	propagator := otel.GetTextMapPropagator()
@@ -44,14 +36,14 @@ func (me *LogzFilter) Filter(ctx context.Context, resp httpzserver.Resp, req *ht
 
 	m = logzctx.Get(ctx)
 	appName := m[logz.CtxKeyAppName]
+	appVersion := m[logz.CtxKeyAppVersion]
 
 	ctx, span := tracerz.Span(ctx, "httpz.server", appName, req.Method, req.Path.String())
 	defer span.Close()
 
-	for k, v := range me.Attrs {
-		tracerz.AttrString(ctx, k, v)
-	}
 	tracerz.AttrString(ctx, "req.id", reqId)
+	tracerz.AttrString(ctx, logz.CtxKeyAppName, appName)
+	tracerz.AttrString(ctx, logz.CtxKeyAppVersion, appVersion)
 
 	next(ctx, func(status int, headers http.Header) io.Writer {
 		tracerz.AttrInt(ctx, "resp.status_code", status)
