@@ -8,7 +8,6 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/infinity6-ai/gox/commonz/logz/logzaudit"
 	"github.com/infinity6-ai/gox/httpz/httpzrequest"
 	"github.com/infinity6-ai/gox/httpz/httpzserver"
 	"github.com/infinity6-ai/gox/httpz/httpzserver/filters/httpzserverfilteraudit"
@@ -337,7 +336,7 @@ func TestUnitGzipFilterStandalone(t *testing.T) {
 		defer srv.Close()
 		srv.Listen()
 
-		srv.AddFilter(httpzserverfilteraudit.New(&logzaudit.AuditService{}).WriterFilter())
+		srv.AddFilter(httpzserverfilteraudit.Filter)
 		srv.AddFilter(httpzserverfiltergzip.GzipFilter)
 
 		var receivedReqBody []byte

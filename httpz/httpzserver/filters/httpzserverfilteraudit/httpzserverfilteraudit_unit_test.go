@@ -51,7 +51,7 @@ func TestUnitAuditFilterScenarios(t *testing.T) {
 		collector := httpzserverfilteraudit.Collector()
 		collector() // clear prior log entries
 
-		srv.AddFilter(httpzserverfilteraudit.New(s.auditService).WriterFilter())
+		srv.AddFilter(httpzserverfilteraudit.Filter)
 
 		srv.AddHandler(s.requestMethod, s.requestPath, func(ctx context.Context, resp httpzserver.Resp, req *httpzrequest.Req, params map[string]string) {
 			if s.modifyEntryInHandler != nil {
@@ -279,7 +279,6 @@ func TestUnitAuditFilterEntryDirect(t *testing.T) {
 
 func TestUnitAuditFilterContextPanics(t *testing.T) {
 	t.Run("Filter panics when already registered in context", func(t *testing.T) {
-		filter := httpzserverfilteraudit.New(&logzaudit.AuditService{}).Filter()
 		req := httpzrequest.MustFormat("GET", "/test", nil)
 
 		defer func() {
@@ -289,8 +288,8 @@ func TestUnitAuditFilterContextPanics(t *testing.T) {
 		}()
 
 		// Execute filter inside filter to simulate duplicate registration
-		filter(context.Background(), nil, req, func(ctx context.Context, resp httpzserver.Resp, req *httpzrequest.Req) {
-			filter(ctx, resp, req, func(ctx context.Context, resp httpzserver.Resp, req *httpzrequest.Req) {})
+		httpzserverfilteraudit.Filter(context.Background(), nil, req, func(ctx context.Context, resp httpzserver.Resp, req *httpzrequest.Req) {
+			httpzserverfilteraudit.Filter(ctx, resp, req, func(ctx context.Context, resp httpzserver.Resp, req *httpzrequest.Req) {})
 		})
 	})
 }

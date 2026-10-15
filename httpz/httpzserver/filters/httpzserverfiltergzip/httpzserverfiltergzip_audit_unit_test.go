@@ -61,7 +61,7 @@ func TestUnitFilterGzipWithAudit(t *testing.T) {
 		collector := httpzserverfilteraudit.Collector()
 		collector() // clear prior log entries
 
-		srv.AddFilter(httpzserverfilteraudit.New(s.auditService).WriterFilter())
+		srv.AddFilter(httpzserverfilteraudit.Filter)
 		srv.AddFilter(httpzserverfiltergzip.GzipFilter)
 
 		srv.AddHandler(s.requestMethod, s.requestPath, func(ctx context.Context, resp httpzserver.Resp, req *httpzrequest.Req, params map[string]string) {

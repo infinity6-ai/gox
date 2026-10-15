@@ -1,7 +1,6 @@
 package httpzserverfilters
 
 import (
-	"github.com/infinity6-ai/gox/commonz/logz/logzaudit"
 	"github.com/infinity6-ai/gox/httpz/httpzserver"
 	"github.com/infinity6-ai/gox/httpz/httpzserver/filters/httpzserverfilteraudit"
 	"github.com/infinity6-ai/gox/httpz/httpzserver/filters/httpzserverfiltererror"
@@ -12,10 +11,7 @@ import (
 func BasicFilters(app string, version string) []httpzserver.Filter {
 	return []httpzserver.Filter{
 		httpzserverfilterlogz.Filter,
-		httpzserverfilteraudit.New(&logzaudit.AuditService{
-			Name:    app,
-			Version: version,
-		}).Filter(),
+		httpzserverfilteraudit.Filter,
 		httpzserverfiltergzip.GzipFilter,
 		httpzserverfiltererror.Filter,
 	}
