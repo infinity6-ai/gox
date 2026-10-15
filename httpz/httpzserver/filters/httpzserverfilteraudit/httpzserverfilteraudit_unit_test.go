@@ -8,6 +8,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/infinity6-ai/gox/commonz/logz"
 	"github.com/infinity6-ai/gox/commonz/logz/logzaudit"
 	"github.com/infinity6-ai/gox/httpz/httpz"
 	"github.com/infinity6-ai/gox/httpz/httpzrequest"
@@ -44,6 +45,10 @@ func TestUnitAuditFilterScenarios(t *testing.T) {
 	check := func(t *testing.T, s testScenario) {
 		t.Helper()
 		ctx := t.Context()
+		if s.auditService != nil {
+			ctx = logz.SetAttr(ctx, logz.CtxKeyAppName, s.auditService.Name)
+			ctx = logz.SetAttr(ctx, logz.CtxKeyAppVersion, s.auditService.Version)
+		}
 		srv := httpzserver.New(ctx, httpzserver.Options{LocalAddress: "localhost:0"})
 		defer srv.Close()
 		srv.Listen()
