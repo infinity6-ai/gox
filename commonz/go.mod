@@ -4,7 +4,7 @@ go 1.26.1
 
 require (
 	github.com/google/uuid v1.6.0
-	github.com/infinity6-ai/gox/versionz v0.0.47
+	github.com/infinity6-ai/gox/versionz v0.0.48
 	github.com/spf13/cobra v1.10.2
 	github.com/stretchr/testify v1.12.1
 	go.opentelemetry.io/otel v1.43.0
