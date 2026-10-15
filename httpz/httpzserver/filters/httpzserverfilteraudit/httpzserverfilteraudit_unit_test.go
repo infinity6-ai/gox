@@ -46,8 +46,10 @@ func TestUnitAuditFilterScenarios(t *testing.T) {
 		t.Helper()
 		ctx := t.Context()
 		if s.auditService != nil {
-			ctx = logz.SetAttr(ctx, logz.CtxKeyAppName, s.auditService.Name)
-			ctx = logz.SetAttr(ctx, logz.CtxKeyAppVersion, s.auditService.Version)
+			ctx = logz.SetAttrs(ctx, map[string]string{
+				logz.CtxKeyAppName:    s.auditService.Name,
+				logz.CtxKeyAppVersion: s.auditService.Version,
+			})
 		}
 		srv := httpzserver.New(ctx, httpzserver.Options{LocalAddress: "localhost:0"})
 		defer srv.Close()

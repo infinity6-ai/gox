@@ -15,13 +15,15 @@ import (
 func BasicFilters(app string, version string) []httpzserver.Filter {
 	filters := []httpzserver.Filter{}
 	if app != "" || version != "" {
+		attrs := make(map[string]string, 2)
+		if app != "" {
+			attrs[logz.CtxKeyAppName] = app
+		}
+		if version != "" {
+			attrs[logz.CtxKeyAppVersion] = version
+		}
 		filters = append(filters, func(ctx context.Context, resp httpzserver.Resp, req *httpzrequest.Req, next httpzserver.Handler) {
-			if app != "" {
-				ctx = logz.SetAttr(ctx, logz.CtxKeyAppName, app)
-			}
-			if version != "" {
-				ctx = logz.SetAttr(ctx, logz.CtxKeyAppVersion, version)
-			}
+			ctx = logz.SetAttrs(ctx, attrs)
 			next(ctx, resp, req)
 		})
 	}
@@ -35,11 +37,15 @@ func BasicFilters(app string, version string) []httpzserver.Filter {
 }
 
 func Config(s *httpzserver.Server, app string, version string) {
-	if app != "" {
-		s.Context = logz.SetAttr(s.Context, logz.CtxKeyAppName, app)
-	}
-	if version != "" {
-		s.Context = logz.SetAttr(s.Context, logz.CtxKeyAppVersion, version)
+	if app != "" || version != "" {
+		attrs := make(map[string]string, 2)
+		if app != "" {
+			attrs[logz.CtxKeyAppName] = app
+		}
+		if version != "" {
+			attrs[logz.CtxKeyAppVersion] = version
+		}
+		s.Context = logz.SetAttrs(s.Context, attrs)
 	}
 	filters := BasicFilters(app, version)
 	for _, f := range filters {
