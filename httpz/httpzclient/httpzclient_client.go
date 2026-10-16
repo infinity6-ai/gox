@@ -101,7 +101,7 @@ func (c *Client) MustSuccess(ctx context.Context, req *httpzrequest.Req) *Resp {
 	ret := c.MustDo(ctx, req)
 	dfz.AddCloserS(ret.Body)
 	if ret.StatusCode < 200 || ret.StatusCode >= 300 {
-		panic(fmt.Errorf("http client error: %d, head body: %s", ret.StatusCode, blobz.MustReadAll(req.Body, 1024).Ascii()))
+		panic(fmt.Errorf("http client error: %d, head body: '%s'", ret.StatusCode, blobz.MustReadAll(req.Body, 1024).Ascii()))
 	}
 	dfz.Detach()
 	return ret
