@@ -2,6 +2,8 @@ package routez
 
 import (
 	"context"
+	"fmt"
+	"io"
 	"net/http"
 
 	"github.com/infinity6-ai/gox/commonz/jsonz"
@@ -10,6 +12,28 @@ import (
 	"github.com/infinity6-ai/gox/routez/apiz"
 	"github.com/infinity6-ai/gox/routez/internal/converter"
 )
+
+type responseHolder struct {
+	serverResp httpzserver.Resp
+	ejected    bool
+}
+
+type responseKey struct{}
+
+func EjectResponse(ctx context.Context, status int, headers http.Header) io.Writer {
+	holder, ok := ctx.Value(responseKey{}).(*responseHolder)
+	if !ok || holder == nil {
+		panic(fmt.Errorf("response not found in context"))
+	}
+	if holder.ejected {
+		panic(fmt.Errorf("response has already been ejected"))
+	}
+	holder.ejected = true
+	if headers == nil {
+		headers = make(http.Header)
+	}
+	return holder.serverResp(status, headers)
+}
 
 func writeResponse(resp *apiz.Resp, serverResp httpzserver.Resp, refs *apiz.DataRefs) {
 	if refs.RespHeaders != nil {
@@ -40,10 +64,20 @@ func Register(s *httpzserver.Server, services ...apiz.Service) {
 	for _, service := range services {
 		spec := service.Api().ApiSpec()
 		s.AddHandler(spec.Method, spec.Path, func(ctx context.Context, serverResp httpzserver.Resp, req *httpzrequest.Req, params map[string]string) {
+			holder := &responseHolder{
+				serverResp: serverResp,
+			}
+			ctx = context.WithValue(ctx, responseKey{}, holder)
 			service := service.New()
 			refs := service.Api().ApiDataRefs()
 			parseRequest(refs, req, params)
 			resp := service.Handler(ctx)
+			if holder.ejected {
+				if resp != nil {
+					panic(fmt.Errorf("handler returned non-nil response after EjectResponse: %v", resp))
+				}
+				return
+			}
 			if resp == nil {
 				resp = &apiz.Resp{Status: 200}
 			}
