@@ -24,11 +24,11 @@ type Schema struct {
 	Desc *Desc
 
 	// Mutually exclusive data bindings (returning pointers for 2-way binding)
-	Raw    func() any
+	Field       func() any
 	Object func(read bool) map[string]*Schema
 	Array  func() *Array
-	Str    func() *Parser[string]
-	Strs   func() *Parser[[]string]
+	UrlValue    func() *Parser[string]
+	UrlValues   func() *Parser[[]string]
 }
 
 // =====================================
@@ -56,15 +56,15 @@ func (s *Schema) MarshalJSON() ([]byte, error) {
 		// Marshaling a slice of *Schema triggers recursive MarshalJSON
 		return json.Marshal(out)
 	}
-	if s.Raw != nil {
-		return json.Marshal(s.Raw())
+	if s.Field != nil {
+		return json.Marshal(s.Field())
 	}
-	if s.Str != nil {
-		f, _ := s.Str().Format()
+	if s.UrlValue != nil {
+		f, _ := s.UrlValue().Format()
 		return json.Marshal([]string{f})
 	}
-	if s.Strs != nil {
-		f, _ := s.Strs().Format()
+	if s.UrlValues != nil {
+		f, _ := s.UrlValues().Format()
 		return json.Marshal(f)
 	}
 	return []byte("null"), nil
@@ -84,16 +84,16 @@ func (s *Schema) UnmarshalJSON(data []byte) error {
 	if s.Array != nil {
 		return s.unmarshalJSONArray(data)
 	}
-	if s.Raw != nil {
-		return json.Unmarshal(data, s.Raw())
+	if s.Field != nil {
+		return json.Unmarshal(data, s.Field())
 	}
-	if s.Str != nil {
-		return s.unmarshalJSONStr(data)
+	if s.UrlValue != nil {
+		return s.unmarshalJSONUrlValue(data)
 	}
-	if s.Strs != nil {
-		return s.unmarshalJSONStrs(data)
+	if s.UrlValues != nil {
+		return s.unmarshalJSONUrlValues(data)
 	}
-	return fmt.Errorf("schema must have one field set (Object, Array, Raw, Str, Strs)")
+	return fmt.Errorf("schema must have one field set (Object, Array, Field, UrlValue, UrlValues)")
 }
 
 func (s *Schema) unmarshalJSONObject(data []byte) error {
@@ -136,11 +136,11 @@ func (s *Schema) unmarshalJSONArray(data []byte) error {
 	return nil
 }
 
-func (s *Schema) unmarshalJSONStr(data []byte) error {
+func (s *Schema) unmarshalJSONUrlValue(data []byte) error {
 	if len(data) == 0 {
 		panic("data must not be empty")
 	}
-	parser := s.Str().Parse
+	parser := s.UrlValue().Parse
 	var strs []string
 	if err := json.Unmarshal(data, &strs); err != nil {
 		return err
@@ -153,11 +153,11 @@ func (s *Schema) unmarshalJSONStr(data []byte) error {
 	return nil
 }
 
-func (s *Schema) unmarshalJSONStrs(data []byte) error {
+func (s *Schema) unmarshalJSONUrlValues(data []byte) error {
 	if len(data) == 0 {
 		panic("data must not be empty")
 	}
-	parser := s.Strs().Parse
+	parser := s.UrlValues().Parse
 	var strs []string
 	if err := json.Unmarshal(data, &strs); err != nil {
 		return err

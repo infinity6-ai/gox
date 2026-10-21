@@ -72,9 +72,9 @@ func (f *FractionApi) schemaRespBody() *schemaz.Schema {
 	return &schemaz.Schema{
 		Object: func(read bool) map[string]*schemaz.Schema {
 			return map[string]*schemaz.Schema{
-				"display":  {Raw: func() any { return &f.Resp.Result.Display }, Desc: &schemaz.Desc{Summary: "Human Fraction Representation"}},
-				"result":   {Raw: func() any { return &f.Resp.Result.Result }, Desc: &schemaz.Desc{Summary: "Fraction Result"}},
-				"messages": {Raw: func() any { return &f.Resp.Result.Messages }, Desc: &schemaz.Desc{Summary: "Output Messages"}},
+				"display":  {Field: func() any { return &f.Resp.Result.Display }, Desc: &schemaz.Desc{Summary: "Human Fraction Representation"}},
+				"result":   {Field: func() any { return &f.Resp.Result.Result }, Desc: &schemaz.Desc{Summary: "Fraction Result"}},
+				"messages": {Field: func() any { return &f.Resp.Result.Messages }, Desc: &schemaz.Desc{Summary: "Output Messages"}},
 			}
 		},
 	}
@@ -84,7 +84,7 @@ func (f *FractionApi) schemaRespHeaders() *schemaz.Schema {
 	return &schemaz.Schema{
 		Object: func(read bool) map[string]*schemaz.Schema {
 			return map[string]*schemaz.Schema{
-				"x_i6_trace_message": {Str: schemaz.ParseStr(&f.Resp.TraceMessage), Desc: &schemaz.Desc{Summary: "Sample of any trace message"}},
+				"x_i6_trace_message": {UrlValue: schemaz.ParseStr(&f.Resp.TraceMessage), Desc: &schemaz.Desc{Summary: "Sample of any trace message"}},
 			}
 		},
 	}
@@ -94,7 +94,7 @@ func (f *FractionApi) schemaReqBody() *schemaz.Schema {
 	return &schemaz.Schema{
 		Object: func(read bool) map[string]*schemaz.Schema {
 			return map[string]*schemaz.Schema{
-				"reason": {Raw: func() any { return &f.Req.Reason }, Desc: &schemaz.Desc{Summary: "Sample reason of this fraction"}},
+				"reason": {Field: func() any { return &f.Req.Reason }, Desc: &schemaz.Desc{Summary: "Sample reason of this fraction"}},
 				"messages": {
 					Array: schemaz.NewArray(schemaz.ArrayOptions[[]*Message, *Message]{
 						Slice:      func() *[]*Message { return &f.Req.Messages },
@@ -106,7 +106,7 @@ func (f *FractionApi) schemaReqBody() *schemaz.Schema {
 									return map[string]*schemaz.Schema{
 										"message": {
 											Desc: &schemaz.Desc{Summary: "message string"},
-											Raw:  func() any { return &(*element).Message },
+											Field:  func() any { return &(*element).Message },
 										},
 									}
 								},
@@ -123,7 +123,7 @@ func (f *FractionApi) schemaReqHeaders() *schemaz.Schema {
 	return &schemaz.Schema{
 		Object: func(read bool) map[string]*schemaz.Schema {
 			return map[string]*schemaz.Schema{
-				"x_i6_trace_id": {Str: schemaz.ParseStr(&f.Req.TraceId), Desc: &schemaz.Desc{Summary: "Sample of Trace Id"}},
+				"x_i6_trace_id": {UrlValue: schemaz.ParseStr(&f.Req.TraceId), Desc: &schemaz.Desc{Summary: "Sample of Trace Id"}},
 			}
 		},
 	}
@@ -133,7 +133,7 @@ func (f *FractionApi) schemaQueryParams() *schemaz.Schema {
 	return &schemaz.Schema{
 		Object: func(read bool) map[string]*schemaz.Schema {
 			return map[string]*schemaz.Schema{
-				"precision": {Str: schemaz.ParseStrNumber(&f.Req.Precision), Desc: &schemaz.Desc{Summary: "Fraction max precision"}},
+				"precision": {UrlValue: schemaz.ParseStrNumber(&f.Req.Precision), Desc: &schemaz.Desc{Summary: "Fraction max precision"}},
 			}
 		},
 	}
@@ -143,8 +143,8 @@ func (f *FractionApi) schemaPathParams() *schemaz.Schema {
 	return &schemaz.Schema{
 		Object: func(read bool) map[string]*schemaz.Schema {
 			return map[string]*schemaz.Schema{
-				"numerator":   {Str: schemaz.ParseStrNumber(&f.Req.Numerator), Desc: &schemaz.Desc{Summary: "Fraction Numerator"}},
-				"denominator": {Str: schemaz.ParseStrNumber(&f.Req.Denominator), Desc: &schemaz.Desc{Summary: "Fraction Denominator"}},
+				"numerator":   {UrlValue: schemaz.ParseStrNumber(&f.Req.Numerator), Desc: &schemaz.Desc{Summary: "Fraction Numerator"}},
+				"denominator": {UrlValue: schemaz.ParseStrNumber(&f.Req.Denominator), Desc: &schemaz.Desc{Summary: "Fraction Denominator"}},
 			}
 		},
 	}

@@ -62,7 +62,7 @@ func TestUnitNilHandlerReturns200(t *testing.T) {
 			},
 			refs: apiz.DataRefs{
 				RespBody: &schemaz.Schema{
-					Raw: func() any {
+					Field: func() any {
 						return map[string]string{"status": "ok"}
 					},
 				},
@@ -104,7 +104,7 @@ func TestUnitRespHeaders(t *testing.T) {
 			},
 			refs: apiz.DataRefs{
 				RespBody: &schemaz.Schema{
-					Raw: func() any {
+					Field: func() any {
 						return map[string]string{"status": "ok"}
 					},
 				},

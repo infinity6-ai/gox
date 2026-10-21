@@ -72,22 +72,22 @@ func TestUnitBasic(t *testing.T) {
 		Object: func(read bool) map[string]*schemaz.Schema {
 			return map[string]*schemaz.Schema{
 				"name": {
-					Raw: func() any {
+					Field: func() any {
 						return &person.Name
 					},
 				},
 				"age": {
-					Raw: func() any {
+					Field: func() any {
 						return &person.Age
 					},
 				},
 				"main_address": {
-					Raw: func() any {
+					Field: func() any {
 						return &person.MainAddress
 					},
 				},
 				"main_address_nil": {
-					Raw: func() any {
+					Field: func() any {
 						return &person.MainAddressNil
 					},
 				},
@@ -101,10 +101,10 @@ func TestUnitBasic(t *testing.T) {
 						}
 						return map[string]*schemaz.Schema{
 							"street": {
-								Raw: func() any { return &person.SecondaryAddresses.Street },
+								Field: func() any { return &person.SecondaryAddresses.Street },
 							},
 							"city": {
-								Raw: func() any { return &person.SecondaryAddresses.City },
+								Field: func() any { return &person.SecondaryAddresses.City },
 							},
 						}
 					},
@@ -119,16 +119,16 @@ func TestUnitBasic(t *testing.T) {
 						}
 						return map[string]*schemaz.Schema{
 							"street": {
-								Raw: func() any { return &person.SecondaryAddressesNil.Street },
+								Field: func() any { return &person.SecondaryAddressesNil.Street },
 							},
 							"city": {
-								Raw: func() any { return &person.SecondaryAddressesNil.City },
+								Field: func() any { return &person.SecondaryAddressesNil.City },
 							},
 						}
 					},
 				},
 				"addresses": {
-					Raw: func() any {
+					Field: func() any {
 						return &person.Addresses
 					},
 				},
@@ -148,10 +148,10 @@ func TestUnitBasic(t *testing.T) {
 										}
 										return map[string]*schemaz.Schema{
 											"street": {
-												Raw: func() any { return &person.CompanyAddresses[idx].Street },
+												Field: func() any { return &person.CompanyAddresses[idx].Street },
 											},
 											"city": {
-												Raw: func() any { return &person.CompanyAddresses[idx].City },
+												Field: func() any { return &person.CompanyAddresses[idx].City },
 											},
 										}
 									},
@@ -167,7 +167,7 @@ func TestUnitBasic(t *testing.T) {
 							Get: func(idx int, read bool) *schemaz.Schema {
 								person.Numbers = slicez.GrowLenTo(person.Numbers, idx+1)
 								return &schemaz.Schema{
-									Raw: func() any {
+									Field: func() any {
 										return &person.Numbers[idx]
 									},
 								}
@@ -200,7 +200,7 @@ func TestUnitValues(t *testing.T) {
 		Object: func(read bool) map[string]*schemaz.Schema {
 			return map[string]*schemaz.Schema{
 				"a": {
-					Str: func() *schemaz.Parser[string] {
+					UrlValue: func() *schemaz.Parser[string] {
 						return &schemaz.Parser[string]{
 							Parse: func(unformatted string) {
 								my.A = strconvz.MustParseNumber[float64](unformatted)
@@ -212,7 +212,7 @@ func TestUnitValues(t *testing.T) {
 					},
 				},
 				"b": {
-					Strs: func() *schemaz.Parser[[]string] {
+					UrlValues: func() *schemaz.Parser[[]string] {
 						return &schemaz.Parser[[]string]{
 							Parse: func(unformatted []string) {
 								my.B = make([]float64, len(unformatted))
@@ -231,7 +231,7 @@ func TestUnitValues(t *testing.T) {
 					},
 				},
 				"c": {
-					Strs: func() *schemaz.Parser[[]string] {
+					UrlValues: func() *schemaz.Parser[[]string] {
 						return &schemaz.Parser[[]string]{
 							Parse: func(unformatted []string) {
 								if len(unformatted) > 0 {
