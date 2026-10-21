@@ -34,6 +34,9 @@ type Handler func(ctx context.Context, resp Resp, req *httpzrequest.Req)
 func (h Handler) WrapResponse(ctx context.Context, resp Resp, req *httpzrequest.Req, fixHeaders func(outStatus int, outHeaders http.Header) int, fixWriter func(outWriter io.Writer) io.Writer) io.Writer {
 	var rWriter io.Writer
 	nResp := func(nStatus int, nHeaders http.Header) io.Writer {
+		if nHeaders == nil {
+			nHeaders = make(http.Header)
+		}
 		status := fixHeaders(nStatus, nHeaders)
 		rWriter = resp(status, nHeaders)
 		rWriter = fixWriter(rWriter)
