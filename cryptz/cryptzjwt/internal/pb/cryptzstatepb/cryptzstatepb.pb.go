@@ -2,7 +2,7 @@
 // versions:
 // 	protoc-gen-go v1.36.12
 // 	protoc        v6.33.5
-// source: internal/pb/cryptzstatepb/cryptzstatepb.proto
+// source: cryptzjwt/internal/pb/cryptzstatepb/cryptzstatepb.proto
 
 package cryptzstatepb
 
@@ -34,7 +34,7 @@ type StateMessageCiphered struct {
 
 func (x *StateMessageCiphered) Reset() {
 	*x = StateMessageCiphered{}
-	mi := &file_internal_pb_cryptzstatepb_cryptzstatepb_proto_msgTypes[0]
+	mi := &file_cryptzjwt_internal_pb_cryptzstatepb_cryptzstatepb_proto_msgTypes[0]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -46,7 +46,7 @@ func (x *StateMessageCiphered) String() string {
 func (*StateMessageCiphered) ProtoMessage() {}
 
 func (x *StateMessageCiphered) ProtoReflect() protoreflect.Message {
-	mi := &file_internal_pb_cryptzstatepb_cryptzstatepb_proto_msgTypes[0]
+	mi := &file_cryptzjwt_internal_pb_cryptzstatepb_cryptzstatepb_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -59,7 +59,7 @@ func (x *StateMessageCiphered) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use StateMessageCiphered.ProtoReflect.Descriptor instead.
 func (*StateMessageCiphered) Descriptor() ([]byte, []int) {
-	return file_internal_pb_cryptzstatepb_cryptzstatepb_proto_rawDescGZIP(), []int{0}
+	return file_cryptzjwt_internal_pb_cryptzstatepb_cryptzstatepb_proto_rawDescGZIP(), []int{0}
 }
 
 func (x *StateMessageCiphered) GetVersion() uint32 {
@@ -97,35 +97,35 @@ func (x *StateMessageCiphered) GetKeyId() string {
 	return ""
 }
 
-var File_internal_pb_cryptzstatepb_cryptzstatepb_proto protoreflect.FileDescriptor
+var File_cryptzjwt_internal_pb_cryptzstatepb_cryptzstatepb_proto protoreflect.FileDescriptor
 
-const file_internal_pb_cryptzstatepb_cryptzstatepb_proto_rawDesc = "" +
+const file_cryptzjwt_internal_pb_cryptzstatepb_cryptzstatepb_proto_rawDesc = "" +
 	"\n" +
-	"-internal/pb/cryptzstatepb/cryptzstatepb.proto\x12\x15i6.cryptz.cryptzstate\"\x9e\x01\n" +
+	"7cryptzjwt/internal/pb/cryptzstatepb/cryptzstatepb.proto\x12\x15i6.cryptz.cryptzstate\"\x9e\x01\n" +
 	"\x14StateMessageCiphered\x12\x18\n" +
 	"\aversion\x18\x01 \x01(\rR\aversion\x12\x17\n" +
 	"\asrc_key\x18\x02 \x01(\tR\x06srcKey\x12\x17\n" +
 	"\adst_key\x18\x03 \x01(\tR\x06dstKey\x12#\n" +
 	"\rciphered_data\x18\x04 \x01(\fR\fcipheredData\x12\x15\n" +
-	"\x06key_id\x18\x05 \x01(\tR\x05keyIdB>Z<github.com/infinity6-ai/gox/cryptz/internal/pb/cryptzstatepbb\x06proto3"
+	"\x06key_id\x18\x05 \x01(\tR\x05keyIdBHZFgithub.com/infinity6-ai/gox/cryptz/cryptzjwt/internal/pb/cryptzstatepbb\x06proto3"
 
 var (
-	file_internal_pb_cryptzstatepb_cryptzstatepb_proto_rawDescOnce sync.Once
-	file_internal_pb_cryptzstatepb_cryptzstatepb_proto_rawDescData []byte
+	file_cryptzjwt_internal_pb_cryptzstatepb_cryptzstatepb_proto_rawDescOnce sync.Once
+	file_cryptzjwt_internal_pb_cryptzstatepb_cryptzstatepb_proto_rawDescData []byte
 )
 
-func file_internal_pb_cryptzstatepb_cryptzstatepb_proto_rawDescGZIP() []byte {
-	file_internal_pb_cryptzstatepb_cryptzstatepb_proto_rawDescOnce.Do(func() {
-		file_internal_pb_cryptzstatepb_cryptzstatepb_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_internal_pb_cryptzstatepb_cryptzstatepb_proto_rawDesc), len(file_internal_pb_cryptzstatepb_cryptzstatepb_proto_rawDesc)))
+func file_cryptzjwt_internal_pb_cryptzstatepb_cryptzstatepb_proto_rawDescGZIP() []byte {
+	file_cryptzjwt_internal_pb_cryptzstatepb_cryptzstatepb_proto_rawDescOnce.Do(func() {
+		file_cryptzjwt_internal_pb_cryptzstatepb_cryptzstatepb_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_cryptzjwt_internal_pb_cryptzstatepb_cryptzstatepb_proto_rawDesc), len(file_cryptzjwt_internal_pb_cryptzstatepb_cryptzstatepb_proto_rawDesc)))
 	})
-	return file_internal_pb_cryptzstatepb_cryptzstatepb_proto_rawDescData
+	return file_cryptzjwt_internal_pb_cryptzstatepb_cryptzstatepb_proto_rawDescData
 }
 
-var file_internal_pb_cryptzstatepb_cryptzstatepb_proto_msgTypes = make([]protoimpl.MessageInfo, 1)
-var file_internal_pb_cryptzstatepb_cryptzstatepb_proto_goTypes = []any{
+var file_cryptzjwt_internal_pb_cryptzstatepb_cryptzstatepb_proto_msgTypes = make([]protoimpl.MessageInfo, 1)
+var file_cryptzjwt_internal_pb_cryptzstatepb_cryptzstatepb_proto_goTypes = []any{
 	(*StateMessageCiphered)(nil), // 0: i6.cryptz.cryptzstate.StateMessageCiphered
 }
-var file_internal_pb_cryptzstatepb_cryptzstatepb_proto_depIdxs = []int32{
+var file_cryptzjwt_internal_pb_cryptzstatepb_cryptzstatepb_proto_depIdxs = []int32{
 	0, // [0:0] is the sub-list for method output_type
 	0, // [0:0] is the sub-list for method input_type
 	0, // [0:0] is the sub-list for extension type_name
@@ -133,26 +133,26 @@ var file_internal_pb_cryptzstatepb_cryptzstatepb_proto_depIdxs = []int32{
 	0, // [0:0] is the sub-list for field type_name
 }
 
-func init() { file_internal_pb_cryptzstatepb_cryptzstatepb_proto_init() }
-func file_internal_pb_cryptzstatepb_cryptzstatepb_proto_init() {
-	if File_internal_pb_cryptzstatepb_cryptzstatepb_proto != nil {
+func init() { file_cryptzjwt_internal_pb_cryptzstatepb_cryptzstatepb_proto_init() }
+func file_cryptzjwt_internal_pb_cryptzstatepb_cryptzstatepb_proto_init() {
+	if File_cryptzjwt_internal_pb_cryptzstatepb_cryptzstatepb_proto != nil {
 		return
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
-			RawDescriptor: unsafe.Slice(unsafe.StringData(file_internal_pb_cryptzstatepb_cryptzstatepb_proto_rawDesc), len(file_internal_pb_cryptzstatepb_cryptzstatepb_proto_rawDesc)),
+			RawDescriptor: unsafe.Slice(unsafe.StringData(file_cryptzjwt_internal_pb_cryptzstatepb_cryptzstatepb_proto_rawDesc), len(file_cryptzjwt_internal_pb_cryptzstatepb_cryptzstatepb_proto_rawDesc)),
 			NumEnums:      0,
 			NumMessages:   1,
 			NumExtensions: 0,
 			NumServices:   0,
 		},
-		GoTypes:           file_internal_pb_cryptzstatepb_cryptzstatepb_proto_goTypes,
-		DependencyIndexes: file_internal_pb_cryptzstatepb_cryptzstatepb_proto_depIdxs,
-		MessageInfos:      file_internal_pb_cryptzstatepb_cryptzstatepb_proto_msgTypes,
+		GoTypes:           file_cryptzjwt_internal_pb_cryptzstatepb_cryptzstatepb_proto_goTypes,
+		DependencyIndexes: file_cryptzjwt_internal_pb_cryptzstatepb_cryptzstatepb_proto_depIdxs,
+		MessageInfos:      file_cryptzjwt_internal_pb_cryptzstatepb_cryptzstatepb_proto_msgTypes,
 	}.Build()
-	File_internal_pb_cryptzstatepb_cryptzstatepb_proto = out.File
-	file_internal_pb_cryptzstatepb_cryptzstatepb_proto_goTypes = nil
-	file_internal_pb_cryptzstatepb_cryptzstatepb_proto_depIdxs = nil
+	File_cryptzjwt_internal_pb_cryptzstatepb_cryptzstatepb_proto = out.File
+	file_cryptzjwt_internal_pb_cryptzstatepb_cryptzstatepb_proto_goTypes = nil
+	file_cryptzjwt_internal_pb_cryptzstatepb_cryptzstatepb_proto_depIdxs = nil
 }

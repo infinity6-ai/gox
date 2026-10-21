@@ -2,7 +2,7 @@
 // versions:
 // 	protoc-gen-go v1.36.12
 // 	protoc        v6.33.5
-// source: internal/pb/cryptzjwtpb/cryptzjwtpb.proto
+// source: cryptzjwt/internal/pb/cryptzjwtpb/cryptzjwtpb.proto
 
 package cryptzjwtpb
 
@@ -33,7 +33,7 @@ type JWTHeader struct {
 
 func (x *JWTHeader) Reset() {
 	*x = JWTHeader{}
-	mi := &file_internal_pb_cryptzjwtpb_cryptzjwtpb_proto_msgTypes[0]
+	mi := &file_cryptzjwt_internal_pb_cryptzjwtpb_cryptzjwtpb_proto_msgTypes[0]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -45,7 +45,7 @@ func (x *JWTHeader) String() string {
 func (*JWTHeader) ProtoMessage() {}
 
 func (x *JWTHeader) ProtoReflect() protoreflect.Message {
-	mi := &file_internal_pb_cryptzjwtpb_cryptzjwtpb_proto_msgTypes[0]
+	mi := &file_cryptzjwt_internal_pb_cryptzjwtpb_cryptzjwtpb_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -58,7 +58,7 @@ func (x *JWTHeader) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use JWTHeader.ProtoReflect.Descriptor instead.
 func (*JWTHeader) Descriptor() ([]byte, []int) {
-	return file_internal_pb_cryptzjwtpb_cryptzjwtpb_proto_rawDescGZIP(), []int{0}
+	return file_cryptzjwt_internal_pb_cryptzjwtpb_cryptzjwtpb_proto_rawDescGZIP(), []int{0}
 }
 
 func (x *JWTHeader) GetAlg() string {
@@ -101,7 +101,7 @@ type JWTPayload struct {
 
 func (x *JWTPayload) Reset() {
 	*x = JWTPayload{}
-	mi := &file_internal_pb_cryptzjwtpb_cryptzjwtpb_proto_msgTypes[1]
+	mi := &file_cryptzjwt_internal_pb_cryptzjwtpb_cryptzjwtpb_proto_msgTypes[1]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -113,7 +113,7 @@ func (x *JWTPayload) String() string {
 func (*JWTPayload) ProtoMessage() {}
 
 func (x *JWTPayload) ProtoReflect() protoreflect.Message {
-	mi := &file_internal_pb_cryptzjwtpb_cryptzjwtpb_proto_msgTypes[1]
+	mi := &file_cryptzjwt_internal_pb_cryptzjwtpb_cryptzjwtpb_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -126,7 +126,7 @@ func (x *JWTPayload) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use JWTPayload.ProtoReflect.Descriptor instead.
 func (*JWTPayload) Descriptor() ([]byte, []int) {
-	return file_internal_pb_cryptzjwtpb_cryptzjwtpb_proto_rawDescGZIP(), []int{1}
+	return file_cryptzjwt_internal_pb_cryptzjwtpb_cryptzjwtpb_proto_rawDescGZIP(), []int{1}
 }
 
 func (x *JWTPayload) GetJti() string {
@@ -210,7 +210,7 @@ type JWTToken struct {
 
 func (x *JWTToken) Reset() {
 	*x = JWTToken{}
-	mi := &file_internal_pb_cryptzjwtpb_cryptzjwtpb_proto_msgTypes[2]
+	mi := &file_cryptzjwt_internal_pb_cryptzjwtpb_cryptzjwtpb_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -222,7 +222,7 @@ func (x *JWTToken) String() string {
 func (*JWTToken) ProtoMessage() {}
 
 func (x *JWTToken) ProtoReflect() protoreflect.Message {
-	mi := &file_internal_pb_cryptzjwtpb_cryptzjwtpb_proto_msgTypes[2]
+	mi := &file_cryptzjwt_internal_pb_cryptzjwtpb_cryptzjwtpb_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -235,7 +235,7 @@ func (x *JWTToken) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use JWTToken.ProtoReflect.Descriptor instead.
 func (*JWTToken) Descriptor() ([]byte, []int) {
-	return file_internal_pb_cryptzjwtpb_cryptzjwtpb_proto_rawDescGZIP(), []int{2}
+	return file_cryptzjwt_internal_pb_cryptzjwtpb_cryptzjwtpb_proto_rawDescGZIP(), []int{2}
 }
 
 func (x *JWTToken) GetHeader() *JWTHeader {
@@ -252,11 +252,11 @@ func (x *JWTToken) GetPayload() *JWTPayload {
 	return nil
 }
 
-var File_internal_pb_cryptzjwtpb_cryptzjwtpb_proto protoreflect.FileDescriptor
+var File_cryptzjwt_internal_pb_cryptzjwtpb_cryptzjwtpb_proto protoreflect.FileDescriptor
 
-const file_internal_pb_cryptzjwtpb_cryptzjwtpb_proto_rawDesc = "" +
+const file_cryptzjwt_internal_pb_cryptzjwtpb_cryptzjwtpb_proto_rawDesc = "" +
 	"\n" +
-	")internal/pb/cryptzjwtpb/cryptzjwtpb.proto\x12\x13i6.cryptz.cryptzjwt\"A\n" +
+	"3cryptzjwt/internal/pb/cryptzjwtpb/cryptzjwtpb.proto\x12\x13i6.cryptz.cryptzjwt\"A\n" +
 	"\tJWTHeader\x12\x10\n" +
 	"\x03alg\x18\x01 \x01(\tR\x03alg\x12\x10\n" +
 	"\x03typ\x18\x02 \x01(\tR\x03typ\x12\x10\n" +
@@ -276,27 +276,27 @@ const file_internal_pb_cryptzjwtpb_cryptzjwtpb_proto_rawDesc = "" +
 	" \x01(\tR\x03idp\"}\n" +
 	"\bJWTToken\x126\n" +
 	"\x06header\x18\x01 \x01(\v2\x1e.i6.cryptz.cryptzjwt.JWTHeaderR\x06header\x129\n" +
-	"\apayload\x18\x02 \x01(\v2\x1f.i6.cryptz.cryptzjwt.JWTPayloadR\apayloadB<Z:github.com/infinity6-ai/gox/cryptz/internal/pb/cryptzjwtpbb\x06proto3"
+	"\apayload\x18\x02 \x01(\v2\x1f.i6.cryptz.cryptzjwt.JWTPayloadR\apayloadBFZDgithub.com/infinity6-ai/gox/cryptz/cryptzjwt/internal/pb/cryptzjwtpbb\x06proto3"
 
 var (
-	file_internal_pb_cryptzjwtpb_cryptzjwtpb_proto_rawDescOnce sync.Once
-	file_internal_pb_cryptzjwtpb_cryptzjwtpb_proto_rawDescData []byte
+	file_cryptzjwt_internal_pb_cryptzjwtpb_cryptzjwtpb_proto_rawDescOnce sync.Once
+	file_cryptzjwt_internal_pb_cryptzjwtpb_cryptzjwtpb_proto_rawDescData []byte
 )
 
-func file_internal_pb_cryptzjwtpb_cryptzjwtpb_proto_rawDescGZIP() []byte {
-	file_internal_pb_cryptzjwtpb_cryptzjwtpb_proto_rawDescOnce.Do(func() {
-		file_internal_pb_cryptzjwtpb_cryptzjwtpb_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_internal_pb_cryptzjwtpb_cryptzjwtpb_proto_rawDesc), len(file_internal_pb_cryptzjwtpb_cryptzjwtpb_proto_rawDesc)))
+func file_cryptzjwt_internal_pb_cryptzjwtpb_cryptzjwtpb_proto_rawDescGZIP() []byte {
+	file_cryptzjwt_internal_pb_cryptzjwtpb_cryptzjwtpb_proto_rawDescOnce.Do(func() {
+		file_cryptzjwt_internal_pb_cryptzjwtpb_cryptzjwtpb_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_cryptzjwt_internal_pb_cryptzjwtpb_cryptzjwtpb_proto_rawDesc), len(file_cryptzjwt_internal_pb_cryptzjwtpb_cryptzjwtpb_proto_rawDesc)))
 	})
-	return file_internal_pb_cryptzjwtpb_cryptzjwtpb_proto_rawDescData
+	return file_cryptzjwt_internal_pb_cryptzjwtpb_cryptzjwtpb_proto_rawDescData
 }
 
-var file_internal_pb_cryptzjwtpb_cryptzjwtpb_proto_msgTypes = make([]protoimpl.MessageInfo, 3)
-var file_internal_pb_cryptzjwtpb_cryptzjwtpb_proto_goTypes = []any{
+var file_cryptzjwt_internal_pb_cryptzjwtpb_cryptzjwtpb_proto_msgTypes = make([]protoimpl.MessageInfo, 3)
+var file_cryptzjwt_internal_pb_cryptzjwtpb_cryptzjwtpb_proto_goTypes = []any{
 	(*JWTHeader)(nil),  // 0: i6.cryptz.cryptzjwt.JWTHeader
 	(*JWTPayload)(nil), // 1: i6.cryptz.cryptzjwt.JWTPayload
 	(*JWTToken)(nil),   // 2: i6.cryptz.cryptzjwt.JWTToken
 }
-var file_internal_pb_cryptzjwtpb_cryptzjwtpb_proto_depIdxs = []int32{
+var file_cryptzjwt_internal_pb_cryptzjwtpb_cryptzjwtpb_proto_depIdxs = []int32{
 	0, // 0: i6.cryptz.cryptzjwt.JWTToken.header:type_name -> i6.cryptz.cryptzjwt.JWTHeader
 	1, // 1: i6.cryptz.cryptzjwt.JWTToken.payload:type_name -> i6.cryptz.cryptzjwt.JWTPayload
 	2, // [2:2] is the sub-list for method output_type
@@ -306,26 +306,26 @@ var file_internal_pb_cryptzjwtpb_cryptzjwtpb_proto_depIdxs = []int32{
 	0, // [0:2] is the sub-list for field type_name
 }
 
-func init() { file_internal_pb_cryptzjwtpb_cryptzjwtpb_proto_init() }
-func file_internal_pb_cryptzjwtpb_cryptzjwtpb_proto_init() {
-	if File_internal_pb_cryptzjwtpb_cryptzjwtpb_proto != nil {
+func init() { file_cryptzjwt_internal_pb_cryptzjwtpb_cryptzjwtpb_proto_init() }
+func file_cryptzjwt_internal_pb_cryptzjwtpb_cryptzjwtpb_proto_init() {
+	if File_cryptzjwt_internal_pb_cryptzjwtpb_cryptzjwtpb_proto != nil {
 		return
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
-			RawDescriptor: unsafe.Slice(unsafe.StringData(file_internal_pb_cryptzjwtpb_cryptzjwtpb_proto_rawDesc), len(file_internal_pb_cryptzjwtpb_cryptzjwtpb_proto_rawDesc)),
+			RawDescriptor: unsafe.Slice(unsafe.StringData(file_cryptzjwt_internal_pb_cryptzjwtpb_cryptzjwtpb_proto_rawDesc), len(file_cryptzjwt_internal_pb_cryptzjwtpb_cryptzjwtpb_proto_rawDesc)),
 			NumEnums:      0,
 			NumMessages:   3,
 			NumExtensions: 0,
 			NumServices:   0,
 		},
-		GoTypes:           file_internal_pb_cryptzjwtpb_cryptzjwtpb_proto_goTypes,
-		DependencyIndexes: file_internal_pb_cryptzjwtpb_cryptzjwtpb_proto_depIdxs,
-		MessageInfos:      file_internal_pb_cryptzjwtpb_cryptzjwtpb_proto_msgTypes,
+		GoTypes:           file_cryptzjwt_internal_pb_cryptzjwtpb_cryptzjwtpb_proto_goTypes,
+		DependencyIndexes: file_cryptzjwt_internal_pb_cryptzjwtpb_cryptzjwtpb_proto_depIdxs,
+		MessageInfos:      file_cryptzjwt_internal_pb_cryptzjwtpb_cryptzjwtpb_proto_msgTypes,
 	}.Build()
-	File_internal_pb_cryptzjwtpb_cryptzjwtpb_proto = out.File
-	file_internal_pb_cryptzjwtpb_cryptzjwtpb_proto_goTypes = nil
-	file_internal_pb_cryptzjwtpb_cryptzjwtpb_proto_depIdxs = nil
+	File_cryptzjwt_internal_pb_cryptzjwtpb_cryptzjwtpb_proto = out.File
+	file_cryptzjwt_internal_pb_cryptzjwtpb_cryptzjwtpb_proto_goTypes = nil
+	file_cryptzjwt_internal_pb_cryptzjwtpb_cryptzjwtpb_proto_depIdxs = nil
 }

@@ -24,11 +24,11 @@ type Schema struct {
 	Desc *Desc
 
 	// Mutually exclusive data bindings (returning pointers for 2-way binding)
-	Field       func() any
-	Object func(read bool) map[string]*Schema
-	Array  func() *Array
-	UrlValue    func() *Parser[string]
-	UrlValues   func() *Parser[[]string]
+	Field     func() any
+	Object    func(read bool) map[string]*Schema
+	Array     func() *Array
+	UrlValue  func() *Parser[string]
+	UrlValues func() *Parser[[]string]
 }
 
 // =====================================

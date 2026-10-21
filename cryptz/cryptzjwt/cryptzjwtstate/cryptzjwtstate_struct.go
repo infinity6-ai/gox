@@ -2,7 +2,7 @@ package cryptzjwtstate
 
 import (
 	"github.com/infinity6-ai/gox/commonz/validation/checker"
-	"github.com/infinity6-ai/gox/cryptz/internal/pb/cryptzstatepb"
+	"github.com/infinity6-ai/gox/cryptz/cryptzjwt/internal/pb/cryptzstatepb"
 )
 
 type StateMessageCiphered struct {

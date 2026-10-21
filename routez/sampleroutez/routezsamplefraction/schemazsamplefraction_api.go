@@ -105,8 +105,8 @@ func (f *FractionApi) schemaReqBody() *schemaz.Schema {
 								Object: func(read bool) map[string]*schemaz.Schema {
 									return map[string]*schemaz.Schema{
 										"message": {
-											Desc: &schemaz.Desc{Summary: "message string"},
-											Field:  func() any { return &(*element).Message },
+											Desc:  &schemaz.Desc{Summary: "message string"},
+											Field: func() any { return &(*element).Message },
 										},
 									}
 								},

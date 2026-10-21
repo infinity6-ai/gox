@@ -2,7 +2,7 @@ package cryptzjwtmsg
 
 import (
 	"github.com/infinity6-ai/gox/commonz/validation/checker"
-	"github.com/infinity6-ai/gox/cryptz/internal/pb/cryptzmsgpb"
+	"github.com/infinity6-ai/gox/cryptz/cryptzjwt/internal/pb/cryptzmsgpb"
 )
 
 type RSAMessageCiphered struct {

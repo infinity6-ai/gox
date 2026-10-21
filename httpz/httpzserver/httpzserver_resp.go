@@ -33,4 +33,3 @@ func (r Resp) RedirectJS(headers http.Header, u string) {
 	_, err := w.Write([]byte(`<html><body onload="window.location.href='` + u + `'"></body></html>`))
 	errorz.Check(err)
 }
-

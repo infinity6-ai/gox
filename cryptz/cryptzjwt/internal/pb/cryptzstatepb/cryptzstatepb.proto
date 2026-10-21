@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package i6.cryptz.cryptzstate;
 
-option go_package = "github.com/infinity6-ai/gox/cryptz/internal/pb/cryptzstatepb";
+option go_package = "github.com/infinity6-ai/gox/cryptz/cryptzjwt/internal/pb/cryptzstatepb";
 
 message StateMessageCiphered {
     uint32 version = 1;

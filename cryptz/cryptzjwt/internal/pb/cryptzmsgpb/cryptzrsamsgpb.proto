@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package i6.cryptz.cryptzmsg;
 
-option go_package = "github.com/infinity6-ai/gox/cryptz/internal/pb/cryptzmsgpb";
+option go_package = "github.com/infinity6-ai/gox/cryptz/cryptzjwt/internal/pb/cryptzmsgpb";
 
 message RSAMessageCiphered {
     uint32 version = 1;

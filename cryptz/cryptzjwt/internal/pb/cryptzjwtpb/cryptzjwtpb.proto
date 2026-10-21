@@ -3,7 +3,7 @@ syntax = "proto3";
 package i6.cryptz.cryptzjwt;
 
 // Option for Go code generation
-option go_package = "github.com/infinity6-ai/gox/cryptz/internal/pb/cryptzjwtpb";
+option go_package = "github.com/infinity6-ai/gox/cryptz/cryptzjwt/internal/pb/cryptzjwtpb";
 
 // JWTHeader defines the structure of the JWT header.
 message JWTHeader {
