@@ -27,8 +27,6 @@ type Api interface {
 	ApiDataRefs() *DataRefs
 }
 
-type Handler[T Api] func(ctx context.Context, reqResp T) (int, error)
-
 type Service interface {
 	New() Service
 	Api() Api
