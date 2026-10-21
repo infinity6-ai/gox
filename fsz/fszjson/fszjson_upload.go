@@ -56,6 +56,12 @@ func Upload[E any](ctx context.Context, fn func() (E, bool, error), opts UploadO
 	return nil
 }
 
+func MustUploadJson(ctx context.Context, value any, opts UploadOptions) error {
+	err := UploadJson(ctx, value, opts)
+	errorz.Check(err)
+	return nil
+}
+
 func UploadJson(ctx context.Context, value any, opts UploadOptions) error {
 	return UploadSlice(ctx, []any{value}, opts)
 }
