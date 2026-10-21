@@ -74,9 +74,8 @@ func TestUnitBasic(t *testing.T) {
 			Reason:      "myreason",
 		},
 	}
-	status, err = apiz.Do(ctx, routezsamplefraction.NewService(), reqResp)
-	errorz.Check(err)
-	require.Equal(t, 201, status)
+	resDo := apiz.Do(ctx, routezsamplefraction.NewService(), reqResp)
+	require.Equal(t, 201, resDo.Status)
 	require.Equal(t, "reason: myreason, trace: xx", reqResp.Resp.TraceMessage)
 	require.Equal(t, &routezsamplefraction.Result{
 		Display: "10.000/3.000",

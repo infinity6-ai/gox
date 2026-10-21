@@ -2,6 +2,7 @@ package apiz
 
 import (
 	"context"
+	"net/http"
 
 	"github.com/infinity6-ai/gox/schemaz/schemaz"
 )
@@ -27,10 +28,15 @@ type Api interface {
 	ApiDataRefs() *DataRefs
 }
 
+type Resp struct {
+	Status  int
+	Headers http.Header
+}
+
 type Service interface {
 	New() Service
 	Api() Api
-	Handler(ctx context.Context) (int, error)
+	Handler(ctx context.Context) *Resp
 }
 
 type ServiceT[A Api] interface {
@@ -38,11 +44,17 @@ type ServiceT[A Api] interface {
 	SetApi(api A)
 }
 
-func Do[S ServiceT[A], A Api](ctx context.Context, service S, reqResp A) (int, error) {
+func Do[S ServiceT[A], A Api](ctx context.Context, service S, reqResp A) *Resp {
 	service = service.New().(S)
 	service.SetApi(reqResp)
 	reqResp.ApiDataRefs()
 
-	ret, err := service.Handler(ctx)
-	return ret, err
+	ret := service.Handler(ctx)
+	if ret == nil {
+		ret = &Resp{Status: 200}
+	}
+	if ret.Status == 0 {
+		ret.Status = 200
+	}
+	return ret
 }

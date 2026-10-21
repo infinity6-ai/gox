@@ -4,7 +4,6 @@ import (
 	"context"
 	"net/http"
 
-	"github.com/infinity6-ai/gox/commonz/errorz"
 	"github.com/infinity6-ai/gox/commonz/jsonz"
 	"github.com/infinity6-ai/gox/httpz/httpzrequest"
 	"github.com/infinity6-ai/gox/httpz/httpzserver"
@@ -12,13 +11,13 @@ import (
 	"github.com/infinity6-ai/gox/routez/internal/converter"
 )
 
-func writeResponse(status int, resp httpzserver.Resp, refs *apiz.DataRefs, formattedHeaders http.Header) {
+func writeResponse(resp *apiz.Resp, serverResp httpzserver.Resp, refs *apiz.DataRefs) {
 	if refs.RespHeaders != nil {
 		headers := map[string][]string{}
 		jsonz.MustCopy(refs.RespHeaders, &headers)
-		converter.Json2Header(headers, formattedHeaders)
+		converter.Json2Header(headers, resp.Headers)
 	}
-	w := resp(status, formattedHeaders)
+	w := serverResp(resp.Status, resp.Headers)
 	jsonz.FormatWriter(w, refs.RespBody)
 }
 
@@ -40,15 +39,24 @@ func parseRequest(refs *apiz.DataRefs, req *httpzrequest.Req, params map[string]
 func Register(s *httpzserver.Server, services ...apiz.Service) {
 	for _, service := range services {
 		spec := service.Api().ApiSpec()
-		s.AddHandler(spec.Method, spec.Path, func(ctx context.Context, resp httpzserver.Resp, req *httpzrequest.Req, params map[string]string) {
+		s.AddHandler(spec.Method, spec.Path, func(ctx context.Context, serverResp httpzserver.Resp, req *httpzrequest.Req, params map[string]string) {
 			service := service.New()
 			refs := service.Api().ApiDataRefs()
 			parseRequest(refs, req, params)
-			status, err := service.Handler(ctx)
-			errorz.Check(err)
-			formattedHeaders := make(http.Header)
-			formattedHeaders.Set("Content-Type", "application/json")
-			writeResponse(status, resp, refs, formattedHeaders)
+			resp := service.Handler(ctx)
+			if resp == nil {
+				resp = &apiz.Resp{Status: 200}
+			}
+			if resp.Status == 0 {
+				resp.Status = 200
+			}
+			if resp.Headers == nil {
+				resp.Headers = make(http.Header)
+			}
+			if resp.Headers.Get("Content-Type") == "" {
+				resp.Headers.Set("Content-Type", "application/json")
+			}
+			writeResponse(resp, serverResp, refs)
 		})
 	}
 }
