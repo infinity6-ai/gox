@@ -5,76 +5,54 @@ import (
 	"fmt"
 )
 
-// EmbeddedJson wraps a value of type T, marshaling it as an escaped JSON string
+// Embedded wraps a value of type T, marshaling it as an escaped JSON string
 // and unmarshaling it from an escaped JSON string.
-type EmbeddedJson[T any] struct {
-	ref T
+type Embedded[T any] struct {
+	Ref T
 }
 
-// Json is an alias for EmbeddedJson.
-type Json[T any] = EmbeddedJson[T]
+// EmbeddedJson is an alias for Embedded.
+type EmbeddedJson[T any] = Embedded[T]
 
-// NewEmbedded creates a new EmbeddedJson[T] wrapper around value.
-func NewEmbedded[T any](value T) EmbeddedJson[T] {
-	return EmbeddedJson[T]{ref: value}
-}
-
-// NewEmbeddedJson creates a new EmbeddedJson[T] wrapper around value.
-func NewEmbeddedJson[T any](value T) EmbeddedJson[T] {
-	return EmbeddedJson[T]{ref: value}
-}
-
-// Get returns the underlying value.
-func (p EmbeddedJson[T]) Get() T {
-	return p.ref
-}
-
-// Set updates the underlying value.
-func (p *EmbeddedJson[T]) Set(value T) {
-	p.ref = value
-}
-
-// Value returns a pointer to the underlying value.
-func (p *EmbeddedJson[T]) Value() *T {
-	return &p.ref
-}
+// Json is an alias for Embedded.
+type Json[T any] = Embedded[T]
 
 // MarshalJSON implements json.Marshaler. It marshals the inner value as JSON,
 // and then serializes that result as an escaped JSON string.
-func (p EmbeddedJson[T]) MarshalJSON() ([]byte, error) {
-	r, err := json.Marshal(p.ref)
+func (p Embedded[T]) MarshalJSON() ([]byte, error) {
+	r, err := json.Marshal(p.Ref)
 	if err != nil {
-		return nil, fmt.Errorf("cannot marshal EmbeddedJson[%T]: %w", p.ref, err)
+		return nil, fmt.Errorf("cannot marshal Embedded[%T]: %w", p.Ref, err)
 	}
 	r, err = json.Marshal(string(r))
 	if err != nil {
-		return nil, fmt.Errorf("cannot marshal EmbeddedJson[%T] as string: %w", p.ref, err)
+		return nil, fmt.Errorf("cannot marshal Embedded[%T] as string: %w", p.Ref, err)
 	}
 	return r, nil
 }
 
 // UnmarshalJSON implements json.Unmarshaler. It unmarshals the JSON string
 // and then parses that string into the inner value.
-func (p *EmbeddedJson[T]) UnmarshalJSON(data []byte) error {
+func (p *Embedded[T]) UnmarshalJSON(data []byte) error {
 	if p == nil {
-		return fmt.Errorf("cannot unmarshal into nil *EmbeddedJson")
+		return fmt.Errorf("cannot unmarshal into nil *Embedded")
 	}
 	if string(data) == "null" {
 		var zero T
-		p.ref = zero
+		p.Ref = zero
 		return nil
 	}
 	var s string
 	if err := json.Unmarshal(data, &s); err != nil {
-		return fmt.Errorf("cannot unmarshal EmbeddedJson[%T] string: %w", p.ref, err)
+		return fmt.Errorf("cannot unmarshal Embedded[%T] string: %w", p.Ref, err)
 	}
 	if len(s) == 0 {
 		var zero T
-		p.ref = zero
+		p.Ref = zero
 		return nil
 	}
-	if err := json.Unmarshal([]byte(s), &p.ref); err != nil {
-		return fmt.Errorf("cannot unmarshal inner EmbeddedJson[%T]: %w", p.ref, err)
+	if err := json.Unmarshal([]byte(s), &p.Ref); err != nil {
+		return fmt.Errorf("cannot unmarshal inner Embedded[%T]: %w", p.Ref, err)
 	}
 	return nil
 }
