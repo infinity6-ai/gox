@@ -63,48 +63,12 @@ func writeResponse[T apiz.Api](nResp *httpzclient.Resp, api T) error {
 	return nil
 }
 
-type MyMap map[string][]string
-
-func (s MyMap) UnmarshalJSON(data []byte) error {
-	m := make(map[string]any)
-	_, err := jsonz.Parse(data, &m)
-	if err != nil {
-		return fmt.Errorf("error parsing MyMap: %w", err)
-	}
-	for k, raw := range m {
-		s[k] = nil
-		if raw == nil {
-			continue
-		}
-		values, ok := raw.([]any)
-		if !ok {
-			values = []any{raw}
-		}
-		nv := make([]string, len(values))
-		s[k] = nv
-		for idx, value := range values {
-			switch v := value.(type) {
-			case string:
-				nv[idx] = v
-			default:
-				f, err := jsonz.Format(value)
-				if err != nil {
-					return fmt.Errorf("error parsing MyMap: %w", err)
-				}
-				nv[idx] = f.String()
-			}
-		}
-	}
-	return nil
-}
-
 func parseRequest[T apiz.Api](ctx context.Context, api T) (*httpzrequest.Req, io.Closer, error) {
 	dfz := deferz.New(ctx)
 	defer dfz.Close()
 	refs := api.ApiDataRefs()
 	var p map[string]string
-	var h map[string][]string
-	q := MyMap{}
+	var q, h map[string][]string
 	if refs.PathParams != nil {
 		err := formatPathParams(refs.PathParams, &p)
 		if err != nil {
