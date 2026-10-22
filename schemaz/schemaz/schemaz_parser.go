@@ -74,13 +74,6 @@ func ParseStrGet[T any](out *T, set func(v string) T) func() *Parser[string] {
 				*out = set(v)
 			},
 			Format: func() (string, any) {
-				type J interface {
-					Jsonify() string
-				}
-				j, ok := any(out).(J)
-				if ok {
-					return j.Jsonify(), *out
-				}
 				type O interface {
 					Optional() optionalz.Optional[string]
 				}

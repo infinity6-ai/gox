@@ -11,10 +11,6 @@ type Embedded[T any] struct {
 	Ref T
 }
 
-func (p Embedded[T]) Jsonify() string {
-	return MustFormat(p).String()
-}
-
 // MarshalJSON implements json.Marshaler. It marshals the inner value as JSON,
 // and then serializes that result as an escaped JSON string.
 func (p Embedded[T]) MarshalJSON() ([]byte, error) {
