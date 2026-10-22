@@ -1,7 +1,6 @@
 package routezsamplefraction
 
 import (
-	"github.com/infinity6-ai/gox/commonz/jsonz"
 	"github.com/infinity6-ai/gox/routez/apiz"
 	"github.com/infinity6-ai/gox/schemaz/schemaz"
 )
@@ -17,19 +16,19 @@ type Result struct {
 }
 
 type FractionReq struct {
-	Numerator   float64                  `json:"numerator"`
-	Denominator float64                  `json:"denominator"`
-	Precision   int                      `json:"precision"`
-	TraceId     string                   `json:"x-i6-trace-id"`
-	Reason      string                   `json:"reason"`
-	Smsg        jsonz.Embedded[*Message] `json:"smsg"`
-	Messages    []*Message               `json:"messages"`
+	Numerator   float64    `json:"numerator"`
+	Denominator float64    `json:"denominator"`
+	Precision   int        `json:"precision"`
+	TraceId     string     `json:"x-i6-trace-id"`
+	Reason      string     `json:"reason"`
+	Smsg        *Message   `json:"smsg"`
+	Messages    []*Message `json:"messages"`
 }
 
 type FractionResp struct {
-	TraceMessage string                   `json:"x-i6-trace-message"`
-	Smsg         jsonz.Embedded[*Message] `json:"smsg"`
-	Result       *Result                  `json:"result"`
+	TraceMessage string   `json:"x-i6-trace-message"`
+	Smsg         *Message `json:"smsg"`
+	Result       *Result  `json:"result"`
 }
 
 type FractionApi struct {

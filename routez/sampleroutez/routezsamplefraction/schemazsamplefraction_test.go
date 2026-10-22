@@ -31,7 +31,7 @@ func TestUnitBasic(t *testing.T) {
 
 	req := httpzrequest.New("POST", "/api/gox/routez/sample/fraction/10/3").
 		SetQuery("precision", "3").
-		SetQuery("smsg", `"{\"message\":\"my smsg\"}"`).
+		SetQuery("smsg", `{"message":"my smsg"}`).
 		SetHeader("x-i6-trace-id", "xx").
 		SetBody(strings.NewReader("{\"reason\":\"myreason\"}"))
 	resp, err := c.Do(ctx, req)
@@ -40,7 +40,7 @@ func TestUnitBasic(t *testing.T) {
 	require.Equal(t, 201, resp.StatusCode)
 	require.Equal(t, "application/json", resp.Headers.Get("content-type"))
 	require.Equal(t, "reason: myreason, trace: xx", resp.Headers.Get("x-i6-trace-message"))
-	require.Equal(t, `"{\"message\":\"my smsg\"}"`, resp.Headers.Get("x-i6-smsg"))
+	require.Equal(t, `{"message":"my smsg"}`, resp.Headers.Get("x-i6-smsg"))
 	respBody := jsonz.MustParseReader(resp.Body, &routezsamplefraction.Result{})
 	require.Equal(t, &routezsamplefraction.Result{
 		Display: "10.000/3.000",
@@ -54,7 +54,7 @@ func TestUnitBasic(t *testing.T) {
 			Precision:   3,
 			TraceId:     "xx",
 			Reason:      "myreason",
-			Smsg:        jsonz.Embedded[*routezsamplefraction.Message]{Ref: &routezsamplefraction.Message{Message: "mymsg"}},
+			Smsg:        &routezsamplefraction.Message{Message: "mymsg"},
 			Messages:    []*routezsamplefraction.Message{{Message: "msg1"}, {Message: "msg2"}},
 		},
 	}
@@ -62,7 +62,7 @@ func TestUnitBasic(t *testing.T) {
 	errorz.Check(err)
 	require.Equal(t, 201, status)
 	require.Equal(t, "reason: myreason, trace: xx", reqResp.Resp.TraceMessage)
-	require.Equal(t, jsonz.Embedded[*routezsamplefraction.Message]{Ref: &routezsamplefraction.Message{Message: "mymsg"}}, reqResp.Resp.Smsg)
+	require.Equal(t, &routezsamplefraction.Message{Message: "mymsg"}, reqResp.Resp.Smsg)
 	require.Equal(t, &routezsamplefraction.Result{
 		Display:  "10.000/3.000",
 		Result:   "3.333",
