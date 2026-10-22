@@ -54,6 +54,7 @@ func TestUnitBasic(t *testing.T) {
 			Precision:   3,
 			TraceId:     "xx",
 			Reason:      "myreason",
+			Smsg:        jsonz.Embedded[*routezsamplefraction.Message]{Ref: &routezsamplefraction.Message{Message: "mymsg"}},
 			Messages:    []*routezsamplefraction.Message{{Message: "msg1"}, {Message: "msg2"}},
 		},
 	}
@@ -61,6 +62,7 @@ func TestUnitBasic(t *testing.T) {
 	errorz.Check(err)
 	require.Equal(t, 201, status)
 	require.Equal(t, "reason: myreason, trace: xx", reqResp.Resp.TraceMessage)
+	require.Equal(t, jsonz.Embedded[*routezsamplefraction.Message]{Ref: &routezsamplefraction.Message{Message: "mymsg"}}, reqResp.Resp.Smsg)
 	require.Equal(t, &routezsamplefraction.Result{
 		Display:  "10.000/3.000",
 		Result:   "3.333",
