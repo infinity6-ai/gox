@@ -1,6 +1,7 @@
 package routezsamplefraction
 
 import (
+	"github.com/infinity6-ai/gox/commonz/jsonz"
 	"github.com/infinity6-ai/gox/routez/apiz"
 	"github.com/infinity6-ai/gox/schemaz/schemaz"
 )
@@ -16,17 +17,19 @@ type Result struct {
 }
 
 type FractionReq struct {
-	Numerator   float64    `json:"numerator"`
-	Denominator float64    `json:"denominator"`
-	Precision   int        `json:"precision"`
-	TraceId     string     `json:"x-i6-trace-id"`
-	Reason      string     `json:"reason"`
-	Messages    []*Message `json:"messages"`
+	Numerator   float64                  `json:"numerator"`
+	Denominator float64                  `json:"denominator"`
+	Precision   int                      `json:"precision"`
+	TraceId     string                   `json:"x-i6-trace-id"`
+	Reason      string                   `json:"reason"`
+	Smsg        jsonz.Embedded[*Message] `json:"smsg"`
+	Messages    []*Message               `json:"messages"`
 }
 
 type FractionResp struct {
-	TraceMessage string  `json:"x-i6-trace-message"`
-	Result       *Result `json:"result"`
+	TraceMessage string                   `json:"x-i6-trace-message"`
+	Smsg         jsonz.Embedded[*Message] `json:"smsg"`
+	Result       *Result                  `json:"result"`
 }
 
 type FractionApi struct {
@@ -85,6 +88,11 @@ func (f *FractionApi) schemaRespHeaders() *schemaz.Schema {
 		Object: func(read bool) map[string]*schemaz.Schema {
 			return map[string]*schemaz.Schema{
 				"x_i6_trace_message": {UrlValue: schemaz.ParseStr(&f.Resp.TraceMessage), Desc: &schemaz.Desc{Summary: "Sample of any trace message"}},
+				"x_i6_smsg": {UrlValue: schemaz.ParseStrGet(&f.Resp.Smsg, func(v string) jsonz.Embedded[*Message] {
+					var ret jsonz.Embedded[*Message]
+					jsonz.MustParse(v, &ret)
+					return ret
+				})},
 			}
 		},
 	}
@@ -134,6 +142,11 @@ func (f *FractionApi) schemaQueryParams() *schemaz.Schema {
 		Object: func(read bool) map[string]*schemaz.Schema {
 			return map[string]*schemaz.Schema{
 				"precision": {UrlValue: schemaz.ParseStrNumber(&f.Req.Precision), Desc: &schemaz.Desc{Summary: "Fraction max precision"}},
+				"smsg": {UrlValue: schemaz.ParseStrGet(&f.Req.Smsg, func(v string) jsonz.Embedded[*Message] {
+					var ret jsonz.Embedded[*Message]
+					jsonz.MustParse(v, &ret)
+					return ret
+				})},
 			}
 		},
 	}

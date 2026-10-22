@@ -31,6 +31,7 @@ func TestUnitBasic(t *testing.T) {
 
 	req := httpzrequest.New("POST", "/api/gox/routez/sample/fraction/10/3").
 		SetQuery("precision", "3").
+		SetQuery("smsg", `"{\"message\":\"my smsg\"}"`).
 		SetHeader("x-i6-trace-id", "xx").
 		SetBody(strings.NewReader("{\"reason\":\"myreason\"}"))
 	resp, err := c.Do(ctx, req)
@@ -39,6 +40,7 @@ func TestUnitBasic(t *testing.T) {
 	require.Equal(t, 201, resp.StatusCode)
 	require.Equal(t, "application/json", resp.Headers.Get("content-type"))
 	require.Equal(t, "reason: myreason, trace: xx", resp.Headers.Get("x-i6-trace-message"))
+	require.Equal(t, `"{\"message\":\"my smsg\"}"`, resp.Headers.Get("x-i6-smsg"))
 	respBody := jsonz.MustParseReader(resp.Body, &routezsamplefraction.Result{})
 	require.Equal(t, &routezsamplefraction.Result{
 		Display: "10.000/3.000",
