@@ -88,11 +88,12 @@ func (f *FractionApi) schemaRespHeaders() *schemaz.Schema {
 		Object: func(read bool) map[string]*schemaz.Schema {
 			return map[string]*schemaz.Schema{
 				"x_i6_trace_message": {UrlValue: schemaz.ParseStr(&f.Resp.TraceMessage), Desc: &schemaz.Desc{Summary: "Sample of any trace message"}},
-				"x_i6_smsg": {UrlValue: schemaz.ParseStrGet(&f.Resp.Smsg, func(v string) jsonz.Embedded[*Message] {
-					var ret jsonz.Embedded[*Message]
-					jsonz.MustParse(v, &ret)
-					return ret
-				})},
+				// "x_i6_smsg": {UrlValue: schemaz.ParseStrGet(&f.Resp.Smsg, func(v string) jsonz.Embedded[*Message] {
+				// var ret jsonz.Embedded[*Message]
+				// jsonz.MustParse(v, &ret)
+				// return ret
+				// })},
+				"x_i6_smsg": {UrlValue: schemaz.ParseJson(&f.Resp.Smsg)},
 			}
 		},
 	}
@@ -142,11 +143,12 @@ func (f *FractionApi) schemaQueryParams() *schemaz.Schema {
 		Object: func(read bool) map[string]*schemaz.Schema {
 			return map[string]*schemaz.Schema{
 				"precision": {UrlValue: schemaz.ParseStrNumber(&f.Req.Precision), Desc: &schemaz.Desc{Summary: "Fraction max precision"}},
-				"smsg": {UrlValue: schemaz.ParseStrGet(&f.Req.Smsg, func(v string) jsonz.Embedded[*Message] {
-					var ret jsonz.Embedded[*Message]
-					jsonz.MustParse(v, &ret)
-					return ret
-				})},
+				// "smsg": {UrlValue: schemaz.ParseStrGet(&f.Req.Smsg, func(v string) jsonz.Embedded[*Message] {
+				// 	var ret jsonz.Embedded[*Message]
+				// 	jsonz.MustParse(v, &ret)
+				// 	return ret
+				// })},
+				"smsg": {UrlValue: schemaz.ParseJson(&f.Req.Smsg)},
 			}
 		},
 	}

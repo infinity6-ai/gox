@@ -6,12 +6,26 @@ import (
 
 	"github.com/infinity6-ai/gox/commonz/constraintz"
 	"github.com/infinity6-ai/gox/commonz/constraintz/optionalz"
+	"github.com/infinity6-ai/gox/commonz/jsonz"
 	"github.com/infinity6-ai/gox/commonz/strconvz"
 )
 
 type Parser[T any] struct {
 	Parse  func(v T)
 	Format func() (T, any)
+}
+
+func ParseJson(out any) func() *Parser[string] {
+	return func() *Parser[string] {
+		return &Parser[string]{
+			Parse: func(v string) {
+				jsonz.MustParse(v, out)
+			},
+			Format: func() (string, any) {
+				return jsonz.MustFormat(out).String(), out
+			},
+		}
+	}
 }
 
 func ParseStrNumber[O constraintz.Numbers](out *O) func() *Parser[string] {
