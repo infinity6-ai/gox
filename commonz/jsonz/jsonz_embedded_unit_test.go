@@ -13,7 +13,7 @@ type embeddedTestPayload struct {
 }
 
 type embeddedTestOuter struct {
-	ID      string                       `json:"id"`
+	ID      string                        `json:"id"`
 	Payload Embedded[embeddedTestPayload] `json:"payload"`
 }
 
@@ -180,13 +180,5 @@ func TestUnitEmbeddedDirectFieldAccess(t *testing.T) {
 		v.Ref.Count = 100
 		require.Equal(t, "Updated", v.Ref.Name)
 		require.Equal(t, 100, v.Ref.Count)
-	})
-
-	t.Run("Type aliases compatibility", func(t *testing.T) {
-		var ej EmbeddedJson[int] = Embedded[int]{Ref: 10}
-		require.Equal(t, 10, ej.Ref)
-
-		var j Json[int] = Embedded[int]{Ref: 20}
-		require.Equal(t, 20, j.Ref)
 	})
 }

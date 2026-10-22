@@ -11,12 +11,6 @@ type Embedded[T any] struct {
 	Ref T
 }
 
-// EmbeddedJson is an alias for Embedded.
-type EmbeddedJson[T any] = Embedded[T]
-
-// Json is an alias for Embedded.
-type Json[T any] = Embedded[T]
-
 // MarshalJSON implements json.Marshaler. It marshals the inner value as JSON,
 // and then serializes that result as an escaped JSON string.
 func (p Embedded[T]) MarshalJSON() ([]byte, error) {
