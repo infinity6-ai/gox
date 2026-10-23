@@ -5,10 +5,26 @@ import (
 	"fmt"
 )
 
+func Unembed(emb any) (any, bool) {
+	type unembed interface {
+		unembed() any
+	}
+	v, ok := emb.(unembed)
+	if !ok {
+		return nil, false
+	}
+	ret := v.unembed()
+	return ret, ok
+}
+
 // Embedded wraps a value of type T, marshaling it as an escaped JSON string
 // and unmarshaling it from an escaped JSON string.
 type Embedded[T any] struct {
 	Ref T
+}
+
+func (p Embedded[T]) unembed() any {
+	return p.Ref
 }
 
 // MarshalJSON implements json.Marshaler. It marshals the inner value as JSON,
