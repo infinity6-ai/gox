@@ -85,9 +85,12 @@ func (f *FractionApi) schemaRespBody() *schemaz.Schema {
 func (f *FractionApi) schemaRespHeaders() *schemaz.Schema {
 	return &schemaz.Schema{
 		Object: func(read bool) map[string]*schemaz.Schema {
+			if !read && f.Resp.Smsg == nil {
+				f.Resp.Smsg = &Message{}
+			}
 			return map[string]*schemaz.Schema{
 				"x_i6_trace_message": {UrlValue: schemaz.ParseStr(&f.Resp.TraceMessage), Desc: &schemaz.Desc{Summary: "Sample of any trace message"}},
-				"x_i6_smsg":          {UrlValue: schemaz.ParseJson(&f.Resp.Smsg)},
+				"x_i6_smsg":          {UrlValue: schemaz.ParseJson(f.Resp.Smsg)},
 			}
 		},
 	}
@@ -135,9 +138,12 @@ func (f *FractionApi) schemaReqHeaders() *schemaz.Schema {
 func (f *FractionApi) schemaQueryParams() *schemaz.Schema {
 	return &schemaz.Schema{
 		Object: func(read bool) map[string]*schemaz.Schema {
+			if !read && f.Req.Smsg == nil {
+				f.Req.Smsg = &Message{}
+			}
 			return map[string]*schemaz.Schema{
 				"precision": {UrlValue: schemaz.ParseStrNumber(&f.Req.Precision), Desc: &schemaz.Desc{Summary: "Fraction max precision"}},
-				"smsg":      {UrlValue: schemaz.ParseJson(&f.Req.Smsg)},
+				"smsg":      {UrlValue: schemaz.ParseJson(f.Req.Smsg)},
 			}
 		},
 	}
