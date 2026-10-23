@@ -1,4 +1,4 @@
-package jsonz
+package jsonzembedded
 
 import (
 	"encoding/json"
