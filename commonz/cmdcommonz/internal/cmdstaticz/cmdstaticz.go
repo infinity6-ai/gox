@@ -3,13 +3,14 @@ package cmdstaticz
 import (
 	"bytes"
 	"context"
-	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 
 	"github.com/infinity6-ai/gox/commonz/errorz"
 	"github.com/infinity6-ai/gox/commonz/logz"
 	"github.com/infinity6-ai/gox/commonz/staticz/staticzwriter"
+	"github.com/infinity6-ai/gox/versionz/version"
 	"github.com/spf13/cobra"
 )
 
@@ -19,53 +20,46 @@ var logger = logz.Create(tlogger(true))
 
 func Prepare(ctx context.Context, parent *cobra.Command) *cobra.Command {
 	var cmd = &cobra.Command{
-		Version: "dev",
+		Version: version.Version(),
 		Use:     "staticz",
 		Short:   "staticz",
 	}
 	parent.AddCommand(cmd)
 
-	prepareGenerateCmd(ctx, cmd)
+	prepareGenerateCmd(cmd)
 
 	return cmd
 }
 
-func prepareGenerateCmd(ctx context.Context, parent *cobra.Command) {
+func prepareGenerateCmd(parent *cobra.Command) {
+	var opts staticzwriter.GenerateOptions
+	var out string
+
 	cmd := &cobra.Command{
 		Use: "generate",
 		Run: func(cmd *cobra.Command, args []string) {
-			opts := staticzwriter.GenerateOptions{}
-			opts.Imp = errorz.Check2(cmd.Flags().GetString("imp"))
-			opts.Code = errorz.Check2(cmd.Flags().GetString("code"))
-			opts.Dir = errorz.Check2(cmd.Flags().GetString("dir"))
-			out := errorz.Check2(cmd.Flags().GetString("out"))
-
+			ctx := cmd.Context()
 			var buf bytes.Buffer
 			opts.Out = &buf
 			staticzwriter.Generate(ctx, opts)
 
-			w := os.Stdout
+			var w io.Writer = cmd.OutOrStdout()
 			if out != "-" {
 				out = errorz.Check2(filepath.Abs(out))
 				logger.Info(ctx, "stfiles generation", map[string]any{"out": out, "size": buf.Len()})
-				os.MkdirAll(filepath.Dir(out), os.ModePerm)
-				w = errorz.Check2(os.Create(out))
+				errorz.Check(os.MkdirAll(filepath.Dir(out), 0o755))
+				f := errorz.Check2(os.Create(out))
+				defer f.Close()
+				w = f
 			}
 			_, err := buf.WriteTo(w)
 			errorz.Check(err)
 		},
 	}
-	cmd.PersistentFlags().String("imp", "", "import module")
-	cmd.PersistentFlags().String("code", "", "code")
-	cmd.PersistentFlags().String("dir", "", "dir")
-	cmd.PersistentFlags().String("out", "internal/stzfiles/stzfiles.gen.go", "outfile")
+	cmd.Flags().StringVar(&opts.Imp, "imp", "", "import module")
+	cmd.Flags().StringVar(&opts.Code, "code", "", "code")
+	cmd.Flags().StringVar(&opts.Dir, "dir", "", "dir")
+	cmd.Flags().StringVar(&out, "out", "internal/stzfiles/stzfiles.gen.go", "outfile")
 
 	parent.AddCommand(cmd)
-}
-
-func Execute(rootCmd *cobra.Command) {
-	if err := rootCmd.Execute(); err != nil {
-		fmt.Fprintln(os.Stderr, err)
-		os.Exit(1)
-	}
 }

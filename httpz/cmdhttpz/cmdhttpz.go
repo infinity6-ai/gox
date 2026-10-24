@@ -28,9 +28,9 @@ func Prepare(ctx context.Context) *cobra.Command {
 	return rootCmd
 }
 
-// Execute executes the given root cobra command and terminates the process on error.
-func Execute(rootCmd *cobra.Command) {
-	if err := rootCmd.Execute(); err != nil {
+// Execute executes the given root cobra command with the provided context and terminates the process on error.
+func Execute(ctx context.Context, rootCmd *cobra.Command) {
+	if err := rootCmd.ExecuteContext(ctx); err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
 	}

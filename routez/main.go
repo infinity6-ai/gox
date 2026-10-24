@@ -9,5 +9,5 @@ import (
 func main() {
 	ctx := context.Background()
 	rootCmd := cmdroutez.Prepare(ctx)
-	cmdroutez.Execute(rootCmd)
+	cmdroutez.Execute(ctx, rootCmd)
 }

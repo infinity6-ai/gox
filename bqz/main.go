@@ -9,5 +9,5 @@ import (
 func main() {
 	ctx := context.Background()
 	rootCmd := cmdbqz.Prepare(ctx)
-	cmdbqz.Execute(rootCmd)
+	cmdbqz.Execute(ctx, rootCmd)
 }

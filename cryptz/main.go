@@ -9,5 +9,5 @@ import (
 func main() {
 	ctx := context.Background()
 	rootCmd := cmdcryptz.Prepare(ctx)
-	cmdcryptz.Execute(rootCmd)
+	cmdcryptz.Execute(ctx, rootCmd)
 }

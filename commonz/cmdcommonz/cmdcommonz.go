@@ -29,8 +29,8 @@ func Prepare(ctx context.Context) *cobra.Command {
 	return rootCmd
 }
 
-func Execute(rootCmd *cobra.Command) {
-	if err := rootCmd.Execute(); err != nil {
+func Execute(ctx context.Context, rootCmd *cobra.Command) {
+	if err := rootCmd.ExecuteContext(ctx); err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
 	}

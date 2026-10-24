@@ -10,5 +10,5 @@ import (
 func main() {
 	ctx := context.Background()
 	rootCmd := cmdcommonz.Prepare(ctx)
-	cmdcommonz.Execute(rootCmd)
+	cmdcommonz.Execute(ctx, rootCmd)
 }

@@ -9,5 +9,5 @@ import (
 func main() {
 	ctx := context.Background()
 	rootCmd := cmdhttpz.Prepare(ctx)
-	cmdhttpz.Execute(rootCmd)
+	cmdhttpz.Execute(ctx, rootCmd)
 }
