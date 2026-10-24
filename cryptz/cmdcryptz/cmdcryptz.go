@@ -23,6 +23,16 @@ func Prepare(ctx context.Context) *cobra.Command {
 		},
 	})
 
+	rootCmd.AddCommand(
+		newB64Cmd(),
+		newB32Cmd(),
+		newHashCmd(),
+		newRandCmd(),
+		newAesCmd(),
+		newRsaCmd(),
+		newSaltCmd(),
+	)
+
 	return rootCmd
 }
 
