@@ -15,18 +15,6 @@ import (
 func TestUnitJwtStateCommand(t *testing.T) {
 	tempDir := t.TempDir()
 
-	t.Run("jwtstate gen-key generates 32-byte hex key", func(t *testing.T) {
-		cmd := newJwtStateGenKeyCmd()
-		var outBuf bytes.Buffer
-		cmd.SetOut(&outBuf)
-		cmd.SetArgs([]string{"-s", "32"})
-
-		err := cmd.Execute()
-		require.NoError(t, err)
-		keyHex := strings.TrimSpace(outBuf.String())
-		require.Len(t, keyHex, 64)
-	})
-
 	t.Run("jwtstate encrypt and decrypt with direct key", func(t *testing.T) {
 		key := cryptzaes.NewKey(32)
 		keyHex := "00112233445566778899aabbccddeeff00112233445566778899aabbccddeeff"
@@ -57,7 +45,7 @@ func TestUnitJwtStateCommand(t *testing.T) {
 		require.Equal(t, "user_session_state_data", decBuf.String())
 	})
 
-	t.Run("jwtstate encrypt and decrypt with state keyring", func(t *testing.T) {
+	t.Run("jwtstate encrypt and decrypt with self-owner in state keyring", func(t *testing.T) {
 		kr := cryptzjwtstate.NewKeyRing()
 		kr.Generate("myservice", 32)
 		krFile := filepath.Join(tempDir, "state_kr.json")
@@ -88,5 +76,41 @@ func TestUnitJwtStateCommand(t *testing.T) {
 		err = decCmd.Execute()
 		require.NoError(t, err)
 		require.Equal(t, "oauth_state_12345", decBuf.String())
+	})
+
+	t.Run("jwtstate encrypt and decrypt with pairwise key in state keyring", func(t *testing.T) {
+		kr := cryptzjwtstate.NewKeyRing()
+		kr.GeneratePair("web", "api", 32)
+		krFile := filepath.Join(tempDir, "state_kr_pair.json")
+		krData, err := kr.Export()
+		require.NoError(t, err)
+		require.NoError(t, os.WriteFile(krFile, krData, 0600))
+
+		// Encrypt with src=web dst=api
+		encCmd := newJwtStateEncryptCmd()
+		var encBuf bytes.Buffer
+		encCmd.SetOut(&encBuf)
+		encCmd.SetArgs([]string{
+			"--kr", krFile,
+			"--src", "web",
+			"--dst", "api",
+			"pairwise_secret_token",
+		})
+		err = encCmd.Execute()
+		require.NoError(t, err)
+
+		ciphertextHex := strings.TrimSpace(encBuf.String())
+
+		// Decrypt using same keyring
+		decCmd := newJwtStateDecryptCmd()
+		var decBuf bytes.Buffer
+		decCmd.SetOut(&decBuf)
+		decCmd.SetArgs([]string{
+			"--kr", krFile,
+			ciphertextHex,
+		})
+		err = decCmd.Execute()
+		require.NoError(t, err)
+		require.Equal(t, "pairwise_secret_token", decBuf.String())
 	})
 }

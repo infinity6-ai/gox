@@ -20,7 +20,6 @@ func newJwtStateCmd() *cobra.Command {
 	cmd.AddCommand(
 		newJwtStateEncryptCmd(),
 		newJwtStateDecryptCmd(),
-		newJwtStateGenKeyCmd(),
 	)
 
 	return cmd
@@ -36,21 +35,6 @@ func loadStateKeyRingFile(filePath string) (*cryptzjwtstate.KeyRing, error) {
 		return nil, fmt.Errorf("failed to import state keyring from %s: %w", filePath, err)
 	}
 	return kr, nil
-}
-
-func newJwtStateGenKeyCmd() *cobra.Command {
-	var size int
-	cmd := &cobra.Command{
-		Use:   "gen-key",
-		Short: "Generate a new random AES symmetric key in hex",
-		RunE: func(cmd *cobra.Command, args []string) error {
-			key := cryptzaes.NewKey(size)
-			fmt.Fprintln(cmd.OutOrStdout(), hex.EncodeToString(key))
-			return nil
-		},
-	}
-	cmd.Flags().IntVarP(&size, "size", "s", 32, "Key size in bytes (16, 24, or 32)")
-	return cmd
 }
 
 func newJwtStateEncryptCmd() *cobra.Command {
