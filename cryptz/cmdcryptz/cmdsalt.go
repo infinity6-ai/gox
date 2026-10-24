@@ -3,7 +3,6 @@ package cmdcryptz
 import (
 	"encoding/hex"
 	"fmt"
-	"os"
 
 	"github.com/infinity6-ai/gox/cryptz/cryptzsalt"
 	"github.com/spf13/cobra"
@@ -27,7 +26,7 @@ func newSaltCmd() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			fmt.Println(hex.EncodeToString(res.Format()))
+			fmt.Fprintln(cmd.OutOrStdout(), hex.EncodeToString(res.Format()))
 			return nil
 		},
 	}
@@ -47,10 +46,10 @@ func newSaltCmd() *cobra.Command {
 			}
 			_, err = cryptzsalt.Verify(bundleBytes, original)
 			if err != nil {
-				fmt.Println("Verification failed:", err)
-				os.Exit(1)
+				fmt.Fprintln(cmd.OutOrStderr(), "Verification failed:", err)
+				return fmt.Errorf("verification failed: %w", err)
 			}
-			fmt.Println("Verification succeeded")
+			fmt.Fprintln(cmd.OutOrStdout(), "Verification succeeded")
 			return nil
 		},
 	}

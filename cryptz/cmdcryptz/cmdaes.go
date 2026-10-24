@@ -32,7 +32,7 @@ func newAesCmd() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			fmt.Print(hex.EncodeToString(out))
+			fmt.Fprint(cmd.OutOrStdout(), hex.EncodeToString(out))
 			return nil
 		},
 	}
@@ -59,7 +59,7 @@ func newAesCmd() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			fmt.Print(string(out.Bytes()))
+			fmt.Fprint(cmd.OutOrStdout(), string(out.Bytes()))
 			return nil
 		},
 	}

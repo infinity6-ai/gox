@@ -2,6 +2,7 @@ package cmdcryptz
 
 import (
 	"encoding/hex"
+	"fmt"
 
 	"github.com/infinity6-ai/gox/cryptz/cryptzb64"
 	"github.com/infinity6-ai/gox/cryptz/cryptzrand"
@@ -19,19 +20,20 @@ func newRandCmd() *cobra.Command {
 		Short: "Generate random bytes",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			out := cryptzrand.Rand(size)
+			stdout := cmd.OutOrStdout()
 			if raw {
-				_, err := cmd.OutOrStdout().Write(out)
+				_, err := stdout.Write(out)
 				return err
 			}
 			if b64url {
-				cmd.Println(cryptzb64.UrlEncode(out).String())
+				fmt.Fprintln(stdout, cryptzb64.UrlEncode(out).String())
 				return nil
 			}
 			if b64 {
-				cmd.Println(cryptzb64.StdEncode(out).String())
+				fmt.Fprintln(stdout, cryptzb64.StdEncode(out).String())
 				return nil
 			}
-			cmd.Println(hex.EncodeToString(out))
+			fmt.Fprintln(stdout, hex.EncodeToString(out))
 			return nil
 		},
 	}

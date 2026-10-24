@@ -26,7 +26,7 @@ func newHashCmd() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			fmt.Println(hex.EncodeToString(out))
+			fmt.Fprintln(cmd.OutOrStdout(), hex.EncodeToString(out))
 			return nil
 		},
 	}
@@ -43,7 +43,7 @@ func newHashCmd() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			fmt.Println(hex.EncodeToString(out))
+			fmt.Fprintln(cmd.OutOrStdout(), hex.EncodeToString(out))
 			return nil
 		},
 	}

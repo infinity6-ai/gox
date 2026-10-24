@@ -29,7 +29,7 @@ func newB64Cmd() *cobra.Command {
 			} else {
 				out = cryptzb64.StdEncode(in).Bytes()
 			}
-			fmt.Print(string(out))
+			fmt.Fprint(cmd.OutOrStdout(), string(out))
 			return nil
 		},
 	}
@@ -57,7 +57,7 @@ func newB64Cmd() *cobra.Command {
 				}
 				out = res.Bytes()
 			}
-			fmt.Print(string(out))
+			fmt.Fprint(cmd.OutOrStdout(), string(out))
 			return nil
 		},
 	}

@@ -22,7 +22,7 @@ func newB32Cmd() *cobra.Command {
 				return err
 			}
 			out := cryptzb32.Encode(in)
-			fmt.Print(string(out.Bytes()))
+			fmt.Fprint(cmd.OutOrStdout(), string(out.Bytes()))
 			return nil
 		},
 	}
@@ -39,7 +39,7 @@ func newB32Cmd() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			fmt.Print(string(out.Bytes()))
+			fmt.Fprint(cmd.OutOrStdout(), string(out.Bytes()))
 			return nil
 		},
 	}
