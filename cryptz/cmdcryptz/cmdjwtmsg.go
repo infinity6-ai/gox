@@ -79,6 +79,8 @@ func newJwtMsgEncryptCmd() *cobra.Command {
 
 func newJwtMsgDecryptCmd() *cobra.Command {
 	var krPath string
+	var expectedSrc string
+	var expectedDst string
 	var b64 bool
 	var b64url bool
 	var raw bool
@@ -120,12 +122,21 @@ func newJwtMsgDecryptCmd() *cobra.Command {
 				return fmt.Errorf("decryption failed: %w", err)
 			}
 
+			if expectedSrc != "" && plain.SrcKey != expectedSrc {
+				return fmt.Errorf("source mismatch: expected %s, got %s", expectedSrc, plain.SrcKey)
+			}
+			if expectedDst != "" && plain.DstKey != expectedDst {
+				return fmt.Errorf("destination mismatch: expected %s, got %s", expectedDst, plain.DstKey)
+			}
+
 			_, err = cmd.OutOrStdout().Write(plain.Data)
 			return err
 		},
 	}
 
 	cmd.Flags().StringVarP(&krPath, "kr", "k", "keyring.json", "Keyring file path")
+	cmd.Flags().StringVar(&expectedSrc, "src", "", "Assert expected sender/source owner name")
+	cmd.Flags().StringVar(&expectedDst, "dst", "", "Assert expected recipient/destination owner name")
 	cmd.Flags().BoolVar(&b64, "b64", false, "Input ciphertext is Base64")
 	cmd.Flags().BoolVar(&b64url, "b64url", false, "Input ciphertext is URL-safe Base64")
 	cmd.Flags().BoolVarP(&raw, "raw", "r", false, "Input ciphertext is raw binary")

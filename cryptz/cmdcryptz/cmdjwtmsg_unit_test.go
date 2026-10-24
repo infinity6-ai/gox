@@ -99,4 +99,35 @@ func TestUnitJwtMsgCommand(t *testing.T) {
 		require.NoError(t, err)
 		require.Equal(t, "raw binary message data", plainBuf.String())
 	})
+
+	t.Run("jwtmsg decrypt asserts src and dst successfully", func(t *testing.T) {
+		cmdDec := newJwtMsgDecryptCmd()
+		var plainBuf bytes.Buffer
+		cmdDec.SetOut(&plainBuf)
+		cmdDec.SetArgs([]string{
+			"--kr", krFile,
+			"--src", "alice",
+			"--dst", "bob",
+			cipherHex,
+		})
+		err := cmdDec.Execute()
+		require.NoError(t, err)
+		require.Equal(t, "secret message from alice to bob", plainBuf.String())
+	})
+
+	t.Run("jwtmsg decrypt fails when asserting wrong src", func(t *testing.T) {
+		cmdDec := newJwtMsgDecryptCmd()
+		var plainBuf bytes.Buffer
+		var errBuf bytes.Buffer
+		cmdDec.SetOut(&plainBuf)
+		cmdDec.SetErr(&errBuf)
+		cmdDec.SetArgs([]string{
+			"--kr", krFile,
+			"--src", "mallory",
+			cipherHex,
+		})
+		err := cmdDec.Execute()
+		require.Error(t, err)
+		require.Contains(t, err.Error(), "source mismatch")
+	})
 }

@@ -37,12 +37,37 @@ func loadStateKeyRingFile(filePath string) (*cryptzjwtstate.KeyRing, error) {
 	return kr, nil
 }
 
+func loadAesKey(keyHex string, keyFile string) (cryptzaes.Key, error) {
+	if keyHex != "" {
+		keyBytes, err := hex.DecodeString(cleanHexInput([]byte(keyHex)))
+		if err != nil {
+			return nil, fmt.Errorf("invalid key hex: %w", err)
+		}
+		return cryptzaes.Key(keyBytes), nil
+	}
+	if keyFile != "" {
+		data, err := os.ReadFile(keyFile)
+		if err != nil {
+			return nil, fmt.Errorf("failed to read key file %s: %w", keyFile, err)
+		}
+		str := cleanHexInput(data)
+		if keyBytes, err := hex.DecodeString(str); err == nil && (len(keyBytes) == 16 || len(keyBytes) == 24 || len(keyBytes) == 32) {
+			return cryptzaes.Key(keyBytes), nil
+		}
+		if len(data) == 16 || len(data) == 24 || len(data) == 32 {
+			return cryptzaes.Key(data), nil
+		}
+		return nil, fmt.Errorf("key file %s must contain a 16, 24, or 32 byte key (in hex or raw binary)", keyFile)
+	}
+	return nil, nil
+}
+
 func newJwtStateEncryptCmd() *cobra.Command {
 	var keyHex string
+	var keyFile string
 	var krPath string
 	var src string
 	var dst string
-	var keyId string
 	var b64 bool
 	var b64url bool
 	var raw bool
@@ -66,14 +91,15 @@ func newJwtStateEncryptCmd() *cobra.Command {
 
 			var keysLoader *cryptzjwtstate.EncryptorKeysLoader
 
-			if keyHex != "" {
-				keyBytes, err := hex.DecodeString(cleanHexInput([]byte(keyHex)))
-				if err != nil {
-					return fmt.Errorf("invalid key hex: %w", err)
-				}
+			directKey, err := loadAesKey(keyHex, keyFile)
+			if err != nil {
+				return err
+			}
+
+			if directKey != nil {
 				keysLoader = &cryptzjwtstate.EncryptorKeysLoader{
 					KeyLoader: func(s, d string) cryptzaes.Key {
-						return cryptzaes.Key(keyBytes)
+						return directKey
 					},
 				}
 			} else if krPath != "" {
@@ -83,7 +109,7 @@ func newJwtStateEncryptCmd() *cobra.Command {
 				}
 				keysLoader = cryptzjwtstate.FromKeyRing(kr).EncryptorKeysLoader()
 			} else {
-				return fmt.Errorf("either --key or --kr must be provided")
+				return fmt.Errorf("one of --key, --key-file, or --kr must be provided")
 			}
 
 			enc := cryptzjwtstate.NewEncryptor()
@@ -91,7 +117,6 @@ func newJwtStateEncryptCmd() *cobra.Command {
 			enc.Message = &cryptzjwtstate.StateMessagePlain{
 				SrcKey: src,
 				DstKey: dst,
-				KeyId:  keyId,
 				Data:   in,
 			}
 
@@ -105,15 +130,15 @@ func newJwtStateEncryptCmd() *cobra.Command {
 	}
 
 	cmd.Flags().StringVarP(&keyHex, "key", "k", "", "Direct AES symmetric key in hex (16, 24, or 32 bytes)")
+	cmd.Flags().StringVar(&keyFile, "key-file", "", "File containing AES symmetric key (hex or raw binary)")
 	cmd.Flags().StringVar(&krPath, "kr", "", "State keyring file path")
 	cmd.Flags().StringVar(&src, "src", "app", "Source / owner name")
 	cmd.Flags().StringVar(&dst, "dst", "", "Destination name (defaults to src)")
-	cmd.Flags().StringVar(&keyId, "key-id", "", "Optional key identifier")
 	cmd.Flags().BoolVar(&b64, "b64", false, "Output in Base64")
 	cmd.Flags().BoolVar(&b64url, "b64url", false, "Output in URL-safe Base64")
 	cmd.Flags().BoolVarP(&raw, "raw", "r", false, "Output raw binary")
 
-	cmd.MarkFlagsMutuallyExclusive("key", "kr")
+	cmd.MarkFlagsMutuallyExclusive("key", "key-file", "kr")
 	cmd.MarkFlagsMutuallyExclusive("b64", "b64url", "raw")
 
 	return cmd
@@ -121,7 +146,10 @@ func newJwtStateEncryptCmd() *cobra.Command {
 
 func newJwtStateDecryptCmd() *cobra.Command {
 	var keyHex string
+	var keyFile string
 	var krPath string
+	var expectedSrc string
+	var expectedDst string
 	var b64 bool
 	var b64url bool
 	var raw bool
@@ -149,14 +177,15 @@ func newJwtStateDecryptCmd() *cobra.Command {
 
 			var keysLoader *cryptzjwtstate.DecryptorKeysLoader
 
-			if keyHex != "" {
-				keyBytes, err := hex.DecodeString(cleanHexInput([]byte(keyHex)))
-				if err != nil {
-					return fmt.Errorf("invalid key hex: %w", err)
-				}
+			directKey, err := loadAesKey(keyHex, keyFile)
+			if err != nil {
+				return err
+			}
+
+			if directKey != nil {
 				keysLoader = &cryptzjwtstate.DecryptorKeysLoader{
 					KeyLoader: func(s, d string) cryptzaes.Key {
-						return cryptzaes.Key(keyBytes)
+						return directKey
 					},
 				}
 			} else if krPath != "" {
@@ -166,7 +195,7 @@ func newJwtStateDecryptCmd() *cobra.Command {
 				}
 				keysLoader = cryptzjwtstate.FromKeyRing(kr).DecryptorKeysLoader()
 			} else {
-				return fmt.Errorf("either --key or --kr must be provided")
+				return fmt.Errorf("one of --key, --key-file, or --kr must be provided")
 			}
 
 			dec := cryptzjwtstate.NewDecryptor()
@@ -179,18 +208,28 @@ func newJwtStateDecryptCmd() *cobra.Command {
 				return fmt.Errorf("state decryption failed: %w", err)
 			}
 
+			if expectedSrc != "" && plain.SrcKey != expectedSrc {
+				return fmt.Errorf("source mismatch: expected %s, got %s", expectedSrc, plain.SrcKey)
+			}
+			if expectedDst != "" && plain.DstKey != expectedDst {
+				return fmt.Errorf("destination mismatch: expected %s, got %s", expectedDst, plain.DstKey)
+			}
+
 			_, err = cmd.OutOrStdout().Write(plain.Data)
 			return err
 		},
 	}
 
 	cmd.Flags().StringVarP(&keyHex, "key", "k", "", "Direct AES symmetric key in hex")
+	cmd.Flags().StringVar(&keyFile, "key-file", "", "File containing AES symmetric key (hex or raw binary)")
 	cmd.Flags().StringVar(&krPath, "kr", "", "State keyring file path")
+	cmd.Flags().StringVar(&expectedSrc, "src", "", "Assert expected source owner name")
+	cmd.Flags().StringVar(&expectedDst, "dst", "", "Assert expected destination name")
 	cmd.Flags().BoolVar(&b64, "b64", false, "Input ciphertext is Base64")
 	cmd.Flags().BoolVar(&b64url, "b64url", false, "Input ciphertext is URL-safe Base64")
 	cmd.Flags().BoolVarP(&raw, "raw", "r", false, "Input ciphertext is raw binary")
 
-	cmd.MarkFlagsMutuallyExclusive("key", "kr")
+	cmd.MarkFlagsMutuallyExclusive("key", "key-file", "kr")
 	cmd.MarkFlagsMutuallyExclusive("b64", "b64url", "raw")
 
 	return cmd
