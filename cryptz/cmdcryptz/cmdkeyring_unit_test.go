@@ -97,4 +97,40 @@ func TestUnitKeyringCommand(t *testing.T) {
 		require.NotContains(t, outBuf.String(), "-----BEGIN PRIVATE KEY-----")
 		require.Contains(t, outBuf.String(), "-----BEGIN PUBLIC KEY-----")
 	})
+
+	t.Run("keyring exp-priv and exp-pub export PEM keys for owner", func(t *testing.T) {
+		// Test exp-priv for alice
+		privCmd := newKeyringExpPrivCmd()
+		var privBuf bytes.Buffer
+		privCmd.SetOut(&privBuf)
+		privCmd.SetArgs([]string{"-f", krFile, "-o", "alice"})
+
+		err := privCmd.Execute()
+		require.NoError(t, err)
+		require.Contains(t, privBuf.String(), "-----BEGIN PRIVATE KEY-----")
+
+		// Test exp-pub for alice
+		pubCmd := newKeyringExpPubCmd()
+		var pubBuf bytes.Buffer
+		pubCmd.SetOut(&pubBuf)
+		pubCmd.SetArgs([]string{"-f", krFile, "-o", "alice"})
+
+		err = pubCmd.Execute()
+		require.NoError(t, err)
+		require.Contains(t, pubBuf.String(), "-----BEGIN PUBLIC KEY-----")
+
+		// Test exp-pub to file
+		pubFile := filepath.Join(tempDir, "alice_pub.pem")
+		pubFileCmd := newKeyringExpPubCmd()
+		var pubFileBuf bytes.Buffer
+		pubFileCmd.SetOut(&pubFileBuf)
+		pubFileCmd.SetArgs([]string{"-f", krFile, "-o", "alice", "--out", pubFile})
+
+		err = pubFileCmd.Execute()
+		require.NoError(t, err)
+
+		pubData, err := os.ReadFile(pubFile)
+		require.NoError(t, err)
+		require.Contains(t, string(pubData), "-----BEGIN PUBLIC KEY-----")
+	})
 }
