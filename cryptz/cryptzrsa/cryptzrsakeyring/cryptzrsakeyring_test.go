@@ -6,6 +6,7 @@ import (
 
 	"github.com/infinity6-ai/gox/cryptz/cryptzrsa"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 // Helper function to create a new KeyRing for tests
@@ -238,4 +239,42 @@ func TestUnitOwnersNoKeysFound(t *testing.T) {
 	// or if owner has no keys, then `len(ret.keys) == 0` will cause panic later.
 	// The `getOwner` helper within `KeyRing` will panic if `k.owners` is nil or the owner is not found.
 	// If `k.owners` is not nil but the owner has no keys, it returns an empty `ret.keys` which then panics.
+}
+
+func TestUnitExportImport(t *testing.T) {
+	kr := NewKeyRing()
+	kr.Generate("alice", 1024)
+	kr.Generate("bob", 1024)
+
+	t.Run("ExportAll exports both private and public keys", func(t *testing.T) {
+		data, err := kr.ExportAll()
+		require.NoError(t, err)
+		require.Contains(t, string(data), "-----BEGIN PRIVATE KEY-----")
+		require.Contains(t, string(data), "-----BEGIN PUBLIC KEY-----")
+
+		imported, err := Import(data)
+		require.NoError(t, err)
+		require.ElementsMatch(t, []string{"alice", "bob"}, imported.GetOwnerNames())
+		require.NotNil(t, imported.Current("alice").Private())
+		require.NotNil(t, imported.Current("bob").Private())
+		require.Equal(t, kr.Current("alice").KeyId(), imported.Current("alice").KeyId())
+	})
+
+	t.Run("ExportPubs exports only public keys", func(t *testing.T) {
+		data, err := kr.ExportPubs()
+		require.NoError(t, err)
+		require.NotContains(t, string(data), "-----BEGIN PRIVATE KEY-----")
+		require.Contains(t, string(data), "-----BEGIN PUBLIC KEY-----")
+
+		imported, err := Import(data)
+		require.NoError(t, err)
+		require.ElementsMatch(t, []string{"alice", "bob"}, imported.GetOwnerNames())
+		require.Nil(t, imported.Current("alice").Private())
+		require.NotNil(t, imported.Current("alice").Public())
+	})
+
+	t.Run("Import invalid data returns error", func(t *testing.T) {
+		_, err := Import([]byte("invalid json"))
+		require.Error(t, err)
+	})
 }

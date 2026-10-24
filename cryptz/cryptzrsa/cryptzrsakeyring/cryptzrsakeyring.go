@@ -2,6 +2,8 @@ package cryptzrsakeyring
 
 import (
 	"crypto/rsa"
+	"encoding/json"
+	"fmt"
 	"regexp"
 
 	"github.com/infinity6-ai/gox/commonz/validation/checker"
@@ -180,4 +182,104 @@ func (k *KeyRing) Owners(owners ...string) *Keys {
 		panic("no keys")
 	}
 	return ret
+}
+
+type keyRecord struct {
+	KeyId      string `json:"key_id"`
+	PublicKey  string `json:"public_key"`
+	PrivateKey string `json:"private_key,omitempty"`
+}
+
+type ownerRecord struct {
+	Name    string                `json:"name"`
+	Current string                `json:"current"`
+	Keys    map[string]*keyRecord `json:"keys"`
+}
+
+type keyringRecord struct {
+	Version int                     `json:"version"`
+	Owners  map[string]*ownerRecord `json:"owners"`
+}
+
+func (k *KeyRing) ExportAll() ([]byte, error) {
+	return k.export(false)
+}
+
+func (k *KeyRing) ExportPubs() ([]byte, error) {
+	return k.export(true)
+}
+
+func (k *KeyRing) export(pubsOnly bool) ([]byte, error) {
+	s := cryptzrsa.NewService()
+	rec := keyringRecord{
+		Version: 1,
+		Owners:  make(map[string]*ownerRecord),
+	}
+
+	for ownerName, owner := range k.owners {
+		oRec := &ownerRecord{
+			Name:    ownerName,
+			Current: owner.current,
+			Keys:    make(map[string]*keyRecord),
+		}
+		for keyId, key := range owner.keys {
+			kRec := &keyRecord{
+				KeyId:     keyId,
+				PublicKey: s.PubKeyExport(key.publicKey),
+			}
+			if !pubsOnly && key.privateKey != nil {
+				kRec.PrivateKey = s.PrivKeyExport(key.privateKey)
+			}
+			oRec.Keys[keyId] = kRec
+		}
+		rec.Owners[ownerName] = oRec
+	}
+
+	data, err := json.MarshalIndent(rec, "", "  ")
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal keyring: %w", err)
+	}
+	return data, nil
+}
+
+func Import(data []byte) (*KeyRing, error) {
+	kr := NewKeyRing()
+	if err := kr.Import(data); err != nil {
+		return nil, err
+	}
+	return kr, nil
+}
+
+func (k *KeyRing) Import(data []byte) (err error) {
+	defer func() {
+		if r := recover(); r != nil {
+			err = fmt.Errorf("failed to import keyring: %v", r)
+		}
+	}()
+
+	var rec keyringRecord
+	if err := json.Unmarshal(data, &rec); err != nil {
+		return fmt.Errorf("failed to parse keyring JSON: %w", err)
+	}
+
+	s := cryptzrsa.NewService()
+	if k.owners == nil {
+		k.owners = make(map[string]*Owner)
+	}
+
+	for ownerName, oRec := range rec.Owners {
+		for _, kRec := range oRec.Keys {
+			if kRec.PrivateKey != "" {
+				priv := s.PrivKeyImport(kRec.PrivateKey)
+				k.AddPrivate(ownerName, priv)
+			} else if kRec.PublicKey != "" {
+				pub := s.PubKeyImport(kRec.PublicKey)
+				k.AddPublic(ownerName, pub)
+			}
+		}
+		if owner, ok := k.owners[ownerName]; ok && oRec.Current != "" {
+			owner.current = oRec.Current
+		}
+	}
+	return nil
 }

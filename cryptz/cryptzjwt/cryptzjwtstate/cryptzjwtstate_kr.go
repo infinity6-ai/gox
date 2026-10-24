@@ -1,6 +1,9 @@
 package cryptzjwtstate
 
 import (
+	"encoding/hex"
+	"encoding/json"
+	"fmt"
 	"regexp"
 
 	"github.com/infinity6-ai/gox/commonz/validation/checker"
@@ -97,4 +100,42 @@ func (m *MessageKeyRing) DecryptorKeysLoader() *DecryptorKeysLoader {
 	return &DecryptorKeysLoader{
 		KeyLoader: m.KeyLoader(),
 	}
+}
+
+func (k *KeyRing) Export() ([]byte, error) {
+	rec := make(map[string]string)
+	for name, key := range k.keys {
+		rec[name] = hex.EncodeToString(key)
+	}
+	data, err := json.MarshalIndent(rec, "", "  ")
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal state keyring: %w", err)
+	}
+	return data, nil
+}
+
+func Import(data []byte) (*KeyRing, error) {
+	kr := NewKeyRing()
+	if err := kr.Import(data); err != nil {
+		return nil, err
+	}
+	return kr, nil
+}
+
+func (k *KeyRing) Import(data []byte) error {
+	var rec map[string]string
+	if err := json.Unmarshal(data, &rec); err != nil {
+		return fmt.Errorf("failed to parse state keyring JSON: %w", err)
+	}
+	if k.keys == nil {
+		k.keys = make(map[string]cryptzaes.Key)
+	}
+	for name, hexKey := range rec {
+		keyBytes, err := hex.DecodeString(hexKey)
+		if err != nil {
+			return fmt.Errorf("invalid hex key for %s: %w", name, err)
+		}
+		k.keys[name] = cryptzaes.Key(keyBytes)
+	}
+	return nil
 }

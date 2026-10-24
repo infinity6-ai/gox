@@ -93,3 +93,24 @@ func TestUnitStateKeyRingUnknownKey(t *testing.T) {
 		})
 	})
 }
+
+func TestUnitStateKeyRingExportImport(t *testing.T) {
+	kr := cryptzjwtstate.NewKeyRing()
+	kr.Generate("myapp", 32)
+	kr.GeneratePair("alice", "bob", 32)
+
+	t.Run("Export and Import roundtrip preserves keys", func(t *testing.T) {
+		data, err := kr.Export()
+		require.NoError(t, err)
+
+		imported, err := cryptzjwtstate.Import(data)
+		require.NoError(t, err)
+		require.Equal(t, kr.GetKey("myapp", "myapp"), imported.GetKey("myapp", "myapp"))
+		require.Equal(t, kr.GetKey("alice", "bob"), imported.GetKey("alice", "bob"))
+	})
+
+	t.Run("Import invalid JSON fails", func(t *testing.T) {
+		_, err := cryptzjwtstate.Import([]byte("invalid json"))
+		require.Error(t, err)
+	})
+}
