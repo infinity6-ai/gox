@@ -6,9 +6,12 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"strconv"
 	"strings"
+	"time"
 
 	"github.com/infinity6-ai/gox/cryptz/cryptzb64"
+	"github.com/infinity6-ai/gox/cryptz/cryptzjwt"
 	"github.com/infinity6-ai/gox/cryptz/cryptzrsa/cryptzrsaservice"
 	"github.com/spf13/cobra"
 )
@@ -119,4 +122,100 @@ func safePubKeyImport(s cryptzrsaservice.RSAService, keyPEM string) (pub *rsa.Pu
 		}
 	}()
 	return s.PubKeyImport(keyPEM), nil
+}
+
+func parseIat(iatStr string) (time.Time, error) {
+	if iatStr == "" {
+		return time.Now().UTC(), nil
+	}
+	if n, err := strconv.ParseInt(iatStr, 10, 64); err == nil {
+		if n < 10000000000 {
+			return time.Unix(n, 0).UTC(), nil
+		}
+		return time.UnixMilli(n).UTC(), nil
+	}
+	if d, err := time.ParseDuration(iatStr); err == nil {
+		if d > 0 {
+			d = -d
+		}
+		return time.Now().UTC().Add(d), nil
+	}
+	if t, err := time.Parse(time.RFC3339, iatStr); err == nil {
+		return t.UTC(), nil
+	}
+	if t, err := time.Parse("2006-01-02 15:04:05", iatStr); err == nil {
+		return t.UTC(), nil
+	}
+	return time.Time{}, fmt.Errorf("invalid --iat format %q: expected unix epoch (seconds or ms), RFC3339, or relative offset (e.g. -5m)", iatStr)
+}
+
+func parseBxt(bxtRaw, bxtHex, bxtB64, bxtB64Url, bxtFile string) ([]byte, error) {
+	if bxtFile != "" {
+		data, err := os.ReadFile(bxtFile)
+		if err != nil {
+			return nil, fmt.Errorf("failed to read bxt file %s: %w", bxtFile, err)
+		}
+		return data, nil
+	}
+	if bxtHex != "" {
+		data, err := hex.DecodeString(cleanHexInput([]byte(bxtHex)))
+		if err != nil {
+			return nil, fmt.Errorf("invalid --bxt-hex: %w", err)
+		}
+		return data, nil
+	}
+	if bxtB64 != "" {
+		blob, err := cryptzb64.StdDecode(cleanHexInput([]byte(bxtB64)))
+		if err != nil {
+			return nil, fmt.Errorf("invalid --bxt-b64: %w", err)
+		}
+		return blob.Bytes(), nil
+	}
+	if bxtB64Url != "" {
+		blob, err := cryptzb64.UrlDecode(cleanHexInput([]byte(bxtB64Url)))
+		if err != nil {
+			return nil, fmt.Errorf("invalid --bxt-b64url: %w", err)
+		}
+		return blob.Bytes(), nil
+	}
+	if bxtRaw != "" {
+		return []byte(bxtRaw), nil
+	}
+	return nil, nil
+}
+
+func buildJwtPayload(jti, typ string, iatTime time.Time, expDuration time.Duration, iss, aud, sub, ext string, bxtBytes []byte, idp string) (*cryptzjwt.JWTPayload, error) {
+	if jti != "" {
+		step := cryptzjwt.NewToken().
+			SetJti(jti).
+			SetPayloadType(typ).
+			CreatedAt(iatTime).
+			ExpiresIn(expDuration).
+			SetIssuer(iss).
+			SetAudience(aud).
+			SetSubject(sub)
+
+		if len(bxtBytes) > 0 && ext != "" {
+			return step.SetBothExtentions(ext, bxtBytes).SetIdentityProvider(idp).BuildPayload()
+		} else if len(bxtBytes) > 0 {
+			return step.SetBinaryExtension(bxtBytes).SetIdentityProvider(idp).BuildPayload()
+		}
+		return step.SetExtension(ext).SetIdentityProvider(idp).BuildPayload()
+	}
+
+	step := cryptzjwt.NewToken().
+		GenerateJti().
+		SetPayloadType(typ).
+		CreatedAt(iatTime).
+		ExpiresIn(expDuration).
+		SetIssuer(iss).
+		SetAudience(aud).
+		SetSubject(sub)
+
+	if len(bxtBytes) > 0 && ext != "" {
+		return step.SetBothExtentions(ext, bxtBytes).SetIdentityProvider(idp).BuildPayload()
+	} else if len(bxtBytes) > 0 {
+		return step.SetBinaryExtension(bxtBytes).SetIdentityProvider(idp).BuildPayload()
+	}
+	return step.SetExtension(ext).SetIdentityProvider(idp).BuildPayload()
 }

@@ -2,6 +2,7 @@ package cmdcryptz
 
 import (
 	"bytes"
+	"os"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -129,5 +130,46 @@ func TestUnitJwtMsgCommand(t *testing.T) {
 		err := cmdDec.Execute()
 		require.Error(t, err)
 		require.Contains(t, err.Error(), "source mismatch")
+	})
+
+	t.Run("jwtmsg send and receive structured JWT payload with exp and claims", func(t *testing.T) {
+		sendCmd := newJwtMsgSendCmd()
+		var sendBuf bytes.Buffer
+		sendCmd.SetOut(&sendBuf)
+		sendCmd.SetArgs([]string{
+			"--kr", krFile,
+			"--src", "alice",
+			"--dst", "bob",
+			"--sub", "user_abc",
+			"--exp", "30m",
+			"--ext", "role=admin",
+			"--bxt-hex", "aabbcc",
+		})
+		err := sendCmd.Execute()
+		require.NoError(t, err)
+
+		tokenHex := strings.TrimSpace(sendBuf.String())
+		require.NotEmpty(t, tokenHex)
+
+		bxtOutFile := filepath.Join(tempDir, "msg_bxt.bin")
+		recvCmd := newJwtMsgReceiveCmd()
+		var recvBuf bytes.Buffer
+		recvCmd.SetOut(&recvBuf)
+		recvCmd.SetArgs([]string{
+			"--kr", krFile,
+			"--src", "alice",
+			"--dst", "bob",
+			"--sub", "user_abc",
+			"--bxt-out", bxtOutFile,
+			tokenHex,
+		})
+		err = recvCmd.Execute()
+		require.NoError(t, err)
+		require.Contains(t, recvBuf.String(), `"user_abc"`)
+		require.Contains(t, recvBuf.String(), `"role=admin"`)
+
+		bxtData, err := os.ReadFile(bxtOutFile)
+		require.NoError(t, err)
+		require.Equal(t, []byte{0xaa, 0xbb, 0xcc}, bxtData)
 	})
 }

@@ -188,4 +188,48 @@ func TestUnitJwtStateCommand(t *testing.T) {
 		require.Error(t, err)
 		require.Contains(t, err.Error(), "source mismatch")
 	})
+
+	t.Run("jwtstate send and receive structured JWT payload with exp and claims", func(t *testing.T) {
+		keyFile := filepath.Join(tempDir, "state_jwt.key")
+		require.NoError(t, os.WriteFile(keyFile, []byte("00112233445566778899aabbccddeeff00112233445566778899aabbccddeeff"), 0600))
+
+		sendCmd := newJwtStateSendCmd()
+		var sendBuf bytes.Buffer
+		sendCmd.SetOut(&sendBuf)
+		sendCmd.SetArgs([]string{
+			"--key-file", keyFile,
+			"--src", "session",
+			"--dst", "session",
+			"--sub", "user_999",
+			"--exp", "1h",
+			"--ext", "role=user",
+			"--bxt-hex", "112233",
+		})
+		err := sendCmd.Execute()
+		require.NoError(t, err)
+
+		tokenHex := strings.TrimSpace(sendBuf.String())
+		require.NotEmpty(t, tokenHex)
+
+		bxtOutFile := filepath.Join(tempDir, "state_bxt.bin")
+		recvCmd := newJwtStateReceiveCmd()
+		var recvBuf bytes.Buffer
+		recvCmd.SetOut(&recvBuf)
+		recvCmd.SetArgs([]string{
+			"--key-file", keyFile,
+			"--src", "session",
+			"--dst", "session",
+			"--sub", "user_999",
+			"--bxt-out", bxtOutFile,
+			tokenHex,
+		})
+		err = recvCmd.Execute()
+		require.NoError(t, err)
+		require.Contains(t, recvBuf.String(), `"user_999"`)
+		require.Contains(t, recvBuf.String(), `"role=user"`)
+
+		bxtData, err := os.ReadFile(bxtOutFile)
+		require.NoError(t, err)
+		require.Equal(t, []byte{0x11, 0x22, 0x33}, bxtData)
+	})
 }
