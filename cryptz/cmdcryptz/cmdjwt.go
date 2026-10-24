@@ -40,7 +40,7 @@ func newJwtInspectCmd() *cobra.Command {
 		Aliases: []string{"decode"},
 		Short:   "Decode and inspect a JWT header and payload without verifying",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			in, err := readInput(args)
+			in, err := readInput(cmd, args)
 			if err != nil {
 				return err
 			}
@@ -253,7 +253,7 @@ func newJwtVerifyCmd() *cobra.Command {
 				pub = &priv.PublicKey
 			}
 
-			in, err := readInput(args)
+			in, err := readInput(cmd, args)
 			if err != nil {
 				return err
 			}

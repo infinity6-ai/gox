@@ -18,7 +18,7 @@ func newSaltCmd() *cobra.Command {
 		Use:   "gen [text]",
 		Short: "Generate salted hash",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			in, err := readInput(args)
+			in, err := readInput(cmd, args)
 			if err != nil {
 				return err
 			}
@@ -36,7 +36,7 @@ func newSaltCmd() *cobra.Command {
 		Use:   "verify [bundle_hex]",
 		Short: "Verify a salted hash",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			in, err := readInput(args)
+			in, err := readInput(cmd, args)
 			if err != nil {
 				return err
 			}

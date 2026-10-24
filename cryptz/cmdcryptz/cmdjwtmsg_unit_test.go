@@ -69,4 +69,34 @@ func TestUnitJwtMsgCommand(t *testing.T) {
 		err := cmd.Execute()
 		require.Error(t, err)
 	})
+
+	t.Run("jwtmsg encrypt raw and decrypt raw roundtrip", func(t *testing.T) {
+		cmdEnc := newJwtMsgEncryptCmd()
+		var rawBuf bytes.Buffer
+		cmdEnc.SetOut(&rawBuf)
+		cmdEnc.SetArgs([]string{
+			"--kr", krFile,
+			"--src", "alice",
+			"--dst", "bob",
+			"-r",
+			"raw binary message data",
+		})
+		err := cmdEnc.Execute()
+		require.NoError(t, err)
+
+		rawCipherBytes := rawBuf.Bytes()
+		require.NotEmpty(t, rawCipherBytes)
+
+		cmdDec := newJwtMsgDecryptCmd()
+		var plainBuf bytes.Buffer
+		cmdDec.SetOut(&plainBuf)
+		cmdDec.SetIn(bytes.NewReader(rawCipherBytes))
+		cmdDec.SetArgs([]string{
+			"--kr", krFile,
+			"-r",
+		})
+		err = cmdDec.Execute()
+		require.NoError(t, err)
+		require.Equal(t, "raw binary message data", plainBuf.String())
+	})
 }

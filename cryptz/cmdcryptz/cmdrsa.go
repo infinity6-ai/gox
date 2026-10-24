@@ -127,7 +127,7 @@ func newRsaSignCmd() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			in, err := readInput(args)
+			in, err := readInput(cmd, args)
 			if err != nil {
 				return err
 			}
@@ -210,7 +210,7 @@ func newRsaVerifyCmd() *cobra.Command {
 				}
 			}
 
-			in, err := readInput(args)
+			in, err := readInput(cmd, args)
 			if err != nil {
 				return err
 			}
@@ -261,7 +261,7 @@ func newRsaEncryptCmd() *cobra.Command {
 				}
 				pub = &priv.PublicKey
 			}
-			in, err := readInput(args)
+			in, err := readInput(cmd, args)
 			if err != nil {
 				return err
 			}
@@ -300,7 +300,7 @@ func newRsaDecryptCmd() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			in, err := readInput(args)
+			in, err := readInput(cmd, args)
 			if err != nil {
 				return err
 			}

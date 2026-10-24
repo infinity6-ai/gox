@@ -19,7 +19,7 @@ func newB64Cmd() *cobra.Command {
 		Use:   "encode [text]",
 		Short: "Encode to Base64",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			in, err := readInput(args)
+			in, err := readInput(cmd, args)
 			if err != nil {
 				return err
 			}
@@ -39,7 +39,7 @@ func newB64Cmd() *cobra.Command {
 		Use:   "decode [text]",
 		Short: "Decode from Base64",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			in, err := readInput(args)
+			in, err := readInput(cmd, args)
 			if err != nil {
 				return err
 			}

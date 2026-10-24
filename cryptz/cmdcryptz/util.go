@@ -13,18 +13,28 @@ import (
 	"github.com/spf13/cobra"
 )
 
-func readInput(args []string) ([]byte, error) {
+func readInput(cmd *cobra.Command, args []string) ([]byte, error) {
 	if len(args) > 0 {
 		return []byte(strings.Join(args, " ")), nil
 	}
-	stat, err := os.Stdin.Stat()
+	in := cmd.InOrStdin()
+	if f, ok := in.(*os.File); ok {
+		stat, err := f.Stat()
+		if err != nil {
+			return nil, err
+		}
+		if (stat.Mode() & os.ModeCharDevice) != 0 {
+			return nil, fmt.Errorf("no input provided")
+		}
+	}
+	data, err := io.ReadAll(in)
 	if err != nil {
 		return nil, err
 	}
-	if (stat.Mode() & os.ModeCharDevice) == 0 {
-		return io.ReadAll(os.Stdin)
+	if len(data) == 0 {
+		return nil, fmt.Errorf("no input provided")
 	}
-	return nil, fmt.Errorf("no input provided")
+	return data, nil
 }
 
 func cleanHexInput(in []byte) string {

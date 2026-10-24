@@ -18,7 +18,7 @@ func newHashCmd() *cobra.Command {
 		Use:   "sha256 [text]",
 		Short: "SHA256 hash",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			in, err := readInput(args)
+			in, err := readInput(cmd, args)
 			if err != nil {
 				return err
 			}
@@ -35,7 +35,7 @@ func newHashCmd() *cobra.Command {
 		Use:   "md5 [text]",
 		Short: "MD5 hash",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			in, err := readInput(args)
+			in, err := readInput(cmd, args)
 			if err != nil {
 				return err
 			}

@@ -75,7 +75,7 @@ func newJwtStateEncryptCmd() *cobra.Command {
 				dst = src
 			}
 
-			in, err := readInput(args)
+			in, err := readInput(cmd, args)
 			if err != nil {
 				return err
 			}
@@ -140,20 +140,27 @@ func newJwtStateDecryptCmd() *cobra.Command {
 	var krPath string
 	var b64 bool
 	var b64url bool
+	var raw bool
 
 	cmd := &cobra.Command{
 		Use:     "decrypt [ciphertext]",
 		Aliases: []string{"receive"},
 		Short:   "Decrypt a symmetric state envelope using AES-GCM",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			in, err := readInput(args)
+			in, err := readInput(cmd, args)
 			if err != nil {
 				return err
 			}
 
-			cipherBytes, err := decodeInputBytes(in, b64, b64url)
-			if err != nil {
-				return err
+			var cipherBytes []byte
+			if raw {
+				cipherBytes = in
+			} else {
+				var err error
+				cipherBytes, err = decodeInputBytes(in, b64, b64url)
+				if err != nil {
+					return err
+				}
 			}
 
 			var keysLoader *cryptzjwtstate.DecryptorKeysLoader
@@ -188,8 +195,8 @@ func newJwtStateDecryptCmd() *cobra.Command {
 				return fmt.Errorf("state decryption failed: %w", err)
 			}
 
-			fmt.Fprint(cmd.OutOrStdout(), string(plain.Data))
-			return nil
+			_, err = cmd.OutOrStdout().Write(plain.Data)
+			return err
 		},
 	}
 
@@ -197,9 +204,10 @@ func newJwtStateDecryptCmd() *cobra.Command {
 	cmd.Flags().StringVar(&krPath, "kr", "", "State keyring file path")
 	cmd.Flags().BoolVar(&b64, "b64", false, "Input ciphertext is Base64")
 	cmd.Flags().BoolVar(&b64url, "b64url", false, "Input ciphertext is URL-safe Base64")
+	cmd.Flags().BoolVarP(&raw, "raw", "r", false, "Input ciphertext is raw binary")
 
 	cmd.MarkFlagsMutuallyExclusive("key", "kr")
-	cmd.MarkFlagsMutuallyExclusive("b64", "b64url")
+	cmd.MarkFlagsMutuallyExclusive("b64", "b64url", "raw")
 
 	return cmd
 }

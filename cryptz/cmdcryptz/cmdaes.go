@@ -20,7 +20,7 @@ func newAesCmd() *cobra.Command {
 		Use:   "encrypt [text]",
 		Short: "Encrypt using AES GCM",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			in, err := readInput(args)
+			in, err := readInput(cmd, args)
 			if err != nil {
 				return err
 			}
@@ -43,7 +43,7 @@ func newAesCmd() *cobra.Command {
 		Use:   "decrypt [hex_ciphertext]",
 		Short: "Decrypt using AES GCM",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			in, err := readInput(args)
+			in, err := readInput(cmd, args)
 			if err != nil {
 				return err
 			}
