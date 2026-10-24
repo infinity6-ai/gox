@@ -25,6 +25,8 @@ func newKeyringCmd() *cobra.Command {
 		newKeyringListCmd(),
 		newKeyringExpPrivCmd(),
 		newKeyringExpPubCmd(),
+		newKeyringDelKeyCmd(),
+		newKeyringDelPrivCmd(),
 	)
 
 	return cmd
@@ -392,6 +394,94 @@ func newKeyringExpPubCmd() *cobra.Command {
 	cmd.Flags().StringVarP(&owner, "owner", "o", "", "Owner name")
 	cmd.Flags().StringVar(&keyId, "key-id", "", "Specific key ID (defaults to owner's current key)")
 	cmd.Flags().StringVar(&outFile, "out", "", "File path to write PEM public key")
+	cmd.MarkFlagRequired("owner")
+
+	return cmd
+}
+
+func newKeyringDelKeyCmd() *cobra.Command {
+	var filePath string
+	var owner string
+	var keyId string
+
+	cmd := &cobra.Command{
+		Use:     "del-key",
+		Aliases: []string{"rm-key", "delete-key"},
+		Short:   "Delete a key pair from an owner in keyring",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			kr, err := loadKeyRingFile(filePath)
+			if err != nil {
+				return err
+			}
+
+			if keyId == "" {
+				k, err := getKeyForOwner(kr, owner, "")
+				if err != nil {
+					return err
+				}
+				keyId = k.KeyId()
+			}
+
+			if err := kr.DeleteKey(owner, keyId); err != nil {
+				return err
+			}
+
+			if err := saveKeyRingFile(filePath, kr); err != nil {
+				return err
+			}
+
+			fmt.Fprintf(cmd.OutOrStdout(), "Deleted key %s for owner %s from %s\n", keyId, owner, filePath)
+			return nil
+		},
+	}
+
+	cmd.Flags().StringVarP(&filePath, "file", "f", "keyring.json", "Keyring file path")
+	cmd.Flags().StringVarP(&owner, "owner", "o", "", "Owner name")
+	cmd.Flags().StringVar(&keyId, "key-id", "", "Specific key ID to delete (defaults to owner's current key)")
+	cmd.MarkFlagRequired("owner")
+
+	return cmd
+}
+
+func newKeyringDelPrivCmd() *cobra.Command {
+	var filePath string
+	var owner string
+	var keyId string
+
+	cmd := &cobra.Command{
+		Use:     "del-priv",
+		Aliases: []string{"rm-priv", "delete-priv"},
+		Short:   "Delete only the private key for an owner's key (retains public key)",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			kr, err := loadKeyRingFile(filePath)
+			if err != nil {
+				return err
+			}
+
+			if keyId == "" {
+				k, err := getKeyForOwner(kr, owner, "")
+				if err != nil {
+					return err
+				}
+				keyId = k.KeyId()
+			}
+
+			if err := kr.DeletePrivate(owner, keyId); err != nil {
+				return err
+			}
+
+			if err := saveKeyRingFile(filePath, kr); err != nil {
+				return err
+			}
+
+			fmt.Fprintf(cmd.OutOrStdout(), "Deleted private key for key %s (owner %s) in %s\n", keyId, owner, filePath)
+			return nil
+		},
+	}
+
+	cmd.Flags().StringVarP(&filePath, "file", "f", "keyring.json", "Keyring file path")
+	cmd.Flags().StringVarP(&owner, "owner", "o", "", "Owner name")
+	cmd.Flags().StringVar(&keyId, "key-id", "", "Specific key ID (defaults to owner's current key)")
 	cmd.MarkFlagRequired("owner")
 
 	return cmd

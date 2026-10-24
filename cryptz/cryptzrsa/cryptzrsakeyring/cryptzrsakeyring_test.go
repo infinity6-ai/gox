@@ -284,3 +284,47 @@ func TestUnitExportImport(t *testing.T) {
 		require.Error(t, err)
 	})
 }
+
+func TestUnitDeleteKey(t *testing.T) {
+	kr := NewKeyRing()
+	kr.Generate("alice", 1024)
+	key1 := kr.Current("alice").KeyId()
+	kr.Generate("alice", 1024)
+	key2 := kr.Current("alice").KeyId()
+
+	t.Run("Delete key when multiple keys exist keeps owner with remaining key", func(t *testing.T) {
+		err := kr.DeleteKey("alice", key2)
+		require.NoError(t, err)
+		require.Equal(t, key1, kr.Current("alice").KeyId())
+	})
+
+	t.Run("Delete last key removes owner", func(t *testing.T) {
+		err := kr.DeleteKey("alice", key1)
+		require.NoError(t, err)
+		require.Empty(t, kr.GetOwnerNames())
+	})
+
+	t.Run("Delete non-existent key returns error", func(t *testing.T) {
+		err := kr.DeleteKey("alice", "nonexistent")
+		require.Error(t, err)
+	})
+}
+
+func TestUnitDeletePrivate(t *testing.T) {
+	kr := NewKeyRing()
+	kr.Generate("bob", 1024)
+	keyId := kr.Current("bob").KeyId()
+
+	t.Run("DeletePrivate strips private key and retains public key", func(t *testing.T) {
+		require.NotNil(t, kr.Current("bob").Private())
+		err := kr.DeletePrivate("bob", keyId)
+		require.NoError(t, err)
+		require.Nil(t, kr.Current("bob").Private())
+		require.NotNil(t, kr.Current("bob").Public())
+	})
+
+	t.Run("DeletePrivate on key without private key returns error", func(t *testing.T) {
+		err := kr.DeletePrivate("bob", keyId)
+		require.Error(t, err)
+	})
+}

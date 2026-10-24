@@ -133,4 +133,53 @@ func TestUnitKeyringCommand(t *testing.T) {
 		require.NoError(t, err)
 		require.Contains(t, string(pubData), "-----BEGIN PUBLIC KEY-----")
 	})
+
+	t.Run("keyring del-priv removes only private key", func(t *testing.T) {
+		delPrivCmd := newKeyringDelPrivCmd()
+		var outBuf bytes.Buffer
+		delPrivCmd.SetOut(&outBuf)
+		delPrivCmd.SetArgs([]string{"-f", krFile, "-o", "bob"})
+
+		err := delPrivCmd.Execute()
+		require.NoError(t, err)
+		require.Contains(t, outBuf.String(), "Deleted private key")
+
+		// exp-priv for bob now fails
+		privCmd := newKeyringExpPrivCmd()
+		var privBuf bytes.Buffer
+		privCmd.SetOut(&privBuf)
+		privCmd.SetArgs([]string{"-f", krFile, "-o", "bob"})
+		err = privCmd.Execute()
+		require.Error(t, err)
+
+		// exp-pub for bob still succeeds
+		pubCmd := newKeyringExpPubCmd()
+		var pubBuf bytes.Buffer
+		pubCmd.SetOut(&pubBuf)
+		pubCmd.SetArgs([]string{"-f", krFile, "-o", "bob"})
+		err = pubCmd.Execute()
+		require.NoError(t, err)
+		require.Contains(t, pubBuf.String(), "-----BEGIN PUBLIC KEY-----")
+	})
+
+	t.Run("keyring del-key deletes entire key pair and cleans up owner", func(t *testing.T) {
+		delKeyCmd := newKeyringDelKeyCmd()
+		var outBuf bytes.Buffer
+		delKeyCmd.SetOut(&outBuf)
+		delKeyCmd.SetArgs([]string{"-f", krFile, "-o", "bob"})
+
+		err := delKeyCmd.Execute()
+		require.NoError(t, err)
+		require.Contains(t, outBuf.String(), "Deleted key")
+
+		// List should no longer have bob
+		listCmd := newKeyringListCmd()
+		var listBuf bytes.Buffer
+		listCmd.SetOut(&listBuf)
+		listCmd.SetArgs([]string{"-f", krFile})
+		err = listCmd.Execute()
+		require.NoError(t, err)
+		require.NotContains(t, listBuf.String(), "bob")
+		require.Contains(t, listBuf.String(), "alice")
+	})
 }

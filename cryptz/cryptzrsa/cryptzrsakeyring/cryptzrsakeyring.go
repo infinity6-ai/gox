@@ -183,6 +183,59 @@ func (k *KeyRing) Owners(owners ...string) *Keys {
 	return ret
 }
 
+func (k *KeyRing) DeleteKey(owner, keyId string) error {
+	if k.owners == nil {
+		return fmt.Errorf("owner %s not found", owner)
+	}
+	o, ok := k.owners[owner]
+	if !ok {
+		return fmt.Errorf("owner %s not found", owner)
+	}
+	if keyId == "" {
+		keyId = o.current
+	}
+	if _, ok := o.keys[keyId]; !ok {
+		return fmt.Errorf("key %s not found for owner %s", keyId, owner)
+	}
+
+	delete(o.keys, keyId)
+
+	if len(o.keys) == 0 {
+		delete(k.owners, owner)
+		return nil
+	}
+
+	if o.current == keyId {
+		for remainingId := range o.keys {
+			o.current = remainingId
+			break
+		}
+	}
+	return nil
+}
+
+func (k *KeyRing) DeletePrivate(owner, keyId string) error {
+	if k.owners == nil {
+		return fmt.Errorf("owner %s not found", owner)
+	}
+	o, ok := k.owners[owner]
+	if !ok {
+		return fmt.Errorf("owner %s not found", owner)
+	}
+	if keyId == "" {
+		keyId = o.current
+	}
+	key, ok := o.keys[keyId]
+	if !ok {
+		return fmt.Errorf("key %s not found for owner %s", keyId, owner)
+	}
+	if key.privateKey == nil {
+		return fmt.Errorf("key %s for owner %s does not have a private key", keyId, owner)
+	}
+	key.privateKey = nil
+	return nil
+}
+
 type keyRecord struct {
 	KeyId      string `json:"key_id"`
 	PublicKey  string `json:"public_key"`
