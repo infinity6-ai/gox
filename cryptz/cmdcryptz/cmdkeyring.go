@@ -9,11 +9,11 @@ import (
 	"github.com/spf13/cobra"
 )
 
-func newKeyringCmd() *cobra.Command {
+func newKrRsaCmd() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:     "keyring",
-		Aliases: []string{"kr"},
-		Short:   "RSA KeyRing management (init, gen, add-priv, add-pub, export, list)",
+		Use:     "kr-rsa",
+		Aliases: []string{"keyring-rsa", "keyring", "kr"},
+		Short:   "RSA KeyRing management (init, gen, add-priv, add-pub, del-key, del-priv, exp-priv, exp-pub, export, list)",
 	}
 
 	cmd.AddCommand(

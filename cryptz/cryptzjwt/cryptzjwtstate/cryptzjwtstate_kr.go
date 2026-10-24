@@ -75,6 +75,26 @@ func (k *KeyRing) GetKey(src, dst string) cryptzaes.Key {
 	return nil
 }
 
+func (k *KeyRing) Delete(owner string) {
+	delete(k.keys, owner)
+}
+
+func (k *KeyRing) DeletePair(src, dst string) {
+	delete(k.keys, pairKey(src, dst))
+}
+
+func (k *KeyRing) GetNames() []string {
+	ret := make([]string, 0, len(k.keys))
+	for name := range k.keys {
+		ret = append(ret, name)
+	}
+	return ret
+}
+
+func (k *KeyRing) GetRawKey(name string) cryptzaes.Key {
+	return k.keys[name]
+}
+
 type MessageKeyRing struct {
 	kr *KeyRing
 }
