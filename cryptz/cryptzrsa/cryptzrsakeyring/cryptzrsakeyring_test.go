@@ -241,6 +241,12 @@ func TestUnitOwnersNoKeysFound(t *testing.T) {
 	// If `k.owners` is not nil but the owner has no keys, it returns an empty `ret.keys` which then panics.
 }
 
+func TestUnitGetOwnerNamesEmpty(t *testing.T) {
+	kr := NewKeyRing()
+	names := kr.GetOwnerNames()
+	require.Empty(t, names)
+}
+
 func TestUnitExportImport(t *testing.T) {
 	kr := NewKeyRing()
 	kr.Generate("alice", 1024)

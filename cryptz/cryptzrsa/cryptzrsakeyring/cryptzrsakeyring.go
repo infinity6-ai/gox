@@ -75,7 +75,6 @@ func (k *KeyRing) GetOwnerNames() []string {
 		ret[i] = k
 		i = i + 1
 	}
-	checker.NotEmpty(ret, "owners")
 	return ret
 }
 

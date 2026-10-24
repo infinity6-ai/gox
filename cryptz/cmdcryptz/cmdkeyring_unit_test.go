@@ -27,6 +27,17 @@ func TestUnitKeyringCommand(t *testing.T) {
 		require.Contains(t, string(data), `"owners"`)
 	})
 
+	t.Run("keyring list on empty keyring prints Keyring is empty without panicking", func(t *testing.T) {
+		cmd := newKeyringListCmd()
+		var outBuf bytes.Buffer
+		cmd.SetOut(&outBuf)
+		cmd.SetArgs([]string{"-f", krFile})
+
+		err := cmd.Execute()
+		require.NoError(t, err)
+		require.Equal(t, "Keyring is empty\n", outBuf.String())
+	})
+
 	t.Run("keyring init fails without required -f flag", func(t *testing.T) {
 		cmd := newKeyringInitCmd()
 		var outBuf bytes.Buffer
