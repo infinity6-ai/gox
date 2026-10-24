@@ -31,6 +31,7 @@ func Prepare(ctx context.Context) *cobra.Command {
 		newAesCmd(),
 		newRsaCmd(),
 		newSaltCmd(),
+		newJwtCmd(),
 	)
 
 	return rootCmd
