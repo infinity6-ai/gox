@@ -100,6 +100,7 @@ func (s *Server) Listen() {
 	}
 	listener, err := net.Listen("tcp", s.Options.LocalAddress)
 	errorz.Check(err)
+	logger.Info(s.Context, "httpzserver started", map[string]any{"address": listener.Addr().String()})
 	s.listener = listener
 	s.dfz.AddCloserS(listener)
 }
