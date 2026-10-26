@@ -100,7 +100,6 @@ func (s *Server) Listen() {
 	}
 	listener, err := net.Listen("tcp", s.Options.LocalAddress)
 	errorz.Check(err)
-	logger.Info(s.Context, "httpzserver started", map[string]any{"address": listener.Addr().String()})
 	s.listener = listener
 	s.dfz.AddCloserS(listener)
 }
@@ -162,6 +161,8 @@ func (s *Server) startServer() {
 		},
 	}
 
+	logger.Info(s.Context, "Server Started", map[string]any{"addr": s.listener.Addr().String()})
+
 	s.dfz.Add(func() {
 		_ = s.httpServer.Shutdown(s.Context)
 	})
@@ -174,7 +175,6 @@ func (s *Server) Serve() {
 		panic("not configured")
 	}
 	s.startServer()
-	logger.Info(s.Context, "Server Started", map[string]any{"addr": s.listener.Addr().String()})
 	s.internalServe()
 }
 
