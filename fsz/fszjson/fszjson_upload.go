@@ -35,7 +35,6 @@ func Upload[E any](ctx context.Context, fn func() (E, bool, error), opts UploadO
 
 	var uploadReader io.Reader = r
 	if opts.Gzip {
-		header.Set("Content-Encoding", "gzip")
 		var buf bytes.Buffer
 		gw := gzip.NewWriter(&buf)
 		_, err := io.Copy(gw, r)

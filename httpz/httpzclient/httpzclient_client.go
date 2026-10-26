@@ -24,7 +24,7 @@ func DefaultCheckRedirect(req *http.Request, via []*http.Request) error {
 }
 
 var defaultHttpClient = &http.Client{
-	Timeout: 10 * time.Second,
+	Timeout: 120 * time.Second,
 	Transport: &http.Transport{
 		MaxIdleConns:        100,
 		MaxIdleConnsPerHost: 100,
