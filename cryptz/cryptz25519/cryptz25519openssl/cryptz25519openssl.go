@@ -58,6 +58,10 @@ func (s *Service25519Openssl) PubKeyImport(key string) ed25519.PublicKey {
 	return s.impl.PubKeyImport(key)
 }
 
+func (s *Service25519Openssl) ExtractPubKey(privateKey ed25519.PrivateKey) ed25519.PublicKey {
+	return s.impl.ExtractPubKey(privateKey)
+}
+
 func (s *Service25519Openssl) Sign(privateKey ed25519.PrivateKey, message []byte) []byte {
 	privKeyFilePath := filez.CreateTempFile("private_key.pem", []byte(s.PrivKeyExport(privateKey)))
 	defer os.Remove(privKeyFilePath)

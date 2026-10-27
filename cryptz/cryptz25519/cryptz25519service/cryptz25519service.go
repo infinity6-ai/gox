@@ -12,6 +12,7 @@ type Service25519 interface {
 	PubKeyId(pub ed25519.PublicKey) string
 	PrivKeyImport(key string) ed25519.PrivateKey
 	PubKeyImport(key string) ed25519.PublicKey
+	ExtractPubKey(privateKey ed25519.PrivateKey) ed25519.PublicKey
 	Sign(privateKey ed25519.PrivateKey, message []byte) []byte
 	Verify(publicKey ed25519.PublicKey, message []byte, signature []byte) bool
 	FindPubKey(pubs []ed25519.PublicKey, keyId string) ed25519.PublicKey

@@ -89,7 +89,7 @@ func (k *KeyRing) Generate(owner string) {
 }
 
 func (k *KeyRing) AddPrivate(owner string, privKey ed25519.PrivateKey) {
-	pubKey := privKey.Public().(ed25519.PublicKey)
+	pubKey := cryptz25519.ExtractPubKey(privKey)
 	key := k.AddPublic(owner, pubKey)
 	key.privateKey = privKey
 }

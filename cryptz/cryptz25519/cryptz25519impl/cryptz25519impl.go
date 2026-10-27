@@ -88,6 +88,13 @@ func (s *Service25519Impl) PubKeyImport(key string) ed25519.PublicKey {
 	return ret
 }
 
+func (s *Service25519Impl) ExtractPubKey(privateKey ed25519.PrivateKey) ed25519.PublicKey {
+	if len(privateKey) != ed25519.PrivateKeySize {
+		panic("invalid ed25519 private key length")
+	}
+	return privateKey.Public().(ed25519.PublicKey)
+}
+
 func (s *Service25519Impl) Sign(privateKey ed25519.PrivateKey, message []byte) []byte {
 	return ed25519.Sign(privateKey, message)
 }
