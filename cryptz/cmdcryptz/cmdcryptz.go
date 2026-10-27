@@ -30,6 +30,7 @@ func Prepare(ctx context.Context) *cobra.Command {
 		newRandCmd(),
 		newAesCmd(),
 		newRsaCmd(),
+		new25519Cmd(),
 		newSaltCmd(),
 		newJwtCmd(),
 		newKrRsaCmd(),
