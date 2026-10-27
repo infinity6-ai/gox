@@ -1,8 +1,6 @@
-#!/bin/bash
-set -e
+#!/bin/bash -e
 
-# Ensure we are in the cryptz directory
-cd "$(dirname "$0")"
+# [ "$I6DEV_DEBUG" != "true" ] || eval "$(i6dev meta debug i6gox-comp I6DEV_DEBUG)"
 
 TMP_DIR="$(mktemp -d)"
 BUILD_DIR="$(mktemp -d)"
@@ -32,7 +30,7 @@ assert_eq() {
   fi
 }
 
-cmd_version() {
+function cmd_version() {
   ensure_binary
   echo "--- Testing: version ---"
   local ver
@@ -41,7 +39,7 @@ cmd_version() {
   echo "  OK: version=$ver"
 }
 
-cmd_b64() {
+function cmd_b64() {
   ensure_binary
   echo "--- Testing: b64 ---"
   local enc dec
@@ -57,7 +55,7 @@ cmd_b64() {
   echo "  OK: b64 encode/decode"
 }
 
-cmd_b32() {
+function cmd_b32() {
   ensure_binary
   echo "--- Testing: b32 ---"
   local enc dec
@@ -68,7 +66,7 @@ cmd_b32() {
   echo "  OK: b32 encode/decode"
 }
 
-cmd_hash() {
+function cmd_hash() {
   ensure_binary
   echo "--- Testing: hash ---"
   local sha md5
@@ -79,7 +77,7 @@ cmd_hash() {
   echo "  OK: hash sha256 and md5"
 }
 
-cmd_rand() {
+function cmd_rand() {
   ensure_binary
   echo "--- Testing: rand ---"
   local hex b64 b64url
@@ -92,7 +90,7 @@ cmd_rand() {
   echo "  OK: rand generation"
 }
 
-cmd_aes() {
+function cmd_aes() {
   ensure_binary
   echo "--- Testing: aes ---"
   local key enc dec
@@ -103,7 +101,7 @@ cmd_aes() {
   echo "  OK: aes encrypt/decrypt"
 }
 
-cmd_rsa() {
+function cmd_rsa() {
   ensure_binary
   echo "--- Testing: rsa ---"
   local priv="$TMP_DIR/rsa_priv.pem"
@@ -136,7 +134,7 @@ cmd_rsa() {
   echo "  OK: rsa gen, pub, id, sign, verify, encrypt, decrypt"
 }
 
-cmd_25519() {
+function cmd_25519() {
   ensure_binary
   echo "--- Testing: 25519 ---"
   local priv="$TMP_DIR/25519_priv.pem"
@@ -169,7 +167,7 @@ cmd_25519() {
   echo "  OK: 25519 gen, pub, id, sign, verify, encrypt, decrypt"
 }
 
-cmd_salt() {
+function cmd_salt() {
   ensure_binary
   echo "--- Testing: salt ---"
   local bundle
@@ -182,7 +180,7 @@ cmd_salt() {
   echo "  OK: salt gen and verify"
 }
 
-cmd_jwt() {
+function cmd_jwt() {
   ensure_binary
   echo "--- Testing: jwt ---"
   local priv="$TMP_DIR/jwt_rsa_priv.pem"
@@ -201,7 +199,7 @@ cmd_jwt() {
   echo "  OK: jwt seal, inspect, verify"
 }
 
-cmd_kr_rsa() {
+function cmd_kr_rsa() {
   ensure_binary
   echo "--- Testing: kr-rsa ---"
   local kr_file="$TMP_DIR/kr_rsa.json"
@@ -221,7 +219,7 @@ cmd_kr_rsa() {
   echo "  OK: kr-rsa init, gen, list, export"
 }
 
-cmd_kr_aes() {
+function cmd_kr_aes() {
   ensure_binary
   echo "--- Testing: kr-aes ---"
   local kr_file="$TMP_DIR/kr_aes.json"
@@ -241,7 +239,7 @@ cmd_kr_aes() {
   echo "  OK: kr-aes init, gen, gen-pair, list, export"
 }
 
-cmd_jwtmsg() {
+function cmd_jwtmsg() {
   ensure_binary
   echo "--- Testing: jwtmsg ---"
   local kr_file="$TMP_DIR/kr_jwtmsg.json"
@@ -264,7 +262,7 @@ cmd_jwtmsg() {
   echo "  OK: jwtmsg encrypt, decrypt, send, receive"
 }
 
-cmd_jwtstate() {
+function cmd_jwtstate() {
   ensure_binary
   echo "--- Testing: jwtstate ---"
   local kr_file="$TMP_DIR/kr_jwtstate.json"
@@ -286,7 +284,7 @@ cmd_jwtstate() {
   echo "  OK: jwtstate encrypt, decrypt, send, receive"
 }
 
-cmd_all() {
+function cmd_all() {
   echo "=========================================="
   echo "Running all cryptz CLI command tests"
   echo "=========================================="
@@ -309,6 +307,4 @@ cmd_all() {
   echo "=========================================="
 }
 
-_cmd="${1:-all}"
-shift || true
-"cmd_${_cmd}" "$@"
+cd "$(dirname "$0")"; _cmd="${1?"cmd is required"}"; shift; "cmd_${_cmd}" "$@"
