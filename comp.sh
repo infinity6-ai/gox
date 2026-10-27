@@ -28,6 +28,7 @@ function cmd_codegen() {
 
 function cmd_test_unit() {
   go test -run '^TestUnit.*$' ./... "$@" 
+  [ ! -f cmd_unit_test.sh ] || ./cmd_unit_test.sh
 }
 
 function cmd_test_remote() {
