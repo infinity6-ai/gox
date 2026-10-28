@@ -9,9 +9,10 @@ import (
 )
 
 type Desc struct {
-	Name     string `json:"name"`
-	Summary  string `json:"summary"`
-	Markdown string `json:"markdown"`
+	Name     string            `json:"name"`
+	Summary  string            `json:"summary"`
+	Markdown string            `json:"markdown"`
+	Labels   map[string]string `json:"labels"`
 }
 
 type Array struct {
