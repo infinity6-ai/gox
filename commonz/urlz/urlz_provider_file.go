@@ -14,6 +14,9 @@ func (p *providerSpec) providerFile() (*providerSpec, error) {
 		if err != nil {
 			return err
 		}
+		if u.Path == nil {
+			return fmt.Errorf("file url path cannot be nil")
+		}
 		err = u.Path.ValidateAbsoluteFile()
 		if err != nil {
 			return err
@@ -33,9 +36,13 @@ func (p *providerSpec) providerFile() (*providerSpec, error) {
 		return &Url{Scheme: u.Scheme, Path: pt}, nil
 	}
 	p.ToString = func(u *Url) string {
+		var pathStr string
+		if u.Path != nil {
+			pathStr = u.Path.String()
+		}
 		out := &url.URL{
 			Scheme: "file",
-			Path:   u.Path.String(),
+			Path:   pathStr,
 		}
 		return out.String()
 	}

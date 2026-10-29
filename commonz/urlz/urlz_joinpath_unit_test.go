@@ -20,7 +20,10 @@ func TestUnitUrlJoinPath(t *testing.T) {
 
 	check := func(t *testing.T, s testScenario) {
 		t.Helper()
-		originalPathString := s.originalUrl.Path.String() // Save original path string for immutability check
+		var originalPathString string
+		if s.originalUrl.Path != nil {
+			originalPathString = s.originalUrl.Path.String() // Save original path string for immutability check
+		}
 		joinedUrl, err := s.originalUrl.JoinPath(s.joinPaths...)
 
 		if s.expectedErr != "" {
@@ -29,20 +32,27 @@ func TestUnitUrlJoinPath(t *testing.T) {
 			require.NotNil(t, joinedUrl) // joinedUrl should not be nil even on error
 			require.Equal(t, s.expectedUrlOnError, joinedUrl, "Joined URL on error should match expected error URL")
 			// Ensure original URL is unchanged on error
-			require.Equal(t, originalPathString, s.originalUrl.Path.String(), "Original URL's path should be unchanged on error")
+			if s.originalUrl.Path != nil {
+				require.Equal(t, originalPathString, s.originalUrl.Path.String(), "Original URL's path should be unchanged on error")
+			} else {
+				require.Nil(t, s.originalUrl.Path, "Original URL's path should remain nil on error")
+			}
 			return
 		}
 
 		require.NoError(t, err)
 		require.NotNil(t, joinedUrl)
 		require.NotSame(t, s.originalUrl, joinedUrl, "Joined URL should be a new object")
-		require.NotSame(t, s.originalUrl.Path, joinedUrl.Path, "Joined URL's Path should be a new object")
+		if s.originalUrl.Path != nil {
+			require.NotSame(t, s.originalUrl.Path, joinedUrl.Path, "Joined URL's Path should be a new object")
+			// Ensure original URL is unchanged
+			require.Equal(t, originalPathString, s.originalUrl.Path.String(), "Original URL's path should be unchanged after join")
+		} else {
+			require.Nil(t, s.originalUrl.Path, "Original URL's path should remain nil after join")
+		}
 
 		// Verify the new URL's string representation
 		require.Equal(t, s.expectedUrl, joinedUrl.String(), "Joined URL string should match expected")
-
-		// Ensure original URL is unchanged
-		require.Equal(t, originalPathString, s.originalUrl.Path.String(), "Original URL's path should be unchanged after join")
 	}
 
 	t.Run("join single relative path", func(t *testing.T) {
@@ -167,5 +177,12 @@ func TestUnitUrlJoinPath(t *testing.T) {
 			joinPaths:   []*pathz.Path{pathz.MustParse("segment")},
 			expectedUrl: "http://example.com/base/segment#anchor",
 		})
+	})
+
+	t.Run("must join path string on empty path root url", func(t *testing.T) {
+		u := urlz.MustParse("http://example.com")
+		require.Nil(t, u.Path)
+		joined := u.MustJoinPathString("api", "v1")
+		require.Equal(t, "http://example.com/api/v1", joined.String())
 	})
 }

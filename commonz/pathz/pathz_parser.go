@@ -32,6 +32,9 @@ func New(parents int, parts []string, hasEndingSlash bool) *Path {
 }
 
 func (p *Path) Clone() *Path {
+	if p == nil {
+		return nil
+	}
 	return &Path{
 		parts:          p.Parts(),
 		parents:        p.parents,

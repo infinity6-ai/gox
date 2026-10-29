@@ -116,15 +116,20 @@ func (u *Url) IsBaseOf(other *Url) bool {
 	if u.Port != other.Port {
 		return false
 	}
-	if u.Path == nil || other.Path == nil {
-		return u.Path == other.Path
+	basePath := u.Path
+	if basePath == nil {
+		basePath = pathz.MustParse("/")
 	}
-	return u.Path.IsBaseOf(other.Path)
+	otherPath := other.Path
+	if otherPath == nil {
+		otherPath = pathz.MustParse("/")
+	}
+	return basePath.IsBaseOf(otherPath)
 }
 
 func (u *Url) JoinPath(others ...*pathz.Path) (*Url, error) {
 	basePath := u.Path
-	if basePath != nil && !basePath.IsAbsolute() && len(basePath.Parts()) == 0 && !basePath.HasEndingSlash() {
+	if basePath == nil {
 		basePath = pathz.MustParse("/")
 	}
 	p, err := basePath.Join(others...)

@@ -89,7 +89,7 @@ func TestUnitParseHttp(t *testing.T) {
 				Password: "password",
 				Host:     "host.com",
 				Port:     "8080",
-				Path:     pathz.New(0, nil, false),
+				Path:     nil,
 				Query:    "query=1",
 				Fragment: "fragment",
 			},
@@ -129,7 +129,7 @@ func TestUnitParseHttp(t *testing.T) {
 			expected: &urlz.Url{
 				Scheme: "http",
 				Host:   "host.com",
-				Path:   pathz.New(0, nil, false),
+				Path:   nil,
 			},
 		})
 	})
@@ -190,7 +190,7 @@ func TestUnitParseHttp(t *testing.T) {
 				Password: "password",
 				Host:     "host.com",
 				Port:     "8080",
-				Path:     pathz.New(0, nil, false),
+				Path:     nil,
 				Query:    "query=1",
 				Fragment: "fragment",
 			},
@@ -230,7 +230,7 @@ func TestUnitParseHttp(t *testing.T) {
 			expected: &urlz.Url{
 				Scheme: "https",
 				Host:   "host.com",
-				Path:   pathz.New(0, nil, false),
+				Path:   nil,
 			},
 		})
 	})

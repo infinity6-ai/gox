@@ -18,6 +18,9 @@ func (p *providerSpec) providerBoxlocal() (*providerSpec, error) {
 		if err != nil {
 			return err
 		}
+		if u.Path == nil {
+			return fmt.Errorf("boxlocal url path cannot be nil")
+		}
 		err = u.Path.ValidateAbsoluteFile()
 		if err != nil {
 			return err
@@ -39,10 +42,14 @@ func (p *providerSpec) providerBoxlocal() (*providerSpec, error) {
 		}, nil
 	}
 	p.ToString = func(u *Url) string {
+		var pathStr string
+		if u.Path != nil {
+			pathStr = u.Path.String()
+		}
 		out := &url.URL{
 			Scheme: "boxlocal",
 			Host:   u.Host,
-			Path:   u.Path.String(),
+			Path:   pathStr,
 		}
 		return out.String()
 	}

@@ -20,8 +20,8 @@ func (p *providerSpec) providerHttp() (*providerSpec, error) {
 			return err
 		}
 
-		// Path can be empty, but if it is not, it must be absolute
-		if u.Path != nil && (len(u.Path.Parts()) > 0 || u.Path.HasEndingSlash()) {
+		// Path can be nil, but if it is not, it must be absolute
+		if u.Path != nil {
 			err = u.Path.ValidateAbsoluteFile()
 			if err != nil {
 				return err
@@ -31,9 +31,13 @@ func (p *providerSpec) providerHttp() (*providerSpec, error) {
 		return nil
 	}
 	p.Parser = func(u *url.URL) (*Url, error) {
-		pt, err := pathz.Parse(u.Path)
-		if err != nil {
-			return nil, fmt.Errorf("error parsing http url path: %s, %w", u.Path, err)
+		var pt *pathz.Path
+		if u.Path != "" {
+			var err error
+			pt, err = pathz.Parse(u.Path)
+			if err != nil {
+				return nil, fmt.Errorf("error parsing http url path: %s, %w", u.Path, err)
+			}
 		}
 		password, _ := u.User.Password()
 		return &Url{
@@ -67,11 +71,16 @@ func (p *providerSpec) providerHttp() (*providerSpec, error) {
 			host = fmt.Sprintf("%s:%s", host, u.Port)
 		}
 
+		var pathStr string
+		if u.Path != nil {
+			pathStr = u.Path.String()
+		}
+
 		ret := &url.URL{
 			Scheme:   u.Scheme,
 			User:     user,
 			Host:     host,
-			Path:     u.Path.String(),
+			Path:     pathStr,
 			RawQuery: u.Query,
 			Fragment: u.Fragment,
 		}

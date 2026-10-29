@@ -14,6 +14,9 @@ func (p *providerSpec) providerUnix() (*providerSpec, error) {
 		if err != nil {
 			return err
 		}
+		if u.Path == nil {
+			return fmt.Errorf("unix url path cannot be nil")
+		}
 		err = u.Path.ValidateAbsoluteFile()
 		if err != nil {
 			return err
@@ -33,7 +36,11 @@ func (p *providerSpec) providerUnix() (*providerSpec, error) {
 		return &Url{Scheme: u.Scheme, Path: pt}, nil
 	}
 	p.ToString = func(u *Url) string {
-		return u.Scheme + ":" + u.Path.String()
+		var pathStr string
+		if u.Path != nil {
+			pathStr = u.Path.String()
+		}
+		return u.Scheme + ":" + pathStr
 	}
 	return p, nil
 }
