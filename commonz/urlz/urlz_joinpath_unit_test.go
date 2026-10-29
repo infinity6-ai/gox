@@ -104,6 +104,16 @@ func TestUnitUrlJoinPath(t *testing.T) {
 		})
 	})
 
+	t.Run("join to empty path root url", func(t *testing.T) {
+		originalUrl := urlz.MustParse("http://example.com")
+		check(t, testScenario{
+			name:        "join to empty path root url",
+			originalUrl: originalUrl,
+			joinPaths:   []*pathz.Path{pathz.MustParse("segment")},
+			expectedUrl: "http://example.com/segment",
+		})
+	})
+
 	t.Run("join empty path", func(t *testing.T) {
 		originalUrl := &urlz.Url{Scheme: "http", Host: "example.com", Path: pathz.MustParse("/base")}
 		check(t, testScenario{

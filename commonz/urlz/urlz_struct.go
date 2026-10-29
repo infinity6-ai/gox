@@ -123,7 +123,11 @@ func (u *Url) IsBaseOf(other *Url) bool {
 }
 
 func (u *Url) JoinPath(others ...*pathz.Path) (*Url, error) {
-	p, err := u.Path.Join(others...)
+	basePath := u.Path
+	if basePath != nil && !basePath.IsAbsolute() && len(basePath.Parts()) == 0 && !basePath.HasEndingSlash() {
+		basePath = pathz.MustParse("/")
+	}
+	p, err := basePath.Join(others...)
 	if err != nil {
 		err = fmt.Errorf("%w: error joining path to url %s: %s", err, u, others)
 	}
