@@ -6,7 +6,6 @@ import (
 	"net/http"
 
 	"github.com/infinity6-ai/gox/commonz/constraintz/blobz"
-	"github.com/infinity6-ai/gox/commonz/errorz"
 )
 
 type CodeError struct {
@@ -49,5 +48,8 @@ func (r *Resp) Success() error {
 }
 
 func (r *Resp) MustSuccess() {
-	errorz.Check(r.Success())
+	err := r.Success()
+	if err != nil {
+		panic(err)
+	}
 }

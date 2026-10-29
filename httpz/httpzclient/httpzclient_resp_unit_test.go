@@ -200,12 +200,12 @@ func TestUnitRespMustSuccess(t *testing.T) {
 		})
 	})
 
-	t.Run("404 Not Found panics with structured error", func(t *testing.T) {
+	t.Run("404 Not Found panics with CodeError", func(t *testing.T) {
 		check(t, testScenario{
 			statusCode:  http.StatusNotFound,
 			body:        "page-missing",
 			expectPanic: true,
-			wantPanic:   "http response error: 404, head body: 'page-missing': (InternalError, code=500)",
+			wantPanic:   "http response error: 404, head body: 'page-missing'",
 		})
 	})
 }

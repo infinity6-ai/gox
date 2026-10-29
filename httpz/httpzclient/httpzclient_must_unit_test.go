@@ -95,7 +95,7 @@ func TestUnitClientMustSuccess(t *testing.T) {
 			method:         "GET",
 			path:           "/404",
 			expectPanic:    true,
-			expectedErrSub: "http response error: 404, head body: 'resource-not-found': (InternalError, code=500)",
+			expectedErrSub: "http response error: 404, head body: 'resource-not-found'",
 		})
 	})
 
@@ -105,7 +105,7 @@ func TestUnitClientMustSuccess(t *testing.T) {
 			path:           "/500",
 			reqBody:        strings.NewReader("request-payload"),
 			expectPanic:    true,
-			expectedErrSub: "http response error: 500, head body: 'server-failure-message': (InternalError, code=500)",
+			expectedErrSub: "http response error: 500, head body: 'server-failure-message'",
 		})
 	})
 
@@ -114,7 +114,7 @@ func TestUnitClientMustSuccess(t *testing.T) {
 			method:         "GET",
 			path:           "/long-error",
 			expectPanic:    true,
-			expectedErrSub: fmt.Sprintf("http response error: 400, head body: '%s': (InternalError, code=500)", strings.Repeat("a", 1024)),
+			expectedErrSub: fmt.Sprintf("http response error: 400, head body: '%s'", strings.Repeat("a", 1024)),
 		})
 	})
 }
