@@ -340,3 +340,235 @@ func TestUnitMustFilter(t *testing.T) {
 		require.Nil(t, result)
 	})
 }
+
+func TestUnitUnique(t *testing.T) {
+	type testScenario struct {
+		name          string
+		initial       []int
+		expected      []int
+		expectedArray []int
+	}
+
+	check := func(t *testing.T, s testScenario) {
+		t.Helper()
+		var input []int
+		if s.initial != nil {
+			input = make([]int, len(s.initial))
+			copy(input, s.initial)
+		}
+		cmpInt := func(a, b int) int {
+			if a < b {
+				return -1
+			}
+			if a > b {
+				return 1
+			}
+			return 0
+		}
+		result := Unique(input, cmpInt)
+		if s.expected == nil {
+			require.Nil(t, result)
+			return
+		}
+		require.Equal(t, s.expected, result)
+		if s.expectedArray != nil {
+			require.Equal(t, s.expectedArray, input)
+		}
+		if len(result) > 0 {
+			require.Same(t, &input[0], &result[0], "should be sub-slice of original slice")
+		}
+	}
+
+	t.Run("nil slice", func(t *testing.T) {
+		check(t, testScenario{
+			initial:  nil,
+			expected: nil,
+		})
+	})
+
+	t.Run("empty slice", func(t *testing.T) {
+		check(t, testScenario{
+			initial:       []int{},
+			expected:      []int{},
+			expectedArray: []int{},
+		})
+	})
+
+	t.Run("single element", func(t *testing.T) {
+		check(t, testScenario{
+			initial:       []int{42},
+			expected:      []int{42},
+			expectedArray: []int{42},
+		})
+	})
+
+	t.Run("already unique elements", func(t *testing.T) {
+		check(t, testScenario{
+			initial:       []int{1, 2, 3, 4, 5},
+			expected:      []int{1, 2, 3, 4, 5},
+			expectedArray: []int{1, 2, 3, 4, 5},
+		})
+	})
+
+	t.Run("consecutive duplicates", func(t *testing.T) {
+		check(t, testScenario{
+			initial:       []int{1, 1, 2, 2, 3, 3},
+			expected:      []int{1, 2, 3},
+			expectedArray: []int{1, 2, 3, 0, 0, 0},
+		})
+	})
+
+	t.Run("global non-consecutive duplicates", func(t *testing.T) {
+		check(t, testScenario{
+			initial:       []int{1, 2, 3, 1, 2, 4, 3, 5},
+			expected:      []int{1, 2, 3, 4, 5},
+			expectedArray: []int{1, 2, 3, 4, 5, 0, 0, 0},
+		})
+	})
+
+	t.Run("all duplicate elements", func(t *testing.T) {
+		check(t, testScenario{
+			initial:       []int{7, 7, 7, 7},
+			expected:      []int{7},
+			expectedArray: []int{7, 0, 0, 0},
+		})
+	})
+
+	t.Run("custom non-comparable struct with comparator", func(t *testing.T) {
+		type customItem struct {
+			id   int
+			tags []string
+		}
+		items := []customItem{
+			{id: 1, tags: []string{"a"}},
+			{id: 2, tags: []string{"b"}},
+			{id: 1, tags: []string{"c"}},
+			{id: 3, tags: []string{"d"}},
+		}
+		res := Unique(items, func(a, b customItem) int {
+			if a.id < b.id {
+				return -1
+			}
+			if a.id > b.id {
+				return 1
+			}
+			return 0
+		})
+		require.Equal(t, []customItem{
+			{id: 1, tags: []string{"a"}},
+			{id: 2, tags: []string{"b"}},
+			{id: 3, tags: []string{"d"}},
+		}, res)
+		require.Equal(t, customItem{}, items[3])
+	})
+
+	t.Run("preserves custom slice type", func(t *testing.T) {
+		type IntSlice []int
+		s := IntSlice{1, 2, 1, 3}
+		res := Unique(s, func(a, b int) int {
+			return a - b
+		})
+		require.Equal(t, IntSlice{1, 2, 3}, res)
+	})
+}
+
+func TestUnitUniqueC(t *testing.T) {
+	type testScenario struct {
+		name          string
+		initial       []string
+		expected      []string
+		expectedArray []string
+	}
+
+	check := func(t *testing.T, s testScenario) {
+		t.Helper()
+		var input []string
+		if s.initial != nil {
+			input = make([]string, len(s.initial))
+			copy(input, s.initial)
+		}
+		result := UniqueC(input)
+		if s.expected == nil {
+			require.Nil(t, result)
+			return
+		}
+		require.Equal(t, s.expected, result)
+		if s.expectedArray != nil {
+			require.Equal(t, s.expectedArray, input)
+		}
+		if len(result) > 0 {
+			require.Same(t, &input[0], &result[0], "should be sub-slice of original slice")
+		}
+	}
+
+	t.Run("nil slice", func(t *testing.T) {
+		check(t, testScenario{
+			initial:  nil,
+			expected: nil,
+		})
+	})
+
+	t.Run("empty slice", func(t *testing.T) {
+		check(t, testScenario{
+			initial:       []string{},
+			expected:      []string{},
+			expectedArray: []string{},
+		})
+	})
+
+	t.Run("single element", func(t *testing.T) {
+		check(t, testScenario{
+			initial:       []string{"a"},
+			expected:      []string{"a"},
+			expectedArray: []string{"a"},
+		})
+	})
+
+	t.Run("already unique elements", func(t *testing.T) {
+		check(t, testScenario{
+			initial:       []string{"a", "b", "c"},
+			expected:      []string{"a", "b", "c"},
+			expectedArray: []string{"a", "b", "c"},
+		})
+	})
+
+	t.Run("consecutive duplicates", func(t *testing.T) {
+		check(t, testScenario{
+			initial:       []string{"a", "a", "b", "b", "c"},
+			expected:      []string{"a", "b", "c"},
+			expectedArray: []string{"a", "b", "c", "", ""},
+		})
+	})
+
+	t.Run("global non-consecutive duplicates", func(t *testing.T) {
+		check(t, testScenario{
+			initial:       []string{"a", "b", "a", "c", "b", "d", "a"},
+			expected:      []string{"a", "b", "c", "d"},
+			expectedArray: []string{"a", "b", "c", "d", "", "", ""},
+		})
+	})
+
+	t.Run("all duplicate elements", func(t *testing.T) {
+		check(t, testScenario{
+			initial:       []string{"x", "x", "x"},
+			expected:      []string{"x"},
+			expectedArray: []string{"x", "", ""},
+		})
+	})
+
+	t.Run("pointers zeroed out as nil", func(t *testing.T) {
+		v1, v2, v3 := 1, 2, 3
+		items := []*int{&v1, &v2, &v1, &v3, &v2}
+		res := UniqueC(items)
+		require.Equal(t, []*int{&v1, &v2, &v3}, res)
+		require.Nil(t, items[3])
+		require.Nil(t, items[4])
+	})
+
+	t.Run("preserves custom slice type", func(t *testing.T) {
+		type StringSlice []string
+		s := StringSlice{"a", "b", "a"}
+		res := UniqueC(s)
+		require.Equal(t, StringSlice{"a", "b"}, res)
+	})
+}

@@ -187,3 +187,58 @@ func MustFilter[S ~[]I, I any](s S, fn func(i int, v I) bool) S {
 	}
 	return s[:n]
 }
+
+// Unique removes all duplicate elements from a slice in-place, keeping the first occurrence.
+// The cmp function should return 0 when two elements are equal (e.g. cmp.Compare or cmpz.Compare).
+// Elements between the new length and the original length are zeroed out.
+func Unique[S ~[]E, E any](s S, cmp func(a, b E) int) S {
+	if len(s) <= 1 {
+		return s
+	}
+	n := 1
+	for i := 1; i < len(s); i++ {
+		duplicate := false
+		for j := 0; j < n; j++ {
+			if cmp(s[j], s[i]) == 0 {
+				duplicate = true
+				break
+			}
+		}
+		if !duplicate {
+			if n != i {
+				s[n] = s[i]
+			}
+			n++
+		}
+	}
+	var zero E
+	for i := n; i < len(s); i++ {
+		s[i] = zero
+	}
+	return s[:n]
+}
+
+// UniqueC removes all duplicate elements from a slice of comparable elements in-place, keeping the first occurrence.
+// Elements between the new length and the original length are zeroed out.
+func UniqueC[S ~[]E, E comparable](s S) S {
+	if len(s) <= 1 {
+		return s
+	}
+	seen := make(map[E]struct{}, len(s))
+	seen[s[0]] = struct{}{}
+	n := 1
+	for i := 1; i < len(s); i++ {
+		if _, exists := seen[s[i]]; !exists {
+			seen[s[i]] = struct{}{}
+			if n != i {
+				s[n] = s[i]
+			}
+			n++
+		}
+	}
+	var zero E
+	for i := n; i < len(s); i++ {
+		s[i] = zero
+	}
+	return s[:n]
+}
