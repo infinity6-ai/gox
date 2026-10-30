@@ -61,10 +61,7 @@ func MustFormat(method string, path string, params map[string]string) *Req {
 
 // New creates a new Req initialized with the specified HTTP method and path/url string.
 func New(method string, u string) *Req {
-	// if strings.HasPrefix(u, "/") {
 	return FromPath(method, pathz.MustParse(u))
-	// }
-	// return FromUrl(method, urlz.MustParse(u))
 }
 
 // FromUrl creates a new Req initialized with the specified HTTP method and absolute URL.
