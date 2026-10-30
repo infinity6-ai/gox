@@ -314,6 +314,204 @@ func TestUnitFilterGzip(t *testing.T) {
 			expectedRespStatus: 200,
 		})
 	})
+
+	t.Run("Response with Content-Type image/png is not compressed", func(t *testing.T) {
+		check(t, testScenario{
+			name:                  "Response with Content-Type image/png is not compressed",
+			reqMethod:             "GET",
+			reqHeaders:            map[string]string{"Accept-Encoding": "gzip"},
+			handlerResponseStatus: 200,
+			handlerResponseBody:   "fake png binary content",
+			handlerResponseHeaders: map[string]string{
+				"Content-Type": "image/png",
+			},
+			expectedRespStatus:  200,
+			expectedRespIsGzip:  false,
+			expectedRespBodyStr: "fake png binary content",
+			expectedRespHeaders: map[string]string{
+				"Content-Type": "image/png",
+			},
+		})
+	})
+
+	t.Run("Response with Content-Type image/jpeg is not compressed", func(t *testing.T) {
+		check(t, testScenario{
+			name:                  "Response with Content-Type image/jpeg is not compressed",
+			reqMethod:             "GET",
+			reqHeaders:            map[string]string{"Accept-Encoding": "gzip"},
+			handlerResponseStatus: 200,
+			handlerResponseBody:   "fake jpeg binary content",
+			handlerResponseHeaders: map[string]string{
+				"Content-Type": "image/jpeg",
+			},
+			expectedRespStatus:  200,
+			expectedRespIsGzip:  false,
+			expectedRespBodyStr: "fake jpeg binary content",
+			expectedRespHeaders: map[string]string{
+				"Content-Type": "image/jpeg",
+			},
+		})
+	})
+
+	t.Run("Response with Content-Type image/gif is not compressed", func(t *testing.T) {
+		check(t, testScenario{
+			name:                  "Response with Content-Type image/gif is not compressed",
+			reqMethod:             "GET",
+			reqHeaders:            map[string]string{"Accept-Encoding": "gzip"},
+			handlerResponseStatus: 200,
+			handlerResponseBody:   "fake gif binary content",
+			handlerResponseHeaders: map[string]string{
+				"Content-Type": "image/gif",
+			},
+			expectedRespStatus:  200,
+			expectedRespIsGzip:  false,
+			expectedRespBodyStr: "fake gif binary content",
+		})
+	})
+
+	t.Run("Response with Content-Type image/webp is not compressed", func(t *testing.T) {
+		check(t, testScenario{
+			name:                  "Response with Content-Type image/webp is not compressed",
+			reqMethod:             "GET",
+			reqHeaders:            map[string]string{"Accept-Encoding": "gzip"},
+			handlerResponseStatus: 200,
+			handlerResponseBody:   "fake webp binary content",
+			handlerResponseHeaders: map[string]string{
+				"Content-Type": "image/webp",
+			},
+			expectedRespStatus:  200,
+			expectedRespIsGzip:  false,
+			expectedRespBodyStr: "fake webp binary content",
+		})
+	})
+
+	t.Run("Response with Content-Type image/svg+xml is compressed", func(t *testing.T) {
+		check(t, testScenario{
+			name:                  "Response with Content-Type image/svg+xml is compressed",
+			reqMethod:             "GET",
+			reqHeaders:            map[string]string{"Accept-Encoding": "gzip"},
+			handlerResponseStatus: 200,
+			handlerResponseBody:   "<svg><circle cx='50' cy='50' r='40'/></svg>",
+			handlerResponseHeaders: map[string]string{
+				"Content-Type": "image/svg+xml",
+			},
+			expectedRespStatus:  200,
+			expectedRespIsGzip:  true,
+			expectedRespBodyStr: "<svg><circle cx='50' cy='50' r='40'/></svg>",
+		})
+	})
+
+	t.Run("Response with Content-Type application/zip is not compressed", func(t *testing.T) {
+		check(t, testScenario{
+			name:                  "Response with Content-Type application/zip is not compressed",
+			reqMethod:             "GET",
+			reqHeaders:            map[string]string{"Accept-Encoding": "gzip"},
+			handlerResponseStatus: 200,
+			handlerResponseBody:   "fake zip binary content",
+			handlerResponseHeaders: map[string]string{
+				"Content-Type": "application/zip",
+			},
+			expectedRespStatus:  200,
+			expectedRespIsGzip:  false,
+			expectedRespBodyStr: "fake zip binary content",
+		})
+	})
+
+	t.Run("Response with Content-Type application/pdf is not compressed", func(t *testing.T) {
+		check(t, testScenario{
+			name:                  "Response with Content-Type application/pdf is not compressed",
+			reqMethod:             "GET",
+			reqHeaders:            map[string]string{"Accept-Encoding": "gzip"},
+			handlerResponseStatus: 200,
+			handlerResponseBody:   "%PDF-1.4 fake pdf content",
+			handlerResponseHeaders: map[string]string{
+				"Content-Type": "application/pdf",
+			},
+			expectedRespStatus:  200,
+			expectedRespIsGzip:  false,
+			expectedRespBodyStr: "%PDF-1.4 fake pdf content",
+		})
+	})
+
+	t.Run("Response with Content-Type video/mp4 is not compressed", func(t *testing.T) {
+		check(t, testScenario{
+			name:                  "Response with Content-Type video/mp4 is not compressed",
+			reqMethod:             "GET",
+			reqHeaders:            map[string]string{"Accept-Encoding": "gzip"},
+			handlerResponseStatus: 200,
+			handlerResponseBody:   "fake mp4 video stream content",
+			handlerResponseHeaders: map[string]string{
+				"Content-Type": "video/mp4",
+			},
+			expectedRespStatus:  200,
+			expectedRespIsGzip:  false,
+			expectedRespBodyStr: "fake mp4 video stream content",
+		})
+	})
+
+	t.Run("Response with Content-Type audio/mpeg is not compressed", func(t *testing.T) {
+		check(t, testScenario{
+			name:                  "Response with Content-Type audio/mpeg is not compressed",
+			reqMethod:             "GET",
+			reqHeaders:            map[string]string{"Accept-Encoding": "gzip"},
+			handlerResponseStatus: 200,
+			handlerResponseBody:   "fake mp3 audio stream content",
+			handlerResponseHeaders: map[string]string{
+				"Content-Type": "audio/mpeg",
+			},
+			expectedRespStatus:  200,
+			expectedRespIsGzip:  false,
+			expectedRespBodyStr: "fake mp3 audio stream content",
+		})
+	})
+
+	t.Run("Response with Content-Type application/json is compressed", func(t *testing.T) {
+		check(t, testScenario{
+			name:                  "Response with Content-Type application/json is compressed",
+			reqMethod:             "GET",
+			reqHeaders:            map[string]string{"Accept-Encoding": "gzip"},
+			handlerResponseStatus: 200,
+			handlerResponseBody:   `{"status":"ok","compressible":true}`,
+			handlerResponseHeaders: map[string]string{
+				"Content-Type": "application/json",
+			},
+			expectedRespStatus:  200,
+			expectedRespIsGzip:  true,
+			expectedRespBodyStr: `{"status":"ok","compressible":true}`,
+		})
+	})
+
+	t.Run("Response with Cache-Control no-transform is not compressed", func(t *testing.T) {
+		check(t, testScenario{
+			name:                  "Response with Cache-Control no-transform is not compressed",
+			reqMethod:             "GET",
+			reqHeaders:            map[string]string{"Accept-Encoding": "gzip"},
+			handlerResponseStatus: 200,
+			handlerResponseBody:   "payload that must not be transformed",
+			handlerResponseHeaders: map[string]string{
+				"Cache-Control": "no-transform, public",
+			},
+			expectedRespStatus:  200,
+			expectedRespIsGzip:  false,
+			expectedRespBodyStr: "payload that must not be transformed",
+		})
+	})
+
+	t.Run("Status 206 Partial Content is not compressed", func(t *testing.T) {
+		check(t, testScenario{
+			name:                  "Status 206 Partial Content is not compressed",
+			reqMethod:             "GET",
+			reqHeaders:            map[string]string{"Accept-Encoding": "gzip"},
+			handlerResponseStatus: 206,
+			handlerResponseBody:   "bytes 0-10/100",
+			handlerResponseHeaders: map[string]string{
+				"Content-Range": "bytes 0-10/100",
+			},
+			expectedRespStatus:  206,
+			expectedRespIsGzip:  false,
+			expectedRespBodyStr: "bytes 0-10/100",
+		})
+	})
 }
 
 func gzipCompress(t *testing.T, data []byte) []byte {

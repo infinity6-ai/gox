@@ -48,16 +48,71 @@ func acceptsGzip(req *httpzrequest.Req) bool {
 }
 
 func shouldCompress(status int, headers http.Header) bool {
-	if status == http.StatusNoContent || status == http.StatusNotModified {
+	if status == http.StatusNoContent || status == http.StatusNotModified || status == http.StatusPartialContent {
 		return false
 	}
 	if status >= 100 && status < 200 {
 		return false
 	}
-	if headers != nil && headers.Get("Content-Encoding") != "" {
-		return false
+	if headers != nil {
+		if headers.Get("Content-Encoding") != "" {
+			return false
+		}
+		if headers.Get("Content-Range") != "" {
+			return false
+		}
+		if strings.Contains(strings.ToLower(headers.Get("Cache-Control")), "no-transform") {
+			return false
+		}
+		if isAlreadyCompressed(headers.Get("Content-Type")) {
+			return false
+		}
 	}
 	return true
+}
+
+// isAlreadyCompressed returns true if the media type represents data that is already
+// compressed (such as PNG, JPEG, audio, video, ZIP, PDF, or WOFF fonts) and should not
+// be re-compressed with gzip.
+func isAlreadyCompressed(contentType string) bool {
+	if contentType == "" {
+		return false
+	}
+	ct := strings.TrimSpace(strings.ToLower(contentType))
+	if idx := strings.IndexByte(ct, ';'); idx != -1 {
+		ct = strings.TrimSpace(ct[:idx])
+	}
+	if strings.HasPrefix(ct, "image/") {
+		switch ct {
+		case "image/svg+xml", "image/x-icon", "image/vnd.microsoft.icon", "image/bmp", "image/x-ms-bmp":
+			return false
+		default:
+			return true
+		}
+	}
+	if strings.HasPrefix(ct, "video/") || strings.HasPrefix(ct, "audio/") {
+		return true
+	}
+	switch ct {
+	case "application/zip",
+		"application/x-zip-compressed",
+		"application/gzip",
+		"application/x-gzip",
+		"application/x-bzip2",
+		"application/x-xz",
+		"application/x-7z-compressed",
+		"application/x-rar-compressed",
+		"application/vnd.rar",
+		"application/zstd",
+		"application/x-compress",
+		"application/pdf",
+		"font/woff",
+		"font/woff2",
+		"application/font-woff",
+		"application/font-woff2":
+		return true
+	}
+	return false
 }
 
 func GzipFilter(ctx context.Context, resp httpzserver.Resp, req *httpzrequest.Req, next httpzserver.Handler) {
