@@ -1,4 +1,4 @@
-package smartgzipz_test
+package gzipzsmartwriter_test
 
 import (
 	"bytes"
@@ -9,7 +9,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/infinity6-ai/gox/commonz/zipz/gzipz/smartgzipz"
+	"github.com/infinity6-ai/gox/commonz/zipz/gzipz/gzipzsmartwriter"
 	"github.com/stretchr/testify/require"
 )
 
@@ -44,14 +44,13 @@ func (t *trackFlushWriter) Flush() error {
 	return nil
 }
 
-func TestUnitSmartGzipDecisionAndCompression(t *testing.T) {
+func TestUnitGzipzSmartWriterDecisionAndCompression(t *testing.T) {
 	type testScenario struct {
-		name                string
-		input               []byte
-		chunkSize           int
-		head                int
-		wantCompress        bool
-		useAlternativeSpell bool
+		name         string
+		input        []byte
+		chunkSize    int
+		head         int
+		wantCompress bool
 	}
 
 	check := func(t *testing.T, s testScenario) {
@@ -67,16 +66,12 @@ func TestUnitSmartGzipDecisionAndCompression(t *testing.T) {
 			underlyingBytesAtDecision = underlying.Len()
 		}
 
-		opts := smartgzipz.Opts{
-			Head: s.head,
-		}
-		if s.useAlternativeSpell {
-			opts.Decistion = callback
-		} else {
-			opts.Decision = callback
+		opts := gzipzsmartwriter.Opts{
+			Head:     s.head,
+			Decision: callback,
 		}
 
-		w := smartgzipz.New(underlying, opts)
+		w := gzipzsmartwriter.New(underlying, opts)
 		require.NotNil(t, w)
 
 		// Write in chunks
@@ -222,24 +217,12 @@ func TestUnitSmartGzipDecisionAndCompression(t *testing.T) {
 			wantCompress: true,
 		})
 	})
-
-	// 9. Using Decistion alternative spelling
-	t.Run("Alternative Decistion spelling in Opts", func(t *testing.T) {
-		input := []byte(strings.Repeat("Alternative spelling test. ", 60))
-		check(t, testScenario{
-			name:                "Alternative Decistion spelling in Opts",
-			input:               input,
-			chunkSize:           len(input),
-			wantCompress:        true,
-			useAlternativeSpell: true,
-		})
-	})
 }
 
-func TestUnitSmartGzipWriterErrorsAndEdgeCases(t *testing.T) {
+func TestUnitGzipzSmartWriterErrorsAndEdgeCases(t *testing.T) {
 	t.Run("Write on closed writer returns error", func(t *testing.T) {
 		buf := &bytes.Buffer{}
-		w := smartgzipz.New(buf, smartgzipz.Opts{})
+		w := gzipzsmartwriter.New(buf, gzipzsmartwriter.Opts{})
 		err := w.Close()
 		require.NoError(t, err)
 
@@ -251,7 +234,7 @@ func TestUnitSmartGzipWriterErrorsAndEdgeCases(t *testing.T) {
 
 	t.Run("Multiple Close calls are idempotent", func(t *testing.T) {
 		buf := &bytes.Buffer{}
-		w := smartgzipz.New(buf, smartgzipz.Opts{})
+		w := gzipzsmartwriter.New(buf, gzipzsmartwriter.Opts{})
 		_, err := w.Write([]byte("some data"))
 		require.NoError(t, err)
 
@@ -261,7 +244,7 @@ func TestUnitSmartGzipWriterErrorsAndEdgeCases(t *testing.T) {
 
 	t.Run("Write error on underlying writer propagates", func(t *testing.T) {
 		ew := &errorWriter{failOnWrite: true}
-		w := smartgzipz.New(ew, smartgzipz.Opts{
+		w := gzipzsmartwriter.New(ew, gzipzsmartwriter.Opts{
 			Head: 1024,
 		})
 
@@ -278,7 +261,7 @@ func TestUnitSmartGzipWriterErrorsAndEdgeCases(t *testing.T) {
 		var decisionCalled bool
 		var decisionValue bool
 
-		w := smartgzipz.New(underlying, smartgzipz.Opts{
+		w := gzipzsmartwriter.New(underlying, gzipzsmartwriter.Opts{
 			Head: 2048,
 			Decision: func(compress bool) {
 				decisionCalled = true
@@ -316,7 +299,7 @@ func TestUnitSmartGzipWriterErrorsAndEdgeCases(t *testing.T) {
 
 	t.Run("Flush on closed writer returns error", func(t *testing.T) {
 		buf := &bytes.Buffer{}
-		w := smartgzipz.New(buf, smartgzipz.Opts{})
+		w := gzipzsmartwriter.New(buf, gzipzsmartwriter.Opts{})
 		require.NoError(t, w.Close())
 
 		flusher, ok := w.(interface{ Flush() error })
@@ -328,7 +311,7 @@ func TestUnitSmartGzipWriterErrorsAndEdgeCases(t *testing.T) {
 
 	t.Run("Reset allows writer reuse", func(t *testing.T) {
 		buf1 := &bytes.Buffer{}
-		w := smartgzipz.New(buf1, smartgzipz.Opts{})
+		w := gzipzsmartwriter.New(buf1, gzipzsmartwriter.Opts{})
 		data1 := []byte(strings.Repeat("first writer data! ", 50))
 		_, err := w.Write(data1)
 		require.NoError(t, err)

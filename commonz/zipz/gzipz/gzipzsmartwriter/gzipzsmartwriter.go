@@ -1,6 +1,6 @@
-// Package smartgzipz provides a smart gzip writer that buffers initial data to decide
-// whether gzip compression is worth it, passing through uncompressed data if not.
-package smartgzipz
+// Package gzipzsmartwriter provides a smart gzip writer that buffers initial data to decide
+// whether gzip compression is worthwhile, passing through uncompressed data if not.
+package gzipzsmartwriter
 
 import (
 	"bytes"
@@ -9,7 +9,7 @@ import (
 	"io"
 )
 
-// MinHead is the default minimum viable head size (1024 bytes)
+// MinHead is the default minimum viable head size in bytes (1024)
 // used to evaluate whether compression is worthwhile.
 const MinHead = 1024
 
@@ -17,9 +17,13 @@ const minHead = MinHead
 
 // Opts configures the behavior of smart gzip compression.
 type Opts struct {
-	Head      int                 // how many bytes is going to be loaded to decide if it worth it
-	Decision  func(compress bool) // it is called before any byte goes to underling writer
-	Decistion func(compress bool) // alias for Decision matching prompt spelling
+	// Head specifies how many bytes are buffered to decide whether compression is worthwhile.
+	// If set to less than MinHead (1024 bytes), MinHead is used.
+	Head int
+
+	// Decision is called before any bytes are written to the underlying writer,
+	// indicating whether gzip compression will be applied.
+	Decision func(compress bool)
 }
 
 type smartGzipWriter struct {
@@ -32,22 +36,16 @@ type smartGzipWriter struct {
 	closed       bool
 }
 
-// New creates a new smart gzip WriteCloser. It buffers up to opts.Head bytes (minimum 1024)
+// New creates a new smart gzip io.WriteCloser. It buffers up to opts.Head bytes (minimum 1024)
 // to evaluate whether gzip compression reduces payload size. If compression is beneficial,
 // it streams compressed gzip bytes; otherwise, it passes raw bytes through.
-// The Decision callback (if configured) is guaranteed to be invoked before any byte is written
+// The Decision callback (if configured) is guaranteed to be invoked before any bytes are written
 // to the underlying writer.
 // Closing the returned io.WriteCloser flushes any pending data but never closes the underlying writer.
 func New(w io.Writer, opts Opts) io.WriteCloser {
 	if opts.Head < minHead {
-		opts.Head = minHead // min viable size
+		opts.Head = minHead
 	}
-	decision := opts.Decision
-	if decision == nil {
-		decision = opts.Decistion
-	}
-	opts.Decision = decision
-	opts.Decistion = decision
 
 	return &smartGzipWriter{
 		w:    w,
@@ -87,7 +85,7 @@ func (s *smartGzipWriter) makeDecision(data []byte) {
 // bytes are accumulated to make a compression decision, then flushes and streams data.
 func (s *smartGzipWriter) Write(p []byte) (int, error) {
 	if s.closed {
-		return 0, fmt.Errorf("smartgzip: write to closed writer")
+		return 0, fmt.Errorf("gzipzsmartwriter: write to closed writer")
 	}
 
 	if s.decisionMade {
@@ -206,7 +204,7 @@ func (s *smartGzipWriter) Close() error {
 // has not been made yet.
 func (s *smartGzipWriter) Flush() error {
 	if s.closed {
-		return fmt.Errorf("smartgzip: flush on closed writer")
+		return fmt.Errorf("gzipzsmartwriter: flush on closed writer")
 	}
 
 	if !s.decisionMade {
