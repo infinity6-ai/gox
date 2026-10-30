@@ -122,6 +122,95 @@ func TestUnitRequestMustFormat(t *testing.T) {
 	})
 }
 
+func TestUnitRequestNew(t *testing.T) {
+	type testScenario struct {
+		name         string
+		method       string
+		u            string
+		expectedPath string
+		expectedUrl  string
+		expectPanic  bool
+	}
+
+	check := func(t *testing.T, s testScenario) {
+		t.Helper()
+		if s.expectPanic {
+			require.Panics(t, func() {
+				httpzrequest.New(s.method, s.u)
+			})
+			return
+		}
+
+		req := httpzrequest.New(s.method, s.u)
+		require.NotNil(t, req)
+		require.Equal(t, s.method, req.Method)
+
+		if s.expectedPath != "" {
+			require.NotNil(t, req.Path)
+			require.Equal(t, s.expectedPath, req.Path.String())
+			require.Nil(t, req.Url)
+		} else if s.expectedUrl != "" {
+			require.NotNil(t, req.Url)
+			require.Equal(t, s.expectedUrl, req.Url.String())
+			require.Nil(t, req.Path)
+		}
+	}
+
+	t.Run("New with valid relative path", func(t *testing.T) {
+		check(t, testScenario{
+			name:         "New with valid relative path",
+			method:       "GET",
+			u:            "test/path",
+			expectedPath: "test/path",
+		})
+	})
+
+	t.Run("New with valid absolute path", func(t *testing.T) {
+		check(t, testScenario{
+			name:         "New with valid absolute path",
+			method:       "GET",
+			u:            "/test/path",
+			expectedPath: "/test/path",
+		})
+	})
+
+	t.Run("New with invalid path panics", func(t *testing.T) {
+		check(t, testScenario{
+			name:        "New with invalid path panics",
+			method:      "GET",
+			u:           "invalid:path",
+			expectPanic: true,
+		})
+	})
+
+	t.Run("New with http URL", func(t *testing.T) {
+		check(t, testScenario{
+			name:        "New with http URL",
+			method:      "POST",
+			u:           "http://localhost:8080/api",
+			expectedUrl: "http://localhost:8080/api",
+		})
+	})
+
+	t.Run("New with https URL", func(t *testing.T) {
+		check(t, testScenario{
+			name:        "New with https URL",
+			method:      "PUT",
+			u:           "https://example.com/api?foo=bar",
+			expectedUrl: "https://example.com/api?foo=bar",
+		})
+	})
+
+	t.Run("New with invalid URL panics", func(t *testing.T) {
+		check(t, testScenario{
+			name:        "New with invalid URL panics",
+			method:      "GET",
+			u:           "http:///missing-host",
+			expectPanic: true,
+		})
+	})
+}
+
 func TestUnitRequestBuilders(t *testing.T) {
 	t.Run("New initializes fields", func(t *testing.T) {
 		req := httpzrequest.New("GET", "/test/path")
