@@ -59,14 +59,12 @@ func MustFormat(method string, path string, params map[string]string) *Req {
 	return req
 }
 
-// New creates a new Req initialized with the specified HTTP method and path string.
-func New(method string, path string) *Req {
-	return &Req{
-		Method:  method,
-		Path:    pathz.MustParse(path),
-		Query:   url.Values{},
-		Headers: http.Header{},
-	}
+// New creates a new Req initialized with the specified HTTP method and path/url string.
+func New(method string, u string) *Req {
+	// if strings.HasPrefix(u, "/") {
+	return FromPath(method, pathz.MustParse(u))
+	// }
+	// return FromUrl(method, urlz.MustParse(u))
 }
 
 // FromUrl creates a new Req initialized with the specified HTTP method and absolute URL.
@@ -74,6 +72,15 @@ func FromUrl(method string, u *urlz.Url) *Req {
 	return &Req{
 		Method:  method,
 		Url:     u,
+		Query:   url.Values{},
+		Headers: http.Header{},
+	}
+}
+
+func FromPath(method string, p *pathz.Path) *Req {
+	return &Req{
+		Method:  method,
+		Path:    p,
 		Query:   url.Values{},
 		Headers: http.Header{},
 	}
