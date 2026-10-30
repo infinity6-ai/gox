@@ -7,7 +7,6 @@ import (
 	"io"
 	"net/http"
 	"net/url"
-	"strings"
 
 	"github.com/infinity6-ai/gox/commonz/errorz"
 	"github.com/infinity6-ai/gox/commonz/pathz"
@@ -63,18 +62,10 @@ func MustFormat(method string, path string, params map[string]string) *Req {
 // New creates a new Req initialized with the specified HTTP method and path or URL string.
 // If u contains a URL scheme, it is parsed as a URL; otherwise, it is parsed as a path.
 func New(method string, u string) *Req {
-	if isUrl(u) {
+	if urlz.Is(u) {
 		return FromUrl(method, urlz.MustParse(u))
 	}
 	return FromPath(method, pathz.MustParse(u))
-}
-
-func isUrl(u string) bool {
-	if strings.Contains(u, "://") {
-		return true
-	}
-	parsed, err := url.Parse(u)
-	return err == nil && parsed.Scheme != ""
 }
 
 // FromUrl creates a new Req initialized with the specified HTTP method and absolute URL.
