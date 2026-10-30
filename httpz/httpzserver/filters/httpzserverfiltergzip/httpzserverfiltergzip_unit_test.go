@@ -152,9 +152,12 @@ func TestUnitFilterGzip(t *testing.T) {
 			reqHeaders:            nil,
 			handlerResponseStatus: 200,
 			handlerResponseBody:   "hello world",
-			expectedRespStatus:    200,
-			expectedRespIsGzip:    false,
-			expectedRespBodyStr:   "hello world",
+			expectedHandlerReqHeaders: map[string]string{
+				httpzserverfiltergzip.HeaderAcceptsGzip: "true", // http.DefaultClient injects Accept-Encoding: gzip
+			},
+			expectedRespStatus:  200,
+			expectedRespIsGzip:  false,
+			expectedRespBodyStr: "hello world",
 		})
 	})
 
@@ -165,9 +168,12 @@ func TestUnitFilterGzip(t *testing.T) {
 			reqHeaders:            map[string]string{"Accept-Encoding": "gzip, deflate, br"},
 			handlerResponseStatus: 200,
 			handlerResponseBody:   "hello compressible world",
-			expectedRespStatus:    200,
-			expectedRespIsGzip:    true,
-			expectedRespBodyStr:   "hello compressible world",
+			expectedHandlerReqHeaders: map[string]string{
+				httpzserverfiltergzip.HeaderAcceptsGzip: "true",
+			},
+			expectedRespStatus:  200,
+			expectedRespIsGzip:  true,
+			expectedRespBodyStr: "hello compressible world",
 			expectedRespHeaders: map[string]string{
 				"Vary": "Accept-Encoding",
 			},
@@ -181,9 +187,12 @@ func TestUnitFilterGzip(t *testing.T) {
 			reqHeaders:            map[string]string{"Accept-Encoding": "*"},
 			handlerResponseStatus: 200,
 			handlerResponseBody:   "hello compressible world",
-			expectedRespStatus:    200,
-			expectedRespIsGzip:    true,
-			expectedRespBodyStr:   "hello compressible world",
+			expectedHandlerReqHeaders: map[string]string{
+				httpzserverfiltergzip.HeaderAcceptsGzip: "true",
+			},
+			expectedRespStatus:  200,
+			expectedRespIsGzip:  true,
+			expectedRespBodyStr: "hello compressible world",
 		})
 	})
 
@@ -194,9 +203,12 @@ func TestUnitFilterGzip(t *testing.T) {
 			reqHeaders:            map[string]string{"Accept-Encoding": "gzip;q=0"},
 			handlerResponseStatus: 200,
 			handlerResponseBody:   "hello world",
-			expectedRespStatus:    200,
-			expectedRespIsGzip:    false,
-			expectedRespBodyStr:   "hello world",
+			expectedHandlerReqHeaders: map[string]string{
+				httpzserverfiltergzip.HeaderAcceptsGzip: "false",
+			},
+			expectedRespStatus:  200,
+			expectedRespIsGzip:  false,
+			expectedRespBodyStr: "hello world",
 		})
 	})
 
@@ -257,7 +269,8 @@ func TestUnitFilterGzip(t *testing.T) {
 			expectedHandlerReqBody: reqBodyStr,
 			expectedHandlerReqHeaders: map[string]string{
 				httpzserverfiltergzip.HeaderContentEncodingWas: "gzip",
-				"Content-Encoding": "",
+				"Content-Encoding":                      "",
+				httpzserverfiltergzip.HeaderAcceptsGzip: "true", // injected by http.DefaultClient
 			},
 			expectedRespStatus:  200,
 			expectedRespIsGzip:  false,
@@ -283,6 +296,20 @@ func TestUnitFilterGzip(t *testing.T) {
 			handlerResponseStatus: 200,
 			expectedHandlerReqHeaders: map[string]string{
 				httpzserverfiltergzip.HeaderContentEncodingWas: "",
+				httpzserverfiltergzip.HeaderAcceptsGzip:        "true", // injected by http.DefaultClient
+			},
+			expectedRespStatus: 200,
+		})
+	})
+
+	t.Run("Malicious incoming X-I6-Accepts-Gzip header is removed", func(t *testing.T) {
+		check(t, testScenario{
+			name:                  "Malicious incoming X-I6-Accepts-Gzip header is removed",
+			reqMethod:             "GET",
+			reqHeaders:            map[string]string{httpzserverfiltergzip.HeaderAcceptsGzip: "true", "Accept-Encoding": "gzip;q=0"},
+			handlerResponseStatus: 200,
+			expectedHandlerReqHeaders: map[string]string{
+				httpzserverfiltergzip.HeaderAcceptsGzip: "false",
 			},
 			expectedRespStatus: 200,
 		})

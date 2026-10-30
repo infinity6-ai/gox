@@ -18,6 +18,9 @@ import (
 // and decompressed by the gzip filter.
 const HeaderContentEncodingWas = "X-I6-Content-Encoding-Was"
 
+// HeaderAcceptsGzip indicates whether the client supports gzipped responses.
+const HeaderAcceptsGzip = "X-I6-Accepts-Gzip"
+
 func acceptsGzip(req *httpzrequest.Req) bool {
 	if req == nil || req.Headers == nil {
 		return false
@@ -62,6 +65,7 @@ func GzipFilter(ctx context.Context, resp httpzserver.Resp, req *httpzrequest.Re
 		req.Headers = make(http.Header)
 	}
 	req.Headers.Del(HeaderContentEncodingWas)
+	req.Headers.Del(HeaderAcceptsGzip)
 
 	origEncoding := req.Headers.Get("Content-Encoding")
 	if req.Body != nil && req.Body != http.NoBody && isGzipEncoding(origEncoding) {
@@ -82,7 +86,14 @@ func GzipFilter(ctx context.Context, resp httpzserver.Resp, req *httpzrequest.Re
 		}
 	}
 
-	if !acceptsGzip(req) {
+	clientAcceptsGzip := acceptsGzip(req)
+	if clientAcceptsGzip {
+		req.Headers.Set(HeaderAcceptsGzip, "true")
+	} else {
+		req.Headers.Set(HeaderAcceptsGzip, "false")
+	}
+
+	if !clientAcceptsGzip {
 		next(ctx, resp, req)
 		return
 	}
