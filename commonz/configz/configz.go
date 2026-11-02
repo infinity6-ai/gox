@@ -88,6 +88,12 @@ func (p Prop) Set(ctx context.Context, value string, values ...any) (io.Closer, 
 	return Sets(ctx, map[Prop]string{p: fmt.Sprintf(value, values...)})
 }
 
+func (p Prop) MustSet(ctx context.Context, value string, values ...any) io.Closer {
+	ret, err := p.Set(ctx, value, values...)
+	errorz.Check(err)
+	return ret
+}
+
 func (p Prop) SetEncoded(ctx context.Context, value string, values ...any) (io.Closer, error) {
 	encoded := enczb64.UrlEncode(fmt.Sprintf(value, values...)).String()
 	return p.Set(ctx, "%s", encoded)
