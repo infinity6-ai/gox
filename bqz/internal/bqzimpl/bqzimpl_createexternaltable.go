@@ -19,6 +19,39 @@ type tlogger logz.Type
 
 var logger = logz.Create(tlogger(true))
 
+func fixSchema(s bigquery.Schema) bigquery.Schema {
+	if s == nil {
+		return nil
+	}
+	schema := make(bigquery.Schema, len(s))
+	for i, f := range s {
+		if f == nil {
+			schema[i] = nil
+			continue
+		}
+		fCopy := *f
+		if len(fCopy.Schema) > 0 {
+			fCopy.Schema = fixSchema(fCopy.Schema)
+		}
+		schema[i] = &fCopy
+	}
+
+	slices.SortFunc(schema, func(a, b *bigquery.FieldSchema) int {
+		if a == nil && b == nil {
+			return 0
+		}
+		if a == nil {
+			return -1
+		}
+		if b == nil {
+			return 1
+		}
+		return strings.Compare(a.Name, b.Name)
+	})
+
+	return schema
+}
+
 // CreateExternalTable implements [bqz.Service].
 func (b *BqzServiceImpl) CreateExternalTable(ctx context.Context, table *bqz.ExternalTable) error {
 	err := b.CreateDataset(ctx, &bqz.Dataset{
@@ -34,13 +67,15 @@ func (b *BqzServiceImpl) CreateExternalTable(ctx context.Context, table *bqz.Ext
 	schema, ok := table.Schema.(bigquery.Schema)
 	if !ok {
 		schema, err = bigquery.InferSchema(table.Schema)
-		logger.Info(ctx, "INFER SCHEMA", map[string]any{"schema": schema, "err": err, "table": table, "sample": fmt.Sprintf("%T %#v", table.Schema, table.Schema)})
+		logger.Info(ctx, "INFER SCHEMA BEFORE", map[string]any{"schema": schema, "err": err, "table": table, "sample": fmt.Sprintf("%T %#v", table.Schema, table.Schema)})
 		if err != nil {
 			return fmt.Errorf("failed to infer schema for external table %s: %w", table.Table.Get(), err)
 		}
+		schema = fixSchema(schema)
+		logger.Info(ctx, "INFER SCHEMA AFTER", map[string]any{"schema": schema, "table": table, "sample": fmt.Sprintf("%T %#v", table.Schema, table.Schema)})
+	} else {
+		schema = slices.Clone(schema)
 	}
-
-	schema = slices.Clone(schema)
 
 	extConfig := &bigquery.ExternalDataConfig{
 		SourceFormat:        bigquery.JSON,
