@@ -279,3 +279,148 @@ func TestUnitBitmapzUint8(t *testing.T) {
 		})
 	})
 }
+
+func TestUnitBitmapzSerialize(t *testing.T) {
+	type testScenario struct {
+		value Grant
+		want  []byte
+	}
+
+	check := func(t *testing.T, s testScenario) {
+		t.Helper()
+		got := bitmapz.Serialize(s.value)
+		require.Equal(t, s.want, got)
+
+		back, err := bitmapz.Deserialize[Grant](got)
+		require.NoError(t, err)
+		require.Equal(t, s.value, back)
+	}
+
+	t.Run("Value 0 produces 1 byte with 0x00", func(t *testing.T) {
+		check(t, testScenario{
+			value: 0,
+			want:  []byte{0x00},
+		})
+	})
+
+	t.Run("Value 1 produces 1 byte with 0x01", func(t *testing.T) {
+		check(t, testScenario{
+			value: 1,
+			want:  []byte{0x01},
+		})
+	})
+
+	t.Run("Value 15 produces 1 byte with 0x0F", func(t *testing.T) {
+		check(t, testScenario{
+			value: 15,
+			want:  []byte{0x0F},
+		})
+	})
+
+	t.Run("Value 16 produces 2 bytes with 0x10 header", func(t *testing.T) {
+		check(t, testScenario{
+			value: 16,
+			want:  []byte{0x10, 0x10},
+		})
+	})
+
+	t.Run("Value 255 produces 2 bytes with 0x10 header", func(t *testing.T) {
+		check(t, testScenario{
+			value: 255,
+			want:  []byte{0x10, 0xFF},
+		})
+	})
+
+	t.Run("Value 256 produces 3 bytes with 0x20 header", func(t *testing.T) {
+		check(t, testScenario{
+			value: 256,
+			want:  []byte{0x20, 0x00, 0x01},
+		})
+	})
+
+	t.Run("Value 3 bytes produces 4 bytes with 0x30 header", func(t *testing.T) {
+		check(t, testScenario{
+			value: 0x123456,
+			want:  []byte{0x30, 0x56, 0x34, 0x12},
+		})
+	})
+
+	t.Run("Full 64-bit value produces 9 bytes with 0x80 header", func(t *testing.T) {
+		check(t, testScenario{
+			value: 0xFFFFFFFFFFFFFFFF,
+			want:  []byte{0x80, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF},
+		})
+	})
+
+	t.Run("Highest bit set produces 9 bytes with 0x80 header", func(t *testing.T) {
+		check(t, testScenario{
+			value: 1 << 63,
+			want:  []byte{0x80, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x80},
+		})
+	})
+}
+
+func TestUnitBitmapzDeserializeErrors(t *testing.T) {
+	type testScenario struct {
+		data   []byte
+		errMsg string
+	}
+
+	check := func(t *testing.T, s testScenario) {
+		t.Helper()
+		_, err := bitmapz.Deserialize[Grant](s.data)
+		require.Error(t, err)
+		require.Contains(t, err.Error(), s.errMsg)
+	}
+
+	t.Run("Empty data returns error", func(t *testing.T) {
+		check(t, testScenario{
+			data:   nil,
+			errMsg: "data is empty",
+		})
+	})
+
+	t.Run("Size greater than 8 returns error", func(t *testing.T) {
+		check(t, testScenario{
+			data:   []byte{0x90, 0x01},
+			errMsg: "cannot exceed 8 bytes",
+		})
+	})
+
+	t.Run("Size 0 with extra bytes returns error", func(t *testing.T) {
+		check(t, testScenario{
+			data:   []byte{0x01, 0x02},
+			errMsg: "expected 1 byte for 4-bit value",
+		})
+	})
+
+	t.Run("Non-zero lower nibble when size > 0 returns error", func(t *testing.T) {
+		check(t, testScenario{
+			data:   []byte{0x11, 0x02},
+			errMsg: "lower 4 bits must be 0",
+		})
+	})
+
+	t.Run("Payload shorter than size returns error", func(t *testing.T) {
+		check(t, testScenario{
+			data:   []byte{0x20, 0x01},
+			errMsg: "invalid data length: expected 3 bytes for size 2, got 2",
+		})
+	})
+
+	t.Run("Payload longer than size returns error", func(t *testing.T) {
+		check(t, testScenario{
+			data:   []byte{0x10, 0x01, 0x02},
+			errMsg: "invalid data length: expected 2 bytes for size 1, got 3",
+		})
+	})
+}
+
+func TestUnitBitmapzDeserializeOverflow(t *testing.T) {
+	// 256 requires 2 bytes and overflows uint8
+	data := bitmapz.Serialize(uint16(256))
+	_, err := bitmapz.Deserialize[Uint8Flag](data)
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "overflows type")
+}
+
