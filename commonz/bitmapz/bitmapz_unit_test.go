@@ -8,6 +8,16 @@ import (
 )
 
 func TestUnitBitmapExpand(t *testing.T) {
-	require.Equal(t, true, bitmapz.Contains(6, 4))
-	require.Equal(t, false, bitmapz.Contains(6, 1))
+
+	// type Grant bitmapz.Bit
+	// type Grants bitmapz.Bitmap
+
+	var read bitmapz.Bit = 1
+	var _ bitmapz.Bit = 2
+	var admin bitmapz.Bit = 4
+
+	var grants bitmapz.Bitmap = 6
+
+	require.Equal(t, true, bitmapz.Contains(grants, admin))
+	require.Equal(t, false, bitmapz.Contains(grants, read))
 }
