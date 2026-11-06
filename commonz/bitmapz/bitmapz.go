@@ -27,7 +27,9 @@ type Grant Bit
 
 var Read Grant = create[Grant](1, "READ")
 
-type Grants uint64
+type u[T Bit] uint64
+
+type Grants u[Grant]
 
 func (v Grants) Value() uint64 { return uint64(v) }
 
