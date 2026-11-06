@@ -2,21 +2,23 @@ package bitmapz
 
 import (
 	"math/bits"
-
-	"golang.org/x/exp/constraints"
 )
 
-func ContainsAll[T constraints.Unsigned](current T, expected ...T) bool {
+type Bits interface {
+	~uint64
+}
+
+func ContainsAll[T Bits](current T, expected ...T) bool {
 	all := Join(expected...)
 	return current&all == all
 }
 
-func ContainsAny[T constraints.Unsigned](current T, expected ...T) bool {
+func ContainsAny[T Bits](current T, expected ...T) bool {
 	any := Join(expected...)
 	return (current & any) != 0
 }
 
-func Split[T constraints.Unsigned](current T) []T {
+func Split[T Bits](current T) []T {
 	if current == 0 {
 		return nil
 	}
@@ -30,7 +32,7 @@ func Split[T constraints.Unsigned](current T) []T {
 	return result
 }
 
-func Join[T constraints.Unsigned](values ...T) T {
+func Join[T Bits](values ...T) T {
 	var result T
 	for _, v := range values {
 		result |= v
@@ -38,7 +40,7 @@ func Join[T constraints.Unsigned](values ...T) T {
 	return result
 }
 
-func Set[T constraints.Unsigned](current T, enable bool, values ...T) T {
+func Set[T Bits](current T, enable bool, values ...T) T {
 	mask := Join(values...)
 	if enable {
 		return current | mask
