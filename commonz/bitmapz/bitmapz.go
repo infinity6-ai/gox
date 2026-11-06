@@ -1,49 +1,49 @@
 package bitmapz
 
-import (
-	"math/bits"
-)
-
-type Bits interface {
-	~uint64
+type Bit interface {
+	Name() string
 }
 
-func ContainsAll[T Bits](current T, expected ...T) bool {
-	all := Join(expected...)
-	return current&all == all
+type Bits[T Bit] interface {
+	Value() uint64
 }
 
-func ContainsAny[T Bits](current T, expected ...T) bool {
-	any := Join(expected...)
-	return (current & any) != 0
+type bitImpl struct {
+	v uint64
+	n string
 }
 
-func Split[T Bits](current T) []T {
-	if current == 0 {
-		return nil
-	}
-	count := bits.OnesCount64(uint64(current))
-	result := make([]T, 0, count)
-	for current != 0 {
-		bit := current & -current
-		result = append(result, bit)
-		current &^= bit
-	}
-	return result
+func (x bitImpl) Name() string {
+	return x.n
 }
 
-func Join[T Bits](values ...T) T {
-	var result T
-	for _, v := range values {
-		result |= v
-	}
-	return result
+func create[T Bit](i uint64, s string) T {
+	var ret Bit
+	ret = &bitImpl{v: i, n: s}
+	return ret.(T)
 }
 
-func Set[T Bits](current T, enable bool, values ...T) T {
-	mask := Join(values...)
-	if enable {
-		return current | mask
-	}
-	return current &^ mask
+type Grant Bit
+
+var Read Grant = create[Grant](1, "READ")
+
+type Grants uint64
+
+func (v Grants) Value() uint64 { return uint64(v) }
+
+// func removeit() {
+// 	x := Grants(1)
+// 	ContainsAll(x, Read)
+// 	var s []Grant
+// 	Split(x, &s)
+// }
+
+func ContainsAll[T Bits[B], B Bit](a T, b B) bool {
+	panic("aaa")
 }
+
+func Split[T Bits[B], B Bit](current T, target *[]B) []B {
+	panic("xx")
+}
+
+// implement: ContainsAny, Split, Join
