@@ -31,12 +31,12 @@ type Grants uint64
 
 func (v Grants) Value() uint64 { return uint64(v) }
 
-// func removeit() {
-// 	x := Grants(1)
-// 	ContainsAll(x, Read)
-// 	var s []Grant
-// 	Split(x, &s)
-// }
+func removeit() {
+	x := Grants(1)
+	ContainsAll(x, Read)
+	var s []Grant
+	Split(x, &s)
+}
 
 func ContainsAll[T Bits[B], B Bit](a T, b B) bool {
 	panic("aaa")
