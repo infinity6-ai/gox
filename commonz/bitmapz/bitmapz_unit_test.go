@@ -279,4 +279,3 @@ func TestUnitBitmapzUint8(t *testing.T) {
 		})
 	})
 }
-
