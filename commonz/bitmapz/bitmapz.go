@@ -1,52 +1,58 @@
 package bitmapz
 
-type Bit interface {
-	Name() string
+import (
+	"math/bits"
+)
+
+// Bits is a constraint that permits any unsigned integer type used for bitmasks.
+type Bits interface {
+	~uint | ~uint8 | ~uint16 | ~uint32 | ~uint64 | ~uintptr
 }
 
-type Bits[T Bit] interface {
-	Value() uint64
+// ContainsAll reports whether current contains all bits in expected.
+// If expected is empty, it returns true.
+func ContainsAll[T Bits](current T, expected ...T) bool {
+	all := Join(expected...)
+	return current&all == all
 }
 
-type bitImpl struct {
-	v uint64
-	n string
+// ContainsAny reports whether current contains at least one of the bits in expected.
+// If expected is empty or current is 0, it returns false.
+func ContainsAny[T Bits](current T, expected ...T) bool {
+	any := Join(expected...)
+	return (current & any) != 0
 }
 
-func (x bitImpl) Name() string {
-	return x.n
+// Split decomposes current into a slice of individual set bits in ascending order.
+// If current is 0, it returns nil.
+func Split[T Bits](current T) []T {
+	if current == 0 {
+		return nil
+	}
+	count := bits.OnesCount64(uint64(current))
+	result := make([]T, 0, count)
+	for current != 0 {
+		bit := current & -current
+		result = append(result, bit)
+		current &^= bit
+	}
+	return result
 }
 
-func create[T Bit](i uint64, s string) T {
-	var ret Bit
-	ret = &bitImpl{v: i, n: s}
-	return ret.(T)
+// Join combines all given values into a single bitmask using bitwise OR.
+func Join[T Bits](values ...T) T {
+	var result T
+	for _, v := range values {
+		result |= v
+	}
+	return result
 }
 
-type Grant Bit
-
-var Read Grant = create[Grant](1, "READ")
-
-type u[T Bit] uint64
-
-type Grants u[Grant]
-
-func (v Grants) Value() uint64 { return uint64(v) }
-
-func removeit() {
-	var x Grants
-	x = Grants(1)
-	ContainsAll(x, Read)
-	var s []Grant
-	Split(x, &s)
+// Set adds or removes the given values from current based on enable.
+func Set[T Bits](current T, enable bool, values ...T) T {
+	mask := Join(values...)
+	if enable {
+		return current | mask
+	}
+	return current &^ mask
 }
-
-func ContainsAll[T Bits[B], B Bit](a T, b B) bool {
-	panic("aaa")
-}
-
-func Split[T Bits[B], B Bit](current T, target *[]B) []B {
-	panic("xx")
-}
-
-// implement: ContainsAny, Split, Join
