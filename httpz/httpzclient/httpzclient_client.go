@@ -114,11 +114,26 @@ func (c *Client) MustDo(ctx context.Context, req *httpzrequest.Req) *Resp {
 // Do executes an HTTP request through the registered filter middleware pipeline.
 func (c *Client) Do(ctx context.Context, req *httpzrequest.Req) (*Resp, error) {
 	var h Handler = c.send
-	for i := len(c.filters) - 1; i >= 0; i-- {
-		filter := c.filters[i]
-		next := h
-		h = func(ctx context.Context, req *httpzrequest.Req) (*Resp, error) {
-			return filter(ctx, req, next)
+
+	var outer, inner []Filter
+	if ctxFilters, _ := ctx.Value(filtersKey).(*contextFilters); ctxFilters != nil {
+		outer = ctxFilters.outer
+		inner = ctxFilters.inner
+	}
+
+	totalLen := len(outer) + len(c.filters) + len(inner)
+	if totalLen > 0 {
+		allFilters := make([]Filter, 0, totalLen)
+		allFilters = append(allFilters, outer...)
+		allFilters = append(allFilters, c.filters...)
+		allFilters = append(allFilters, inner...)
+
+		for i := len(allFilters) - 1; i >= 0; i-- {
+			filter := allFilters[i]
+			next := h
+			h = func(ctx context.Context, req *httpzrequest.Req) (*Resp, error) {
+				return filter(ctx, req, next)
+			}
 		}
 	}
 	return h(ctx, req)
