@@ -1,46 +1,22 @@
 package cryptzjwt
 
 import (
-	"encoding/json"
-	"fmt"
-
 	"github.com/infinity6-ai/gox/cryptz/cryptzjwt/internal/pb/cryptzjwtpb"
 )
 
 type JWTHeader struct {
 	Alg string `json:"alg"`
 	Typ string `json:"typ"`
-	Key string `json:"key,omitempty"`
 	Kid string `json:"kid,omitempty"`
 }
 
 func (d *JWTHeader) KeyId() string {
-	if d.Kid != "" {
-		return d.Kid
-	}
-	return d.Key
-}
-
-func (d *JWTHeader) UnmarshalJSON(b []byte) error {
-	type Alias JWTHeader
-	aux := &struct {
-		*Alias
-	}{
-		Alias: (*Alias)(d),
-	}
-	if err := json.Unmarshal(b, aux); err != nil {
-		return fmt.Errorf("failed to unmarshal jwt header: %w", err)
-	}
-	if d.Key == "" && d.Kid != "" {
-		d.Key = d.Kid
-	}
-	return nil
+	return d.Kid
 }
 
 func (d *JWTHeader) FromProto(pb *cryptzjwtpb.JWTHeader) {
 	d.Alg = pb.Alg
 	d.Typ = pb.Typ
-	d.Key = pb.Key
 	d.Kid = pb.Key
 }
 
@@ -48,7 +24,7 @@ func (d *JWTHeader) ToProto() *cryptzjwtpb.JWTHeader {
 	return &cryptzjwtpb.JWTHeader{
 		Alg: d.Alg,
 		Typ: d.Typ,
-		Key: d.KeyId(),
+		Key: d.Kid,
 	}
 }
 

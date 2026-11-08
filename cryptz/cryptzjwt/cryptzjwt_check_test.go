@@ -134,7 +134,7 @@ func TestUnitJWTBasic(t *testing.T) {
 	assert.Equal(t, "abc", parsedToken.Payload.Sub)
 	assert.Equal(t, "RS256", parsedToken.Header.Alg)
 	assert.Equal(t, "JWT", parsedToken.Header.Typ)
-	assert.Equal(t, kr.Current("i").KeyId(), parsedToken.Header.Key)
+	assert.Equal(t, kr.Current("i").KeyId(), parsedToken.Header.Kid)
 
 	checkSign(t, token, kr.Current("i").Public())
 

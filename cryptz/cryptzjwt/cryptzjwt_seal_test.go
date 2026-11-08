@@ -37,7 +37,7 @@ func TestUnitSealUnsealOK(t *testing.T) {
 	assert.Equal(t, &cryptzjwt.JWTHeader{
 		Alg: "RS256",
 		Typ: "JWT",
-		Key: issKr.Current("myiss").KeyId(),
+		Kid: issKr.Current("myiss").KeyId(),
 	}, header)
 
 	token, err := cryptzjwt.UnsealKeyRing(otherKr, tokenString)

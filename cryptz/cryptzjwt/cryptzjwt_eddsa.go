@@ -33,7 +33,6 @@ func SignEdDSA[T any](privKey ed25519.PrivateKey, keyId string, claims T) (strin
 	header := &JWTHeader{
 		Alg: "EdDSA",
 		Typ: "JWT",
-		Key: keyId,
 		Kid: keyId,
 	}
 
@@ -113,7 +112,6 @@ func SealEdDSA[T any](kr *cryptz25519keyring.KeyRing, owner string, claims T) (*
 	header := &JWTHeader{
 		Alg: "EdDSA",
 		Typ: "JWT",
-		Key: key.KeyId(),
 		Kid: key.KeyId(),
 	}
 

@@ -190,7 +190,7 @@ func (b *builderImpl) SetHeaderType(typ string) builderSetKey {
 }
 
 func (b *builderImpl) SetKey(key string) builderLast {
-	b.token.Header.Key = key
+	b.token.Header.Kid = key
 	return b
 }
 

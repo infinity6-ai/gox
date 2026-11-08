@@ -54,7 +54,7 @@ func (v *verifierImpl) AnyHeaderAlg() Verifier {
 // AnyHeaderKey implements [Verifier].
 func (v *verifierImpl) AnyHeaderKey() Verifier {
 	v.addFunc(func(token *JWTToken) error {
-		if token.Header.Key == "" {
+		if token.Header.KeyId() == "" {
 			return fmt.Errorf("header key id is required")
 		}
 		return nil
@@ -92,11 +92,11 @@ func (v *verifierImpl) SetHeaderKeys(keys ...string) Verifier {
 	checker.NotEmpty(keys, "keys")
 	v.addFunc(func(token *JWTToken) error {
 		for _, element := range keys {
-			if token.Header.Key == element {
+			if token.Header.KeyId() == element {
 				return nil
 			}
 		}
-		return fmt.Errorf("header key not allowed, expected: %s, but was: %s", keys, token.Header.Key)
+		return fmt.Errorf("header key not allowed, expected: %s, but was: %s", keys, token.Header.KeyId())
 	})
 	return v
 }

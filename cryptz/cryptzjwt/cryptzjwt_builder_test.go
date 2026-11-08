@@ -48,7 +48,7 @@ func TestUnitStrictBuilder(t *testing.T) {
 	assert.Equal(t, &cryptzjwt.JWTHeader{
 		Alg: "myag",
 		Typ: "ht",
-		Key: "mykey",
+		Kid: "mykey",
 	}, token.Header)
 	assert.Same(t, payload, token.Payload)
 }
@@ -95,7 +95,7 @@ func TestUnitBuilderVariations(t *testing.T) {
 	assert.Equal(t, &cryptzjwt.JWTHeader{
 		Alg: "myag",
 		Typ: "ht",
-		Key: "mykey",
+		Kid: "mykey",
 	}, token.Header)
 	assert.Same(t, payload, token.Payload)
 }

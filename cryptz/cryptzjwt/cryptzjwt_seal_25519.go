@@ -24,7 +24,6 @@ func Seal25519(keyring *cryptz25519keyring.KeyRing, payload *JWTPayload) (*JWTHe
 		Header: &JWTHeader{
 			Alg: "EdDSA",
 			Typ: "JWT",
-			Key: issuerKey.KeyId(),
 			Kid: issuerKey.KeyId(),
 		},
 		Payload: payload,

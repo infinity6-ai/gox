@@ -21,7 +21,7 @@ func Seal(keyring *cryptzrsakeyring.KeyRing, payload *JWTPayload) (*JWTHeader, s
 		Header: &JWTHeader{
 			Alg: "RS256",
 			Typ: "JWT",
-			Key: issuerKey.KeyId(),
+			Kid: issuerKey.KeyId(),
 		},
 		Payload: payload,
 	}
@@ -113,7 +113,7 @@ func UnsealCallback(token string, fn func(id string, iss string) (*rsa.PublicKey
 	if err != nil {
 		return nil, err
 	}
-	key, err := fn(parsed.Token.Header.Key, parsed.Token.Payload.Iss)
+	key, err := fn(parsed.Token.Header.KeyId(), parsed.Token.Payload.Iss)
 	if err != nil {
 		return nil, err
 	}

@@ -38,7 +38,6 @@ func TestUnitSeal25519UnsealOK(t *testing.T) {
 	require.Equal(t, &cryptzjwt.JWTHeader{
 		Alg: "EdDSA",
 		Typ: "JWT",
-		Key: issKr.Current("ediss").KeyId(),
 		Kid: issKr.Current("ediss").KeyId(),
 	}, header)
 
