@@ -29,6 +29,16 @@ func ExtractPubKey(privateKey ed25519.PrivateKey) ed25519.PublicKey {
 	return NewService().ExtractPubKey(privateKey)
 }
 
+// PubKeyId returns the deterministic 16-character identifier for an Ed25519 public key.
+func PubKeyId(pub ed25519.PublicKey) string {
+	return NewService().PubKeyId(pub)
+}
+
+// PrivKeyId returns the deterministic 16-character identifier for an Ed25519 private key's corresponding public key.
+func PrivKeyId(priv ed25519.PrivateKey) string {
+	return PubKeyId(ExtractPubKey(priv))
+}
+
 // DeriveFromRSA deterministically derives an Ed25519 key pair from an existing RSA private key.
 func DeriveFromRSA(rsaKey *rsa.PrivateKey) (ed25519.PublicKey, ed25519.PrivateKey, error) {
 	if rsaKey == nil {

@@ -30,6 +30,10 @@ func SignEdDSA[T any](privKey ed25519.PrivateKey, keyId string, claims T) (strin
 		return "", fmt.Errorf("private key cannot be empty")
 	}
 
+	if keyId == "" {
+		keyId = cryptz25519.PrivKeyId(privKey)
+	}
+
 	header := &JWTHeader{
 		Alg: "EdDSA",
 		Typ: "JWT",
