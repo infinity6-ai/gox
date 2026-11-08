@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	"github.com/infinity6-ai/gox/cryptz/cryptz25519"
+	"github.com/infinity6-ai/gox/cryptz/cryptzrsa"
 	"github.com/stretchr/testify/require"
 )
 
@@ -141,5 +142,70 @@ func TestUnit25519Command(t *testing.T) {
 		pubData, err := os.ReadFile(genPub)
 		require.NoError(t, err)
 		require.Contains(t, string(pubData), "-----BEGIN PUBLIC KEY-----")
+	})
+
+	t.Run("25519 derive-rsa derives keys deterministically", func(t *testing.T) {
+		rsaService := cryptzrsa.NewService()
+		rsaPriv := rsaService.PrivKeyCreate(2048)
+		rsaPrivPEM := rsaService.PrivKeyExport(rsaPriv)
+		rsaKeyFile := filepath.Join(tempDir, "rsa_priv.pem")
+		require.NoError(t, os.WriteFile(rsaKeyFile, []byte(rsaPrivPEM), 0600))
+
+		derivePriv := filepath.Join(tempDir, "derived_priv.pem")
+		derivePub := filepath.Join(tempDir, "derived_pub.pem")
+
+		deriveCmd := new25519DeriveRsaCmd()
+		var deriveBuf bytes.Buffer
+		deriveCmd.SetOut(&deriveBuf)
+		deriveCmd.SetArgs([]string{"-k", rsaKeyFile, "--priv-out", derivePriv, "--pub-out", derivePub})
+
+		err := deriveCmd.Execute()
+		require.NoError(t, err)
+
+		privBytes1, err := os.ReadFile(derivePriv)
+		require.NoError(t, err)
+		pubBytes1, err := os.ReadFile(derivePub)
+		require.NoError(t, err)
+
+		require.Contains(t, string(privBytes1), "-----BEGIN PRIVATE KEY-----")
+		require.Contains(t, string(pubBytes1), "-----BEGIN PUBLIC KEY-----")
+
+		// Re-derive to verify determinism
+		derivePriv2 := filepath.Join(tempDir, "derived_priv2.pem")
+		derivePub2 := filepath.Join(tempDir, "derived_pub2.pem")
+
+		deriveCmd2 := new25519DeriveRsaCmd()
+		var deriveBuf2 bytes.Buffer
+		deriveCmd2.SetOut(&deriveBuf2)
+		deriveCmd2.SetArgs([]string{"-k", rsaKeyFile, "--priv-out", derivePriv2, "--pub-out", derivePub2})
+
+		err = deriveCmd2.Execute()
+		require.NoError(t, err)
+
+		privBytes2, err := os.ReadFile(derivePriv2)
+		require.NoError(t, err)
+		pubBytes2, err := os.ReadFile(derivePub2)
+		require.NoError(t, err)
+
+		require.Equal(t, string(privBytes1), string(privBytes2))
+		require.Equal(t, string(pubBytes1), string(pubBytes2))
+
+		// Verify that imported derived private key matches the derived public key
+		importedPriv := s.PrivKeyImport(string(privBytes1))
+		extractedPub := importedPriv.Public().(ed25519.PublicKey)
+		require.Equal(t, strings.TrimSpace(string(pubBytes1)), strings.TrimSpace(s.PubKeyExport(extractedPub)))
+	})
+
+	t.Run("25519 derive-rsa fails with invalid RSA key", func(t *testing.T) {
+		invalidKeyFile := filepath.Join(tempDir, "invalid.pem")
+		require.NoError(t, os.WriteFile(invalidKeyFile, []byte("invalid pem data"), 0600))
+
+		deriveCmd := new25519DeriveRsaCmd()
+		var deriveBuf bytes.Buffer
+		deriveCmd.SetOut(&deriveBuf)
+		deriveCmd.SetArgs([]string{"-k", invalidKeyFile})
+
+		err := deriveCmd.Execute()
+		require.Error(t, err)
 	})
 }

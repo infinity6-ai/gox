@@ -9,13 +9,14 @@ import (
 	"github.com/infinity6-ai/gox/cryptz/cryptz25519"
 	"github.com/infinity6-ai/gox/cryptz/cryptz25519/cryptz25519service"
 	"github.com/infinity6-ai/gox/cryptz/cryptzb64"
+	"github.com/infinity6-ai/gox/cryptz/cryptzrsa"
 	"github.com/spf13/cobra"
 )
 
 func new25519Cmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "25519",
-		Short: "Curve25519 (Ed25519/X25519) utilities (keygen, pubkey extraction, sign, verify, encrypt, decrypt, id)",
+		Short: "Curve25519 (Ed25519/X25519) utilities (keygen, pubkey extraction, sign, verify, encrypt, decrypt, id, derive-rsa)",
 	}
 
 	cmd.AddCommand(
@@ -26,6 +27,7 @@ func new25519Cmd() *cobra.Command {
 		new25519EncryptCmd(),
 		new25519DecryptCmd(),
 		new25519IdCmd(),
+		new25519DeriveRsaCmd(),
 	)
 
 	return cmd
@@ -353,6 +355,63 @@ func new25519IdCmd() *cobra.Command {
 	}
 	cmd.Flags().StringVarP(&keyPath, "key", "k", "", "Key file or PEM string (use '-' for stdin)")
 	cmd.MarkFlagRequired("key")
+
+	return cmd
+}
+
+func new25519DeriveRsaCmd() *cobra.Command {
+	var keyPath string
+	var privOut string
+	var pubOut string
+
+	cmd := &cobra.Command{
+		Use:   "derive-rsa",
+		Short: "Deterministically derive an Ed25519 key pair from an RSA private key",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			keyPEM, err := loadKey(keyPath)
+			if err != nil {
+				return err
+			}
+			rsaService := cryptzrsa.NewService()
+			rsaPriv, err := safePrivKeyImport(rsaService, keyPEM)
+			if err != nil {
+				return fmt.Errorf("failed to import RSA private key: %w", err)
+			}
+
+			pub, priv, err := cryptz25519.DeriveFromRSA(rsaPriv)
+			if err != nil {
+				return fmt.Errorf("failed to derive Ed25519 key pair: %w", err)
+			}
+
+			s25519 := cryptz25519.NewService()
+			privStr := s25519.PrivKeyExport(priv)
+			pubStr := s25519.PubKeyExport(pub)
+			stdout := cmd.OutOrStdout()
+
+			if privOut != "" {
+				if err := os.WriteFile(privOut, []byte(privStr), 0600); err != nil {
+					return fmt.Errorf("failed to write private key to %s: %w", privOut, err)
+				}
+				fmt.Fprintf(stdout, "Private key written to %s\n", privOut)
+			} else {
+				fmt.Fprintln(stdout, privStr)
+			}
+
+			if pubOut != "" {
+				if err := os.WriteFile(pubOut, []byte(pubStr), 0644); err != nil {
+					return fmt.Errorf("failed to write public key to %s: %w", pubOut, err)
+				}
+				fmt.Fprintf(stdout, "Public key written to %s\n", pubOut)
+			} else if privOut != "" {
+				fmt.Fprintln(stdout, pubStr)
+			}
+			return nil
+		},
+	}
+	cmd.Flags().StringVarP(&keyPath, "key", "k", "", "Path to RSA private key PEM file, or '-' for stdin")
+	cmd.Flags().StringVar(&privOut, "priv-out", "", "File to write derived private key to")
+	cmd.Flags().StringVar(&pubOut, "pub-out", "", "File to write derived public key to")
+	_ = cmd.MarkFlagRequired("key")
 
 	return cmd
 }

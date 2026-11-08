@@ -164,7 +164,27 @@ function cmd_25519() {
   dec=$($BIN 25519 decrypt -k "$priv" --label "25519lbl" "$enc")
   assert_eq "confidential 25519" "$dec" "25519 encrypt/decrypt"
 
-  echo "  OK: 25519 gen, pub, id, sign, verify, encrypt, decrypt"
+  # Test derive-rsa deterministic derivation
+  local rsa_for_derive="$TMP_DIR/rsa_for_derive.pem"
+  $BIN rsa gen -b 1024 --priv-out "$rsa_for_derive" > /dev/null
+
+  local d_priv1="$TMP_DIR/derived_priv1.pem"
+  local d_pub1="$TMP_DIR/derived_pub1.pem"
+  local d_priv2="$TMP_DIR/derived_priv2.pem"
+  local d_pub2="$TMP_DIR/derived_pub2.pem"
+
+  $BIN 25519 derive-rsa -k "$rsa_for_derive" --priv-out "$d_priv1" --pub-out "$d_pub1" > /dev/null
+  [ -f "$d_priv1" ] && [ -f "$d_pub1" ]
+
+  $BIN 25519 derive-rsa -k "$rsa_for_derive" --priv-out "$d_priv2" --pub-out "$d_pub2" > /dev/null
+  assert_eq "$(cat "$d_priv1")" "$(cat "$d_priv2")" "derive-rsa private key determinism"
+  assert_eq "$(cat "$d_pub1")" "$(cat "$d_pub2")" "derive-rsa public key determinism"
+
+  local d_sig
+  d_sig=$($BIN 25519 sign -k "$d_priv1" "derived key test message")
+  $BIN 25519 verify -k "$d_pub1" --sig "$d_sig" "derived key test message" > /dev/null
+
+  echo "  OK: 25519 gen, pub, id, sign, verify, encrypt, decrypt, derive-rsa"
 }
 
 function cmd_salt() {
