@@ -144,7 +144,12 @@ func (s *Schema) unmarshalJSONUrlValue(data []byte) error {
 	parser := s.UrlValue().Parse
 	var strs []string
 	if err := json.Unmarshal(data, &strs); err != nil {
-		return err
+		var str string
+		if errStr := json.Unmarshal(data, &str); errStr != nil {
+			return err
+		}
+		parser(str)
+		return nil
 	}
 	if len(strs) == 0 {
 		parser("")
