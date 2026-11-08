@@ -7,6 +7,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/infinity6-ai/gox/cryptz/cryptz25519"
 	"github.com/infinity6-ai/gox/cryptz/cryptzrsa"
 	"github.com/stretchr/testify/require"
 )
@@ -229,5 +230,69 @@ func TestUnitJwtCommand(t *testing.T) {
 		require.Error(t, err)
 		_, statErr := os.Stat(tamperedOutPath)
 		require.True(t, os.IsNotExist(statErr), "bxt file must not be created if verification fails")
+	})
+
+	t.Run("jwt seal with --alg EdDSA and verify with Ed25519 public key", func(t *testing.T) {
+		s25519 := cryptz25519.NewService()
+		edPriv := s25519.PrivKeyCreate()
+		edPub := cryptz25519.ExtractPubKey(edPriv)
+		edPrivStr := s25519.PrivKeyExport(edPriv)
+		edPubStr := s25519.PubKeyExport(edPub)
+
+		edPrivFile := filepath.Join(tempDir, "jwt_ed25519_priv.pem")
+		edPubFile := filepath.Join(tempDir, "jwt_ed25519_pub.pem")
+		require.NoError(t, os.WriteFile(edPrivFile, []byte(edPrivStr), 0600))
+		require.NoError(t, os.WriteFile(edPubFile, []byte(edPubStr), 0644))
+
+		sealCmd := newJwtSealCmd()
+		var sealBuf bytes.Buffer
+		sealCmd.SetOut(&sealBuf)
+		sealCmd.SetArgs([]string{
+			"-k", edPrivFile,
+			"--alg", "EdDSA",
+			"--iss", "edservice",
+			"--sub", "eduser999",
+			"--aud", "edgateway",
+			"--exp", "1h",
+		})
+		require.NoError(t, sealCmd.Execute())
+		edToken := strings.TrimSpace(sealBuf.String())
+
+		// inspect should show EdDSA
+		inspectCmd := newJwtInspectCmd()
+		var insBuf bytes.Buffer
+		inspectCmd.SetOut(&insBuf)
+		inspectCmd.SetArgs([]string{edToken})
+		require.NoError(t, inspectCmd.Execute())
+		require.Contains(t, insBuf.String(), `"alg": "EdDSA"`)
+
+		// verify with Ed25519 public key
+		verifyCmd := newJwtVerifyCmd()
+		var verBuf bytes.Buffer
+		verifyCmd.SetOut(&verBuf)
+		verifyCmd.SetArgs([]string{
+			"-k", edPubFile,
+			"--iss", "edservice",
+			"--sub", "eduser999",
+			"--aud", "edgateway",
+			edToken,
+		})
+		require.NoError(t, verifyCmd.Execute())
+		require.Contains(t, verBuf.String(), `"sub": "eduser999"`)
+
+		// verify with mismatched Ed25519 public key fails
+		otherPriv := s25519.PrivKeyCreate()
+		otherPub := cryptz25519.ExtractPubKey(otherPriv)
+		otherPubFile := filepath.Join(tempDir, "jwt_other_ed_pub.pem")
+		require.NoError(t, os.WriteFile(otherPubFile, []byte(s25519.PubKeyExport(otherPub)), 0644))
+
+		failCmd := newJwtVerifyCmd()
+		var failBuf bytes.Buffer
+		failCmd.SetOut(&failBuf)
+		failCmd.SetArgs([]string{
+			"-k", otherPubFile,
+			edToken,
+		})
+		require.Error(t, failCmd.Execute())
 	})
 }

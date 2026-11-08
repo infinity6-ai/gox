@@ -1,6 +1,7 @@
 package cmdcryptz
 
 import (
+	"crypto/ed25519"
 	"crypto/rsa"
 	"encoding/json"
 	"fmt"
@@ -8,6 +9,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/infinity6-ai/gox/cryptz/cryptz25519"
+	"github.com/infinity6-ai/gox/cryptz/cryptz25519/cryptz25519keyring"
 	"github.com/infinity6-ai/gox/cryptz/cryptzb64"
 	"github.com/infinity6-ai/gox/cryptz/cryptzjwt"
 	"github.com/infinity6-ai/gox/cryptz/cryptzrsa"
@@ -106,6 +109,7 @@ func newJwtInspectCmd() *cobra.Command {
 
 func newJwtSealCmd() *cobra.Command {
 	var keyPath string
+	var alg string
 	var iss string
 	var sub string
 	var aud string
@@ -124,14 +128,9 @@ func newJwtSealCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "seal",
 		Aliases: []string{"create"},
-		Short:   "Create and sign an RS256 JWT token using an RSA private key",
+		Short:   "Create and sign an RS256 or EdDSA JWT token using a private key",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			keyPEM, err := loadKey(keyPath)
-			if err != nil {
-				return err
-			}
-			s := cryptzrsa.NewService()
-			priv, err := safePrivKeyImport(s, keyPEM)
 			if err != nil {
 				return err
 			}
@@ -156,9 +155,29 @@ func newJwtSealCmd() *cobra.Command {
 				return fmt.Errorf("failed to build payload: %w", err)
 			}
 
-			kr := cryptzrsakeyring.NewKeyRing()
-			kr.AddPrivate(iss, priv)
-			_, tokenStr := cryptzjwt.Seal(kr, payload)
+			var tokenStr string
+			switch strings.ToUpper(alg) {
+			case "EDDSA":
+				s := cryptz25519.NewService()
+				priv, err := safePrivKeyImport25519(s, keyPEM)
+				if err != nil {
+					return fmt.Errorf("failed to import Ed25519 private key: %w", err)
+				}
+				kr := cryptz25519keyring.NewKeyRing()
+				kr.AddPrivate(iss, priv)
+				_, tokenStr = cryptzjwt.Seal25519(kr, payload)
+			case "RS256":
+				s := cryptzrsa.NewService()
+				priv, err := safePrivKeyImport(s, keyPEM)
+				if err != nil {
+					return fmt.Errorf("failed to import RSA private key: %w", err)
+				}
+				kr := cryptzrsakeyring.NewKeyRing()
+				kr.AddPrivate(iss, priv)
+				_, tokenStr = cryptzjwt.Seal(kr, payload)
+			default:
+				return fmt.Errorf("unsupported algorithm %s: expected RS256 or EdDSA", alg)
+			}
 
 			fmt.Fprintln(cmd.OutOrStdout(), tokenStr)
 			return nil
@@ -166,6 +185,7 @@ func newJwtSealCmd() *cobra.Command {
 	}
 
 	cmd.Flags().StringVarP(&keyPath, "key", "k", "", "Private key file or PEM string (use '-' for stdin)")
+	cmd.Flags().StringVar(&alg, "alg", "RS256", "Signature algorithm: RS256 or EdDSA")
 	cmd.Flags().StringVar(&iss, "iss", "app", "Issuer (must match ^[a-z][a-z0-9]*$)")
 	cmd.Flags().StringVar(&sub, "sub", "", "Subject")
 	cmd.Flags().StringVar(&aud, "aud", "", "Audience")
@@ -200,20 +220,11 @@ func newJwtVerifyCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "verify [token]",
 		Aliases: []string{"unseal"},
-		Short:   "Verify an RS256 JWT signature and claims using an RSA public key",
+		Short:   "Verify an RS256 or EdDSA JWT signature and claims using a public key",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			keyPEM, err := loadKey(keyPath)
 			if err != nil {
 				return err
-			}
-			s := cryptzrsa.NewService()
-			pub, err := safePubKeyImport(s, keyPEM)
-			if err != nil {
-				priv, privErr := safePrivKeyImport(s, keyPEM)
-				if privErr != nil {
-					return fmt.Errorf("failed to parse key: %w", err)
-				}
-				pub = &priv.PublicKey
 			}
 
 			in, err := readInput(cmd, args)
@@ -227,10 +238,46 @@ func newJwtVerifyCmd() *cobra.Command {
 				return fmt.Errorf("invalid token format: expected 3 parts, got %d", len(parts))
 			}
 
-			token, err := safeUnseal(tokenStr, pub)
+			headerRaw, err := cryptzb64.UrlDecode(parts[0])
 			if err != nil {
-				fmt.Fprintln(cmd.OutOrStderr(), "Verification failed:", err)
-				return fmt.Errorf("verification failed: %w", err)
+				return fmt.Errorf("invalid header base64: %w", err)
+			}
+			var header cryptzjwt.JWTHeader
+			if err := json.Unmarshal(headerRaw.Bytes(), &header); err != nil {
+				return fmt.Errorf("invalid header JSON: %w", err)
+			}
+
+			var token *cryptzjwt.JWTToken
+			if strings.EqualFold(header.Alg, "EDDSA") {
+				s := cryptz25519.NewService()
+				pub, err := safePubKeyImport25519(s, keyPEM)
+				if err != nil {
+					priv, privErr := safePrivKeyImport25519(s, keyPEM)
+					if privErr != nil {
+						return fmt.Errorf("failed to parse Ed25519 key: %w", err)
+					}
+					pub = cryptz25519.ExtractPubKey(priv)
+				}
+				token, err = safeUnseal25519(tokenStr, pub)
+				if err != nil {
+					fmt.Fprintln(cmd.OutOrStderr(), "Verification failed:", err)
+					return fmt.Errorf("verification failed: %w", err)
+				}
+			} else {
+				s := cryptzrsa.NewService()
+				pub, err := safePubKeyImport(s, keyPEM)
+				if err != nil {
+					priv, privErr := safePrivKeyImport(s, keyPEM)
+					if privErr != nil {
+						return fmt.Errorf("failed to parse RSA key: %w", err)
+					}
+					pub = &priv.PublicKey
+				}
+				token, err = safeUnseal(tokenStr, pub)
+				if err != nil {
+					fmt.Fprintln(cmd.OutOrStderr(), "Verification failed:", err)
+					return fmt.Errorf("verification failed: %w", err)
+				}
 			}
 
 			if expectedIss != "" && token.Payload.Iss != expectedIss {
@@ -279,6 +326,17 @@ func safeUnseal(token string, key *rsa.PublicKey) (tk *cryptzjwt.JWTToken, err e
 		}
 	}()
 	return cryptzjwt.UnsealCallback(token, func(id, iss string) (*rsa.PublicKey, error) {
+		return key, nil
+	})
+}
+
+func safeUnseal25519(token string, key ed25519.PublicKey) (tk *cryptzjwt.JWTToken, err error) {
+	defer func() {
+		if r := recover(); r != nil {
+			err = fmt.Errorf("%v", r)
+		}
+	}()
+	return cryptzjwt.Unseal25519Callback(token, func(id, iss string) (ed25519.PublicKey, error) {
 		return key, nil
 	})
 }

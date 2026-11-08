@@ -196,7 +196,23 @@ function cmd_jwt() {
   echo "$inspect_out" | grep -q "user1"
 
   $BIN jwt verify -k "$pub" --iss "auth" --sub "user1" --aud "servicea" "$token" > /dev/null
-  echo "  OK: jwt seal, inspect, verify"
+
+  # Test EdDSA JWT
+  local ed_priv="$TMP_DIR/jwt_ed_priv.pem"
+  local ed_pub="$TMP_DIR/jwt_ed_pub.pem"
+  $BIN 25519 gen --priv-out "$ed_priv" --pub-out "$ed_pub" > /dev/null
+
+  local ed_token
+  ed_token=$($BIN jwt seal --alg EdDSA -k "$ed_priv" --iss "auth" --sub "eduser1" --aud "serviceb" --exp "1h")
+  [ -n "$ed_token" ]
+
+  local ed_inspect
+  ed_inspect=$($BIN jwt inspect "$ed_token")
+  echo "$ed_inspect" | grep -q "EdDSA"
+  echo "$ed_inspect" | grep -q "eduser1"
+
+  $BIN jwt verify -k "$ed_pub" --iss "auth" --sub "eduser1" --aud "serviceb" "$ed_token" > /dev/null
+  echo "  OK: jwt seal (RS256 & EdDSA), inspect, verify"
 }
 
 function cmd_kr_rsa() {
