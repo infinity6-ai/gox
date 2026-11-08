@@ -52,7 +52,7 @@ func StructsToMapList[T any](data []T) []map[string]any {
 			switch val.Kind() {
 			case reflect.Int64, reflect.String:
 				ret[i][k] = v
-			case reflect.Int16, reflect.Int32, reflect.Float32, reflect.Float64:
+			case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Float32, reflect.Float64:
 				ret[i][k] = ToInt64(v)
 
 			case reflect.Slice:
