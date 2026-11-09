@@ -144,7 +144,7 @@ func TestUnitClientContextFilters(t *testing.T) {
 					*executionLog = append(*executionLog, "inner1-out")
 					return resp, err
 				}
-				
+
 				fOut2 := func(ctx context.Context, req *httpzrequest.Req, next httpzclient.Handler) (*httpzclient.Resp, error) {
 					*executionLog = append(*executionLog, "outer2-in")
 					resp, err := next(ctx, req)

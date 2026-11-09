@@ -45,4 +45,3 @@ func WithFilters(ctx context.Context, outer []Filter, inner []Filter) context.Co
 
 	return context.WithValue(ctx, filtersKey, &next)
 }
-
