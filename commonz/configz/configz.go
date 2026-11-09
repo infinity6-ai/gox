@@ -99,6 +99,12 @@ func (p Prop) SetEncoded(ctx context.Context, value string, values ...any) (io.C
 	return p.Set(ctx, "%s", encoded)
 }
 
+func (p Prop) MustSetEncoded(ctx context.Context, value string, values ...any) io.Closer {
+	ret, err := p.SetEncoded(ctx, value, values...)
+	errorz.Check(err)
+	return ret
+}
+
 func Sets(ctx context.Context, values map[Prop]string) (io.Closer, error) {
 	ret := reverter{}
 	for k, v := range values {
