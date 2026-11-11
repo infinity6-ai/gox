@@ -29,6 +29,7 @@ func (r Resp) RedirectJS(headers http.Header, u string) {
 		headers = make(http.Header)
 	}
 	headers.Set("Content-Type", "text/html; charset=UTF-8")
+	headers.Set("X-Js-Redirect", u)
 	w := r(http.StatusOK, headers)
 	_, err := w.Write([]byte(`<html><body onload="window.location.href='` + u + `'"></body></html>`))
 	errorz.Check(err)
