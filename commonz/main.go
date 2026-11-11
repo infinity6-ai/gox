@@ -1,4 +1,4 @@
-//go:generate go run github.com/infinity6-ai/gox/commonz staticz generate
+//go:generate go run github.com/infinity6-ai/gox/commonz@latest staticz generate
 package main
 
 import (

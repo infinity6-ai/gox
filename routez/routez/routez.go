@@ -47,7 +47,7 @@ func writeResponse(resp *apiz.Resp, serverResp httpzserver.Resp, refs *apiz.Data
 
 func parseRequest(refs *apiz.DataRefs, req *httpzrequest.Req, params map[string]string) {
 	if refs.PathParams != nil {
-		jsonz.MustCopy(converter.Params2Json(params), refs.PathParams)
+		jsonz.MustCopy(params, refs.PathParams)
 	}
 	if refs.QueryParams != nil {
 		jsonz.MustParse(jsonz.MustFormat(req.Query).Bytes(), refs.QueryParams)
