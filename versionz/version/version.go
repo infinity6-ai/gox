@@ -1,5 +1,5 @@
 package version
 
 func Version() string {
-	return "v0.0.65"
+	return "v0.0.66"
 }
