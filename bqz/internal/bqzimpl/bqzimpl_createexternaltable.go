@@ -67,12 +67,10 @@ func (b *BqzServiceImpl) CreateExternalTable(ctx context.Context, table *bqz.Ext
 	schema, ok := table.Schema.(bigquery.Schema)
 	if !ok {
 		schema, err = bigquery.InferSchema(table.Schema)
-		logger.Info(ctx, "INFER SCHEMA BEFORE", map[string]any{"schema": schema, "err": err, "table": table, "sample": fmt.Sprintf("%T %#v", table.Schema, table.Schema)})
 		if err != nil {
 			return fmt.Errorf("failed to infer schema for external table %s: %w", table.Table.Get(), err)
 		}
 		schema = fixSchema(schema)
-		logger.Info(ctx, "INFER SCHEMA AFTER", map[string]any{"schema": schema, "table": table, "sample": fmt.Sprintf("%T %#v", table.Schema, table.Schema)})
 	} else {
 		schema = slices.Clone(schema)
 	}
