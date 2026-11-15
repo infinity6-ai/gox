@@ -139,7 +139,7 @@ func (s *Server) startServer() {
 
 	s.httpServer = &http.Server{
 		Handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			ctx, span := tracerz.Span(r.Context(), "httpzserverhandler")
+			ctx, span := tracerz.Span(r.Context(), "httpzserver.handler")
 			defer span.Close()
 			req := &httpzrequest.Req{}
 			httpzhelper.FromHttpRequest(ctx, r, req)

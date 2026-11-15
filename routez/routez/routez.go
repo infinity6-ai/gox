@@ -49,7 +49,7 @@ func writeResponse(ctx context.Context, resp *apiz.Resp, serverResp httpzserver.
 }
 
 func parseRequest(ctx context.Context, refs *apiz.DataRefs, req *httpzrequest.Req, params map[string]string) {
-	ctx, span := tracerz.Span(ctx, "routez.handler")
+	ctx, span := tracerz.Span(ctx, "routez.parseRequest")
 	defer span.Close()
 	if refs.PathParams != nil {
 		jsonz.MustCopy(params, refs.PathParams)

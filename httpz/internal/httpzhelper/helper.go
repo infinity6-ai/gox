@@ -14,7 +14,7 @@ import (
 // FromHttpRequest populates a Req instance with values extracted from a standard http.Request.
 func FromHttpRequest(ctx context.Context, input *http.Request, output *httpzrequest.Req) {
 	ctx, span := tracerz.Span(ctx, "httpzserver.FromHttpRequest")
-	span.Close()
+	defer span.Close()
 	output.Method = input.Method
 	output.Path = pathz.MustParse(input.URL.Path)
 	checker.True(output.Path.IsAbsolute(), "must be absolute: %s", output.Path)
