@@ -7,6 +7,7 @@ import (
 	"net/http"
 
 	"github.com/infinity6-ai/gox/commonz/jsonz"
+	"github.com/infinity6-ai/gox/commonz/logz/tracerz"
 	"github.com/infinity6-ai/gox/httpz/httpzrequest"
 	"github.com/infinity6-ai/gox/httpz/httpzserver"
 	"github.com/infinity6-ai/gox/routez/apiz"
@@ -35,7 +36,9 @@ func EjectResponse(ctx context.Context, status int, headers http.Header) io.Writ
 	return holder.serverResp(status, headers)
 }
 
-func writeResponse(resp *apiz.Resp, serverResp httpzserver.Resp, refs *apiz.DataRefs) {
+func writeResponse(ctx context.Context, resp *apiz.Resp, serverResp httpzserver.Resp, refs *apiz.DataRefs) {
+	ctx, span := tracerz.Span(ctx, "routez.writeResponse")
+	defer span.Close()
 	if refs.RespHeaders != nil {
 		headers := map[string][]string{}
 		jsonz.MustCopy(refs.RespHeaders, &headers)
@@ -45,7 +48,9 @@ func writeResponse(resp *apiz.Resp, serverResp httpzserver.Resp, refs *apiz.Data
 	jsonz.FormatWriter(w, refs.RespBody)
 }
 
-func parseRequest(refs *apiz.DataRefs, req *httpzrequest.Req, params map[string]string) {
+func parseRequest(ctx context.Context, refs *apiz.DataRefs, req *httpzrequest.Req, params map[string]string) {
+	ctx, span := tracerz.Span(ctx, "routez.handler")
+	defer span.Close()
 	if refs.PathParams != nil {
 		jsonz.MustCopy(params, refs.PathParams)
 	}
@@ -70,8 +75,8 @@ func Register(s *httpzserver.Server, services ...apiz.Service) {
 			ctx = context.WithValue(ctx, responseKey{}, holder)
 			service := service.New()
 			refs := service.Api().ApiDataRefs()
-			parseRequest(refs, req, params)
-			resp := service.Handler(ctx)
+			parseRequest(ctx, refs, req, params)
+			resp := callService(ctx, service)
 			if holder.ejected {
 				if resp != nil {
 					panic(fmt.Errorf("handler returned non-nil response after EjectResponse: %v", resp))
@@ -90,7 +95,13 @@ func Register(s *httpzserver.Server, services ...apiz.Service) {
 			if resp.Headers.Get("Content-Type") == "" {
 				resp.Headers.Set("Content-Type", "application/json")
 			}
-			writeResponse(resp, serverResp, refs)
+			writeResponse(ctx, resp, serverResp, refs)
 		})
 	}
+}
+
+func callService(ctx context.Context, service apiz.Service) *apiz.Resp {
+	ctx, span := tracerz.Span(ctx, "routez.callService")
+	defer span.Close()
+	return service.Handler(ctx)
 }
