@@ -23,15 +23,16 @@ func TestUnitFromHttpRequest(t *testing.T) {
 	check := func(t *testing.T, s testScenario) {
 		t.Helper()
 		output := &httpzrequest.Req{}
+		ctx := t.Context()
 
 		if s.expectPanic {
 			require.Panics(t, func() {
-				httpzhelper.FromHttpRequest(s.httpReq, output)
+				httpzhelper.FromHttpRequest(ctx, s.httpReq, output)
 			})
 			return
 		}
 
-		httpzhelper.FromHttpRequest(s.httpReq, output)
+		httpzhelper.FromHttpRequest(ctx, s.httpReq, output)
 		require.Equal(t, s.httpReq.Method, output.Method)
 		require.Equal(t, s.expectedPath, output.Path.String())
 		require.Equal(t, s.httpReq.Header, output.Headers)

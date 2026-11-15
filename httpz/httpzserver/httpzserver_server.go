@@ -15,6 +15,7 @@ import (
 	"github.com/infinity6-ai/gox/commonz/errorz"
 	"github.com/infinity6-ai/gox/commonz/idgen"
 	"github.com/infinity6-ai/gox/commonz/logz"
+	"github.com/infinity6-ai/gox/commonz/logz/tracerz"
 	"github.com/infinity6-ai/gox/commonz/pathz"
 	"github.com/infinity6-ai/gox/commonz/syncz/promise"
 	"github.com/infinity6-ai/gox/commonz/urlz"
@@ -138,8 +139,10 @@ func (s *Server) startServer() {
 
 	s.httpServer = &http.Server{
 		Handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			ctx, span := tracerz.Span(r.Context(), "httpzserverhandler")
+			defer span.Close()
 			req := &httpzrequest.Req{}
-			httpzhelper.FromHttpRequest(r, req)
+			httpzhelper.FromHttpRequest(ctx, r, req)
 			if req.Headers == nil {
 				req.Headers = make(http.Header)
 			}
@@ -147,14 +150,9 @@ func (s *Server) startServer() {
 			req.Headers.Set(httpz.HeaderReqId, reqId)
 			w.Header().Set(httpz.HeaderReqId, reqId)
 			resp := func(status int, headers http.Header) io.Writer {
-				for k, v := range headers {
-					w.Header()[k] = v
-				}
-				w.Header().Set(httpz.HeaderReqId, reqId)
-				w.WriteHeader(status)
-				return w
+				return s.writeResp(ctx, headers, w, reqId, status)
 			}
-			h(r.Context(), resp, req)
+			s.callHandler(ctx, h, resp, req)
 		}),
 		BaseContext: func(l net.Listener) context.Context {
 			return s.Context
@@ -166,6 +164,23 @@ func (s *Server) startServer() {
 	s.dfz.Add(func() {
 		_ = s.httpServer.Shutdown(s.Context)
 	})
+}
+
+func (s *Server) callHandler(ctx context.Context, h Handler, resp func(status int, headers http.Header) io.Writer, req *httpzrequest.Req) {
+	ctx, span := tracerz.Span(ctx, "httpzserver.callHandler")
+	defer span.Close()
+	h(ctx, resp, req)
+}
+
+func (*Server) writeResp(ctx context.Context, headers http.Header, w http.ResponseWriter, reqId string, status int) io.Writer {
+	ctx, span := tracerz.Span(ctx, "httpzserver.writeResp")
+	defer span.Close()
+	for k, v := range headers {
+		w.Header()[k] = v
+	}
+	w.Header().Set(httpz.HeaderReqId, reqId)
+	w.WriteHeader(status)
+	return w
 }
 
 // Serve runs the server in the current goroutine, blocking until the server is

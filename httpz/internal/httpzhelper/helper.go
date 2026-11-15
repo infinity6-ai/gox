@@ -2,15 +2,19 @@
 package httpzhelper
 
 import (
+	"context"
 	"net/http"
 
+	"github.com/infinity6-ai/gox/commonz/logz/tracerz"
 	"github.com/infinity6-ai/gox/commonz/pathz"
 	"github.com/infinity6-ai/gox/commonz/validation/checker"
 	"github.com/infinity6-ai/gox/httpz/httpzrequest"
 )
 
 // FromHttpRequest populates a Req instance with values extracted from a standard http.Request.
-func FromHttpRequest(input *http.Request, output *httpzrequest.Req) {
+func FromHttpRequest(ctx context.Context, input *http.Request, output *httpzrequest.Req) {
+	ctx, span := tracerz.Span(ctx, "httpzserver.FromHttpRequest")
+	span.Close()
 	output.Method = input.Method
 	output.Path = pathz.MustParse(input.URL.Path)
 	checker.True(output.Path.IsAbsolute(), "must be absolute: %s", output.Path)
