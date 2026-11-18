@@ -45,28 +45,44 @@ func Troke(original string, opts Options) (string, error) {
 		}
 	}
 
+	escapedBegin := opts.Begin + opts.Begin
+	escapedEnd := opts.End + opts.End
+
 	var builder strings.Builder
 	builder.Grow(len(original))
 	remaining := original
 
 	for {
+		nextBegin := strings.Index(remaining, opts.Begin)
+
 		if opts.Begin != opts.End {
-			endIdx := strings.Index(remaining, opts.End)
-			beginIdx := strings.Index(remaining, opts.Begin)
-			if endIdx != -1 && (beginIdx == -1 || endIdx < beginIdx) {
+			nextEnd := strings.Index(remaining, opts.End)
+			if nextEnd != -1 && (nextBegin == -1 || nextEnd < nextBegin) {
+				if strings.HasPrefix(remaining[nextEnd:], escapedEnd) {
+					builder.WriteString(remaining[:nextEnd])
+					builder.WriteString(opts.End)
+					remaining = remaining[nextEnd+len(escapedEnd):]
+					continue
+				}
 				return "", fmt.Errorf("%w: found %q without preceding %q", ErrUnmatchedClosingDelimiter, opts.End, opts.Begin)
 			}
 		}
 
-		beginIdx := strings.Index(remaining, opts.Begin)
-		if beginIdx == -1 {
+		if nextBegin == -1 {
 			builder.WriteString(remaining)
 			break
 		}
 
-		builder.WriteString(remaining[:beginIdx])
+		if strings.HasPrefix(remaining[nextBegin:], escapedBegin) {
+			builder.WriteString(remaining[:nextBegin])
+			builder.WriteString(opts.Begin)
+			remaining = remaining[nextBegin+len(escapedBegin):]
+			continue
+		}
 
-		afterBegin := remaining[beginIdx+len(opts.Begin):]
+		builder.WriteString(remaining[:nextBegin])
+
+		afterBegin := remaining[nextBegin+len(opts.Begin):]
 
 		endIdx := strings.Index(afterBegin, opts.End)
 		if endIdx == -1 {

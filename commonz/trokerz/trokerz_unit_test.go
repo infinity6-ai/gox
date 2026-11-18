@@ -108,9 +108,9 @@ func TestUnitTroke(t *testing.T) {
 		})
 	})
 
-	t.Run("Nested delimiters return ErrUnclosedPlaceholder", func(t *testing.T) {
+	t.Run("Nested delimiters without escaping return ErrUnclosedPlaceholder", func(t *testing.T) {
 		check(t, testScenario{
-			original: "{{{{first}}}}",
+			original: "{{ {{first}} }}",
 			opts: trokerz.Options{
 				Begin: "{{",
 				End:   "}}",
@@ -242,6 +242,105 @@ func TestUnitTroke(t *testing.T) {
 			},
 			wantErr:    trokerz.ErrUnclosedPlaceholder,
 			wantErrMsg: "unclosed placeholder",
+		})
+	})
+
+	t.Run("Escaped symmetric delimiters", func(t *testing.T) {
+		check(t, testScenario{
+			original: "100%% complete: %task% (100%% done)",
+			opts: trokerz.Options{
+				Begin: "%",
+				End:   "%",
+				Get: func(v string) (string, bool, error) {
+					if v == "task" {
+						return "deploy", true, nil
+					}
+					return "", false, nil
+				},
+			},
+			want: "100% complete: deploy (100% done)",
+		})
+	})
+
+	t.Run("Escaped symmetric delimiters followed by placeholder", func(t *testing.T) {
+		check(t, testScenario{
+			original: "%%%task%",
+			opts: trokerz.Options{
+				Begin: "%",
+				End:   "%",
+				Get: func(v string) (string, bool, error) {
+					if v == "task" {
+						return "deploy", true, nil
+					}
+					return "", false, nil
+				},
+			},
+			want: "%deploy",
+		})
+	})
+
+	t.Run("Escaped asymmetric delimiters with single characters", func(t *testing.T) {
+		check(t, testScenario{
+			original: "use {{name}} or {val}",
+			opts: trokerz.Options{
+				Begin: "{",
+				End:   "}",
+				Get: func(v string) (string, bool, error) {
+					if v == "val" {
+						return "42", true, nil
+					}
+					return "", false, nil
+				},
+			},
+			want: "use {name} or 42",
+		})
+	})
+
+	t.Run("Escaped asymmetric delimiters combined with placeholder", func(t *testing.T) {
+		check(t, testScenario{
+			original: "nested: {{{val}}}",
+			opts: trokerz.Options{
+				Begin: "{",
+				End:   "}",
+				Get: func(v string) (string, bool, error) {
+					if v == "val" {
+						return "42", true, nil
+					}
+					return "", false, nil
+				},
+			},
+			want: "nested: {42}",
+		})
+	})
+
+	t.Run("Escaped multi-character delimiters", func(t *testing.T) {
+		check(t, testScenario{
+			original: "raw {{{{key}}}} and {{key}}",
+			opts: trokerz.Options{
+				Begin: "{{",
+				End:   "}}",
+				Get: func(v string) (string, bool, error) {
+					if v == "key" {
+						return "replaced", true, nil
+					}
+					return "", false, nil
+				},
+			},
+			want: "raw {{key}} and replaced",
+		})
+	})
+
+	t.Run("Escaped closing delimiters alone", func(t *testing.T) {
+		check(t, testScenario{
+			original: "closing }} and more",
+			opts: trokerz.Options{
+				Begin: "{",
+				End:   "}",
+				Get: func(v string) (string, bool, error) {
+					return "val", true, nil
+				},
+			},
+			want: "closing } and more",
 		})
 	})
 
