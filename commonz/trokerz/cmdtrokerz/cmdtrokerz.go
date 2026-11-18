@@ -21,6 +21,7 @@ type trokerzCmdOptions struct {
 	InFile       string
 	OutFile      string
 	Inplace      bool
+	Recursive    bool
 	ParamFiles   []string
 	ParamEnvs    bool
 	ParamEnvList []string
@@ -35,6 +36,7 @@ func Prepare(ctx context.Context, parent *cobra.Command) *cobra.Command {
 		inFile       string
 		outFile      string
 		inplace      bool
+		recursive    bool
 		paramFiles   []string
 		paramEnvs    bool
 		paramEnvList []string
@@ -55,6 +57,7 @@ func Prepare(ctx context.Context, parent *cobra.Command) *cobra.Command {
 				InFile:       inFile,
 				OutFile:      outFile,
 				Inplace:      inplace,
+				Recursive:    recursive,
 				ParamFiles:   paramFiles,
 				ParamEnvs:    paramEnvs,
 				ParamEnvList: paramEnvList,
@@ -70,6 +73,7 @@ func Prepare(ctx context.Context, parent *cobra.Command) *cobra.Command {
 	flags.StringVar(&inFile, "in", "", "input file (defaults to stdin if omitted or '-')")
 	flags.StringVarP(&outFile, "out", "o", "", "output file (defaults to stdout if omitted or '-')")
 	flags.BoolVarP(&inplace, "inplace", "i", false, "modify input file in-place")
+	flags.BoolVarP(&recursive, "recursive", "r", false, "recursively process directory (only with --inplace)")
 	flags.StringSliceVar(&paramFiles, "param-file", nil, "JSON file(s) containing parameters")
 	flags.BoolVar(&paramEnvs, "param-envs", false, "load all environment variables as parameters")
 	flags.StringSliceVar(&paramEnvList, "param-env", nil, "specific environment variable(s) to load")
@@ -91,6 +95,10 @@ func Execute(ctx context.Context, cmd *cobra.Command) {
 }
 
 func runTrokerz(cmd *cobra.Command, opts trokerzCmdOptions) error {
+	if opts.Recursive && !opts.Inplace {
+		return fmt.Errorf("--recursive can only be used with --inplace")
+	}
+
 	if opts.Inplace {
 		if opts.InFile == "" || opts.InFile == "-" {
 			return fmt.Errorf("--inplace requires a valid input file path (--in)")
@@ -137,6 +145,38 @@ func runTrokerz(cmd *cobra.Command, opts trokerzCmdOptions) error {
 		params[k] = v
 	}
 
+	if opts.Inplace {
+		if opts.Recursive {
+			if _, err := os.Stat(opts.InFile); err != nil {
+				return fmt.Errorf("failed to read input path %q: %w", opts.InFile, err)
+			}
+			err := filepath.WalkDir(opts.InFile, func(path string, d os.DirEntry, err error) error {
+				if err != nil {
+					return fmt.Errorf("failed to access %q: %w", path, err)
+				}
+				if d.IsDir() {
+					return nil
+				}
+				if !d.Type().IsRegular() {
+					return nil
+				}
+				if strings.HasPrefix(d.Name(), "trokerz-") && strings.HasSuffix(d.Name(), ".tmp") {
+					return nil
+				}
+				if err := replaceFileInplace(path, opts, params); err != nil {
+					return fmt.Errorf("failed to process %q: %w", path, err)
+				}
+				return nil
+			})
+			if err != nil {
+				return fmt.Errorf("failed to recursively process files: %w", err)
+			}
+			return nil
+		}
+
+		return replaceFileInplace(opts.InFile, opts, params)
+	}
+
 	var inputBytes []byte
 	var inPath string
 	if opts.InFile != "" && opts.InFile != "-" {
@@ -172,38 +212,6 @@ func runTrokerz(cmd *cobra.Command, opts trokerzCmdOptions) error {
 		return fmt.Errorf("failed to process template: %w", err)
 	}
 
-	if opts.Inplace {
-		info, err := os.Stat(inPath)
-		if err != nil {
-			return fmt.Errorf("failed to stat input file %q: %w", inPath, err)
-		}
-		dir := filepath.Dir(inPath)
-		tmpFile, err := os.CreateTemp(dir, "trokerz-*.tmp")
-		if err != nil {
-			return fmt.Errorf("failed to create temp file: %w", err)
-		}
-		tmpPath := tmpFile.Name()
-		defer func() {
-			_ = tmpFile.Close()
-			_ = os.Remove(tmpPath)
-		}()
-
-		if _, err := tmpFile.WriteString(result); err != nil {
-			return fmt.Errorf("failed to write temp file: %w", err)
-		}
-		if err := tmpFile.Chmod(info.Mode()); err != nil {
-			return fmt.Errorf("failed to chmod temp file: %w", err)
-		}
-		if err := tmpFile.Close(); err != nil {
-			return fmt.Errorf("failed to close temp file: %w", err)
-		}
-
-		if err := os.Rename(tmpPath, inPath); err != nil {
-			return fmt.Errorf("failed to replace file in-place: %w", err)
-		}
-		return nil
-	}
-
 	if opts.OutFile != "" && opts.OutFile != "-" {
 		if err := os.MkdirAll(filepath.Dir(opts.OutFile), 0o755); err != nil {
 			return fmt.Errorf("failed to create directory for %q: %w", opts.OutFile, err)
@@ -216,6 +224,62 @@ func runTrokerz(cmd *cobra.Command, opts trokerzCmdOptions) error {
 
 	if _, err := cmd.OutOrStdout().Write([]byte(result)); err != nil {
 		return fmt.Errorf("failed to write to stdout: %w", err)
+	}
+	return nil
+}
+
+func replaceFileInplace(filePath string, opts trokerzCmdOptions, params map[string]string) error {
+	data, err := os.ReadFile(filePath)
+	if err != nil {
+		return fmt.Errorf("failed to read input file %q: %w", filePath, err)
+	}
+
+	result, err := trokerz.Troke(string(data), trokerz.Options{
+		Begin: opts.Begin,
+		End:   opts.End,
+		Get: func(k string) (string, bool, error) {
+			val, exists := params[k]
+			if exists {
+				return val, true, nil
+			}
+			if opts.FailMissing {
+				return "", false, fmt.Errorf("missing parameter %q", k)
+			}
+			return "", false, nil
+		},
+	})
+	if err != nil {
+		return fmt.Errorf("failed to process template: %w", err)
+	}
+
+	info, err := os.Stat(filePath)
+	if err != nil {
+		return fmt.Errorf("failed to stat input file %q: %w", filePath, err)
+	}
+
+	dir := filepath.Dir(filePath)
+	tmpFile, err := os.CreateTemp(dir, "trokerz-*.tmp")
+	if err != nil {
+		return fmt.Errorf("failed to create temp file: %w", err)
+	}
+	tmpPath := tmpFile.Name()
+	defer func() {
+		_ = tmpFile.Close()
+		_ = os.Remove(tmpPath)
+	}()
+
+	if _, err := tmpFile.WriteString(result); err != nil {
+		return fmt.Errorf("failed to write temp file: %w", err)
+	}
+	if err := tmpFile.Chmod(info.Mode()); err != nil {
+		return fmt.Errorf("failed to chmod temp file: %w", err)
+	}
+	if err := tmpFile.Close(); err != nil {
+		return fmt.Errorf("failed to close temp file: %w", err)
+	}
+
+	if err := os.Rename(tmpPath, filePath); err != nil {
+		return fmt.Errorf("failed to replace file in-place: %w", err)
 	}
 	return nil
 }

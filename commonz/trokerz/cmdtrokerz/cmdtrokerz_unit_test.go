@@ -32,6 +32,8 @@ func TestUnitCmdTrokerzPrepare(t *testing.T) {
 		require.Equal(t, "", cmd.Flags().Lookup("in").DefValue)
 		require.Equal(t, "", cmd.Flags().Lookup("out").DefValue)
 		require.Equal(t, "false", cmd.Flags().Lookup("inplace").DefValue)
+		require.Equal(t, "false", cmd.Flags().Lookup("recursive").DefValue)
+		require.Equal(t, "r", cmd.Flags().Lookup("recursive").Shorthand)
 		require.Equal(t, "false", cmd.Flags().Lookup("fail-missing").DefValue)
 	})
 
@@ -214,8 +216,143 @@ func TestUnitCmdTrokerzInplace(t *testing.T) {
 	require.Equal(t, os.FileMode(0o600), info.Mode().Perm())
 }
 
+func TestUnitCmdTrokerzRecursiveInplace(t *testing.T) {
+	ctx := context.Background()
+
+	t.Run("Recursively replaces templates across multiple nested directories and files", func(t *testing.T) {
+		tmpDir := t.TempDir()
+		subDir := filepath.Join(tmpDir, "sub")
+		subSubDir := filepath.Join(subDir, "sub2")
+
+		require.NoError(t, os.MkdirAll(subSubDir, 0o755))
+
+		file1 := filepath.Join(tmpDir, "file1.txt")
+		file2 := filepath.Join(subDir, "file2.json")
+		file3 := filepath.Join(subSubDir, "file3.env")
+		file4 := filepath.Join(tmpDir, "plain.txt")
+
+		require.NoError(t, os.WriteFile(file1, []byte("Hello {{name}}!"), 0o644))
+		require.NoError(t, os.WriteFile(file2, []byte(`{"app": "{{app}}"}`), 0o600))
+		require.NoError(t, os.WriteFile(file3, []byte("APP={{app}}\nNAME={{name}}"), 0o640))
+		require.NoError(t, os.WriteFile(file4, []byte("plain text no placeholders"), 0o644))
+
+		cmd := cmdtrokerz.Prepare(ctx, nil)
+		cmd.SetArgs([]string{
+			"-r",
+			"-i",
+			"--in", tmpDir,
+			"--params", "name=Alice",
+			"--params", "app=Dashboard",
+		})
+
+		err := cmd.ExecuteContext(ctx)
+		require.NoError(t, err)
+
+		data1, err := os.ReadFile(file1)
+		require.NoError(t, err)
+		require.Equal(t, "Hello Alice!", string(data1))
+
+		data2, err := os.ReadFile(file2)
+		require.NoError(t, err)
+		require.Equal(t, `{"app": "Dashboard"}`, string(data2))
+
+		data3, err := os.ReadFile(file3)
+		require.NoError(t, err)
+		require.Equal(t, "APP=Dashboard\nNAME=Alice", string(data3))
+
+		data4, err := os.ReadFile(file4)
+		require.NoError(t, err)
+		require.Equal(t, "plain text no placeholders", string(data4))
+
+		// Check permissions preserved
+		info1, err := os.Stat(file1)
+		require.NoError(t, err)
+		require.Equal(t, os.FileMode(0o644), info1.Mode().Perm())
+
+		info2, err := os.Stat(file2)
+		require.NoError(t, err)
+		require.Equal(t, os.FileMode(0o600), info2.Mode().Perm())
+
+		info3, err := os.Stat(file3)
+		require.NoError(t, err)
+		require.Equal(t, os.FileMode(0o640), info3.Mode().Perm())
+	})
+
+	t.Run("Recursively replaces with custom delimiters", func(t *testing.T) {
+		tmpDir := t.TempDir()
+		subDir := filepath.Join(tmpDir, "nested")
+		require.NoError(t, os.MkdirAll(subDir, 0o755))
+
+		targetFile := filepath.Join(subDir, "config.ini")
+		require.NoError(t, os.WriteFile(targetFile, []byte("value = <<custom>>"), 0o644))
+
+		cmd := cmdtrokerz.Prepare(ctx, nil)
+		cmd.SetArgs([]string{
+			"--recursive",
+			"--inplace",
+			"--in", tmpDir,
+			"--begin", "<<",
+			"--end", ">>",
+			"--params", "custom=success",
+		})
+
+		err := cmd.ExecuteContext(ctx)
+		require.NoError(t, err)
+
+		data, err := os.ReadFile(targetFile)
+		require.NoError(t, err)
+		require.Equal(t, "value = success", string(data))
+	})
+
+	t.Run("Fails and reports error when nested file template fails missing check", func(t *testing.T) {
+		tmpDir := t.TempDir()
+		subDir := filepath.Join(tmpDir, "sub")
+		require.NoError(t, os.MkdirAll(subDir, 0o755))
+
+		targetFile := filepath.Join(subDir, "missing.txt")
+		require.NoError(t, os.WriteFile(targetFile, []byte("unresolved: {{missing_val}}"), 0o644))
+
+		cmd := cmdtrokerz.Prepare(ctx, nil)
+		cmd.SetArgs([]string{
+			"-r",
+			"-i",
+			"--in", tmpDir,
+			"--fail-missing",
+		})
+
+		err := cmd.ExecuteContext(ctx)
+		require.Error(t, err)
+		require.Contains(t, err.Error(), `missing parameter "missing_val"`)
+		require.Contains(t, err.Error(), "failed to recursively process files")
+	})
+}
+
 func TestUnitCmdTrokerzValidationErrors(t *testing.T) {
 	ctx := context.Background()
+
+	t.Run("Recursive without inplace returns error", func(t *testing.T) {
+		cmd := cmdtrokerz.Prepare(ctx, nil)
+		cmd.SetArgs([]string{"--recursive", "--in", "somepath"})
+		err := cmd.ExecuteContext(ctx)
+		require.Error(t, err)
+		require.Contains(t, err.Error(), "--recursive can only be used with --inplace")
+	})
+
+	t.Run("Recursive shorthand -r without inplace returns error", func(t *testing.T) {
+		cmd := cmdtrokerz.Prepare(ctx, nil)
+		cmd.SetArgs([]string{"-r", "--in", "somepath"})
+		err := cmd.ExecuteContext(ctx)
+		require.Error(t, err)
+		require.Contains(t, err.Error(), "--recursive can only be used with --inplace")
+	})
+
+	t.Run("Recursive with non-existent input path returns error", func(t *testing.T) {
+		cmd := cmdtrokerz.Prepare(ctx, nil)
+		cmd.SetArgs([]string{"-r", "-i", "--in", "/non/existent/path/for/trokerz"})
+		err := cmd.ExecuteContext(ctx)
+		require.Error(t, err)
+		require.Contains(t, err.Error(), "failed to read input path")
+	})
 
 	t.Run("Inplace without in file returns error", func(t *testing.T) {
 		cmd := cmdtrokerz.Prepare(ctx, nil)
