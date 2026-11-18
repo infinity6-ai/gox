@@ -9,6 +9,7 @@ import (
 	"github.com/infinity6-ai/gox/commonz/staticz"
 	"github.com/infinity6-ai/gox/commonz/urlz"
 	"github.com/infinity6-ai/gox/httpz/httpzserver"
+	"github.com/infinity6-ai/gox/httpz/httpzserver/filters/httpzserverfilterauthbasic"
 	"github.com/infinity6-ai/gox/httpz/httpzserver/httpzserverstatic"
 )
 
@@ -16,6 +17,7 @@ type Site struct {
 	Context      context.Context
 	LocalAddress string
 	Pack         any
+	BasicUsers   map[string]string
 
 	server *httpzserver.Server
 }
@@ -39,6 +41,17 @@ func (s *Site) Listen() {
 }
 
 func (s *Site) AddHandlers() {
+	if s.BasicUsers != nil {
+		s.server.AddFilter(httpzserverfilterauthbasic.New(s.Context, httpzserverfilterauthbasic.Options{
+			Verify: func(ctx context.Context, user string, pass string) (bool, error) {
+				expectedPass, ok := s.BasicUsers[user]
+				if !ok {
+					return false, nil
+				}
+				return expectedPass == pass, nil
+			},
+		}))
+	}
 	s.server.AddHandler("GET", "/*", httpzserverstatic.StaticHandler(s.Pack))
 }
 
