@@ -204,13 +204,12 @@ func runTrokerz(cmd *cobra.Command, opts trokerzCmdOptions) error {
 		inputBytes = data
 	}
 
-	fileCtx := ctx
 	if inPath != "" {
-		fileCtx = logz.SetAttr(ctx, "file", inPath)
+		ctx = logz.SetAttr(ctx, "file", inPath)
 	}
 
 	result, err := trokerz.Troke(string(inputBytes), trokerz.Options{
-		Ctx:   fileCtx,
+		Ctx:   ctx,
 		Begin: opts.Begin,
 		End:   opts.End,
 		Get:   replaceFunc(ctx, params, opts.FailMissing),
@@ -260,10 +259,10 @@ func replaceFileInplace(ctx context.Context, filePath string, opts trokerzCmdOpt
 		return fmt.Errorf("failed to read input file %q: %w", filePath, err)
 	}
 
-	fileCtx := logz.SetAttr(ctx, "file", filePath)
+	ctx = logz.SetAttr(ctx, "file", filePath)
 
 	result, err := trokerz.Troke(string(data), trokerz.Options{
-		Ctx:   fileCtx,
+		Ctx:   ctx,
 		Begin: opts.Begin,
 		End:   opts.End,
 		Get:   replaceFunc(ctx, params, opts.FailMissing),
