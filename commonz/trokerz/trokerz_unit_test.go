@@ -122,7 +122,7 @@ func TestUnitTroke(t *testing.T) {
 		})
 	})
 
-	t.Run("Unmatched closing delimiter returns ErrUnmatchedClosingDelimiter", func(t *testing.T) {
+	t.Run("Unmatched closing delimiter is preserved as literal text", func(t *testing.T) {
 		check(t, testScenario{
 			original: "hello }} world",
 			opts: trokerz.Options{
@@ -132,12 +132,11 @@ func TestUnitTroke(t *testing.T) {
 					return "val", true, nil
 				},
 			},
-			wantErr:    trokerz.ErrUnmatchedClosingDelimiter,
-			wantErrMsg: "unmatched closing delimiter",
+			want: "hello }} world",
 		})
 	})
 
-	t.Run("Unmatched closing delimiter before valid placeholder returns ErrUnmatchedClosingDelimiter", func(t *testing.T) {
+	t.Run("Unmatched closing delimiter before valid placeholder is preserved as literal text", func(t *testing.T) {
 		check(t, testScenario{
 			original: "hello }} {{first}}",
 			opts: trokerz.Options{
@@ -147,8 +146,7 @@ func TestUnitTroke(t *testing.T) {
 					return "val", true, nil
 				},
 			},
-			wantErr:    trokerz.ErrUnmatchedClosingDelimiter,
-			wantErrMsg: "unmatched closing delimiter",
+			want: "hello }} val",
 		})
 	})
 
@@ -447,20 +445,6 @@ func TestUnitMustTroke(t *testing.T) {
 	t.Run("Panics on unclosed placeholder", func(t *testing.T) {
 		check(t, testScenario{
 			original: "hello {{name",
-			opts: trokerz.Options{
-				Begin: "{{",
-				End:   "}}",
-				Get: func(k string) (string, bool, error) {
-					return "world", true, nil
-				},
-			},
-			expectPanic: true,
-		})
-	})
-
-	t.Run("Panics on unmatched closing delimiter", func(t *testing.T) {
-		check(t, testScenario{
-			original: "hello }} world",
 			opts: trokerz.Options{
 				Begin: "{{",
 				End:   "}}",

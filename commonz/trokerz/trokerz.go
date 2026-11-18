@@ -16,9 +16,6 @@ var ErrInvalidOptions = errors.New("begin, end and get are required")
 // or when opening delimiters are interleaved without being closed.
 var ErrUnclosedPlaceholder = errors.New("unclosed placeholder")
 
-// ErrUnmatchedClosingDelimiter is returned when a closing delimiter is found without a preceding opening delimiter.
-var ErrUnmatchedClosingDelimiter = errors.New("unmatched closing delimiter")
-
 type Options struct {
 	Ctx   context.Context
 	Begin string
@@ -42,18 +39,18 @@ func Troke(original string, opts Options) (string, error) {
 		ctx = context.Background()
 	}
 
+	escapedBegin := opts.Begin + opts.Begin
+	escapedEnd := opts.End + opts.End
+
 	if opts.Begin == opts.End {
 		if !strings.Contains(original, opts.Begin) {
 			return original, nil
 		}
 	} else {
-		if !strings.Contains(original, opts.Begin) && !strings.Contains(original, opts.End) {
+		if !strings.Contains(original, opts.Begin) && !strings.Contains(original, escapedEnd) {
 			return original, nil
 		}
 	}
-
-	escapedBegin := opts.Begin + opts.Begin
-	escapedEnd := opts.End + opts.End
 
 	var builder strings.Builder
 	builder.Grow(len(original))
@@ -71,7 +68,6 @@ func Troke(original string, opts Options) (string, error) {
 					remaining = remaining[nextEnd+len(escapedEnd):]
 					continue
 				}
-				return "", fmt.Errorf("%w: found %q without preceding %q", ErrUnmatchedClosingDelimiter, opts.End, opts.Begin)
 			}
 		}
 
