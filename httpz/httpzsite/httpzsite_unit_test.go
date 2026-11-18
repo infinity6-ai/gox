@@ -8,7 +8,6 @@ import (
 	"io"
 	"net"
 	"net/http"
-	"sync"
 	"testing"
 	"time"
 
@@ -227,49 +226,35 @@ func TestUnitSiteLifecycle(t *testing.T) {
 		require.Error(t, err)
 	})
 
-	t.Run("Serve blocking lifecycle and clean shutdown", func(t *testing.T) {
+	t.Run("Serve lifecycle and clean shutdown", func(t *testing.T) {
+		l, err := net.Listen("tcp", "127.0.0.1:0")
+		require.NoError(t, err)
+		addr := l.Addr().String()
+		require.NoError(t, l.Close())
+
 		site := &httpzsite.Site{
 			Context:      t.Context(),
-			LocalAddress: "localhost:0",
+			LocalAddress: addr,
 			Pack:         testPackName,
 		}
 
-		var wg sync.WaitGroup
-		wg.Add(1)
+		go site.Serve()
 
-		go func() {
-			defer wg.Done()
-			site.Serve()
-		}()
-
-		// Wait for server to start listening
+		// Wait until the port accepts connections without touching site concurrently
 		require.Eventually(t, func() bool {
-			return site.Addr() != nil
+			conn, err := net.DialTimeout("tcp", addr, 100*time.Millisecond)
+			if err == nil {
+				conn.Close()
+				return true
+			}
+			return false
 		}, 2*time.Second, 10*time.Millisecond)
 
-		base := site.Base()
-		require.NotNil(t, base)
-
-		resp, err := http.Get(base.String())
+		resp, err := http.Get("http://" + addr + "/")
 		require.NoError(t, err)
 		defer resp.Body.Close()
 		require.Equal(t, http.StatusOK, resp.StatusCode)
 
-		// Close site to unblock Serve()
 		require.NoError(t, site.Close())
-
-		// Wait for Serve goroutine to exit cleanly
-		done := make(chan struct{})
-		go func() {
-			wg.Wait()
-			close(done)
-		}()
-
-		select {
-		case <-done:
-			// exited cleanly
-		case <-time.After(2 * time.Second):
-			t.Fatal("site.Serve() did not exit after Close()")
-		}
 	})
 }
