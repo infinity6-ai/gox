@@ -2,8 +2,11 @@ package httpzsite
 
 import (
 	"context"
+	"fmt"
 	"net"
 
+	"github.com/infinity6-ai/gox/commonz/pathz"
+	"github.com/infinity6-ai/gox/commonz/staticz"
 	"github.com/infinity6-ai/gox/commonz/urlz"
 	"github.com/infinity6-ai/gox/httpz/httpzserver"
 	"github.com/infinity6-ai/gox/httpz/httpzserver/httpzserverstatic"
@@ -15,6 +18,21 @@ type Site struct {
 	Pack         any
 
 	server *httpzserver.Server
+}
+
+// ExtractTo extracts the site's static pack assets to the specified destination path.
+func (s *Site) ExtractTo(ctx context.Context, path *pathz.Path) error {
+	if ctx == nil {
+		ctx = s.Context
+	}
+	if ctx == nil {
+		ctx = context.Background()
+	}
+	err := staticz.ExtractTo(ctx, path, s.Pack)
+	if err != nil {
+		return fmt.Errorf("failed to extract site pack to %s: %w", path, err)
+	}
+	return nil
 }
 
 func (s *Site) Listen() {
