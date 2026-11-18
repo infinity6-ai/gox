@@ -11,25 +11,25 @@ import (
 
 func TestUnitTroke(t *testing.T) {
 	type testScenario struct {
-		name        string
-		original    string
-		opts        trokerz.Options
-		want        string
-		wantErrMsg  string
-		expectPanic bool
+		original   string
+		opts       trokerz.Options
+		want       string
+		wantErrMsg string
+		wantErr    error
 	}
 
 	check := func(t *testing.T, s testScenario) {
 		t.Helper()
 
-		if s.expectPanic {
-			require.Panics(t, func() {
-				_, _ = trokerz.Troke(s.original, s.opts)
-			})
+		got, err := trokerz.Troke(s.original, s.opts)
+		if s.wantErr != nil {
+			require.Error(t, err)
+			require.ErrorIs(t, err, s.wantErr)
+			if s.wantErrMsg != "" {
+				require.Contains(t, err.Error(), s.wantErrMsg)
+			}
 			return
 		}
-
-		got, err := trokerz.Troke(s.original, s.opts)
 		if s.wantErrMsg != "" {
 			require.Error(t, err)
 			require.Contains(t, err.Error(), s.wantErrMsg)
@@ -155,7 +155,62 @@ func TestUnitTroke(t *testing.T) {
 		})
 	})
 
-	t.Run("Panic on missing Begin option", func(t *testing.T) {
+	t.Run("Unclosed opening delimiter followed by valid placeholder", func(t *testing.T) {
+		check(t, testScenario{
+			original: "hello {{ unclosed {{first}} and {{last}}!",
+			opts: trokerz.Options{
+				Begin: "{{",
+				End:   "}}",
+				Get: func(v string) (string, bool, error) {
+					switch v {
+					case "first":
+						return "John", true, nil
+					case "last":
+						return "Doe", true, nil
+					default:
+						return "", false, nil
+					}
+				},
+			},
+			want: "hello {{ unclosed John and Doe!",
+		})
+	})
+
+	t.Run("Nested delimiters preserve outer and replace inner", func(t *testing.T) {
+		check(t, testScenario{
+			original: "{{{{first}}}}",
+			opts: trokerz.Options{
+				Begin: "{{",
+				End:   "}}",
+				Get: func(v string) (string, bool, error) {
+					if v == "first" {
+						return "John", true, nil
+					}
+					return "", false, nil
+				},
+			},
+			want: "{{John}}",
+		})
+	})
+
+	t.Run("Multiple unclosed opening delimiters before valid placeholder", func(t *testing.T) {
+		check(t, testScenario{
+			original: "a {{ b {{ c {{first}} d",
+			opts: trokerz.Options{
+				Begin: "{{",
+				End:   "}}",
+				Get: func(v string) (string, bool, error) {
+					if v == "first" {
+						return "John", true, nil
+					}
+					return "", false, nil
+				},
+			},
+			want: "a {{ b {{ c John d",
+		})
+	})
+
+	t.Run("Returns error on missing Begin option", func(t *testing.T) {
 		check(t, testScenario{
 			original: "hello",
 			opts: trokerz.Options{
@@ -164,11 +219,12 @@ func TestUnitTroke(t *testing.T) {
 					return "", true, nil
 				},
 			},
-			expectPanic: true,
+			wantErr:    trokerz.ErrInvalidOptions,
+			wantErrMsg: "begin, end and get are required",
 		})
 	})
 
-	t.Run("Panic on missing End option", func(t *testing.T) {
+	t.Run("Returns error on missing End option", func(t *testing.T) {
 		check(t, testScenario{
 			original: "hello",
 			opts: trokerz.Options{
@@ -177,16 +233,79 @@ func TestUnitTroke(t *testing.T) {
 					return "", true, nil
 				},
 			},
-			expectPanic: true,
+			wantErr:    trokerz.ErrInvalidOptions,
+			wantErrMsg: "begin, end and get are required",
 		})
 	})
 
-	t.Run("Panic on missing Get callback option", func(t *testing.T) {
+	t.Run("Returns error on missing Get callback option", func(t *testing.T) {
 		check(t, testScenario{
 			original: "hello",
 			opts: trokerz.Options{
 				Begin: "{",
 				End:   "}",
+			},
+			wantErr:    trokerz.ErrInvalidOptions,
+			wantErrMsg: "begin, end and get are required",
+		})
+	})
+}
+
+func TestUnitMustTroke(t *testing.T) {
+	type testScenario struct {
+		original    string
+		opts        trokerz.Options
+		want        string
+		expectPanic bool
+	}
+
+	check := func(t *testing.T, s testScenario) {
+		t.Helper()
+
+		if s.expectPanic {
+			require.Panics(t, func() {
+				_ = trokerz.MustTroke(s.original, s.opts)
+			})
+			return
+		}
+
+		got := trokerz.MustTroke(s.original, s.opts)
+		require.Equal(t, s.want, got)
+	}
+
+	t.Run("Valid replacement returns result", func(t *testing.T) {
+		check(t, testScenario{
+			original: "hello {{name}}!",
+			opts: trokerz.Options{
+				Begin: "{{",
+				End:   "}}",
+				Get: func(k string) (string, bool, error) {
+					return "world", true, nil
+				},
+			},
+			want: "hello world!",
+		})
+	})
+
+	t.Run("Panics on invalid options", func(t *testing.T) {
+		check(t, testScenario{
+			original: "hello {{name}}",
+			opts: trokerz.Options{
+				Begin: "{{",
+			},
+			expectPanic: true,
+		})
+	})
+
+	t.Run("Panics on Get callback error", func(t *testing.T) {
+		check(t, testScenario{
+			original: "hello {{name}}",
+			opts: trokerz.Options{
+				Begin: "{{",
+				End:   "}}",
+				Get: func(k string) (string, bool, error) {
+					return "", false, errors.New("lookup failed")
+				},
 			},
 			expectPanic: true,
 		})

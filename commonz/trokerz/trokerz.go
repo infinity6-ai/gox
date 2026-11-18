@@ -1,11 +1,15 @@
 package trokerz
 
 import (
+	"errors"
 	"fmt"
 	"strings"
 
 	"github.com/infinity6-ai/gox/commonz/errorz"
 )
+
+// ErrInvalidOptions is returned when Begin, End, or Get is missing in Options.
+var ErrInvalidOptions = errors.New("begin, end and get are required")
 
 type Options struct {
 	Begin string
@@ -21,10 +25,15 @@ func MustTroke(original string, opts Options) string {
 
 func Troke(original string, opts Options) (string, error) {
 	if opts.Begin == "" || opts.End == "" || opts.Get == nil {
-		panic("begin, end and get are required")
+		return "", ErrInvalidOptions
+	}
+
+	if !strings.Contains(original, opts.Begin) {
+		return original, nil
 	}
 
 	var builder strings.Builder
+	builder.Grow(len(original))
 	remaining := original
 
 	for {
@@ -43,6 +52,15 @@ func Troke(original string, opts Options) (string, error) {
 			builder.WriteString(opts.Begin)
 			builder.WriteString(afterBegin)
 			break
+		}
+
+		if opts.Begin != opts.End {
+			if lastBegin := strings.LastIndex(afterBegin[:endIdx], opts.Begin); lastBegin != -1 {
+				builder.WriteString(opts.Begin)
+				builder.WriteString(afterBegin[:lastBegin])
+				afterBegin = afterBegin[lastBegin+len(opts.Begin):]
+				endIdx -= lastBegin + len(opts.Begin)
+			}
 		}
 
 		k := afterBegin[:endIdx]
