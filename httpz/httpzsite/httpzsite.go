@@ -17,14 +17,17 @@ type Site struct {
 	server *httpzserver.Server
 }
 
-func (s *Site) initServer() {
+func (s *Site) Listen() {
 	if s.server == nil {
 		s.server = httpzserver.New(s.Context, httpzserver.Options{
 			LocalAddress: s.LocalAddress,
 		})
-		s.server.Listen()
-		s.server.AddHandler("GET", "/*", httpzserverstatic.StaticHandler(s.Pack))
 	}
+	s.server.Listen()
+}
+
+func (s *Site) AddHandlers() {
+	s.server.AddHandler("GET", "/*", httpzserverstatic.StaticHandler(s.Pack))
 }
 
 // Addr returns the network address the server is listening on, or nil if not listening.
@@ -51,11 +54,9 @@ func (s *Site) Close() error {
 }
 
 func (s *Site) Start() {
-	s.initServer()
 	s.server.Start()
 }
 
 func (s *Site) Serve() {
-	s.initServer()
 	s.server.Serve()
 }

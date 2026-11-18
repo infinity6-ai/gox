@@ -64,6 +64,8 @@ func TestUnitSiteStaticFiles(t *testing.T) {
 		LocalAddress: "localhost:0",
 		Pack:         testPackName,
 	}
+	site.Listen()
+	site.AddHandlers()
 	site.Start()
 	defer site.Close()
 
@@ -188,15 +190,18 @@ func TestUnitSiteLifecycle(t *testing.T) {
 		require.NoError(t, site.Close())
 	})
 
-	t.Run("Start and Close lifecycle", func(t *testing.T) {
+	t.Run("Listen populates Addr and Base before Start", func(t *testing.T) {
 		site := &httpzsite.Site{
 			Context:      t.Context(),
 			LocalAddress: "localhost:0",
 			Pack:         testPackName,
 		}
-
-		site.Start()
 		defer site.Close()
+
+		require.Nil(t, site.Addr())
+		require.Nil(t, site.Base())
+
+		site.Listen()
 
 		addr := site.Addr()
 		require.NotNil(t, addr)
@@ -207,6 +212,62 @@ func TestUnitSiteLifecycle(t *testing.T) {
 		base := site.Base()
 		require.NotNil(t, base)
 		require.NotEmpty(t, base.String())
+	})
+
+	t.Run("Double listen panics", func(t *testing.T) {
+		site := &httpzsite.Site{
+			Context:      t.Context(),
+			LocalAddress: "localhost:0",
+			Pack:         testPackName,
+		}
+		defer site.Close()
+
+		site.Listen()
+		require.Panics(t, func() {
+			site.Listen()
+		})
+	})
+
+	t.Run("Start without listen panics", func(t *testing.T) {
+		site := &httpzsite.Site{
+			Context:      t.Context(),
+			LocalAddress: "localhost:0",
+			Pack:         testPackName,
+		}
+		defer site.Close()
+
+		require.Panics(t, func() {
+			site.Start()
+		})
+	})
+
+	t.Run("Serve without listen panics", func(t *testing.T) {
+		site := &httpzsite.Site{
+			Context:      t.Context(),
+			LocalAddress: "localhost:0",
+			Pack:         testPackName,
+		}
+		defer site.Close()
+
+		require.Panics(t, func() {
+			site.Serve()
+		})
+	})
+
+	t.Run("Start and Close lifecycle", func(t *testing.T) {
+		site := &httpzsite.Site{
+			Context:      t.Context(),
+			LocalAddress: "localhost:0",
+			Pack:         testPackName,
+		}
+
+		site.Listen()
+		site.AddHandlers()
+		site.Start()
+		defer site.Close()
+
+		base := site.Base()
+		require.NotNil(t, base)
 
 		// Verify server answers requests
 		resp, err := http.Get(base.String())
@@ -227,30 +288,22 @@ func TestUnitSiteLifecycle(t *testing.T) {
 	})
 
 	t.Run("Serve lifecycle and clean shutdown", func(t *testing.T) {
-		l, err := net.Listen("tcp", "127.0.0.1:0")
-		require.NoError(t, err)
-		addr := l.Addr().String()
-		require.NoError(t, l.Close())
-
 		site := &httpzsite.Site{
 			Context:      t.Context(),
-			LocalAddress: addr,
+			LocalAddress: "localhost:0",
 			Pack:         testPackName,
 		}
 
+		site.Listen()
+		site.AddHandlers()
+		defer site.Close()
+
+		base := site.Base()
+		require.NotNil(t, base)
+
 		go site.Serve()
 
-		// Wait until the port accepts connections without touching site concurrently
-		require.Eventually(t, func() bool {
-			conn, err := net.DialTimeout("tcp", addr, 100*time.Millisecond)
-			if err == nil {
-				conn.Close()
-				return true
-			}
-			return false
-		}, 2*time.Second, 10*time.Millisecond)
-
-		resp, err := http.Get("http://" + addr + "/")
+		resp, err := http.Get(base.String())
 		require.NoError(t, err)
 		defer resp.Body.Close()
 		require.Equal(t, http.StatusOK, resp.StatusCode)
