@@ -1,4 +1,4 @@
-package httpzgosite
+package httpzsite
 
 import (
 	"context"
