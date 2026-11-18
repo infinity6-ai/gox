@@ -10,6 +10,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/infinity6-ai/gox/commonz/logz"
 	"github.com/infinity6-ai/gox/commonz/trokerz"
 	"github.com/infinity6-ai/gox/versionz/version"
 	"github.com/spf13/cobra"
@@ -22,6 +23,7 @@ type trokerzCmdOptions struct {
 	OutFile      string
 	Inplace      bool
 	Recursive    bool
+	DryRun       bool
 	ParamFiles   []string
 	ParamEnvs    bool
 	ParamEnvList []string
@@ -37,6 +39,7 @@ func Prepare(ctx context.Context, parent *cobra.Command) *cobra.Command {
 		outFile      string
 		inplace      bool
 		recursive    bool
+		dryRun       bool
 		paramFiles   []string
 		paramEnvs    bool
 		paramEnvList []string
@@ -58,6 +61,7 @@ func Prepare(ctx context.Context, parent *cobra.Command) *cobra.Command {
 				OutFile:      outFile,
 				Inplace:      inplace,
 				Recursive:    recursive,
+				DryRun:       dryRun,
 				ParamFiles:   paramFiles,
 				ParamEnvs:    paramEnvs,
 				ParamEnvList: paramEnvList,
@@ -74,6 +78,7 @@ func Prepare(ctx context.Context, parent *cobra.Command) *cobra.Command {
 	flags.StringVarP(&outFile, "out", "o", "", "output file (defaults to stdout if omitted or '-')")
 	flags.BoolVarP(&inplace, "inplace", "i", false, "modify input file in-place")
 	flags.BoolVarP(&recursive, "recursive", "r", false, "recursively process directory (only with --inplace)")
+	flags.BoolVar(&dryRun, "dry-run", false, "simulate run without writing to files (requires --inplace or --out)")
 	flags.StringSliceVar(&paramFiles, "param-file", nil, "JSON file(s) containing parameters")
 	flags.BoolVar(&paramEnvs, "param-envs", false, "load all environment variables as parameters")
 	flags.StringSliceVar(&paramEnvList, "param-env", nil, "specific environment variable(s) to load")
@@ -97,6 +102,12 @@ func Execute(ctx context.Context, cmd *cobra.Command) {
 func runTrokerz(cmd *cobra.Command, opts trokerzCmdOptions) error {
 	if opts.Recursive && !opts.Inplace {
 		return fmt.Errorf("--recursive can only be used with --inplace")
+	}
+
+	if opts.DryRun {
+		if !opts.Inplace && (opts.OutFile == "" || opts.OutFile == "-") {
+			return fmt.Errorf("--dry-run requires --inplace or --out")
+		}
 	}
 
 	if opts.Inplace {
@@ -145,6 +156,11 @@ func runTrokerz(cmd *cobra.Command, opts trokerzCmdOptions) error {
 		params[k] = v
 	}
 
+	ctx := cmd.Context()
+	if ctx == nil {
+		ctx = context.Background()
+	}
+
 	if opts.Inplace {
 		if opts.Recursive {
 			if _, err := os.Stat(opts.InFile); err != nil {
@@ -163,7 +179,7 @@ func runTrokerz(cmd *cobra.Command, opts trokerzCmdOptions) error {
 				if strings.HasPrefix(d.Name(), "trokerz-") && strings.HasSuffix(d.Name(), ".tmp") {
 					return nil
 				}
-				if err := replaceFileInplace(path, opts, params); err != nil {
+				if err := replaceFileInplace(ctx, path, opts, params); err != nil {
 					return fmt.Errorf("failed to process %q: %w", path, err)
 				}
 				return nil
@@ -174,7 +190,7 @@ func runTrokerz(cmd *cobra.Command, opts trokerzCmdOptions) error {
 			return nil
 		}
 
-		return replaceFileInplace(opts.InFile, opts, params)
+		return replaceFileInplace(ctx, opts.InFile, opts, params)
 	}
 
 	var inputBytes []byte
@@ -194,7 +210,13 @@ func runTrokerz(cmd *cobra.Command, opts trokerzCmdOptions) error {
 		inputBytes = data
 	}
 
+	fileCtx := ctx
+	if inPath != "" {
+		fileCtx = logz.SetAttr(ctx, "file", inPath)
+	}
+
 	result, err := trokerz.Troke(string(inputBytes), trokerz.Options{
+		Ctx:   fileCtx,
 		Begin: opts.Begin,
 		End:   opts.End,
 		Get: func(k string) (string, bool, error) {
@@ -210,6 +232,10 @@ func runTrokerz(cmd *cobra.Command, opts trokerzCmdOptions) error {
 	})
 	if err != nil {
 		return fmt.Errorf("failed to process template: %w", err)
+	}
+
+	if opts.DryRun {
+		return nil
 	}
 
 	if opts.OutFile != "" && opts.OutFile != "-" {
@@ -228,13 +254,16 @@ func runTrokerz(cmd *cobra.Command, opts trokerzCmdOptions) error {
 	return nil
 }
 
-func replaceFileInplace(filePath string, opts trokerzCmdOptions, params map[string]string) error {
+func replaceFileInplace(ctx context.Context, filePath string, opts trokerzCmdOptions, params map[string]string) error {
 	data, err := os.ReadFile(filePath)
 	if err != nil {
 		return fmt.Errorf("failed to read input file %q: %w", filePath, err)
 	}
 
+	fileCtx := logz.SetAttr(ctx, "file", filePath)
+
 	result, err := trokerz.Troke(string(data), trokerz.Options{
+		Ctx:   fileCtx,
 		Begin: opts.Begin,
 		End:   opts.End,
 		Get: func(k string) (string, bool, error) {
@@ -250,6 +279,10 @@ func replaceFileInplace(filePath string, opts trokerzCmdOptions, params map[stri
 	})
 	if err != nil {
 		return fmt.Errorf("failed to process template: %w", err)
+	}
+
+	if opts.DryRun {
+		return nil
 	}
 
 	info, err := os.Stat(filePath)

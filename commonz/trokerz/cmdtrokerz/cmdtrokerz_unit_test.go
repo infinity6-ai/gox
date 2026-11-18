@@ -34,6 +34,7 @@ func TestUnitCmdTrokerzPrepare(t *testing.T) {
 		require.Equal(t, "false", cmd.Flags().Lookup("inplace").DefValue)
 		require.Equal(t, "false", cmd.Flags().Lookup("recursive").DefValue)
 		require.Equal(t, "r", cmd.Flags().Lookup("recursive").Shorthand)
+		require.Equal(t, "false", cmd.Flags().Lookup("dry-run").DefValue)
 		require.Equal(t, "false", cmd.Flags().Lookup("fail-missing").DefValue)
 	})
 
@@ -327,8 +328,123 @@ func TestUnitCmdTrokerzRecursiveInplace(t *testing.T) {
 	})
 }
 
+func TestUnitCmdTrokerzDryRun(t *testing.T) {
+	ctx := context.Background()
+
+	t.Run("Single file inplace dry run does not modify file", func(t *testing.T) {
+		tmpDir := t.TempDir()
+		targetFile := filepath.Join(tmpDir, "target.txt")
+		originalContent := "Hello {{name}}!"
+		require.NoError(t, os.WriteFile(targetFile, []byte(originalContent), 0o644))
+
+		cmd := cmdtrokerz.Prepare(ctx, nil)
+		cmd.SetArgs([]string{
+			"--inplace",
+			"--dry-run",
+			"--in", targetFile,
+			"--params", "name=DryRunBob",
+		})
+
+		err := cmd.ExecuteContext(ctx)
+		require.NoError(t, err)
+
+		data, err := os.ReadFile(targetFile)
+		require.NoError(t, err)
+		require.Equal(t, originalContent, string(data))
+	})
+
+	t.Run("Recursive inplace dry run does not modify nested files", func(t *testing.T) {
+		tmpDir := t.TempDir()
+		subDir := filepath.Join(tmpDir, "sub")
+		require.NoError(t, os.MkdirAll(subDir, 0o755))
+
+		file1 := filepath.Join(tmpDir, "a.txt")
+		file2 := filepath.Join(subDir, "b.txt")
+		content1 := "A: {{valA}}"
+		content2 := "B: {{valB}}"
+		require.NoError(t, os.WriteFile(file1, []byte(content1), 0o644))
+		require.NoError(t, os.WriteFile(file2, []byte(content2), 0o644))
+
+		cmd := cmdtrokerz.Prepare(ctx, nil)
+		cmd.SetArgs([]string{
+			"-r",
+			"-i",
+			"--dry-run",
+			"--in", tmpDir,
+			"--params", "valA=Alpha",
+			"--params", "valB=Beta",
+		})
+
+		err := cmd.ExecuteContext(ctx)
+		require.NoError(t, err)
+
+		data1, err := os.ReadFile(file1)
+		require.NoError(t, err)
+		require.Equal(t, content1, string(data1))
+
+		data2, err := os.ReadFile(file2)
+		require.NoError(t, err)
+		require.Equal(t, content2, string(data2))
+	})
+
+	t.Run("Out file dry run does not create output file", func(t *testing.T) {
+		tmpDir := t.TempDir()
+		inFile := filepath.Join(tmpDir, "in.txt")
+		outFile := filepath.Join(tmpDir, "nested", "out.txt")
+		require.NoError(t, os.WriteFile(inFile, []byte("Hello {{name}}!"), 0o644))
+
+		cmd := cmdtrokerz.Prepare(ctx, nil)
+		cmd.SetArgs([]string{
+			"--in", inFile,
+			"--out", outFile,
+			"--dry-run",
+			"--params", "name=World",
+		})
+
+		err := cmd.ExecuteContext(ctx)
+		require.NoError(t, err)
+
+		_, err = os.Stat(outFile)
+		require.True(t, os.IsNotExist(err))
+	})
+
+	t.Run("Dry run with fail-missing still validates template errors", func(t *testing.T) {
+		tmpDir := t.TempDir()
+		targetFile := filepath.Join(tmpDir, "target.txt")
+		require.NoError(t, os.WriteFile(targetFile, []byte("Missing: {{not_found}}"), 0o644))
+
+		cmd := cmdtrokerz.Prepare(ctx, nil)
+		cmd.SetArgs([]string{
+			"-i",
+			"--dry-run",
+			"--in", targetFile,
+			"--fail-missing",
+		})
+
+		err := cmd.ExecuteContext(ctx)
+		require.Error(t, err)
+		require.Contains(t, err.Error(), `missing parameter "not_found"`)
+	})
+}
+
 func TestUnitCmdTrokerzValidationErrors(t *testing.T) {
 	ctx := context.Background()
+
+	t.Run("Dry run without inplace or out returns error", func(t *testing.T) {
+		cmd := cmdtrokerz.Prepare(ctx, nil)
+		cmd.SetArgs([]string{"--dry-run", "--in", "somepath"})
+		err := cmd.ExecuteContext(ctx)
+		require.Error(t, err)
+		require.Contains(t, err.Error(), "--dry-run requires --inplace or --out")
+	})
+
+	t.Run("Dry run with stdout out returns error", func(t *testing.T) {
+		cmd := cmdtrokerz.Prepare(ctx, nil)
+		cmd.SetArgs([]string{"--dry-run", "--out", "-"})
+		err := cmd.ExecuteContext(ctx)
+		require.Error(t, err)
+		require.Contains(t, err.Error(), "--dry-run requires --inplace or --out")
+	})
 
 	t.Run("Recursive without inplace returns error", func(t *testing.T) {
 		cmd := cmdtrokerz.Prepare(ctx, nil)

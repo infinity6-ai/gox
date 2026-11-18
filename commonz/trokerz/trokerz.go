@@ -1,12 +1,23 @@
 package trokerz
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"strings"
 
 	"github.com/infinity6-ai/gox/commonz/errorz"
+	"github.com/infinity6-ai/gox/commonz/logz"
 )
+
+type tlogger logz.Type
+
+var logger = logz.Create(tlogger(true))
+
+// Logger returns the package-level logger.
+func Logger() logz.Logger {
+	return logger
+}
 
 // ErrInvalidOptions is returned when Begin, End, or Get is missing in Options.
 var ErrInvalidOptions = errors.New("begin, end and get are required")
@@ -19,6 +30,7 @@ var ErrUnclosedPlaceholder = errors.New("unclosed placeholder")
 var ErrUnmatchedClosingDelimiter = errors.New("unmatched closing delimiter")
 
 type Options struct {
+	Ctx   context.Context
 	Begin string
 	End   string
 	Get   func(k string) (string, bool, error)
@@ -33,6 +45,11 @@ func MustTroke(original string, opts Options) string {
 func Troke(original string, opts Options) (string, error) {
 	if opts.Begin == "" || opts.End == "" || opts.Get == nil {
 		return "", ErrInvalidOptions
+	}
+
+	ctx := opts.Ctx
+	if ctx == nil {
+		ctx = context.Background()
 	}
 
 	if opts.Begin == opts.End {
@@ -103,6 +120,10 @@ func Troke(original string, opts Options) (string, error) {
 		}
 
 		if shouldReplace {
+			logger.Info(ctx, "replace placeholder", map[string]any{
+				"key":         k,
+				"replacement": replacement,
+			})
 			builder.WriteString(replacement)
 		} else {
 			builder.WriteString(opts.Begin)

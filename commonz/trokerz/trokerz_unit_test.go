@@ -1,12 +1,13 @@
 package trokerz_test
 
 import (
+	"context"
 	"errors"
 	"testing"
 
-	"github.com/stretchr/testify/require"
-
+	"github.com/infinity6-ai/gox/commonz/logz"
 	"github.com/infinity6-ai/gox/commonz/trokerz"
+	"github.com/stretchr/testify/require"
 )
 
 func TestUnitTroke(t *testing.T) {
@@ -472,4 +473,35 @@ func TestUnitMustTroke(t *testing.T) {
 			expectPanic: true,
 		})
 	})
+}
+
+func TestUnitTrokeLogging(t *testing.T) {
+	collector := trokerz.Logger().(logz.Collector).Collector()
+	ctx := logz.SetAttr(context.Background(), "file", "test.txt")
+
+	got, err := trokerz.Troke("Hello {{name}}! Unchanged: {{missing}}", trokerz.Options{
+		Ctx:   ctx,
+		Begin: "{{",
+		End:   "}}",
+		Get: func(k string) (string, bool, error) {
+			if k == "name" {
+				return "World", true, nil
+			}
+			return "", false, nil
+		},
+	})
+	require.NoError(t, err)
+	require.Equal(t, "Hello World! Unchanged: {{missing}}", got)
+
+	entries := collector()
+	require.NotEmpty(t, entries)
+
+	for _, entry := range entries {
+		if entry.Operation == "replace placeholder" && entry.Params["key"] == `"name"` {
+			require.Equal(t, `"World"`, entry.Params["replacement"])
+			require.Equal(t, "test.txt", entry.Context["file"])
+			return
+		}
+	}
+	t.Fatalf("expected log entry for replaced placeholder not found in %v", entries)
 }
