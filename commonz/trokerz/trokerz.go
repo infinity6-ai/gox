@@ -11,6 +11,13 @@ import (
 // ErrInvalidOptions is returned when Begin, End, or Get is missing in Options.
 var ErrInvalidOptions = errors.New("begin, end and get are required")
 
+// ErrUnclosedPlaceholder is returned when an opening delimiter has no matching closing delimiter,
+// or when opening delimiters are interleaved without being closed.
+var ErrUnclosedPlaceholder = errors.New("unclosed placeholder")
+
+// ErrUnmatchedClosingDelimiter is returned when a closing delimiter is found without a preceding opening delimiter.
+var ErrUnmatchedClosingDelimiter = errors.New("unmatched closing delimiter")
+
 type Options struct {
 	Begin string
 	End   string
@@ -28,8 +35,14 @@ func Troke(original string, opts Options) (string, error) {
 		return "", ErrInvalidOptions
 	}
 
-	if !strings.Contains(original, opts.Begin) {
-		return original, nil
+	if opts.Begin == opts.End {
+		if !strings.Contains(original, opts.Begin) {
+			return original, nil
+		}
+	} else {
+		if !strings.Contains(original, opts.Begin) && !strings.Contains(original, opts.End) {
+			return original, nil
+		}
 	}
 
 	var builder strings.Builder
@@ -37,6 +50,14 @@ func Troke(original string, opts Options) (string, error) {
 	remaining := original
 
 	for {
+		if opts.Begin != opts.End {
+			endIdx := strings.Index(remaining, opts.End)
+			beginIdx := strings.Index(remaining, opts.Begin)
+			if endIdx != -1 && (beginIdx == -1 || endIdx < beginIdx) {
+				return "", fmt.Errorf("%w: found %q without preceding %q", ErrUnmatchedClosingDelimiter, opts.End, opts.Begin)
+			}
+		}
+
 		beginIdx := strings.Index(remaining, opts.Begin)
 		if beginIdx == -1 {
 			builder.WriteString(remaining)
@@ -49,17 +70,12 @@ func Troke(original string, opts Options) (string, error) {
 
 		endIdx := strings.Index(afterBegin, opts.End)
 		if endIdx == -1 {
-			builder.WriteString(opts.Begin)
-			builder.WriteString(afterBegin)
-			break
+			return "", fmt.Errorf("%w: missing %q", ErrUnclosedPlaceholder, opts.End)
 		}
 
 		if opts.Begin != opts.End {
-			if lastBegin := strings.LastIndex(afterBegin[:endIdx], opts.Begin); lastBegin != -1 {
-				builder.WriteString(opts.Begin)
-				builder.WriteString(afterBegin[:lastBegin])
-				afterBegin = afterBegin[lastBegin+len(opts.Begin):]
-				endIdx -= lastBegin + len(opts.Begin)
+			if strings.Contains(afterBegin[:endIdx], opts.Begin) {
+				return "", fmt.Errorf("%w: unclosed %q before %q", ErrUnclosedPlaceholder, opts.Begin, opts.End)
 			}
 		}
 

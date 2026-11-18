@@ -78,7 +78,7 @@ func TestUnitTroke(t *testing.T) {
 		})
 	})
 
-	t.Run("Unclosed placeholder keeps delimiter and remaining text", func(t *testing.T) {
+	t.Run("Unclosed placeholder returns ErrUnclosedPlaceholder", func(t *testing.T) {
 		check(t, testScenario{
 			original: "hello {{unclosed placeholder",
 			opts: trokerz.Options{
@@ -88,7 +88,68 @@ func TestUnitTroke(t *testing.T) {
 					return "replaced", true, nil
 				},
 			},
-			want: "hello {{unclosed placeholder",
+			wantErr:    trokerz.ErrUnclosedPlaceholder,
+			wantErrMsg: "unclosed placeholder",
+		})
+	})
+
+	t.Run("Interleaved opening delimiter returns ErrUnclosedPlaceholder", func(t *testing.T) {
+		check(t, testScenario{
+			original: "hello {{ unclosed {{first}} and {{last}}!",
+			opts: trokerz.Options{
+				Begin: "{{",
+				End:   "}}",
+				Get: func(v string) (string, bool, error) {
+					return "val", true, nil
+				},
+			},
+			wantErr:    trokerz.ErrUnclosedPlaceholder,
+			wantErrMsg: "unclosed placeholder",
+		})
+	})
+
+	t.Run("Nested delimiters return ErrUnclosedPlaceholder", func(t *testing.T) {
+		check(t, testScenario{
+			original: "{{{{first}}}}",
+			opts: trokerz.Options{
+				Begin: "{{",
+				End:   "}}",
+				Get: func(v string) (string, bool, error) {
+					return "val", true, nil
+				},
+			},
+			wantErr:    trokerz.ErrUnclosedPlaceholder,
+			wantErrMsg: "unclosed placeholder",
+		})
+	})
+
+	t.Run("Unmatched closing delimiter returns ErrUnmatchedClosingDelimiter", func(t *testing.T) {
+		check(t, testScenario{
+			original: "hello }} world",
+			opts: trokerz.Options{
+				Begin: "{{",
+				End:   "}}",
+				Get: func(v string) (string, bool, error) {
+					return "val", true, nil
+				},
+			},
+			wantErr:    trokerz.ErrUnmatchedClosingDelimiter,
+			wantErrMsg: "unmatched closing delimiter",
+		})
+	})
+
+	t.Run("Unmatched closing delimiter before valid placeholder returns ErrUnmatchedClosingDelimiter", func(t *testing.T) {
+		check(t, testScenario{
+			original: "hello }} {{first}}",
+			opts: trokerz.Options{
+				Begin: "{{",
+				End:   "}}",
+				Get: func(v string) (string, bool, error) {
+					return "val", true, nil
+				},
+			},
+			wantErr:    trokerz.ErrUnmatchedClosingDelimiter,
+			wantErrMsg: "unmatched closing delimiter",
 		})
 	})
 
@@ -155,58 +216,32 @@ func TestUnitTroke(t *testing.T) {
 		})
 	})
 
-	t.Run("Unclosed opening delimiter followed by valid placeholder", func(t *testing.T) {
+	t.Run("Same begin and end delimiters with no delimiters in input", func(t *testing.T) {
 		check(t, testScenario{
-			original: "hello {{ unclosed {{first}} and {{last}}!",
+			original: "no delimiters",
 			opts: trokerz.Options{
-				Begin: "{{",
-				End:   "}}",
+				Begin: "%",
+				End:   "%",
 				Get: func(v string) (string, bool, error) {
-					switch v {
-					case "first":
-						return "John", true, nil
-					case "last":
-						return "Doe", true, nil
-					default:
-						return "", false, nil
-					}
+					return "should not call", true, nil
 				},
 			},
-			want: "hello {{ unclosed John and Doe!",
+			want: "no delimiters",
 		})
 	})
 
-	t.Run("Nested delimiters preserve outer and replace inner", func(t *testing.T) {
+	t.Run("Same begin and end delimiters unclosed returns ErrUnclosedPlaceholder", func(t *testing.T) {
 		check(t, testScenario{
-			original: "{{{{first}}}}",
+			original: "hello %unclosed",
 			opts: trokerz.Options{
-				Begin: "{{",
-				End:   "}}",
+				Begin: "%",
+				End:   "%",
 				Get: func(v string) (string, bool, error) {
-					if v == "first" {
-						return "John", true, nil
-					}
-					return "", false, nil
+					return "val", true, nil
 				},
 			},
-			want: "{{John}}",
-		})
-	})
-
-	t.Run("Multiple unclosed opening delimiters before valid placeholder", func(t *testing.T) {
-		check(t, testScenario{
-			original: "a {{ b {{ c {{first}} d",
-			opts: trokerz.Options{
-				Begin: "{{",
-				End:   "}}",
-				Get: func(v string) (string, bool, error) {
-					if v == "first" {
-						return "John", true, nil
-					}
-					return "", false, nil
-				},
-			},
-			want: "a {{ b {{ c John d",
+			wantErr:    trokerz.ErrUnclosedPlaceholder,
+			wantErrMsg: "unclosed placeholder",
 		})
 	})
 
@@ -305,6 +340,34 @@ func TestUnitMustTroke(t *testing.T) {
 				End:   "}}",
 				Get: func(k string) (string, bool, error) {
 					return "", false, errors.New("lookup failed")
+				},
+			},
+			expectPanic: true,
+		})
+	})
+
+	t.Run("Panics on unclosed placeholder", func(t *testing.T) {
+		check(t, testScenario{
+			original: "hello {{name",
+			opts: trokerz.Options{
+				Begin: "{{",
+				End:   "}}",
+				Get: func(k string) (string, bool, error) {
+					return "world", true, nil
+				},
+			},
+			expectPanic: true,
+		})
+	})
+
+	t.Run("Panics on unmatched closing delimiter", func(t *testing.T) {
+		check(t, testScenario{
+			original: "hello }} world",
+			opts: trokerz.Options{
+				Begin: "{{",
+				End:   "}}",
+				Get: func(k string) (string, bool, error) {
+					return "world", true, nil
 				},
 			},
 			expectPanic: true,
