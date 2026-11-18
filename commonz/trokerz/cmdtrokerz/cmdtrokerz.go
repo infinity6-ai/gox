@@ -219,16 +219,7 @@ func runTrokerz(cmd *cobra.Command, opts trokerzCmdOptions) error {
 		Ctx:   fileCtx,
 		Begin: opts.Begin,
 		End:   opts.End,
-		Get: func(k string) (string, bool, error) {
-			val, exists := params[k]
-			if exists {
-				return val, true, nil
-			}
-			if opts.FailMissing {
-				return "", false, fmt.Errorf("missing parameter %q", k)
-			}
-			return "", false, nil
-		},
+		Get:   replaceFunc(params, opts.FailMissing),
 	})
 	if err != nil {
 		return fmt.Errorf("failed to process template: %w", err)
@@ -254,6 +245,19 @@ func runTrokerz(cmd *cobra.Command, opts trokerzCmdOptions) error {
 	return nil
 }
 
+func replaceFunc(params map[string]string, failMissing bool) func(k string) (string, bool, error) {
+	return func(k string) (string, bool, error) {
+		val, exists := params[k]
+		if exists {
+			return val, true, nil
+		}
+		if failMissing {
+			return "", false, fmt.Errorf("missing parameter %q", k)
+		}
+		return "", false, nil
+	}
+}
+
 func replaceFileInplace(ctx context.Context, filePath string, opts trokerzCmdOptions, params map[string]string) error {
 	data, err := os.ReadFile(filePath)
 	if err != nil {
@@ -266,16 +270,7 @@ func replaceFileInplace(ctx context.Context, filePath string, opts trokerzCmdOpt
 		Ctx:   fileCtx,
 		Begin: opts.Begin,
 		End:   opts.End,
-		Get: func(k string) (string, bool, error) {
-			val, exists := params[k]
-			if exists {
-				return val, true, nil
-			}
-			if opts.FailMissing {
-				return "", false, fmt.Errorf("missing parameter %q", k)
-			}
-			return "", false, nil
-		},
+		Get:   replaceFunc(params, opts.FailMissing),
 	})
 	if err != nil {
 		return fmt.Errorf("failed to process template: %w", err)
