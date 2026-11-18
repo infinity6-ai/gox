@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/infinity6-ai/gox/httpz/internal/httpzsitesample"
 	"github.com/infinity6-ai/gox/versionz/version"
 	"github.com/spf13/cobra"
 )
@@ -24,6 +25,13 @@ func Prepare(ctx context.Context) *cobra.Command {
 			fmt.Println(version.Version())
 		},
 	})
+
+	siteCmd := &cobra.Command{
+		Use:   "site",
+		Short: "Site commands",
+	}
+	siteCmd.AddCommand(httpzsitesample.New().Cmd("sample"))
+	rootCmd.AddCommand(siteCmd)
 
 	return rootCmd
 }
