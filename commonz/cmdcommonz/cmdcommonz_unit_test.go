@@ -27,6 +27,7 @@ func TestUnitCmdCommonzPrepare(t *testing.T) {
 
 		hasVersion := false
 		hasStaticz := false
+		hasTrokerz := false
 		for _, c := range cmd.Commands() {
 			if c.Name() == "version" {
 				hasVersion = true
@@ -34,9 +35,13 @@ func TestUnitCmdCommonzPrepare(t *testing.T) {
 			if c.Name() == "staticz" {
 				hasStaticz = true
 			}
+			if c.Name() == "trokerz" {
+				hasTrokerz = true
+			}
 		}
 		require.True(t, hasVersion)
 		require.True(t, hasStaticz)
+		require.True(t, hasTrokerz)
 	}
 
 	t.Run("Prepare returns root command with subcommands", func(t *testing.T) {

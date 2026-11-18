@@ -6,6 +6,7 @@ import (
 	"os"
 
 	"github.com/infinity6-ai/gox/commonz/cmdcommonz/internal/cmdstaticz"
+	"github.com/infinity6-ai/gox/commonz/trokerz/cmdtrokerz"
 	"github.com/infinity6-ai/gox/versionz/version"
 	"github.com/spf13/cobra"
 )
@@ -25,6 +26,7 @@ func Prepare(ctx context.Context) *cobra.Command {
 	})
 
 	cmdstaticz.Prepare(ctx, rootCmd)
+	cmdtrokerz.Prepare(ctx, rootCmd)
 
 	return rootCmd
 }
