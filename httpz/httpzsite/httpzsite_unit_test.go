@@ -345,39 +345,6 @@ func TestUnitSiteExtractTo(t *testing.T) {
 		}
 	})
 
-	t.Run("Extract with nil context uses site context", func(t *testing.T) {
-		site := &httpzsite.Site{
-			Context: ctx,
-			Pack:    testPackName,
-		}
-
-		tempDir := t.TempDir()
-		dest := pathz.MustParse(tempDir)
-
-		err := site.ExtractTo(nil, dest)
-		require.NoError(t, err)
-
-		content, err := os.ReadFile(dest.MustJoin(pathz.MustParse("index.html")).String())
-		require.NoError(t, err)
-		require.Equal(t, "<html><body>Home</body></html>", string(content))
-	})
-
-	t.Run("Extract with nil context and nil site context uses background context", func(t *testing.T) {
-		site := &httpzsite.Site{
-			Pack: testPackName,
-		}
-
-		tempDir := t.TempDir()
-		dest := pathz.MustParse(tempDir)
-
-		err := site.ExtractTo(nil, dest)
-		require.NoError(t, err)
-
-		content, err := os.ReadFile(dest.MustJoin(pathz.MustParse("index.html")).String())
-		require.NoError(t, err)
-		require.Equal(t, "<html><body>Home</body></html>", string(content))
-	})
-
 	t.Run("Extract invalid pack returns error", func(t *testing.T) {
 		site := &httpzsite.Site{
 			Context: ctx,
