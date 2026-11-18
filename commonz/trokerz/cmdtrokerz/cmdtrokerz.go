@@ -154,9 +154,6 @@ func runTrokerz(cmd *cobra.Command, opts trokerzCmdOptions) error {
 	}
 
 	ctx := cmd.Context()
-	if ctx == nil {
-		ctx = context.Background()
-	}
 
 	if opts.Inplace {
 		if opts.Recursive {
