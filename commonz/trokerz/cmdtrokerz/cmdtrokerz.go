@@ -16,6 +16,10 @@ import (
 	"github.com/spf13/cobra"
 )
 
+type tlogger logz.Type
+
+var logger = logz.Create(tlogger(true))
+
 type trokerzCmdOptions struct {
 	Begin        string
 	End          string
@@ -219,7 +223,7 @@ func runTrokerz(cmd *cobra.Command, opts trokerzCmdOptions) error {
 		Ctx:   fileCtx,
 		Begin: opts.Begin,
 		End:   opts.End,
-		Get:   replaceFunc(params, opts.FailMissing),
+		Get:   replaceFunc(ctx, params, opts.FailMissing),
 	})
 	if err != nil {
 		return fmt.Errorf("failed to process template: %w", err)
@@ -245,15 +249,17 @@ func runTrokerz(cmd *cobra.Command, opts trokerzCmdOptions) error {
 	return nil
 }
 
-func replaceFunc(params map[string]string, failMissing bool) func(k string) (string, bool, error) {
+func replaceFunc(ctx context.Context, params map[string]string, failMissing bool) func(k string) (string, bool, error) {
 	return func(k string) (string, bool, error) {
 		val, exists := params[k]
 		if exists {
+			logger.Info(ctx, "replace placeholder", map[string]any{"key": k, "val": val})
 			return val, true, nil
 		}
 		if failMissing {
 			return "", false, fmt.Errorf("missing parameter %q", k)
 		}
+		logger.Info(ctx, "ignored placeholder", map[string]any{"key": k})
 		return "", false, nil
 	}
 }
@@ -270,7 +276,7 @@ func replaceFileInplace(ctx context.Context, filePath string, opts trokerzCmdOpt
 		Ctx:   fileCtx,
 		Begin: opts.Begin,
 		End:   opts.End,
-		Get:   replaceFunc(params, opts.FailMissing),
+		Get:   replaceFunc(ctx, params, opts.FailMissing),
 	})
 	if err != nil {
 		return fmt.Errorf("failed to process template: %w", err)

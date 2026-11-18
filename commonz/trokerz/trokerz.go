@@ -7,17 +7,7 @@ import (
 	"strings"
 
 	"github.com/infinity6-ai/gox/commonz/errorz"
-	"github.com/infinity6-ai/gox/commonz/logz"
 )
-
-type tlogger logz.Type
-
-var logger = logz.Create(tlogger(true))
-
-// Logger returns the package-level logger.
-func Logger() logz.Logger {
-	return logger
-}
 
 // ErrInvalidOptions is returned when Begin, End, or Get is missing in Options.
 var ErrInvalidOptions = errors.New("begin, end and get are required")
@@ -120,10 +110,6 @@ func Troke(original string, opts Options) (string, error) {
 		}
 
 		if shouldReplace {
-			logger.Info(ctx, "replace placeholder", map[string]any{
-				"key":         k,
-				"replacement": replacement,
-			})
 			builder.WriteString(replacement)
 		} else {
 			builder.WriteString(opts.Begin)
