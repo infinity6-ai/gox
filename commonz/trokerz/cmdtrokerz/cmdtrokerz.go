@@ -96,13 +96,6 @@ func Prepare(ctx context.Context, parent *cobra.Command) *cobra.Command {
 	return cmd
 }
 
-func Execute(ctx context.Context, cmd *cobra.Command) {
-	if err := cmd.ExecuteContext(ctx); err != nil {
-		fmt.Fprintln(os.Stderr, err)
-		os.Exit(1)
-	}
-}
-
 func runTrokerz(cmd *cobra.Command, opts trokerzCmdOptions) error {
 	if opts.Recursive && !opts.Inplace {
 		return fmt.Errorf("--recursive can only be used with --inplace")
