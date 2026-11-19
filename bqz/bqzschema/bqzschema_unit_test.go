@@ -26,11 +26,6 @@ type testRow struct {
 	CreatedAt time.Time           `bigquery:"created_at"`
 }
 
-type testRowWithInsertedAt struct {
-	ID         string    `bigquery:"id"`
-	InsertedAt time.Time `bigquery:"inserted_at"`
-}
-
 func TestUnitNativeTableJSON(t *testing.T) {
 	type testScenario struct {
 		input any
@@ -45,14 +40,13 @@ func TestUnitNativeTableJSON(t *testing.T) {
 		require.Equal(t, byte('\n'), got[len(got)-1])
 	}
 
-	t.Run("Struct is sorted recursively including inserted_at", func(t *testing.T) {
+	t.Run("Struct is sorted recursively", func(t *testing.T) {
 		check(t, testScenario{
 			input: testRow{},
 			want: `[
   {"name": "created_at", "type": "TIMESTAMP", "mode": "REQUIRED"},
   {"name": "dataset", "type": "STRING", "mode": "NULLABLE"},
   {"name": "id", "type": "STRING", "mode": "REQUIRED"},
-  {"name": "inserted_at", "type": "TIMESTAMP", "mode": "NULLABLE", "defaultValueExpression": "CURRENT_TIMESTAMP()"},
   {"name": "payload", "type": "RECORD", "mode": "NULLABLE", "fields": [
     {"name": "order_id", "type": "STRING", "mode": "REQUIRED"},
     {"name": "skus", "type": "RECORD", "mode": "REPEATED", "fields": [
@@ -65,16 +59,6 @@ func TestUnitNativeTableJSON(t *testing.T) {
 		})
 	})
 
-	t.Run("Struct already declaring inserted_at is not duplicated", func(t *testing.T) {
-		check(t, testScenario{
-			input: testRowWithInsertedAt{},
-			want: `[
-  {"name": "id", "type": "STRING", "mode": "REQUIRED"},
-  {"name": "inserted_at", "type": "TIMESTAMP", "mode": "REQUIRED"}
-]`,
-		})
-	})
-
 	t.Run("Explicit bigquery.Schema is sorted too", func(t *testing.T) {
 		check(t, testScenario{
 			input: bigquery.Schema{
@@ -83,8 +67,7 @@ func TestUnitNativeTableJSON(t *testing.T) {
 			},
 			want: `[
   {"name": "a", "type": "STRING", "mode": "REQUIRED"},
-  {"name": "b", "type": "STRING", "mode": "NULLABLE"},
-  {"name": "inserted_at", "type": "TIMESTAMP", "mode": "NULLABLE", "defaultValueExpression": "CURRENT_TIMESTAMP()"}
+  {"name": "b", "type": "STRING", "mode": "NULLABLE"}
 ]`,
 		})
 	})

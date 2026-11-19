@@ -65,9 +65,6 @@ func NativeTableJSON(v any) ([]byte, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to build schema json: %w", err)
 	}
-	if !slices.ContainsFunc(s, func(f *bigquery.FieldSchema) bool { return f.Name == "inserted_at" }) {
-		s = append(s, &bigquery.FieldSchema{Name: "inserted_at", Type: bigquery.TimestampFieldType, DefaultValueExpression: "CURRENT_TIMESTAMP()"})
-	}
 	b, err := json.MarshalIndent(toJSON(fix(s)), "", "  ")
 	if err != nil {
 		return nil, fmt.Errorf("failed to marshal schema json: %w", err)
