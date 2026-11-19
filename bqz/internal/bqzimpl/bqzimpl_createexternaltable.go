@@ -3,13 +3,13 @@ package bqzimpl
 import (
 	"context"
 	"fmt"
-	"slices"
 	"strings"
 	"time"
 
 	"cloud.google.com/go/bigquery"
 	"github.com/infinity6-ai/gox/bqz/bqz"
 	"github.com/infinity6-ai/gox/bqz/bqzerr"
+	"github.com/infinity6-ai/gox/bqz/bqzschema"
 	"github.com/infinity6-ai/gox/commonz/logz"
 	"github.com/infinity6-ai/gox/commonz/slicez"
 	"github.com/infinity6-ai/gox/commonz/validation"
@@ -18,39 +18,6 @@ import (
 type tlogger logz.Type
 
 var logger = logz.Create(tlogger(true))
-
-func fixSchema(s bigquery.Schema) bigquery.Schema {
-	if s == nil {
-		return nil
-	}
-	schema := make(bigquery.Schema, len(s))
-	for i, f := range s {
-		if f == nil {
-			schema[i] = nil
-			continue
-		}
-		fCopy := *f
-		if len(fCopy.Schema) > 0 {
-			fCopy.Schema = fixSchema(fCopy.Schema)
-		}
-		schema[i] = &fCopy
-	}
-
-	slices.SortFunc(schema, func(a, b *bigquery.FieldSchema) int {
-		if a == nil && b == nil {
-			return 0
-		}
-		if a == nil {
-			return -1
-		}
-		if b == nil {
-			return 1
-		}
-		return strings.Compare(a.Name, b.Name)
-	})
-
-	return schema
-}
 
 // CreateExternalTable implements [bqz.Service].
 func (b *BqzServiceImpl) CreateExternalTable(ctx context.Context, table *bqz.ExternalTable) error {
@@ -64,15 +31,9 @@ func (b *BqzServiceImpl) CreateExternalTable(ctx context.Context, table *bqz.Ext
 		return fmt.Errorf("failed to ensure dataset %s exists: %w", table.Dataset.Get(), err)
 	}
 
-	schema, ok := table.Schema.(bigquery.Schema)
-	if !ok {
-		schema, err = bigquery.InferSchema(table.Schema)
-		if err != nil {
-			return fmt.Errorf("failed to infer schema for external table %s: %w", table.Table.Get(), err)
-		}
-		schema = fixSchema(schema)
-	} else {
-		schema = slices.Clone(schema)
+	schema, err := bqzschema.Infer(table.Schema)
+	if err != nil {
+		return fmt.Errorf("failed to infer schema for external table %s: %w", table.Table.Get(), err)
 	}
 
 	extConfig := &bigquery.ExternalDataConfig{
