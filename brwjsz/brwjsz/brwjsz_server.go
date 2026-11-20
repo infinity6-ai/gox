@@ -20,7 +20,7 @@ type Site = handlers.Site
 
 // Options configures the Browser instance, command arguments, and HTTP server.
 type Options struct {
-	Site            Site
+	Site            *Site
 	Command         execz.Options
 	Server          httpzserver.Options
 	tempUserDataDir string
@@ -85,7 +85,7 @@ type Browser struct {
 func New(ctx context.Context, opts Options) *Browser {
 	hub := handlers.NewHub()
 	srv := httpzserver.New(ctx, opts.Server)
-	handlers.AddHandlers(ctx, srv, hub, &opts.Site)
+	handlers.AddHandlers(ctx, srv, hub, opts.Site)
 
 	ret := &Browser{
 		tempUserDataDir: opts.tempUserDataDir,

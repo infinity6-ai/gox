@@ -174,7 +174,7 @@ func TestUnitBrowserSite(t *testing.T) {
 	require.NoError(t, err)
 
 	opts := brwjsz.Options{
-		Site: brwjsz.Site{
+		Site: &brwjsz.Site{
 			Disk: pathz.MustParse(tempDir),
 		},
 	}
