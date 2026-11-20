@@ -64,6 +64,18 @@ func TestUnitChromeOptions(t *testing.T) {
 			userDataDir: "/tmp/custom-profile",
 		})
 	})
+
+	t.Run("Headless disabled via configz", func(t *testing.T) {
+		closer := brwjsz.BrwjszDisableHeadless.MustSet(t.Context(), "true")
+		defer closer.Close()
+
+		opts := brwjsz.Options{}
+		opts.Chrome("", true, "")
+
+		for _, arg := range opts.Command.Args {
+			require.False(t, strings.HasPrefix(arg, "--headless"), "headless flag should not be present when disabled via configz")
+		}
+	})
 }
 
 func TestUnitBrowserE2E(t *testing.T) {

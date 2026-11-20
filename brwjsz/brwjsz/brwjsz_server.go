@@ -6,14 +6,19 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"strconv"
 
 	"github.com/infinity6-ai/gox/brwjsz/brwclient"
 	"github.com/infinity6-ai/gox/brwjsz/internal/handlers"
+	"github.com/infinity6-ai/gox/commonz/configz"
 	"github.com/infinity6-ai/gox/commonz/errorz"
 	"github.com/infinity6-ai/gox/commonz/execz"
 	"github.com/infinity6-ai/gox/commonz/pathz"
 	"github.com/infinity6-ai/gox/httpz/httpzserver"
 )
+
+// BrwjszDisableHeadless configures whether to disable headless mode regardless of options.
+var BrwjszDisableHeadless = configz.Create("BRWJSZ_DISABLE_HEADLESS", "false")
 
 // Site configures serving static files from a disk directory on the internal server.
 type Site = handlers.Site
@@ -64,7 +69,10 @@ func (o *Options) Chrome(binPath string, headless bool, userDataDir string) *Opt
 		"--disable-features=Translate,OptimizationHints",
 	}
 	if headless {
-		flags = append(flags, "--headless", "--ozone-platform=headless")
+		disable, _ := strconv.ParseBool(BrwjszDisableHeadless.Req(context.Background()))
+		if !disable {
+			flags = append(flags, "--headless", "--ozone-platform=headless")
+		}
 	}
 
 	o.Command.Args = append(flags, o.Command.Args...)

@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/infinity6-ai/gox/brwjsz/internal/cmd/cmdexec"
 	"github.com/infinity6-ai/gox/brwjsz/version"
 	"github.com/spf13/cobra"
 )
@@ -26,7 +27,7 @@ func Prepare(ctx context.Context) *cobra.Command {
 		},
 	})
 
-	rootCmd.AddCommand(newExecCmd())
+	cmdexec.Prepare(ctx, rootCmd)
 
 	return rootCmd
 }

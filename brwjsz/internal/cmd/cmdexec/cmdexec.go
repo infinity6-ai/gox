@@ -1,4 +1,5 @@
-package cmdbrwjsz
+// Package cmdexec provides the CLI command for executing JavaScript in a browser session.
+package cmdexec
 
 import (
 	"context"
@@ -34,7 +35,8 @@ func parseArgValue(s string) any {
 	return s
 }
 
-func newExecCmd() *cobra.Command {
+// Prepare configures and attaches the exec command to the parent cobra command.
+func Prepare(ctx context.Context, parent *cobra.Command) *cobra.Command {
 	opts := &execOptions{}
 
 	cmd := &cobra.Command{
@@ -76,10 +78,10 @@ func newExecCmd() *cobra.Command {
 				resolvedArgs = append(resolvedArgs, parseArgValue(string(b)))
 			}
 
-			ctx := cmd.Context()
+			cmdCtx := cmd.Context()
 			if opts.timeout > 0 {
 				var cancel context.CancelFunc
-				ctx, cancel = context.WithTimeout(ctx, opts.timeout)
+				cmdCtx, cancel = context.WithTimeout(cmdCtx, opts.timeout)
 				defer cancel()
 			}
 
@@ -91,10 +93,10 @@ func newExecCmd() *cobra.Command {
 				}
 			}
 
-			b := brwjsz.New(ctx, brwOpts)
+			b := brwjsz.New(cmdCtx, brwOpts)
 			defer b.Close()
 
-			if err := b.Start(ctx); err != nil {
+			if err := b.Start(cmdCtx); err != nil {
 				return fmt.Errorf("failed to start browser: %w", err)
 			}
 
@@ -119,7 +121,7 @@ func newExecCmd() *cobra.Command {
 				return target;
 			}`
 
-			res, err := brwclient.Call[any](ctx, b.Client(), wrapper, code, resolvedArgs)
+			res, err := brwclient.Call[any](cmdCtx, b.Client(), wrapper, code, resolvedArgs)
 			if err != nil {
 				return fmt.Errorf("execution error: %w", err)
 			}
@@ -152,6 +154,10 @@ func newExecCmd() *cobra.Command {
 	cmd.Flags().BoolVar(&opts.headless, "headless", true, "Run browser in headless mode")
 	cmd.Flags().StringVar(&opts.bin, "bin", "", "Browser binary path (defaults to auto-detect)")
 	cmd.Flags().DurationVar(&opts.timeout, "timeout", 30*time.Second, "Execution timeout")
+
+	if parent != nil {
+		parent.AddCommand(cmd)
+	}
 
 	return cmd
 }
