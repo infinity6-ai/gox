@@ -98,12 +98,7 @@ type Process struct {
 }
 
 // New creates an unstarted Process configured with the given Options.
-// If ctx is nil, context.Background() is used.
 func New(ctx context.Context, opts Options) *Process {
-	if ctx == nil {
-		ctx = context.Background()
-	}
-
 	if opts.LineBufferSize <= 0 {
 		opts.LineBufferSize = DefaultLineBufferSize
 	}
@@ -308,8 +303,9 @@ func (p *Process) startGoroutines() {
 }
 
 // Start begins execution of the process asynchronously.
+// If ctx is cancelled before or during process execution, the process is terminated.
 // Returns an error if the process has already been started or if startup fails.
-func (p *Process) Start() error {
+func (p *Process) Start(ctx context.Context) error {
 	p.mu.Lock()
 	if p.state != stateCreated {
 		p.mu.Unlock()
@@ -318,6 +314,10 @@ func (p *Process) Start() error {
 	if p.Err != nil {
 		p.mu.Unlock()
 		return fmt.Errorf("process initialization error: %w", p.Err)
+	}
+	if err := ctx.Err(); err != nil {
+		p.mu.Unlock()
+		return fmt.Errorf("context cancelled before starting process: %w", err)
 	}
 	p.state = stateStarted
 	err := p.cmd.Start()
@@ -336,31 +336,47 @@ func (p *Process) Start() error {
 	}
 	p.mu.Unlock()
 
+	go func() {
+		select {
+		case <-ctx.Done():
+			p.mu.Lock()
+			if p.cmd.Process != nil && p.state == stateStarted {
+				_ = syscall.Kill(-p.cmd.Process.Pid, syscall.SIGKILL)
+			}
+			p.mu.Unlock()
+		case <-p.waitChan:
+		}
+	}()
+
 	p.startGoroutines()
 	return nil
 }
 
-// Run starts the process and blocks until it completes, returning any exit error.
-func (p *Process) Run() error {
-	if err := p.Start(); err != nil {
+// Run starts the process and blocks until it completes or ctx is cancelled, returning any exit error.
+func (p *Process) Run(ctx context.Context) error {
+	if err := p.Start(ctx); err != nil {
 		return fmt.Errorf("failed to start process: %w", err)
 	}
-	if err := p.WaitFor(); err != nil {
+	if err := p.WaitFor(ctx); err != nil {
 		return fmt.Errorf("failed to wait for process: %w", err)
 	}
 	return nil
 }
 
-// WaitFor blocks until the process exits and all captured streams have closed.
-// It is safe to call concurrently and repeatedly.
-func (p *Process) WaitFor() error {
-	<-p.waitChan
-	p.mu.Lock()
-	defer p.mu.Unlock()
-	if p.Err != nil {
-		return p.Err
+// WaitFor blocks until the process exits and all captured streams have closed,
+// or until ctx is cancelled. It is safe to call concurrently and repeatedly.
+func (p *Process) WaitFor(ctx context.Context) error {
+	select {
+	case <-ctx.Done():
+		return fmt.Errorf("context cancelled while waiting for process: %w", ctx.Err())
+	case <-p.waitChan:
+		p.mu.Lock()
+		defer p.mu.Unlock()
+		if p.Err != nil {
+			return p.Err
+		}
+		return nil
 	}
-	return nil
 }
 
 // Close closes the standard input stream idempotently, signaling EOF to the child process.
@@ -377,10 +393,6 @@ func (p *Process) Close() error {
 // within the specified deadline (or if ctx is cancelled), it forcefully kills the group via SIGKILL
 // and returns an error wrapping ErrKilled.
 func (p *Process) Kill(ctx context.Context, deadline time.Duration) error {
-	if ctx == nil {
-		ctx = context.Background()
-	}
-
 	p.mu.Lock()
 	if p.cmd == nil || p.cmd.Process == nil {
 		p.mu.Unlock()
@@ -396,7 +408,7 @@ func (p *Process) Kill(ctx context.Context, deadline time.Duration) error {
 
 	done := make(chan error, 1)
 	go func() {
-		done <- p.WaitFor()
+		done <- p.WaitFor(ctx)
 	}()
 
 	select {

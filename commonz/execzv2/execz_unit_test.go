@@ -26,7 +26,7 @@ func TestUnitBasicRun(t *testing.T) {
 			Bin:  s.bin,
 			Args: s.args,
 		})
-		err := proc.Run()
+		err := proc.Run(ctx)
 		if s.expectError {
 			require.Error(t, err)
 			if s.errMsg != "" {
@@ -76,7 +76,7 @@ func TestUnitGetStdoutAndGetStderr(t *testing.T) {
 			CaptureStdout: 64,
 			CaptureStderr: 64,
 		})
-		require.NoError(t, proc.Start())
+		require.NoError(t, proc.Start(ctx))
 
 		var gotOut []execzv2.Line
 		var gotErr []execzv2.Line
@@ -96,7 +96,7 @@ func TestUnitGetStdoutAndGetStderr(t *testing.T) {
 			}
 		}()
 
-		require.NoError(t, proc.WaitFor())
+		require.NoError(t, proc.WaitFor(ctx))
 		wg.Wait()
 
 		require.Equal(t, s.wantOut, gotOut)
@@ -154,15 +154,14 @@ func TestUnitLineBufferSize(t *testing.T) {
 		CaptureStdout:  64,
 		LineBufferSize: 4,
 	})
-	require.NoError(t, proc.Start())
+	require.NoError(t, proc.Start(ctx))
 
 	var gotOut []execzv2.Line
 	for line := range proc.GetStdout() {
 		gotOut = append(gotOut, line)
 	}
-	require.NoError(t, proc.WaitFor())
+	require.NoError(t, proc.WaitFor(ctx))
 
-	// 10 chars with LineBufferSize 4 yields: "1234" (partial), "5678" (partial), "90" (not partial because \n terminates it)
 	expected := []execzv2.Line{
 		{Line: "1234", Partial: true},
 		{Line: "5678", Partial: true},
@@ -179,7 +178,7 @@ func TestUnitGetStdinAndClose(t *testing.T) {
 		CaptureStdout: 64,
 		EnableStdin:   64,
 	})
-	require.NoError(t, proc.Start())
+	require.NoError(t, proc.Start(ctx))
 
 	var gotOut []execzv2.Line
 	done := make(chan struct{})
@@ -190,16 +189,44 @@ func TestUnitGetStdinAndClose(t *testing.T) {
 		}
 	}()
 
-	// Partial: false automatically appends newline if missing
 	proc.GetStdin() <- execzv2.Line{Line: "hello", Partial: false}
 	proc.GetStdin() <- execzv2.Line{Line: "world", Partial: false}
 	require.NoError(t, proc.Close())
 
 	<-done
-	require.NoError(t, proc.WaitFor())
+	require.NoError(t, proc.WaitFor(ctx))
 	require.Equal(t, []execzv2.Line{
 		{Line: "HELLO", Partial: false},
 		{Line: "WORLD", Partial: false},
+	}, gotOut)
+}
+
+func TestUnitCloseViaChannel(t *testing.T) {
+	ctx := context.Background()
+	proc := execzv2.New(ctx, execzv2.Options{
+		Bin:           "tr",
+		Args:          []string{"a-z", "A-Z"},
+		CaptureStdout: 64,
+		EnableStdin:   64,
+	})
+	require.NoError(t, proc.Start(ctx))
+
+	var gotOut []execzv2.Line
+	done := make(chan struct{})
+	go func() {
+		defer close(done)
+		for line := range proc.GetStdout() {
+			gotOut = append(gotOut, line)
+		}
+	}()
+
+	proc.GetStdin() <- execzv2.Line{Line: "channel-close", Partial: false}
+	close(proc.GetStdin())
+
+	<-done
+	require.NoError(t, proc.WaitFor(ctx))
+	require.Equal(t, []execzv2.Line{
+		{Line: "CHANNEL-CLOSE", Partial: false},
 	}, gotOut)
 }
 
@@ -210,7 +237,7 @@ func TestUnitStdinPartial(t *testing.T) {
 		CaptureStdout: 64,
 		EnableStdin:   64,
 	})
-	require.NoError(t, proc.Start())
+	require.NoError(t, proc.Start(ctx))
 
 	var gotOut []execzv2.Line
 	done := make(chan struct{})
@@ -221,13 +248,12 @@ func TestUnitStdinPartial(t *testing.T) {
 		}
 	}()
 
-	// Send partial chunks that together form one line terminated at EOF
 	proc.GetStdin() <- execzv2.Line{Line: "hel", Partial: true}
 	proc.GetStdin() <- execzv2.Line{Line: "lo", Partial: true}
 	close(proc.GetStdin())
 
 	<-done
-	require.NoError(t, proc.WaitFor())
+	require.NoError(t, proc.WaitFor(ctx))
 	require.Equal(t, []execzv2.Line{
 		{Line: "hello", Partial: true},
 	}, gotOut)
@@ -243,8 +269,7 @@ func TestUnitDiscardByDefault(t *testing.T) {
 	require.Nil(t, proc.GetStderr())
 	require.Nil(t, proc.GetStdin())
 
-	// Runs without hanging because output goes to nil (/dev/null)
-	require.NoError(t, proc.Run())
+	require.NoError(t, proc.Run(ctx))
 }
 
 func TestUnitEnvsAndDir(t *testing.T) {
@@ -262,13 +287,13 @@ func TestUnitEnvsAndDir(t *testing.T) {
 			"MY_VAR": "custom_value",
 		},
 	})
-	require.NoError(t, proc.Start())
+	require.NoError(t, proc.Start(ctx))
 
 	var gotOut []string
 	for line := range proc.GetStdout() {
 		gotOut = append(gotOut, line.Line)
 	}
-	require.NoError(t, proc.WaitFor())
+	require.NoError(t, proc.WaitFor(ctx))
 
 	require.Equal(t, []string{"custom_value", realTmpDir}, gotOut)
 }
@@ -280,14 +305,14 @@ func TestUnitLargeOutputChannel(t *testing.T) {
 		Args:          []string{"-c", "seq 1 10000"},
 		CaptureStdout: 256,
 	})
-	require.NoError(t, proc.Start())
+	require.NoError(t, proc.Start(ctx))
 
 	count := 0
 	for line := range proc.GetStdout() {
 		require.False(t, line.Partial)
 		count++
 	}
-	require.NoError(t, proc.WaitFor())
+	require.NoError(t, proc.WaitFor(ctx))
 	require.Equal(t, 10000, count)
 }
 
@@ -297,13 +322,13 @@ func TestUnitKillDeadline(t *testing.T) {
 		Bin:  "bash",
 		Args: []string{"-c", "trap '' TERM; sleep 10"},
 	})
-	require.NoError(t, proc.Start())
+	require.NoError(t, proc.Start(ctx))
 
 	time.Sleep(50 * time.Millisecond)
 	err := proc.Kill(ctx, 100*time.Millisecond)
 	require.Error(t, err)
 	require.ErrorIs(t, err, execzv2.ErrKilled)
-	require.ErrorIs(t, proc.WaitFor(), execzv2.ErrKilled)
+	require.ErrorIs(t, proc.WaitFor(ctx), execzv2.ErrKilled)
 }
 
 func TestUnitKillGraceful(t *testing.T) {
@@ -312,7 +337,7 @@ func TestUnitKillGraceful(t *testing.T) {
 		Bin:  "sleep",
 		Args: []string{"10"},
 	})
-	require.NoError(t, proc.Start())
+	require.NoError(t, proc.Start(ctx))
 
 	time.Sleep(50 * time.Millisecond)
 	err := proc.Kill(ctx, 2*time.Second)
@@ -326,7 +351,7 @@ func TestUnitKillContextCancelled(t *testing.T) {
 		Bin:  "bash",
 		Args: []string{"-c", "trap '' TERM; sleep 10"},
 	})
-	require.NoError(t, proc.Start())
+	require.NoError(t, proc.Start(context.Background()))
 
 	time.Sleep(50 * time.Millisecond)
 	go func() {
@@ -345,16 +370,16 @@ func TestUnitProcessAlreadyStarted(t *testing.T) {
 		Bin:  "bash",
 		Args: []string{"-c", "exit 0"},
 	})
-	require.NoError(t, proc.Start())
-	err := proc.Start()
+	require.NoError(t, proc.Start(ctx))
+	err := proc.Start(ctx)
 	require.Error(t, err)
 	require.Contains(t, err.Error(), "process already started")
 
-	err2 := proc.Run()
+	err2 := proc.Run(ctx)
 	require.Error(t, err2)
 	require.Contains(t, err2.Error(), "process already started")
 
-	require.NoError(t, proc.WaitFor())
+	require.NoError(t, proc.WaitFor(ctx))
 }
 
 func TestUnitConcurrentWait(t *testing.T) {
@@ -363,13 +388,13 @@ func TestUnitConcurrentWait(t *testing.T) {
 		Bin:  "bash",
 		Args: []string{"-c", "sleep 0.1 && exit 0"},
 	})
-	require.NoError(t, proc.Start())
+	require.NoError(t, proc.Start(ctx))
 
 	const numWaiters = 5
 	errs := make(chan error, numWaiters)
 	for i := 0; i < numWaiters; i++ {
 		go func() {
-			errs <- proc.WaitFor()
+			errs <- proc.WaitFor(ctx)
 		}()
 	}
 
@@ -400,31 +425,15 @@ func TestUnitCloseIdempotent(t *testing.T) {
 	require.NoError(t, proc.Close())
 }
 
-func TestUnitNilContext(t *testing.T) {
-	proc := execzv2.New(nil, execzv2.Options{
-		Bin:           "bash",
-		Args:          []string{"-c", "echo nil_ctx"},
-		CaptureStdout: 10,
-	})
-	require.NoError(t, proc.Start())
-
-	var got []string
-	for line := range proc.GetStdout() {
-		got = append(got, line.Line)
-	}
-	require.NoError(t, proc.WaitFor())
-	require.Equal(t, []string{"nil_ctx"}, got)
-}
-
 func TestUnitExitCode(t *testing.T) {
 	ctx := context.Background()
 	proc := execzv2.New(ctx, execzv2.Options{
 		Bin:  "bash",
 		Args: []string{"-c", "exit 42"},
 	})
-	err := proc.Run()
+	err := proc.Run(ctx)
 	require.Error(t, err)
-	require.ErrorIs(t, proc.WaitFor(), proc.Err)
+	require.ErrorIs(t, proc.WaitFor(ctx), proc.Err)
 }
 
 func TestUnitUtf8Stdin(t *testing.T) {
@@ -434,7 +443,7 @@ func TestUnitUtf8Stdin(t *testing.T) {
 		CaptureStdout: 10,
 		EnableStdin:   10,
 	})
-	require.NoError(t, proc.Start())
+	require.NoError(t, proc.Start(ctx))
 
 	proc.GetStdin() <- execzv2.Line{Line: "Hello 世界 🚀", Partial: false}
 	require.NoError(t, proc.Close())
@@ -443,8 +452,41 @@ func TestUnitUtf8Stdin(t *testing.T) {
 	for line := range proc.GetStdout() {
 		got = append(got, line)
 	}
-	require.NoError(t, proc.WaitFor())
+	require.NoError(t, proc.WaitFor(ctx))
 	require.Equal(t, []execzv2.Line{
 		{Line: "Hello 世界 🚀", Partial: false},
 	}, got)
+}
+
+func TestUnitWaitForContextCancelled(t *testing.T) {
+	ctx := context.Background()
+	proc := execzv2.New(ctx, execzv2.Options{
+		Bin:  "sleep",
+		Args: []string{"5"},
+	})
+	require.NoError(t, proc.Start(ctx))
+
+	waitCtx, cancel := context.WithTimeout(ctx, 50*time.Millisecond)
+	defer cancel()
+
+	err := proc.WaitFor(waitCtx)
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "context cancelled while waiting for process")
+
+	// Cleanup
+	_ = proc.Kill(ctx, 100*time.Millisecond)
+}
+
+func TestUnitStartContextCancelled(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+
+	proc := execzv2.New(context.Background(), execzv2.Options{
+		Bin:  "bash",
+		Args: []string{"-c", "exit 0"},
+	})
+
+	err := proc.Start(ctx)
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "context cancelled before starting process")
 }
