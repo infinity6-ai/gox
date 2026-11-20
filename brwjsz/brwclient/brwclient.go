@@ -295,3 +295,16 @@ func MustGet[T any](ctx context.Context, c *Client, ref Ref[T]) T {
 	errorz.Check(err)
 	return ret
 }
+
+// RefDump instructs the browser controller to log all active references to console.log
+// and returns a summary map of ref ID -> type/description.
+func RefDump(ctx context.Context, c *Client) (map[string]string, error) {
+	return Call[map[string]string](ctx, c, `() => window.brwjsz.refDump()`)
+}
+
+// MustRefDump logs active references in the browser and returns a summary map, panicking on failure.
+func MustRefDump(ctx context.Context, c *Client) map[string]string {
+	ret, err := RefDump(ctx, c)
+	errorz.Check(err)
+	return ret
+}

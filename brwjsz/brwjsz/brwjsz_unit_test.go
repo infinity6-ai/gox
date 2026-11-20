@@ -133,6 +133,18 @@ func TestUnitBrowserE2E(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, 300, calcVal)
 
+	// Non-transferable JS objects: DOM elements and Canvas context
+	canvasRef := brwclient.MustFunc[any](ctx, client, `() => document.createElement('canvas')`)
+	ctx2dRef := brwclient.MustFunc[any](ctx, client, `(c) => c.getContext('2d')`, canvasRef)
+
+	// Perform RefDump
+	dump := brwclient.MustRefDump(ctx, client)
+	require.Contains(t, dump[string(canvasRef)], "HTMLCanvasElement")
+	require.Contains(t, dump[string(ctx2dRef)], "CanvasRenderingContext2D")
+
+	brwclient.MustDelete(ctx, client, canvasRef)
+	brwclient.MustDelete(ctx, client, ctx2dRef)
+
 	// Clean up references
 	err = closer.Close()
 	require.NoError(t, err)

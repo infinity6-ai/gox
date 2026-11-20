@@ -184,4 +184,22 @@ func TestUnitClientOperations(t *testing.T) {
 		require.NoError(t, err)
 		require.Equal(t, string(ref), deletedRef)
 	})
+
+	t.Run("RefDump returns active references map", func(t *testing.T) {
+		mock := &mockDispatcher{
+			dispatchFunc: func(ctx context.Context, cmd *brwclient.Command) (*brwclient.Reply, error) {
+				return &brwclient.Reply{
+					ID:     cmd.ID,
+					Ok:     true,
+					Result: json.RawMessage(`{"ref-1":"HTMLCanvasElement","ref-2":"Function"}`),
+				}, nil
+			},
+		}
+
+		c := &brwclient.Client{Dispatcher: mock}
+		dump, err := brwclient.RefDump(t.Context(), c)
+		require.NoError(t, err)
+		require.Equal(t, "HTMLCanvasElement", dump["ref-1"])
+		require.Equal(t, "Function", dump["ref-2"])
+	})
 }

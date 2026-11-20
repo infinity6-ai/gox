@@ -156,9 +156,28 @@
         });
     }
 
+    function refDump() {
+        const summary = {};
+        console.log(`[brwjsz] RefDump (${refs.size} active refs):`);
+        for (const [id, val] of refs.entries()) {
+            let desc = typeof val;
+            try {
+                if (val && val.constructor && val.constructor.name) {
+                    desc = val.constructor.name;
+                } else if (val !== null && val !== undefined) {
+                    desc = String(val);
+                }
+            } catch (_) {}
+            console.log(`  - [${id}] (${desc}):`, val);
+            summary[id] = desc;
+        }
+        return summary;
+    }
+
     window.brwjsz = {
         init: init,
-        refs: refs
+        refs: refs,
+        refDump: refDump
     };
 
     if (document.readyState !== 'loading') {
