@@ -392,6 +392,13 @@ func (p *Process) WaitFor(ctx context.Context, deadline time.Duration) error {
 	}
 }
 
+// IsRunning returns true if the process has started and has not yet terminated.
+func (p *Process) IsRunning() bool {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	return p.state == stateStarted
+}
+
 // Close closes the standard input stream idempotently, signaling EOF to the child process.
 func (p *Process) Close() error {
 	p.closeStdinOnce.Do(func() {

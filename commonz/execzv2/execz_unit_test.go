@@ -517,3 +517,26 @@ func TestUnitWaitForDeadlineExceeded(t *testing.T) {
 
 	_ = proc.Kill(ctx, 100*time.Millisecond)
 }
+
+func TestUnitIsRunning(t *testing.T) {
+	ctx := context.Background()
+	proc := execzv2.New(ctx, execzv2.Options{
+		Bin:  "sleep",
+		Args: []string{"0.2"},
+	})
+	require.False(t, proc.IsRunning())
+
+	require.NoError(t, proc.Start(ctx))
+	require.True(t, proc.IsRunning())
+
+	require.NoError(t, proc.WaitFor(ctx, 0))
+	require.False(t, proc.IsRunning())
+
+	// Test non-existent command
+	failProc := execzv2.New(ctx, execzv2.Options{
+		Bin: "non_existent_binary_xyz",
+	})
+	require.False(t, failProc.IsRunning())
+	require.Error(t, failProc.Start(ctx))
+	require.False(t, failProc.IsRunning())
+}
