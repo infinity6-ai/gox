@@ -31,12 +31,21 @@ function cmd_test_unit() {
   [ ! -f cmd_unit_test.sh ] || ./cmd_unit_test.sh all
 }
 
+function cmd_test_web() {
+  go test -run '^TestWeb.*$' ./... "$@" 
+}
+
 function cmd_test_remote() {
   go test -run '^TestRemote.*$' ./... "$@" 
 }
 
+function cmd_test_manual() {
+  go test -run '^TestManual.*$' ./... "$@" 
+}
+
 function cmd_test() {
   cmd_test_unit
+  cmd_test_web
 }
 
 function cmd_fmt() {

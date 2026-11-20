@@ -61,6 +61,10 @@ function cmd_test() {
   cmd_comps_run test "$@"
 }
 
+function cmd_test_web() {
+  cmd_comps_run test_web "$@"
+}
+
 function cmd_fmt() {
   cmd_comps_run fmt "$@"
 }
