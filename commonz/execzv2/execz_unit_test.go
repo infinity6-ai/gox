@@ -448,15 +448,3 @@ func TestUnitUtf8Stdin(t *testing.T) {
 		{Line: "Hello 世界 🚀", Partial: false},
 	}, got)
 }
-
-func TestUnitMethodAliases(t *testing.T) {
-	proc := execzv2.New(context.Background(), execzv2.Options{
-		Bin:           "bash",
-		CaptureStdout: 10,
-		CaptureStderr: 10,
-		EnableStdin:   10,
-	})
-	require.Equal(t, (<-chan execzv2.Line)(proc.GetStdout()), proc.GetStdOut())
-	require.Equal(t, (<-chan execzv2.Line)(proc.GetStderr()), proc.GetStdErr())
-	require.Equal(t, (chan<- execzv2.Line)(proc.GetStdin()), proc.GetStdIn())
-}

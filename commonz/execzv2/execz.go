@@ -1,3 +1,6 @@
+// Package execzv2 provides structured OS process execution with channel-based
+// streaming for standard I/O (stdin, stdout, stderr), process group signaling,
+// and graceful termination with fallback to SIGKILL.
 package execzv2
 
 import (
@@ -20,23 +23,46 @@ type tlogger logz.Type
 
 var logger = logz.Create(tlogger(true))
 
+// ErrKilled is returned when a process does not exit within the grace period deadline and is terminated via SIGKILL.
 var ErrKilled = errors.New("ErrKilled")
 
+// DefaultLineBufferSize is the default maximum byte size of a line fragment (64 KB).
 const DefaultLineBufferSize = 64 * 1024
 
+// Line represents a streamed input or output line.
+// For output:
+//   - Partial is false when the line was completed by a newline (\n or \r\n), with the newline stripped.
+//   - Partial is true when the line reached LineBufferSize without a newline, or ended at EOF without a newline.
+//
+// For input:
+//   - If Partial is false, a newline is automatically appended if not already present.
+//   - If Partial is true, the line is written as-is without appending a newline.
 type Line struct {
 	Line    string
 	Partial bool
 }
 
+// Options configures the creation and I/O behavior of a Process.
 type Options struct {
-	Bin            string
-	Args           []string
-	Envs           map[string]string
-	Dir            string
-	CaptureStdout  int
-	CaptureStderr  int
-	EnableStdin    int
+	// Bin specifies the path or name of the executable binary.
+	Bin string
+	// Args holds command-line arguments passed to the binary.
+	Args []string
+	// Envs provides environment variables to set or override (merged with os.Environ()).
+	Envs map[string]string
+	// Dir sets the working directory of the process.
+	Dir string
+	// CaptureStdout defines the buffer size of the stdout channel.
+	// When 0 or negative, stdout capture is disabled and output is discarded.
+	CaptureStdout int
+	// CaptureStderr defines the buffer size of the stderr channel.
+	// When 0 or negative, stderr capture is disabled and output is discarded.
+	CaptureStderr int
+	// EnableStdin defines the buffer size of the stdin channel.
+	// When 0 or negative, stdin is disabled.
+	EnableStdin int
+	// LineBufferSize sets the maximum byte size of a single line chunk before emitting a partial line.
+	// Defaults to DefaultLineBufferSize (64 KB) when 0 or negative.
 	LineBufferSize int
 }
 
@@ -48,10 +74,12 @@ const (
 	stateFinished stateType = "finished"
 )
 
+// Process manages the execution and streaming lifecycle of an OS process.
 type Process struct {
 	Options
 	cmd *exec.Cmd
 
+	// Err holds the process exit error or failure reason after termination.
 	Err error
 
 	mu             sync.Mutex
@@ -69,6 +97,8 @@ type Process struct {
 	wg             sync.WaitGroup
 }
 
+// New creates an unstarted Process configured with the given Options.
+// If ctx is nil, context.Background() is used.
 func New(ctx context.Context, opts Options) *Process {
 	if ctx == nil {
 		ctx = context.Background()
@@ -129,30 +159,27 @@ func New(ctx context.Context, opts Options) *Process {
 	return p
 }
 
+// GetStdout returns a receive-only channel streaming lines read from the process's standard output.
+// Returns nil if CaptureStdout was not enabled (> 0).
 func (p *Process) GetStdout() <-chan Line {
 	return p.stdoutChan
 }
 
-func (p *Process) GetStdOut() <-chan Line {
-	return p.GetStdout()
-}
-
+// GetStderr returns a receive-only channel streaming lines read from the process's standard error.
+// Returns nil if CaptureStderr was not enabled (> 0).
 func (p *Process) GetStderr() <-chan Line {
 	return p.stderrChan
 }
 
-func (p *Process) GetStdErr() <-chan Line {
-	return p.GetStderr()
-}
-
+// GetStdin returns a send-only channel for streaming lines into the process's standard input.
+// Returns nil if EnableStdin was not enabled (> 0).
+// Closing this channel or calling Close() sends EOF to the process's stdin.
 func (p *Process) GetStdin() chan<- Line {
 	return p.stdinChan
 }
 
-func (p *Process) GetStdIn() chan<- Line {
-	return p.GetStdin()
-}
-
+// readStreamLines reads bytes from r, splits into lines by '\n', enforces maxBuf chunking,
+// and delivers Line structs to outChan until EOF or killChan is closed.
 func readStreamLines(r io.Reader, maxBuf int, killChan <-chan struct{}, outChan chan<- Line) {
 	defer close(outChan)
 	if r == nil {
@@ -280,6 +307,8 @@ func (p *Process) startGoroutines() {
 	}()
 }
 
+// Start begins execution of the process asynchronously.
+// Returns an error if the process has already been started or if startup fails.
 func (p *Process) Start() error {
 	p.mu.Lock()
 	if p.state != stateCreated {
@@ -311,6 +340,7 @@ func (p *Process) Start() error {
 	return nil
 }
 
+// Run starts the process and blocks until it completes, returning any exit error.
 func (p *Process) Run() error {
 	if err := p.Start(); err != nil {
 		return fmt.Errorf("failed to start process: %w", err)
@@ -321,6 +351,8 @@ func (p *Process) Run() error {
 	return nil
 }
 
+// WaitFor blocks until the process exits and all captured streams have closed.
+// It is safe to call concurrently and repeatedly.
 func (p *Process) WaitFor() error {
 	<-p.waitChan
 	p.mu.Lock()
@@ -331,6 +363,7 @@ func (p *Process) WaitFor() error {
 	return nil
 }
 
+// Close closes the standard input stream idempotently, signaling EOF to the child process.
 func (p *Process) Close() error {
 	p.closeStdinOnce.Do(func() {
 		if p.stdinChan != nil {
@@ -340,6 +373,9 @@ func (p *Process) Close() error {
 	return nil
 }
 
+// Kill attempts to gracefully stop the process group via SIGTERM. If the process does not terminate
+// within the specified deadline (or if ctx is cancelled), it forcefully kills the group via SIGKILL
+// and returns an error wrapping ErrKilled.
 func (p *Process) Kill(ctx context.Context, deadline time.Duration) error {
 	if ctx == nil {
 		ctx = context.Background()
