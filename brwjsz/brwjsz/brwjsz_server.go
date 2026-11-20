@@ -79,5 +79,7 @@ func (b *Browser) fixArgs() {
 }
 
 func (b *Browser) Client() *brwclient.Client {
-	return &brwclient.Client{BaseUrl: b.server.Base().MustJoinPathString(handlers.BasePath)}
+	return &brwclient.Client{
+		BaseUrl: b.server.Base().MustJoinPathString(handlers.BasePath),
+	}
 }
