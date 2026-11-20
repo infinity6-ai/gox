@@ -1,8 +1,10 @@
 package httpzserverdisk_test
 
 import (
+	"encoding/json"
 	"io"
 	"net/http"
+	"net/url"
 	"os"
 	"path/filepath"
 	"testing"
@@ -82,7 +84,12 @@ func TestUnitDiskHandler(t *testing.T) {
 		srv.AddHandler(mountMethod, mountPath, handler)
 		srv.Start()
 
-		req, err := http.NewRequest(s.method, srv.Base().MustJoinPathString(s.path).String(), nil)
+		baseURL, err := url.Parse(srv.Base().String())
+		require.NoError(t, err)
+		subURL, err := url.Parse(s.path)
+		require.NoError(t, err)
+
+		req, err := http.NewRequest(s.method, baseURL.ResolveReference(subURL).String(), nil)
 		require.NoError(t, err)
 
 		resp, err := http.DefaultClient.Do(req)
@@ -358,6 +365,119 @@ func TestUnitDiskHandler(t *testing.T) {
 		})
 	})
 
+	t.Run("Directory listing as JSON flat (t=json)", func(t *testing.T) {
+		check(t, testScenario{
+			method:         http.MethodGet,
+			path:           "/?t=json",
+			options:        httpzserverdisk.Options{Listing: true},
+			expectedStatus: http.StatusOK,
+			expectedCType:  "application/json",
+			expectedBodyMatch: []string{
+				`"path": "/"`,
+				`"recursive": false`,
+				`"name": "app.js"`,
+				`"path": "/app.js"`,
+				`"dir": false`,
+				`"name": "sub"`,
+				`"path": "/sub/"`,
+				`"dir": true`,
+			},
+		})
+	})
+
+	t.Run("Directory listing as JSON recursive (t=json&r=true)", func(t *testing.T) {
+		check(t, testScenario{
+			method:         http.MethodGet,
+			path:           "/?t=json&r=true",
+			options:        httpzserverdisk.Options{Listing: true},
+			expectedStatus: http.StatusOK,
+			expectedCType:  "application/json",
+			expectedBodyMatch: []string{
+				`"path": "/"`,
+				`"recursive": true`,
+				`"name": "app.js"`,
+				`"name": "deep/path/hi.txt"`,
+				`"path": "/deep/path/hi.txt"`,
+				`"name": "sub/data.json"`,
+				`"path": "/sub/data.json"`,
+			},
+		})
+	})
+
+	t.Run("Directory listing as JSON recursive with r=1", func(t *testing.T) {
+		check(t, testScenario{
+			method:         http.MethodGet,
+			path:           "/?t=json&r=1",
+			options:        httpzserverdisk.Options{Listing: true},
+			expectedStatus: http.StatusOK,
+			expectedCType:  "application/json",
+			expectedBodyMatch: []string{
+				`"path": "/"`,
+				`"recursive": true`,
+				`"name": "deep/path/hi.txt"`,
+			},
+		})
+	})
+
+	t.Run("Directory listing as HTML recursive (r=true)", func(t *testing.T) {
+		check(t, testScenario{
+			method:         http.MethodGet,
+			path:           "/?r=true",
+			options:        httpzserverdisk.Options{Listing: true},
+			expectedStatus: http.StatusOK,
+			expectedCType:  "text/html",
+			expectedBodyMatch: []string{
+				"<title>Index of / (recursive)</title>",
+				"<h1>Index of / (recursive)</h1>",
+				`<a href="/deep/path/hi.txt">deep/path/hi.txt</a>`,
+				`<a href="/sub/data.json">sub/data.json</a>`,
+			},
+		})
+	})
+
+	t.Run("Explicit listing query bypasses index.html when Listing is true", func(t *testing.T) {
+		check(t, testScenario{
+			method:         http.MethodGet,
+			path:           "/?t=json",
+			options:        httpzserverdisk.Options{Listing: true},
+			expectedStatus: http.StatusOK,
+			expectedCType:  "application/json",
+			expectedBodyMatch: []string{
+				`"name": "index.html"`,
+			},
+		})
+	})
+
+	t.Run("400 Bad Request for invalid t parameter", func(t *testing.T) {
+		check(t, testScenario{
+			method:         http.MethodGet,
+			path:           "/?t=xml",
+			options:        httpzserverdisk.Options{Listing: true},
+			expectedStatus: http.StatusBadRequest,
+			expectedBody:   "invalid format parameter 't', expected 'html' or 'json'",
+		})
+	})
+
+	t.Run("400 Bad Request for invalid r parameter", func(t *testing.T) {
+		check(t, testScenario{
+			method:         http.MethodGet,
+			path:           "/?r=notabool",
+			options:        httpzserverdisk.Options{Listing: true},
+			expectedStatus: http.StatusBadRequest,
+			expectedBody:   "invalid recursive parameter 'r', expected boolean",
+		})
+	})
+
+	t.Run("HEAD request on JSON listing returns headers with empty body", func(t *testing.T) {
+		check(t, testScenario{
+			method:         http.MethodHead,
+			path:           "/?t=json",
+			options:        httpzserverdisk.Options{Listing: true},
+			expectedStatus: http.StatusOK,
+			expectedCType:  "application/json",
+		})
+	})
+
 	t.Run("Handler synonym works identical to DiskHandler", func(t *testing.T) {
 		ctx := t.Context()
 		srv := httpzserver.New(ctx, httpzserver.Options{LocalAddress: "localhost:0"})
@@ -386,4 +506,52 @@ func TestUnitOptionsValidation(t *testing.T) {
 			})
 		})
 	})
+}
+
+func TestUnitListingJSONUnmarshal(t *testing.T) {
+	baseDir := createTestDiskFiles(t, map[string]string{
+		"a.txt":     "aaa",
+		"sub/b.txt": "bbb",
+	})
+
+	ctx := t.Context()
+	srv := httpzserver.New(ctx, httpzserver.Options{LocalAddress: "localhost:0"})
+	defer srv.Close()
+	srv.Listen()
+
+	srv.AddHandler("*", "/*", httpzserverdisk.DiskHandler(httpzserverdisk.Options{
+		Base:    baseDir,
+		Listing: true,
+	}))
+	srv.Start()
+
+	baseURL, err := url.Parse(srv.Base().String())
+	require.NoError(t, err)
+	subURL, err := url.Parse("/?t=json&r=true")
+	require.NoError(t, err)
+
+	resp, err := http.Get(baseURL.ResolveReference(subURL).String())
+	require.NoError(t, err)
+	defer resp.Body.Close()
+
+	require.Equal(t, http.StatusOK, resp.StatusCode)
+
+	var listing httpzserverdisk.ListingResponse
+	err = json.NewDecoder(resp.Body).Decode(&listing)
+	require.NoError(t, err)
+
+	require.Equal(t, "/", listing.Path)
+	require.True(t, listing.Recursive)
+	require.NotEmpty(t, listing.Entries)
+
+	foundSubFile := false
+	for _, entry := range listing.Entries {
+		if entry.Name == "sub/b.txt" {
+			foundSubFile = true
+			require.False(t, entry.Dir)
+			require.Equal(t, int64(3), entry.Size)
+			require.Equal(t, "/sub/b.txt", entry.Path)
+		}
+	}
+	require.True(t, foundSubFile, "expected to find sub/b.txt in recursive listing")
 }
