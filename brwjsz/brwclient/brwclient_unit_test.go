@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"strings"
 	"testing"
 
 	"github.com/infinity6-ai/gox/brwjsz/brwclient"
@@ -175,7 +176,8 @@ func TestUnitClientOperations(t *testing.T) {
 		}
 
 		c := &brwclient.Client{Dispatcher: mock}
-		ref := brwclient.MustCreate[string]()
+		ref := brwclient.MustCreate[string]("test")
+		require.True(t, strings.HasPrefix(string(ref), "test_"))
 		closer, err := brwclient.Set(t.Context(), c, ref, "test-value")
 		require.NoError(t, err)
 		require.NotNil(t, closer)

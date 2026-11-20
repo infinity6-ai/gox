@@ -67,14 +67,17 @@ type Client struct {
 	Dispatcher Dispatcher
 }
 
-// Create generates a unique Ref locally with zero network RPC.
-func Create[T any]() Ref[T] {
-	return Ref[T](idgen.B64())
+// Create generates a unique Ref locally with zero network RPC using the given prefix.
+func Create[T any](prefix string) Ref[T] {
+	if prefix == "" {
+		prefix = "ref"
+	}
+	return Ref[T](prefix + "_" + idgen.B64())
 }
 
-// MustCreate generates a unique Ref locally with zero network RPC.
-func MustCreate[T any]() Ref[T] {
-	return Create[T]()
+// MustCreate generates a unique Ref locally with zero network RPC using the given prefix.
+func MustCreate[T any](prefix string) Ref[T] {
+	return Create[T](prefix)
 }
 
 // Set binds a value in the browser's reference registry under the given ref.
@@ -165,11 +168,17 @@ func MustProc(ctx context.Context, c *Client, fn string, args ...any) {
 // Func executes a function or callable expression, stores the result in the reference registry,
 // and returns a typed Ref[T] handle to it.
 func Func[T any](ctx context.Context, c *Client, fn string, args ...any) (Ref[T], error) {
+	return FuncWithPrefix[T](ctx, c, "fn", fn, args...)
+}
+
+// FuncWithPrefix executes a function, stores the result in the reference registry with the given prefix,
+// and returns a typed Ref[T] handle to it.
+func FuncWithPrefix[T any](ctx context.Context, c *Client, prefix string, fn string, args ...any) (Ref[T], error) {
 	var zero Ref[T]
 	if c == nil || c.Dispatcher == nil {
 		return zero, fmt.Errorf("dispatcher is not configured")
 	}
-	ref := Create[T]()
+	ref := Create[T](prefix)
 	cmd := &Command{
 		ID:     idgen.B64(),
 		Action: "func",
@@ -190,6 +199,13 @@ func Func[T any](ctx context.Context, c *Client, fn string, args ...any) (Ref[T]
 // MustFunc executes a function on the browser and returns a typed Ref handle, panicking on failure.
 func MustFunc[T any](ctx context.Context, c *Client, fn string, args ...any) Ref[T] {
 	ret, err := Func[T](ctx, c, fn, args...)
+	errorz.Check(err)
+	return ret
+}
+
+// MustFuncWithPrefix executes a function with a custom reference prefix, panicking on failure.
+func MustFuncWithPrefix[T any](ctx context.Context, c *Client, prefix string, fn string, args ...any) Ref[T] {
+	ret, err := FuncWithPrefix[T](ctx, c, prefix, fn, args...)
 	errorz.Check(err)
 	return ret
 }

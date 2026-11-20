@@ -112,7 +112,8 @@ func TestUnitBrowserE2E(t *testing.T) {
 		Score int    `json:"score"`
 	}
 
-	userRef := brwclient.MustCreate[UserInfo]()
+	userRef := brwclient.MustCreate[UserInfo]("user")
+	require.True(t, strings.HasPrefix(string(userRef), "user_"))
 	closer, err := brwclient.Set(ctx, client, userRef, UserInfo{Name: "Alice", Score: 100})
 	require.NoError(t, err)
 
@@ -128,14 +129,17 @@ func TestUnitBrowserE2E(t *testing.T) {
 	calcRef, err := brwclient.Func[int](ctx, client, `(u) => u.score * 3`, userRef)
 	require.NoError(t, err)
 	require.NotEmpty(t, calcRef)
+	require.True(t, strings.HasPrefix(string(calcRef), "fn_"))
 
 	calcVal, err := brwclient.Get[int](ctx, client, calcRef)
 	require.NoError(t, err)
 	require.Equal(t, 300, calcVal)
 
 	// Non-transferable JS objects: DOM elements and Canvas context
-	canvasRef := brwclient.MustFunc[any](ctx, client, `() => document.createElement('canvas')`)
-	ctx2dRef := brwclient.MustFunc[any](ctx, client, `(c) => c.getContext('2d')`, canvasRef)
+	canvasRef := brwclient.MustFuncWithPrefix[any](ctx, client, "canvas", `() => document.createElement('canvas')`)
+	require.True(t, strings.HasPrefix(string(canvasRef), "canvas_"))
+	ctx2dRef := brwclient.MustFuncWithPrefix[any](ctx, client, "ctx2d", `(c) => c.getContext('2d')`, canvasRef)
+	require.True(t, strings.HasPrefix(string(ctx2dRef), "ctx2d_"))
 
 	// Perform RefDump (all active refs)
 	dumpAll := brwclient.MustRefDump(ctx, client)
