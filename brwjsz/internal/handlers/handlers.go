@@ -21,22 +21,28 @@ const ControllerPath = BasePath + "/controller.html"
 const EventsPath = "/api/brwjs/events"
 const ReplyPath = "/api/brwjs/reply"
 
-// SiteOptions configures serving static files from a disk directory on the server.
-type SiteOptions struct {
+// Site configures serving static files from a disk directory on the server.
+type Site struct {
 	Disk *pathz.Path
 	Path string // default "/*"
 }
 
-// AddHandlers registers the static file handler, SSE event stream, reply endpoint,
-// and optional disk site handler on the server.
-func AddHandlers(ctx context.Context, s *httpzserver.Server, hub *Hub, site ...SiteOptions) {
-	// Serve static assets from embedded stzfiles
+// AddHandlers registers all internal handlers and an optional disk site on the server.
+func AddHandlers(ctx context.Context, s *httpzserver.Server, hub *Hub, site *Site) {
+	addStatic(s)
+	addEvents(s, hub)
+	addReply(s, hub)
+	addSite(s, site)
+}
+
+func addStatic(s *httpzserver.Server) {
 	s.AddHandler("GET", BasePath+"/*", httpzserverstatic.Handler(stzfiles.Name, httpzserverstatic.Options{
 		Prefix:  BasePath,
 		NoIndex: false,
 	}))
+}
 
-	// SSE Events stream
+func addEvents(s *httpzserver.Server, hub *Hub) {
 	s.AddHandler("GET", EventsPath, func(ctx context.Context, resp httpzserver.Resp, req *httpzrequest.Req, params map[string]string) {
 		conn, cleanup := hub.RegisterController()
 		defer cleanup()
@@ -74,8 +80,9 @@ func AddHandlers(ctx context.Context, s *httpzserver.Server, hub *Hub, site ...S
 			}
 		}
 	})
+}
 
-	// Reply endpoint
+func addReply(s *httpzserver.Server, hub *Hub) {
 	s.AddHandler("POST", ReplyPath, func(ctx context.Context, resp httpzserver.Resp, req *httpzrequest.Req, params map[string]string) {
 		if req.Body == nil {
 			w := resp(http.StatusBadRequest, nil)
@@ -92,30 +99,25 @@ func AddHandlers(ctx context.Context, s *httpzserver.Server, hub *Hub, site ...S
 		w := resp(http.StatusOK, nil)
 		_, _ = w.Write([]byte("ok"))
 	})
-
-	// Optional disk site handler added last
-	if len(site) > 0 && site[0].Disk != nil {
-		path := site[0].Path
-		if path == "" {
-			path = "/*"
-		}
-		prefix := strings.TrimSuffix(path, "/*")
-		prefix = strings.TrimSuffix(prefix, "*")
-		prefix = strings.TrimSuffix(prefix, "/")
-		if prefix != "" && !strings.HasPrefix(prefix, "/") {
-			prefix = "/" + prefix
-		}
-		s.AddHandler("GET", path, httpzserverdisk.Handler(httpzserverdisk.Options{
-			Base:    site[0].Disk,
-			Prefix:  prefix,
-			Listing: true,
-		}))
-	}
 }
 
-// AddHanlers is an alias for backwards compatibility.
-func AddHanlers(ctx context.Context, s *httpzserver.Server) *Hub {
-	h := NewHub()
-	AddHandlers(ctx, s, h)
-	return h
+func addSite(s *httpzserver.Server, site *Site) {
+	if site == nil || site.Disk == nil {
+		return
+	}
+	path := site.Path
+	if path == "" {
+		path = "/*"
+	}
+	prefix := strings.TrimSuffix(path, "/*")
+	prefix = strings.TrimSuffix(prefix, "*")
+	prefix = strings.TrimSuffix(prefix, "/")
+	if prefix != "" && !strings.HasPrefix(prefix, "/") {
+		prefix = "/" + prefix
+	}
+	s.AddHandler("GET", path, httpzserverdisk.Handler(httpzserverdisk.Options{
+		Base:    site.Disk,
+		Prefix:  prefix,
+		Listing: true,
+	}))
 }

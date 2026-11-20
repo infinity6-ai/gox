@@ -23,7 +23,7 @@ func TestUnitHandlersStaticServing(t *testing.T) {
 	defer srv.Close()
 
 	hub := handlers.NewHub()
-	handlers.AddHandlers(ctx, srv, hub)
+	handlers.AddHandlers(ctx, srv, hub, nil)
 	srv.Listen()
 	srv.Start()
 
@@ -69,7 +69,7 @@ func TestUnitHubDispatchAndReply(t *testing.T) {
 	defer srv.Close()
 
 	hub := handlers.NewHub()
-	handlers.AddHandlers(ctx, srv, hub)
+	handlers.AddHandlers(ctx, srv, hub, nil)
 	srv.Listen()
 	srv.Start()
 
@@ -127,7 +127,7 @@ func TestUnitHandlersDiskSiteServing(t *testing.T) {
 	defer srv.Close()
 
 	hub := handlers.NewHub()
-	handlers.AddHandlers(ctx, srv, hub, handlers.SiteOptions{
+	handlers.AddHandlers(ctx, srv, hub, &handlers.Site{
 		Disk: pathz.MustParse(tempDir),
 	})
 	srv.Listen()
