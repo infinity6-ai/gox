@@ -21,6 +21,14 @@ const ReplyPath = "/api/brwjs/reply"
 
 // AddHandlers registers the static file handler, SSE event stream, and reply endpoint on the server.
 func AddHandlers(ctx context.Context, s *httpzserver.Server, hub *Hub) {
+	// Debug log endpoint from JS
+	s.AddHandler("GET", "/api/brwjs/log", func(ctx context.Context, resp httpzserver.Resp, req *httpzrequest.Req, params map[string]string) {
+		msg := req.Query.Get("msg")
+		fmt.Printf("[JS-LOG] %s\n", msg)
+		w := resp(http.StatusOK, nil)
+		_, _ = w.Write([]byte("ok"))
+	})
+
 	// Serve static assets from embedded stzfiles
 	s.AddHandler("GET", BasePath+"/*", httpzserverstatic.Handler(stzfiles.Name, httpzserverstatic.Options{
 		Prefix:  BasePath,
@@ -34,9 +42,13 @@ func AddHandlers(ctx context.Context, s *httpzserver.Server, hub *Hub) {
 		if err != nil {
 			tab = 0
 		}
+		fmt.Printf("[SERVER] SSE connected for tab %d\n", tab)
 
 		conn, cleanup := hub.RegisterTab(tab)
-		defer cleanup()
+		defer func() {
+			fmt.Printf("[SERVER] SSE disconnected for tab %d\n", tab)
+			cleanup()
+		}()
 
 		headers := make(http.Header)
 		headers.Set("Content-Type", "text/event-stream")
@@ -59,8 +71,10 @@ func AddHandlers(ctx context.Context, s *httpzserver.Server, hub *Hub) {
 				if err != nil {
 					continue
 				}
+				fmt.Printf("[SERVER] Sending cmd to tab %d: %s\n", tab, string(data))
 				_, err = fmt.Fprintf(w, "event: cmd\ndata: %s\n\n", string(data))
 				if err != nil {
+					fmt.Printf("[SERVER] Write cmd error to tab %d: %v\n", tab, err)
 					return
 				}
 				if f, ok := w.(http.Flusher); ok {
@@ -85,6 +99,7 @@ func AddHandlers(ctx context.Context, s *httpzserver.Server, hub *Hub) {
 			_, _ = w.Write([]byte(fmt.Sprintf("invalid json: %s", err)))
 			return
 		}
+		fmt.Printf("[SERVER] Reply received: ID=%s, Ok=%v, Err=%s, Result=%s\n", reply.ID, reply.Ok, reply.Error, string(reply.Result))
 		hub.HandleReply(&reply)
 		w := resp(http.StatusOK, nil)
 		_, _ = w.Write([]byte("ok"))

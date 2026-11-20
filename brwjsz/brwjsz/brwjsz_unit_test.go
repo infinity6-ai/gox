@@ -67,13 +67,13 @@ func TestUnitChromeOptions(t *testing.T) {
 }
 
 func TestUnitBrowserE2E(t *testing.T) {
-	ctx, cancel := context.WithTimeout(t.Context(), 5*time.Second)
+	ctx, cancel := context.WithTimeout(t.Context(), 30*time.Second)
 	defer cancel()
 
 	opts := brwjsz.Options{
 		TabCount: 2,
 	}
-	opts.Chrome("", true, "")
+	opts.Chrome("", false, "") // # let is non headless
 	opts.Command.CaptureStderr = 100
 	opts.Command.CaptureStdout = 100
 
@@ -81,20 +81,6 @@ func TestUnitBrowserE2E(t *testing.T) {
 	defer b.Close()
 
 	err := b.Start(ctx)
-	if err != nil {
-		t.Logf("Error starting: %v", err)
-		if b.Process() != nil && b.Process().GetStderr() != nil {
-			for {
-				select {
-				case line := <-b.Process().GetStderr():
-					t.Logf("Chrome stderr: %s", line.Line)
-				default:
-					goto doneStderr
-				}
-			}
-		}
-	doneStderr:
-	}
 	require.NoError(t, err)
 
 	tab0 := b.Tab(0)

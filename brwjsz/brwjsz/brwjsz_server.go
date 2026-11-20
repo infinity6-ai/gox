@@ -6,14 +6,18 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
-	"strconv"
 
 	"github.com/infinity6-ai/gox/brwjsz/brwclient"
 	"github.com/infinity6-ai/gox/brwjsz/internal/handlers"
 	"github.com/infinity6-ai/gox/commonz/errorz"
 	"github.com/infinity6-ai/gox/commonz/execz"
+	"github.com/infinity6-ai/gox/commonz/logz"
 	"github.com/infinity6-ai/gox/httpz/httpzserver"
 )
+
+type tlogger logz.Type
+
+var logger = logz.Create(tlogger(true))
 
 // Options configures the Browser instance, tab count, command arguments, and HTTP server.
 type Options struct {
@@ -56,6 +60,7 @@ func (o *Options) Chrome(binPath string, headless bool, userDataDir string) *Opt
 		"--no-first-run",
 		"--no-default-browser-check",
 		"--disable-sync",
+		"--disable-popup-blocking",
 		"--disable-background-timer-throttling",
 		"--disable-backgrounding-occluded-windows",
 		"--disable-renderer-backgrounding",
@@ -134,6 +139,17 @@ func (b *Browser) Start(ctx context.Context) error {
 		return fmt.Errorf("error starting browser process: %w", err)
 	}
 
+	go func() {
+		for line := range b.Process().GetStderr() {
+			logger.Info(ctx, "Chrome stderr", map[string]any{"p": line.Partial, "l": line.Line})
+		}
+	}()
+	go func() {
+		for line := range b.Process().GetStdout() {
+			logger.Info(ctx, "Chrome stdout", map[string]any{"p": line.Partial, "l": line.Line})
+		}
+	}()
+
 	err = b.hub.WaitReady(ctx, b.tabCount)
 	if err != nil {
 		return fmt.Errorf("error waiting for tabs ready: %w", err)
@@ -148,25 +164,22 @@ func (b *Browser) fixArgs() {
 		tabCount = 1
 	}
 
-	tabUrls := make([]string, tabCount)
-	for i := 0; i < tabCount; i++ {
-		u := b.server.Base().MustJoinPathString(handlers.ControllerPath)
-		u.Query = "tab=" + strconv.Itoa(i)
-		tabUrls[i] = u.String()
-	}
+	u := b.server.Base().MustJoinPathString(handlers.ControllerPath)
+	u.Query = fmt.Sprintf("tab=0&count=%d", tabCount)
+	targetUrl := u.String()
 
-	b.cmdOpts.Args = make([]string, 0, len(b.originalArgs)+len(tabUrls))
+	b.cmdOpts.Args = make([]string, 0, len(b.originalArgs)+1)
 	urlReplaced := false
 	for _, arg := range b.originalArgs {
 		if arg == "URL" {
-			b.cmdOpts.Args = append(b.cmdOpts.Args, tabUrls...)
+			b.cmdOpts.Args = append(b.cmdOpts.Args, targetUrl)
 			urlReplaced = true
 		} else {
 			b.cmdOpts.Args = append(b.cmdOpts.Args, arg)
 		}
 	}
 	if !urlReplaced {
-		b.cmdOpts.Args = append(b.cmdOpts.Args, tabUrls...)
+		b.cmdOpts.Args = append(b.cmdOpts.Args, targetUrl)
 	}
 }
 
