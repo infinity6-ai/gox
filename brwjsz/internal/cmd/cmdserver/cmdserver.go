@@ -4,6 +4,7 @@ package cmdserver
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"os"
@@ -35,6 +36,11 @@ func ReadState(path string) (*ServerState, error) {
 	if err := json.Unmarshal(b, &state); err != nil {
 		return nil, fmt.Errorf("invalid state file %s: %w", path, err)
 	}
+	if state.Pid > 0 {
+		if err := syscall.Kill(state.Pid, 0); errors.Is(err, syscall.ESRCH) {
+			return nil, fmt.Errorf("server daemon at %s (pid %d) is not running; state file may be stale", state.URL, state.Pid)
+		}
+	}
 	return &state, nil
 }
 
@@ -42,9 +48,12 @@ func ReadState(path string) (*ServerState, error) {
 func WriteState(path string, state ServerState) error {
 	b, err := json.MarshalIndent(state, "", "  ")
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to marshal state: %w", err)
 	}
-	return os.WriteFile(path, b, 0o644)
+	if err := os.WriteFile(path, b, 0o644); err != nil {
+		return fmt.Errorf("failed to write state file %s: %w", path, err)
+	}
+	return nil
 }
 
 // Prepare registers the server command group (start, stop) onto parent.
@@ -167,7 +176,7 @@ func newStopCmd() *cobra.Command {
 
 			state, err := ReadState(statePath)
 			if err != nil {
-				return err
+				return fmt.Errorf("failed to read state: %w", err)
 			}
 
 			stopUrl := state.URL + handlers.StopPath

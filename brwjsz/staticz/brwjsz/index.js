@@ -19,6 +19,14 @@
         return arg;
     }
 
+    function evalTarget(fn) {
+        try {
+            return (0, eval)('(' + fn + ')');
+        } catch (_) {
+            return (0, eval)(fn);
+        }
+    }
+
     async function sendReply(reply) {
         try {
             await fetch('/api/brwjs/reply', {
@@ -39,12 +47,7 @@
             switch (action) {
                 case 'proc': {
                     const resolvedArgs = (args || []).map(resolveArg);
-                    let target;
-                    try {
-                        target = (0, eval)('(' + fn + ')');
-                    } catch (_) {
-                        target = (0, eval)(fn);
-                    }
+                    const target = evalTarget(fn);
                     if (typeof target === 'function') {
                         const res = target.apply(window, resolvedArgs);
                         if (res && typeof res.then === 'function') {
@@ -55,12 +58,7 @@
                     break;
                 }
                 case 'eval': {
-                    let res;
-                    try {
-                        res = (0, eval)('(' + fn + ')');
-                    } catch (_) {
-                        res = (0, eval)(fn);
-                    }
+                    let res = evalTarget(fn);
                     if (res && typeof res.then === 'function') {
                         res = await res;
                     }
@@ -69,18 +67,8 @@
                 }
                 case 'call': {
                     const resolvedArgs = (args || []).map(resolveArg);
-                    let target;
-                    try {
-                        target = (0, eval)('(' + fn + ')');
-                    } catch (_) {
-                        target = (0, eval)(fn);
-                    }
-                    let res;
-                    if (typeof target === 'function') {
-                        res = target.apply(window, resolvedArgs);
-                    } else {
-                        res = target;
-                    }
+                    const target = evalTarget(fn);
+                    let res = (typeof target === 'function') ? target.apply(window, resolvedArgs) : target;
                     if (res && typeof res.then === 'function') {
                         res = await res;
                     }
@@ -89,18 +77,8 @@
                 }
                 case 'func': {
                     const resolvedArgs = (args || []).map(resolveArg);
-                    let target;
-                    try {
-                        target = (0, eval)('(' + fn + ')');
-                    } catch (_) {
-                        target = (0, eval)(fn);
-                    }
-                    let res;
-                    if (typeof target === 'function') {
-                        res = target.apply(window, resolvedArgs);
-                    } else {
-                        res = target;
-                    }
+                    const target = evalTarget(fn);
+                    let res = (typeof target === 'function') ? target.apply(window, resolvedArgs) : target;
                     if (res && typeof res.then === 'function') {
                         res = await res;
                     }

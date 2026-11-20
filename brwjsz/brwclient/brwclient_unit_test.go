@@ -149,6 +149,21 @@ func TestUnitClientOperations(t *testing.T) {
 		})
 	})
 
+	t.Run("Exec runs code with wrapper and returns result", func(t *testing.T) {
+		check(t, testScenario{
+			name: "exec success",
+			action: func(ctx context.Context, c *brwclient.Client) error {
+				val, err := brwclient.Exec(ctx, c, "21 * 2")
+				if err != nil {
+					return err
+				}
+				require.Equal(t, "hello world", val)
+				return nil
+			},
+			wantAction: "call",
+		})
+	})
+
 	t.Run("Func creates reference", func(t *testing.T) {
 		check(t, testScenario{
 			name: "func success",

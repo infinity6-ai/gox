@@ -246,6 +246,41 @@ func MustCall[T any](ctx context.Context, c *Client, fn string, args ...any) T {
 	return ret
 }
 
+// CodeRunnerWrapper is the JavaScript wrapper that evaluates expressions or function calls with args and awaits Promises.
+const CodeRunnerWrapper = `async (code, args) => {
+	window.args = args;
+	let target;
+	try {
+		target = (0, eval)('(' + code + ')');
+	} catch (_) {
+		target = (0, eval)(code);
+	}
+	if (typeof target === 'function') {
+		let res = target.apply(window, args);
+		if (res && typeof res.then === 'function') {
+			res = await res;
+		}
+		return res;
+	}
+	if (target && typeof target.then === 'function') {
+		target = await target;
+	}
+	return target;
+}`
+
+// Exec executes code or a callable function with arguments on the browser,
+// awaiting any returned Promise, and decoding the JSON result into any.
+func Exec(ctx context.Context, c *Client, code string, args ...any) (any, error) {
+	return Call[any](ctx, c, CodeRunnerWrapper, code, args)
+}
+
+// MustExec executes code or a function on the browser, panicking on failure.
+func MustExec(ctx context.Context, c *Client, code string, args ...any) any {
+	ret, err := Exec(ctx, c, code, args...)
+	errorz.Check(err)
+	return ret
+}
+
 // Eval evaluates a JavaScript expression on the browser and decodes the JSON result into T.
 func Eval[T any](ctx context.Context, c *Client, expr string) (T, error) {
 	var zero T

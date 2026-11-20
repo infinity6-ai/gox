@@ -116,7 +116,7 @@ func Prepare(ctx context.Context, parent *cobra.Command) *cobra.Command {
 			if opts.state != "" {
 				state, err := cmdserver.ReadState(opts.state)
 				if err != nil {
-					return err
+					return fmt.Errorf("failed to read state: %w", err)
 				}
 
 				reqPayload, err := json.Marshal(handlers.ExecRequest{
@@ -124,13 +124,13 @@ func Prepare(ctx context.Context, parent *cobra.Command) *cobra.Command {
 					Args: []any{suffix},
 				})
 				if err != nil {
-					return err
+					return fmt.Errorf("failed to marshal qunit payload: %w", err)
 				}
 
 				execUrl := state.URL + handlers.ExecPath
 				httpReq, err := http.NewRequestWithContext(cmd.Context(), "POST", execUrl, bytes.NewReader(reqPayload))
 				if err != nil {
-					return err
+					return fmt.Errorf("failed to create http request: %w", err)
 				}
 				httpReq.Header.Set("Content-Type", "application/json")
 
@@ -152,7 +152,7 @@ func Prepare(ctx context.Context, parent *cobra.Command) *cobra.Command {
 
 				resBytes, err := json.Marshal(execResp.Result)
 				if err != nil {
-					return err
+					return fmt.Errorf("failed to marshal exec result: %w", err)
 				}
 
 				var report brwqunit.TestReport

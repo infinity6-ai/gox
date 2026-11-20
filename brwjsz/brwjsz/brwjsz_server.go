@@ -116,6 +116,7 @@ func (b *Browser) Close() error {
 	}
 	if b.tempUserDataDir != "" {
 		cleanErr = os.RemoveAll(b.tempUserDataDir)
+		b.tempUserDataDir = ""
 	}
 	err := errors.Join(prcErr, serverErr, cleanErr)
 	if err != nil {

@@ -115,9 +115,9 @@ type ExecRequest struct {
 
 // ExecResponse represents the JSON response returned by /api/brwjs/exec.
 type ExecResponse struct {
-	Ok     bool   `json:"ok"`
-	Result any    `json:"result,omitempty"`
-	Error  string `json:"error,omitempty"`
+	Ok     bool            `json:"ok"`
+	Result json.RawMessage `json:"result,omitempty"`
+	Error  string          `json:"error,omitempty"`
 }
 
 func addExec(s *httpzserver.Server, hub *Hub) {
@@ -137,31 +137,10 @@ func addExec(s *httpzserver.Server, hub *Hub) {
 			return
 		}
 
-		wrapper := `async (code, args) => {
-			window.args = args;
-			let target;
-			try {
-				target = (0, eval)('(' + code + ')');
-			} catch (_) {
-				target = (0, eval)(code);
-			}
-			if (typeof target === 'function') {
-				let res = target.apply(window, args);
-				if (res && typeof res.then === 'function') {
-					res = await res;
-				}
-				return res;
-			}
-			if (target && typeof target.then === 'function') {
-				target = await target;
-			}
-			return target;
-		}`
-
 		cmd := &brwclient.Command{
 			ID:     idgen.B64(),
 			Action: "call",
-			Fn:     wrapper,
+			Fn:     brwclient.CodeRunnerWrapper,
 			Args:   []any{execReq.Code, execReq.Args},
 		}
 
@@ -177,12 +156,8 @@ func addExec(s *httpzserver.Server, hub *Hub) {
 			return
 		}
 
-		var resVal any
-		if len(reply.Result) > 0 {
-			_ = json.Unmarshal(reply.Result, &resVal)
-		}
 		w := resp(http.StatusOK, headers)
-		_ = json.NewEncoder(w).Encode(ExecResponse{Ok: true, Result: resVal})
+		_ = json.NewEncoder(w).Encode(ExecResponse{Ok: true, Result: reply.Result})
 	})
 }
 

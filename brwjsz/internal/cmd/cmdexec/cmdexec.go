@@ -22,14 +22,14 @@ import (
 type execOptions struct {
 	code     string
 	file     string
-	site            string
-	state           string
-	args            []string
-	argFiles        []string
-	raw             bool
-	disableHeadless bool
-	bin             string
-	timeout         time.Duration
+	site     string
+	state    string
+	args     []string
+	argFiles []string
+	raw      bool
+	headless bool
+	bin      string
+	timeout  time.Duration
 }
 
 func parseArgValue(s string) any {
@@ -104,7 +104,7 @@ func Prepare(ctx context.Context, parent *cobra.Command) *cobra.Command {
 			if opts.state != "" {
 				state, err := cmdserver.ReadState(opts.state)
 				if err != nil {
-					return err
+					return fmt.Errorf("failed to read state: %w", err)
 				}
 
 				reqPayload, err := json.Marshal(handlers.ExecRequest{
@@ -112,20 +112,20 @@ func Prepare(ctx context.Context, parent *cobra.Command) *cobra.Command {
 					Args: resolvedArgs,
 				})
 				if err != nil {
-					return err
+					return fmt.Errorf("failed to marshal exec payload: %w", err)
 				}
 
 				execUrl := state.URL + handlers.ExecPath
 				httpReq, err := http.NewRequestWithContext(cmd.Context(), "POST", execUrl, bytes.NewReader(reqPayload))
 				if err != nil {
-					return err
+					return fmt.Errorf("failed to create http request: %w", err)
 				}
 				httpReq.Header.Set("Content-Type", "application/json")
 
 				httpClient := &http.Client{Timeout: opts.timeout}
 				httpResp, err := httpClient.Do(httpReq)
 				if err != nil {
-					return fmt.Errorf("failed to send exec request to server: %w", err)
+					return fmt.Errorf("failed to send exec request to server daemon (pid %d): %w", state.Pid, err)
 				}
 				defer httpResp.Body.Close()
 
@@ -138,7 +138,14 @@ func Prepare(ctx context.Context, parent *cobra.Command) *cobra.Command {
 					return fmt.Errorf("execution error: %s", execResp.Error)
 				}
 
-				return printResult(execResp.Result, opts.raw)
+				var resVal any
+				if len(execResp.Result) > 0 {
+					if err := json.Unmarshal(execResp.Result, &resVal); err != nil {
+						return fmt.Errorf("failed to unmarshal exec result: %w", err)
+					}
+				}
+
+				return printResult(resVal, opts.raw)
 			}
 
 			// Mode B: Standalone one-shot browser session
@@ -150,7 +157,7 @@ func Prepare(ctx context.Context, parent *cobra.Command) *cobra.Command {
 			}
 
 			brwOpts := brwjsz.Options{}
-			brwOpts.Chrome(opts.bin, !opts.disableHeadless, "")
+			brwOpts.Chrome(opts.bin, opts.headless, "")
 			if opts.site != "" {
 				brwOpts.Site = &brwjsz.Site{
 					Disk: pathz.MustParse(opts.site),
@@ -164,28 +171,7 @@ func Prepare(ctx context.Context, parent *cobra.Command) *cobra.Command {
 				return fmt.Errorf("failed to start browser: %w", err)
 			}
 
-			wrapper := `async (code, args) => {
-				window.args = args;
-				let target;
-				try {
-					target = (0, eval)('(' + code + ')');
-				} catch (_) {
-					target = (0, eval)(code);
-				}
-				if (typeof target === 'function') {
-					let res = target.apply(window, args);
-					if (res && typeof res.then === 'function') {
-						res = await res;
-					}
-					return res;
-				}
-				if (target && typeof target.then === 'function') {
-					target = await target;
-				}
-				return target;
-			}`
-
-			res, err := brwclient.Call[any](cmdCtx, b.Client(), wrapper, code, resolvedArgs)
+			res, err := brwclient.Exec(cmdCtx, b.Client(), code, resolvedArgs...)
 			if err != nil {
 				return fmt.Errorf("execution error: %w", err)
 			}
@@ -201,7 +187,7 @@ func Prepare(ctx context.Context, parent *cobra.Command) *cobra.Command {
 	cmd.Flags().StringArrayVar(&opts.args, "arg", nil, "Argument to pass to the function (can be specified multiple times)")
 	cmd.Flags().StringArrayVar(&opts.argFiles, "arg-file", nil, "File containing argument value (can be specified multiple times)")
 	cmd.Flags().BoolVar(&opts.raw, "raw", false, "Print string output without JSON quotes")
-	cmd.Flags().BoolVar(&opts.disableHeadless, "disable-headless", false, "Disable headless browser mode")
+	cmd.Flags().BoolVar(&opts.headless, "headless", true, "Run browser in headless mode")
 	cmd.Flags().StringVar(&opts.bin, "bin", "", "Browser binary path (defaults to auto-detect)")
 	cmd.Flags().DurationVar(&opts.timeout, "timeout", 30*time.Second, "Execution timeout")
 
