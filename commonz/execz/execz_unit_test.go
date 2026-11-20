@@ -1,4 +1,4 @@
-package execzv2_test
+package execz_test
 
 import (
 	"context"
@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/infinity6-ai/gox/commonz/execzv2"
+	"github.com/infinity6-ai/gox/commonz/execz"
 	"github.com/stretchr/testify/require"
 )
 
@@ -22,7 +22,7 @@ func TestUnitBasicRun(t *testing.T) {
 	check := func(t *testing.T, s testScenario) {
 		t.Helper()
 		ctx := context.Background()
-		proc := execzv2.New(ctx, execzv2.Options{
+		proc := execz.New(ctx, execz.Options{
 			Bin:  s.bin,
 			Args: s.args,
 		})
@@ -56,7 +56,7 @@ func TestUnitBasicRun(t *testing.T) {
 
 	t.Run("Non-existent command", func(t *testing.T) {
 		check(t, testScenario{
-			bin:         "non_existent_binary_gox_execzv2",
+			bin:         "non_existent_binary_gox_execz",
 			expectError: true,
 		})
 	})
@@ -65,14 +65,14 @@ func TestUnitBasicRun(t *testing.T) {
 func TestUnitGetStdoutAndGetStderr(t *testing.T) {
 	type testScenario struct {
 		command string
-		wantOut []execzv2.Line
-		wantErr []execzv2.Line
+		wantOut []execz.Line
+		wantErr []execz.Line
 	}
 
 	check := func(t *testing.T, s testScenario) {
 		t.Helper()
 		ctx := context.Background()
-		proc := execzv2.New(ctx, execzv2.Options{
+		proc := execz.New(ctx, execz.Options{
 			Bin:           "bash",
 			Args:          []string{"-c", s.command},
 			CaptureStdout: 64,
@@ -81,8 +81,8 @@ func TestUnitGetStdoutAndGetStderr(t *testing.T) {
 		defer proc.Close()
 		require.NoError(t, proc.Start(ctx))
 
-		var gotOut []execzv2.Line
-		var gotErr []execzv2.Line
+		var gotOut []execz.Line
+		var gotErr []execz.Line
 		var wg sync.WaitGroup
 
 		wg.Add(2)
@@ -109,7 +109,7 @@ func TestUnitGetStdoutAndGetStderr(t *testing.T) {
 	t.Run("Single line stdout", func(t *testing.T) {
 		check(t, testScenario{
 			command: "echo hello",
-			wantOut: []execzv2.Line{{Line: "hello", Partial: false}},
+			wantOut: []execz.Line{{Line: "hello", Partial: false}},
 			wantErr: nil,
 		})
 	})
@@ -117,11 +117,11 @@ func TestUnitGetStdoutAndGetStderr(t *testing.T) {
 	t.Run("Multi-line stdout and stderr", func(t *testing.T) {
 		check(t, testScenario{
 			command: "echo out1; echo err1 >&2; echo out2; echo err2 >&2",
-			wantOut: []execzv2.Line{
+			wantOut: []execz.Line{
 				{Line: "out1", Partial: false},
 				{Line: "out2", Partial: false},
 			},
-			wantErr: []execzv2.Line{
+			wantErr: []execz.Line{
 				{Line: "err1", Partial: false},
 				{Line: "err2", Partial: false},
 			},
@@ -131,7 +131,7 @@ func TestUnitGetStdoutAndGetStderr(t *testing.T) {
 	t.Run("No newline stdout yields partial line", func(t *testing.T) {
 		check(t, testScenario{
 			command: "printf 'no-nl'",
-			wantOut: []execzv2.Line{{Line: "no-nl", Partial: true}},
+			wantOut: []execz.Line{{Line: "no-nl", Partial: true}},
 			wantErr: nil,
 		})
 	})
@@ -139,7 +139,7 @@ func TestUnitGetStdoutAndGetStderr(t *testing.T) {
 	t.Run("Empty lines preserved", func(t *testing.T) {
 		check(t, testScenario{
 			command: "echo ''; echo 'non-empty'; echo ''",
-			wantOut: []execzv2.Line{
+			wantOut: []execz.Line{
 				{Line: "", Partial: false},
 				{Line: "non-empty", Partial: false},
 				{Line: "", Partial: false},
@@ -151,7 +151,7 @@ func TestUnitGetStdoutAndGetStderr(t *testing.T) {
 
 func TestUnitLineBufferSize(t *testing.T) {
 	ctx := context.Background()
-	proc := execzv2.New(ctx, execzv2.Options{
+	proc := execz.New(ctx, execz.Options{
 		Bin:            "bash",
 		Args:           []string{"-c", "echo '1234567890'"},
 		CaptureStdout:  64,
@@ -160,13 +160,13 @@ func TestUnitLineBufferSize(t *testing.T) {
 	defer proc.Close()
 	require.NoError(t, proc.Start(ctx))
 
-	var gotOut []execzv2.Line
+	var gotOut []execz.Line
 	for line := range proc.GetStdout() {
 		gotOut = append(gotOut, line)
 	}
 	require.NoError(t, proc.WaitFor(ctx, 0))
 
-	expected := []execzv2.Line{
+	expected := []execz.Line{
 		{Line: "1234", Partial: true},
 		{Line: "5678", Partial: true},
 		{Line: "90", Partial: false},
@@ -176,7 +176,7 @@ func TestUnitLineBufferSize(t *testing.T) {
 
 func TestUnitGetStdinAndCloseStdin(t *testing.T) {
 	ctx := context.Background()
-	proc := execzv2.New(ctx, execzv2.Options{
+	proc := execz.New(ctx, execz.Options{
 		Bin:           "tr",
 		Args:          []string{"a-z", "A-Z"},
 		CaptureStdout: 64,
@@ -185,7 +185,7 @@ func TestUnitGetStdinAndCloseStdin(t *testing.T) {
 	defer proc.Close()
 	require.NoError(t, proc.Start(ctx))
 
-	var gotOut []execzv2.Line
+	var gotOut []execz.Line
 	done := make(chan struct{})
 	go func() {
 		defer close(done)
@@ -194,13 +194,13 @@ func TestUnitGetStdinAndCloseStdin(t *testing.T) {
 		}
 	}()
 
-	proc.GetStdin() <- execzv2.Line{Line: "hello", Partial: false}
-	proc.GetStdin() <- execzv2.Line{Line: "world", Partial: false}
+	proc.GetStdin() <- execz.Line{Line: "hello", Partial: false}
+	proc.GetStdin() <- execz.Line{Line: "world", Partial: false}
 	require.NoError(t, proc.CloseStdin())
 
 	<-done
 	require.NoError(t, proc.WaitFor(ctx, 0))
-	require.Equal(t, []execzv2.Line{
+	require.Equal(t, []execz.Line{
 		{Line: "HELLO", Partial: false},
 		{Line: "WORLD", Partial: false},
 	}, gotOut)
@@ -208,7 +208,7 @@ func TestUnitGetStdinAndCloseStdin(t *testing.T) {
 
 func TestUnitCloseViaChannel(t *testing.T) {
 	ctx := context.Background()
-	proc := execzv2.New(ctx, execzv2.Options{
+	proc := execz.New(ctx, execz.Options{
 		Bin:           "tr",
 		Args:          []string{"a-z", "A-Z"},
 		CaptureStdout: 64,
@@ -217,7 +217,7 @@ func TestUnitCloseViaChannel(t *testing.T) {
 	defer proc.Close()
 	require.NoError(t, proc.Start(ctx))
 
-	var gotOut []execzv2.Line
+	var gotOut []execz.Line
 	done := make(chan struct{})
 	go func() {
 		defer close(done)
@@ -226,19 +226,19 @@ func TestUnitCloseViaChannel(t *testing.T) {
 		}
 	}()
 
-	proc.GetStdin() <- execzv2.Line{Line: "channel-close", Partial: false}
+	proc.GetStdin() <- execz.Line{Line: "channel-close", Partial: false}
 	close(proc.GetStdin())
 
 	<-done
 	require.NoError(t, proc.WaitFor(ctx, 0))
-	require.Equal(t, []execzv2.Line{
+	require.Equal(t, []execz.Line{
 		{Line: "CHANNEL-CLOSE", Partial: false},
 	}, gotOut)
 }
 
 func TestUnitStdinPartial(t *testing.T) {
 	ctx := context.Background()
-	proc := execzv2.New(ctx, execzv2.Options{
+	proc := execz.New(ctx, execz.Options{
 		Bin:           "cat",
 		CaptureStdout: 64,
 		EnableStdin:   64,
@@ -246,7 +246,7 @@ func TestUnitStdinPartial(t *testing.T) {
 	defer proc.Close()
 	require.NoError(t, proc.Start(ctx))
 
-	var gotOut []execzv2.Line
+	var gotOut []execz.Line
 	done := make(chan struct{})
 	go func() {
 		defer close(done)
@@ -255,20 +255,20 @@ func TestUnitStdinPartial(t *testing.T) {
 		}
 	}()
 
-	proc.GetStdin() <- execzv2.Line{Line: "hel", Partial: true}
-	proc.GetStdin() <- execzv2.Line{Line: "lo", Partial: true}
+	proc.GetStdin() <- execz.Line{Line: "hel", Partial: true}
+	proc.GetStdin() <- execz.Line{Line: "lo", Partial: true}
 	close(proc.GetStdin())
 
 	<-done
 	require.NoError(t, proc.WaitFor(ctx, 0))
-	require.Equal(t, []execzv2.Line{
+	require.Equal(t, []execz.Line{
 		{Line: "hello", Partial: true},
 	}, gotOut)
 }
 
 func TestUnitDiscardByDefault(t *testing.T) {
 	ctx := context.Background()
-	proc := execzv2.New(ctx, execzv2.Options{
+	proc := execz.New(ctx, execz.Options{
 		Bin:  "bash",
 		Args: []string{"-c", "seq 1 50000"},
 	})
@@ -286,7 +286,7 @@ func TestUnitEnvsAndDir(t *testing.T) {
 	realTmpDir, err := filepath.EvalSymlinks(tmpDir)
 	require.NoError(t, err)
 
-	proc := execzv2.New(ctx, execzv2.Options{
+	proc := execz.New(ctx, execz.Options{
 		Bin:           "bash",
 		Args:          []string{"-c", "echo $MY_VAR && pwd"},
 		Dir:           realTmpDir,
@@ -309,7 +309,7 @@ func TestUnitEnvsAndDir(t *testing.T) {
 
 func TestUnitLargeOutputChannel(t *testing.T) {
 	ctx := context.Background()
-	proc := execzv2.New(ctx, execzv2.Options{
+	proc := execz.New(ctx, execz.Options{
 		Bin:           "bash",
 		Args:          []string{"-c", "seq 1 10000"},
 		CaptureStdout: 256,
@@ -328,7 +328,7 @@ func TestUnitLargeOutputChannel(t *testing.T) {
 
 func TestUnitKillDeadline(t *testing.T) {
 	ctx := context.Background()
-	proc := execzv2.New(ctx, execzv2.Options{
+	proc := execz.New(ctx, execz.Options{
 		Bin:  "bash",
 		Args: []string{"-c", "trap '' TERM; sleep 10"},
 	})
@@ -338,14 +338,14 @@ func TestUnitKillDeadline(t *testing.T) {
 	time.Sleep(50 * time.Millisecond)
 	err := proc.Kill(ctx, 100*time.Millisecond)
 	require.Error(t, err)
-	require.ErrorIs(t, err, execzv2.ErrKilled)
+	require.ErrorIs(t, err, execz.ErrKilled)
 	require.ErrorIs(t, err, context.DeadlineExceeded)
-	require.ErrorIs(t, proc.WaitFor(ctx, 0), execzv2.ErrKilled)
+	require.ErrorIs(t, proc.WaitFor(ctx, 0), execz.ErrKilled)
 }
 
 func TestUnitKillGraceful(t *testing.T) {
 	ctx := context.Background()
-	proc := execzv2.New(ctx, execzv2.Options{
+	proc := execz.New(ctx, execz.Options{
 		Bin:  "sleep",
 		Args: []string{"10"},
 	})
@@ -355,12 +355,12 @@ func TestUnitKillGraceful(t *testing.T) {
 	time.Sleep(50 * time.Millisecond)
 	err := proc.Kill(ctx, 2*time.Second)
 	require.Error(t, err)
-	require.NotErrorIs(t, err, execzv2.ErrKilled)
+	require.NotErrorIs(t, err, execz.ErrKilled)
 }
 
 func TestUnitKillContextCancelled(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
-	proc := execzv2.New(context.Background(), execzv2.Options{
+	proc := execz.New(context.Background(), execz.Options{
 		Bin:  "bash",
 		Args: []string{"-c", "trap '' TERM; sleep 10"},
 	})
@@ -375,13 +375,13 @@ func TestUnitKillContextCancelled(t *testing.T) {
 
 	err := proc.Kill(ctx, 5*time.Second)
 	require.Error(t, err)
-	require.ErrorIs(t, err, execzv2.ErrKilled)
+	require.ErrorIs(t, err, execz.ErrKilled)
 	require.ErrorIs(t, err, context.Canceled)
 }
 
 func TestUnitProcessAlreadyStarted(t *testing.T) {
 	ctx := context.Background()
-	proc := execzv2.New(ctx, execzv2.Options{
+	proc := execz.New(ctx, execz.Options{
 		Bin:  "bash",
 		Args: []string{"-c", "exit 0"},
 	})
@@ -400,7 +400,7 @@ func TestUnitProcessAlreadyStarted(t *testing.T) {
 
 func TestUnitConcurrentWait(t *testing.T) {
 	ctx := context.Background()
-	proc := execzv2.New(ctx, execzv2.Options{
+	proc := execz.New(ctx, execz.Options{
 		Bin:  "bash",
 		Args: []string{"-c", "sleep 0.1 && exit 0"},
 	})
@@ -423,7 +423,7 @@ func TestUnitConcurrentWait(t *testing.T) {
 
 func TestUnitKillNotStarted(t *testing.T) {
 	ctx := context.Background()
-	proc := execzv2.New(ctx, execzv2.Options{
+	proc := execz.New(ctx, execz.Options{
 		Bin:  "echo",
 		Args: []string{"test"},
 	})
@@ -434,7 +434,7 @@ func TestUnitKillNotStarted(t *testing.T) {
 
 func TestUnitCloseIdempotent(t *testing.T) {
 	ctx := context.Background()
-	proc := execzv2.New(ctx, execzv2.Options{
+	proc := execz.New(ctx, execz.Options{
 		Bin:         "bash",
 		Args:        []string{"-c", "exit 0"},
 		EnableStdin: 10,
@@ -447,7 +447,7 @@ func TestUnitCloseIdempotent(t *testing.T) {
 
 func TestUnitExitCode(t *testing.T) {
 	ctx := context.Background()
-	proc := execzv2.New(ctx, execzv2.Options{
+	proc := execz.New(ctx, execz.Options{
 		Bin:  "bash",
 		Args: []string{"-c", "exit 42"},
 	})
@@ -459,30 +459,33 @@ func TestUnitExitCode(t *testing.T) {
 
 func TestUnitUtf8Stdin(t *testing.T) {
 	ctx := context.Background()
-	proc := execzv2.New(ctx, execzv2.Options{
-		Bin:           "cat",
-		CaptureStdout: 10,
-		EnableStdin:   10,
-	})
-	defer proc.Close()
+	proc := execz.New(ctx, execzv2_or_execz_Options())
 	require.NoError(t, proc.Start(ctx))
 
-	proc.GetStdin() <- execzv2.Line{Line: "Hello 世界 🚀", Partial: false}
+	proc.GetStdin() <- execz.Line{Line: "Hello 世界 🚀", Partial: false}
 	require.NoError(t, proc.CloseStdin())
 
-	var got []execzv2.Line
+	var got []execz.Line
 	for line := range proc.GetStdout() {
 		got = append(got, line)
 	}
 	require.NoError(t, proc.WaitFor(ctx, 0))
-	require.Equal(t, []execzv2.Line{
+	require.Equal(t, []execz.Line{
 		{Line: "Hello 世界 🚀", Partial: false},
 	}, got)
 }
 
+func execzv2_or_execz_Options() execz.Options {
+	return execz.Options{
+		Bin:           "cat",
+		CaptureStdout: 10,
+		EnableStdin:   10,
+	}
+}
+
 func TestUnitWaitForContextCancelled(t *testing.T) {
 	ctx := context.Background()
-	proc := execzv2.New(ctx, execzv2.Options{
+	proc := execz.New(ctx, execz.Options{
 		Bin:  "sleep",
 		Args: []string{"5"},
 	})
@@ -503,7 +506,7 @@ func TestUnitStartContextCancelled(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel()
 
-	proc := execzv2.New(context.Background(), execzv2.Options{
+	proc := execz.New(context.Background(), execz.Options{
 		Bin:  "bash",
 		Args: []string{"-c", "exit 0"},
 	})
@@ -516,7 +519,7 @@ func TestUnitStartContextCancelled(t *testing.T) {
 
 func TestUnitRunDeadlineExceeded(t *testing.T) {
 	ctx := context.Background()
-	proc := execzv2.New(ctx, execzv2.Options{
+	proc := execz.New(ctx, execz.Options{
 		Bin:  "sleep",
 		Args: []string{"5"},
 	})
@@ -528,7 +531,7 @@ func TestUnitRunDeadlineExceeded(t *testing.T) {
 
 func TestUnitWaitForDeadlineExceeded(t *testing.T) {
 	ctx := context.Background()
-	proc := execzv2.New(ctx, execzv2.Options{
+	proc := execz.New(ctx, execz.Options{
 		Bin:  "sleep",
 		Args: []string{"5"},
 	})
@@ -544,7 +547,7 @@ func TestUnitWaitForDeadlineExceeded(t *testing.T) {
 
 func TestUnitIsRunning(t *testing.T) {
 	ctx := context.Background()
-	proc := execzv2.New(ctx, execzv2.Options{
+	proc := execz.New(ctx, execz.Options{
 		Bin:  "sleep",
 		Args: []string{"0.2"},
 	})
@@ -557,7 +560,7 @@ func TestUnitIsRunning(t *testing.T) {
 	require.NoError(t, proc.WaitFor(ctx, 0))
 	require.False(t, proc.IsRunning())
 
-	failProc := execzv2.New(ctx, execzv2.Options{
+	failProc := execz.New(ctx, execz.Options{
 		Bin: "non_existent_binary_xyz",
 	})
 	defer failProc.Close()
@@ -571,7 +574,7 @@ func TestUnitDeferCloseAfterNew(t *testing.T) {
 
 	// 1. Defer close on unstarted process is a no-op and marks it finished
 	func() {
-		proc := execzv2.New(ctx, execzv2.Options{
+		proc := execz.New(ctx, execz.Options{
 			Bin:  "sleep",
 			Args: []string{"10"},
 		})
@@ -579,9 +582,9 @@ func TestUnitDeferCloseAfterNew(t *testing.T) {
 	}()
 
 	// 2. Defer close on running process kills it
-	var runningProc *execzv2.Process
+	var runningProc *execz.Process
 	func() {
-		runningProc = execzv2.New(ctx, execzv2.Options{
+		runningProc = execz.New(ctx, execz.Options{
 			Bin:  "sleep",
 			Args: []string{"10"},
 		})
@@ -593,7 +596,7 @@ func TestUnitDeferCloseAfterNew(t *testing.T) {
 
 	// 3. Defer close on cleanly finished process is a no-op
 	func() {
-		proc := execzv2.New(ctx, execzv2.Options{
+		proc := execz.New(ctx, execz.Options{
 			Bin:  "bash",
 			Args: []string{"-c", "exit 0"},
 		})
@@ -607,7 +610,7 @@ func TestUnitCannotRestart(t *testing.T) {
 	ctx := context.Background()
 
 	// Closed before start cannot be started
-	proc1 := execzv2.New(ctx, execzv2.Options{
+	proc1 := execz.New(ctx, execz.Options{
 		Bin:  "bash",
 		Args: []string{"-c", "exit 0"},
 	})
@@ -617,7 +620,7 @@ func TestUnitCannotRestart(t *testing.T) {
 	require.Contains(t, err.Error(), "already finished or closed")
 
 	// Finished process cannot be started again
-	proc2 := execzv2.New(ctx, execzv2.Options{
+	proc2 := execz.New(ctx, execz.Options{
 		Bin:  "bash",
 		Args: []string{"-c", "exit 0"},
 	})
