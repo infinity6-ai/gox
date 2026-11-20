@@ -16,14 +16,17 @@ type Options struct {
 }
 
 type Browser struct {
-	server *httpzserver.Server
-	prc    *execz.Process
+	originalArgs []string
+	cmdOpts      execz.Options
+	server       *httpzserver.Server
+	prc          *execz.Process
 }
 
 func New(ctx context.Context, opts Options) *Browser {
 	ret := &Browser{
-		server: httpzserver.New(ctx, opts.Server),
-		prc:    execz.New(ctx, opts.Command),
+		server:       httpzserver.New(ctx, opts.Server),
+		cmdOpts:      opts.Command,
+		originalArgs: opts.Command.Args,
 	}
 	handlers.AddHanlers(ctx, ret.server)
 	return ret
@@ -46,9 +49,30 @@ func (b *Browser) Close() error {
 
 func (b *Browser) Start(ctx context.Context) error {
 	b.server.Listen()
+
+	b.fixArgs()
+	b.prc = execz.New(ctx, b.cmdOpts)
+
 	err := b.prc.Start(ctx)
 	if err != nil {
 		return fmt.Errorf("error starging process: %w", err)
 	}
 	return err
+}
+
+func (b *Browser) fixArgs() {
+	u := b.server.Base().MustJoinPathString(handlers.ControllerPath)
+	b.cmdOpts.Args = make([]string, len(b.originalArgs), len(b.originalArgs)+1)
+	d := false
+	for idx, arg := range b.originalArgs {
+		if arg == "URL" {
+			b.cmdOpts.Args[idx] = u.String()
+			d = true
+		} else {
+			b.cmdOpts.Args[idx] = arg
+		}
+	}
+	if !d {
+		b.cmdOpts.Args = append(b.cmdOpts.Args, u.String())
+	}
 }
