@@ -10,12 +10,14 @@ import (
 
 	"github.com/infinity6-ai/gox/brwjsz/brwclient"
 	"github.com/infinity6-ai/gox/brwjsz/brwjsz"
+	"github.com/infinity6-ai/gox/commonz/pathz"
 	"github.com/spf13/cobra"
 )
 
 type execOptions struct {
 	code     string
 	file     string
+	site     string
 	args     []string
 	argFiles []string
 	raw      bool
@@ -83,6 +85,11 @@ func newExecCmd() *cobra.Command {
 
 			brwOpts := brwjsz.Options{}
 			brwOpts.Chrome(opts.bin, opts.headless, "")
+			if opts.site != "" {
+				brwOpts.Site = &brwjsz.Site{
+					Disk: pathz.MustParse(opts.site),
+				}
+			}
 
 			b := brwjsz.New(ctx, brwOpts)
 			defer b.Close()
@@ -138,6 +145,7 @@ func newExecCmd() *cobra.Command {
 
 	cmd.Flags().StringVar(&opts.code, "code", "", "JavaScript code to execute")
 	cmd.Flags().StringVar(&opts.file, "file", "", "JavaScript file path to execute (or - for stdin)")
+	cmd.Flags().StringVar(&opts.site, "site", "", "Disk directory path to serve as a static site (accessible via fetch)")
 	cmd.Flags().StringArrayVar(&opts.args, "arg", nil, "Argument to pass to the function (can be specified multiple times)")
 	cmd.Flags().StringArrayVar(&opts.argFiles, "arg-file", nil, "File containing argument value (can be specified multiple times)")
 	cmd.Flags().BoolVar(&opts.raw, "raw", false, "Print string output without JSON quotes")

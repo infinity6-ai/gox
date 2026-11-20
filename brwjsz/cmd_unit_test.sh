@@ -113,6 +113,18 @@ function cmd_exec_async() {
   echo "  OK: exec async function"
 }
 
+function cmd_exec_site() {
+  ensure_binary
+  echo "--- Testing: exec with --site ---"
+  local site_dir="$TMP_DIR/site"
+  mkdir -p "$site_dir"
+  echo '{"title": "awesome site data"}' > "$site_dir/app.json"
+  local res
+  res="$($BIN exec --site "$site_dir" --code "async () => { const r = await fetch('/app.json'); return (await r.json()).title; }" --raw)"
+  assert_eq "awesome site data" "$res" "fetch from disk site"
+  echo "  OK: exec with --site"
+}
+
 function cmd_exec_error() {
   ensure_binary
   echo "--- Testing: exec error handling ---"
@@ -135,6 +147,7 @@ function cmd_all() {
   cmd_exec_args
   cmd_exec_arg_json
   cmd_exec_arg_file
+  cmd_exec_site
   cmd_exec_async
   cmd_exec_error
   echo "=========================================="
