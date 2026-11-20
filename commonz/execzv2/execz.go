@@ -402,9 +402,10 @@ func (p *Process) Close() error {
 	return nil
 }
 
-// Kill attempts to gracefully stop the process group via SIGTERM. If the process does not terminate
-// within the specified deadline (or if ctx is cancelled), it forcefully kills the group via SIGKILL
-// and returns an error wrapping ErrKilled.
+// Kill attempts to gracefully stop the process group via SIGTERM. It creates a deadline context
+// (if deadline > 0) after sending the initial signal. If the process does not terminate within the deadline
+// or if ctx is cancelled, it forcefully terminates the group via SIGKILL and returns an error wrapping
+// both ErrKilled and the context error (context.DeadlineExceeded or context.Canceled).
 func (p *Process) Kill(ctx context.Context, deadline time.Duration) error {
 	p.mu.Lock()
 	if p.cmd == nil || p.cmd.Process == nil {
@@ -419,14 +420,24 @@ func (p *Process) Kill(ctx context.Context, deadline time.Duration) error {
 		_ = p.cmd.Process.Signal(syscall.SIGTERM)
 	}
 
+	if deadline > 0 {
+		var cancel context.CancelFunc
+		ctx, cancel = context.WithDeadline(ctx, time.Now().Add(deadline))
+		defer cancel()
+	}
+
 	done := make(chan error, 1)
 	go func() {
-		done <- p.WaitFor(ctx, 0)
+		<-p.waitChan
+		p.mu.Lock()
+		err := p.Err
+		p.mu.Unlock()
+		done <- err
 	}()
 
 	select {
 	case <-ctx.Done():
-		logger.Info(ctx, "context cancelled, killing", map[string]any{"pid": pid})
+		logger.Info(ctx, "grace period expired or context cancelled, killing", map[string]any{"pid": pid})
 		p.closeKillOnce.Do(func() { close(p.killChan) })
 		if err := syscall.Kill(-pid, syscall.SIGKILL); err != nil {
 			_ = p.cmd.Process.Kill()
@@ -437,25 +448,7 @@ func (p *Process) Kill(ctx context.Context, deadline time.Duration) error {
 		if p.stderrPipe != nil {
 			_ = p.stderrPipe.Close()
 		}
-		killErr := fmt.Errorf("Killed %d: %s [%s], %w", pid, p.cmd.Path, p.cmd.Args, ErrKilled)
-		p.mu.Lock()
-		p.Err = killErr
-		p.mu.Unlock()
-		<-p.waitChan
-		return killErr
-	case <-time.After(deadline):
-		logger.Info(ctx, "grace period expired, killing", map[string]any{"pid": pid})
-		p.closeKillOnce.Do(func() { close(p.killChan) })
-		if err := syscall.Kill(-pid, syscall.SIGKILL); err != nil {
-			_ = p.cmd.Process.Kill()
-		}
-		if p.stdoutPipe != nil {
-			_ = p.stdoutPipe.Close()
-		}
-		if p.stderrPipe != nil {
-			_ = p.stderrPipe.Close()
-		}
-		killErr := fmt.Errorf("Killed %d: %s [%s], %w", pid, p.cmd.Path, p.cmd.Args, ErrKilled)
+		killErr := fmt.Errorf("Killed %d: %s [%s], %w: %w", pid, p.cmd.Path, p.cmd.Args, ErrKilled, ctx.Err())
 		p.mu.Lock()
 		p.Err = killErr
 		p.mu.Unlock()

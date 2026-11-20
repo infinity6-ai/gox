@@ -328,6 +328,7 @@ func TestUnitKillDeadline(t *testing.T) {
 	err := proc.Kill(ctx, 100*time.Millisecond)
 	require.Error(t, err)
 	require.ErrorIs(t, err, execzv2.ErrKilled)
+	require.ErrorIs(t, err, context.DeadlineExceeded)
 	require.ErrorIs(t, proc.WaitFor(ctx, 0), execzv2.ErrKilled)
 }
 
@@ -362,6 +363,7 @@ func TestUnitKillContextCancelled(t *testing.T) {
 	err := proc.Kill(ctx, 5*time.Second)
 	require.Error(t, err)
 	require.ErrorIs(t, err, execzv2.ErrKilled)
+	require.ErrorIs(t, err, context.Canceled)
 }
 
 func TestUnitProcessAlreadyStarted(t *testing.T) {
