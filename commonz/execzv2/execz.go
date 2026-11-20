@@ -94,8 +94,6 @@ func New(ctx context.Context, opts Options) *Process {
 			p.Err = fmt.Errorf("failed to create stdin pipe: %w", err)
 		}
 		p.stdinPipe = stdinPipe
-	} else {
-		p.cmd.Stdin = nil
 	}
 
 	if opts.CaptureStdout > 0 {
@@ -105,8 +103,6 @@ func New(ctx context.Context, opts Options) *Process {
 			p.Err = fmt.Errorf("failed to create stdout pipe: %w", err)
 		}
 		p.stdoutPipe = stdoutPipe
-	} else {
-		p.cmd.Stdout = io.Discard
 	}
 
 	if opts.CaptureStderr > 0 {
@@ -116,8 +112,6 @@ func New(ctx context.Context, opts Options) *Process {
 			p.Err = fmt.Errorf("failed to create stderr pipe: %w", err)
 		}
 		p.stderrPipe = stderrPipe
-	} else {
-		p.cmd.Stderr = io.Discard
 	}
 
 	return p
