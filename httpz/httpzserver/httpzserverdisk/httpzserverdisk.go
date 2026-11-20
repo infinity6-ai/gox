@@ -12,6 +12,7 @@ import (
 	"io/fs"
 	"mime"
 	"net/http"
+	"net/url"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -93,153 +94,113 @@ func DiskHandler(opts Options) httpzserver.HandlerPattern {
 
 	return func(ctx context.Context, resp httpzserver.Resp, req *httpzrequest.Req, params map[string]string) {
 		if req.Method != http.MethodGet && req.Method != http.MethodHead {
-			w := resp(http.StatusMethodNotAllowed, nil)
-			_, err := w.Write([]byte("Method Not Allowed"))
-			errorz.Check(err)
+			sendError(resp, http.StatusMethodNotAllowed, "Method Not Allowed")
 			return
 		}
 
 		relPath := req.Path
 		if prefixPath != nil {
 			if !prefixPath.IsBaseOf(req.Path) {
-				w := resp(http.StatusNotFound, nil)
-				_, err := w.Write([]byte("Not Found"))
-				errorz.Check(err)
+				sendError(resp, http.StatusNotFound, "Not Found")
 				return
 			}
 			var err error
 			relPath, err = prefixPath.ExtractRelative(req.Path)
 			if err != nil {
-				w := resp(http.StatusNotFound, nil)
-				_, err = w.Write([]byte("Not Found"))
-				errorz.Check(err)
+				sendError(resp, http.StatusNotFound, "Not Found")
 				return
 			}
 		} else {
 			relPath = relPath.ForceCurrent()
 		}
 
-		explicitListing := opts.Listing && (req.Query.Has("t") || req.Query.Has("r"))
-
-		if relPath.PartsLen() == 0 || relPath.HasEndingSlash() {
-			if err := relPath.Validate(pathz.ValidateOptions{
-				MaxParents: new(0),
-				Wildchar:   false,
-			}); err != nil {
-				w := resp(http.StatusNotFound, nil)
-				_, err = w.Write([]byte("Not Found"))
-				errorz.Check(err)
-				return
-			}
-
-			dirTarget, err := opts.Base.Join(relPath)
-			if err != nil {
-				w := resp(http.StatusNotFound, nil)
-				_, err = w.Write([]byte("Not Found"))
-				errorz.Check(err)
-				return
-			}
-
-			dirInfo, err := os.Stat(dirTarget.String())
-			if err != nil || !dirInfo.IsDir() {
-				w := resp(http.StatusNotFound, nil)
-				_, err = w.Write([]byte("Not Found"))
-				errorz.Check(err)
-				return
-			}
-
-			if !opts.NoIndex && indexPath != nil && !explicitListing {
-				indexTarget, err := dirTarget.Join(indexPath)
-				if err == nil {
-					idxInfo, err := os.Stat(indexTarget.String())
-					if err == nil && !idxInfo.IsDir() {
-						serveFile(resp, req, indexTarget, idxInfo, opts)
-						return
-					}
-				}
-			}
-
-			if opts.Listing {
-				serveListing(resp, req, dirTarget, opts)
-				return
-			}
-
-			w := resp(http.StatusNotFound, nil)
-			_, err = w.Write([]byte("Not Found"))
-			errorz.Check(err)
-			return
-		}
-
 		if err := relPath.Validate(pathz.ValidateOptions{
 			MaxParents: new(0),
 			Wildchar:   false,
 		}); err != nil {
-			w := resp(http.StatusNotFound, nil)
-			_, err = w.Write([]byte("Not Found"))
-			errorz.Check(err)
+			sendError(resp, http.StatusNotFound, "Not Found")
 			return
 		}
 
 		targetPath, err := opts.Base.Join(relPath)
 		if err != nil {
-			w := resp(http.StatusNotFound, nil)
-			_, err = w.Write([]byte("Not Found"))
-			errorz.Check(err)
+			sendError(resp, http.StatusNotFound, "Not Found")
 			return
 		}
 
-		fileInfo, err := os.Stat(targetPath.String())
+		info, err := os.Stat(targetPath.String())
 		if err != nil {
-			w := resp(http.StatusNotFound, nil)
-			_, err = w.Write([]byte("Not Found"))
-			errorz.Check(err)
+			sendError(resp, http.StatusNotFound, "Not Found")
 			return
 		}
 
-		if fileInfo.IsDir() {
+		if info.IsDir() {
+			explicitListing := opts.Listing && (req.Query.Has("t") || req.Query.Has("r"))
 			if !opts.NoIndex && indexPath != nil && !explicitListing {
-				indexTarget, err := targetPath.Join(indexPath)
-				if err == nil {
-					idxInfo, err := os.Stat(indexTarget.String())
-					if err == nil && !idxInfo.IsDir() {
-						serveFile(resp, req, indexTarget, idxInfo, opts)
+				if indexTarget, err := targetPath.Join(indexPath); err == nil {
+					if idxInfo, err := os.Stat(indexTarget.String()); err == nil && !idxInfo.IsDir() {
+						serveFile(resp, req, indexTarget, idxInfo, opts.Headers)
 						return
 					}
 				}
 			}
 
 			if opts.Listing {
-				serveListing(resp, req, targetPath, opts)
+				serveListing(resp, req, targetPath, opts.Headers)
 				return
 			}
 
-			w := resp(http.StatusNotFound, nil)
-			_, err = w.Write([]byte("Not Found"))
-			errorz.Check(err)
+			sendError(resp, http.StatusNotFound, "Not Found")
 			return
 		}
 
-		serveFile(resp, req, targetPath, fileInfo, opts)
+		if relPath.HasEndingSlash() {
+			sendError(resp, http.StatusNotFound, "Not Found")
+			return
+		}
+
+		serveFile(resp, req, targetPath, info, opts.Headers)
 	}
 }
 
-func serveFile(resp httpzserver.Resp, req *httpzrequest.Req, targetPath *pathz.Path, fileInfo os.FileInfo, opts Options) {
+func sendError(resp httpzserver.Resp, status int, msg string) {
+	w := resp(status, nil)
+	_, err := w.Write([]byte(msg))
+	errorz.Check(err)
+}
+
+func sendPayload(resp httpzserver.Resp, req *httpzrequest.Req, ctype string, payload []byte, customHeaders http.Header) {
+	headers := make(http.Header)
+	if customHeaders != nil {
+		for k, v := range customHeaders {
+			headers[k] = v
+		}
+	}
+	headers.Set("Content-Type", ctype)
+	headers.Set("Content-Length", strconv.Itoa(len(payload)))
+
+	w := resp(http.StatusOK, headers)
+	if req.Method == http.MethodHead {
+		return
+	}
+	_, err := w.Write(payload)
+	errorz.Check(err)
+}
+
+func serveFile(resp httpzserver.Resp, req *httpzrequest.Req, targetPath *pathz.Path, fileInfo os.FileInfo, customHeaders http.Header) {
 	f, err := os.Open(targetPath.String())
 	if err != nil {
-		w := resp(http.StatusInternalServerError, nil)
-		_, err = w.Write([]byte("Internal Server Error"))
-		errorz.Check(err)
+		sendError(resp, http.StatusInternalServerError, "Internal Server Error")
 		return
 	}
 	defer f.Close()
 
 	headers := make(http.Header)
-	if opts.Headers != nil {
-		for k, v := range opts.Headers {
+	if customHeaders != nil {
+		for k, v := range customHeaders {
 			headers[k] = v
 		}
 	}
-
 	if headers.Get("Content-Type") == "" {
 		headers.Set("Content-Type", detectContentType(targetPath.String()))
 	}
@@ -251,43 +212,32 @@ func serveFile(resp httpzserver.Resp, req *httpzrequest.Req, targetPath *pathz.P
 	if req.Method == http.MethodHead {
 		return
 	}
-
 	_, err = io.Copy(w, f)
 	errorz.Check(err)
 }
 
-func serveListing(resp httpzserver.Resp, req *httpzrequest.Req, dirTarget *pathz.Path, opts Options) {
-	format := strings.ToLower(strings.TrimSpace(req.Query.Get("t")))
+func parseListingQuery(query url.Values) (string, bool, error) {
+	format := strings.ToLower(strings.TrimSpace(query.Get("t")))
 	if format == "" {
 		format = "html"
 	}
 	if format != "html" && format != "json" {
-		w := resp(http.StatusBadRequest, nil)
-		_, err := w.Write([]byte("invalid format parameter 't', expected 'html' or 'json'"))
-		errorz.Check(err)
-		return
+		return "", false, fmt.Errorf("invalid format parameter 't', expected 'html' or 'json'")
 	}
 
 	recursive := false
-	if rStr := strings.TrimSpace(req.Query.Get("r")); rStr != "" {
+	if rStr := strings.TrimSpace(query.Get("r")); rStr != "" {
 		var err error
 		recursive, err = strconv.ParseBool(rStr)
 		if err != nil {
-			w := resp(http.StatusBadRequest, nil)
-			_, err = w.Write([]byte("invalid recursive parameter 'r', expected boolean"))
-			errorz.Check(err)
-			return
+			return "", false, fmt.Errorf("invalid recursive parameter 'r', expected boolean")
 		}
 	}
+	return format, recursive, nil
+}
 
-	dirURLPath := req.Path.String()
-	if !strings.HasSuffix(dirURLPath, "/") {
-		dirURLPath += "/"
-	}
-
+func collectEntries(targetStr string, dirURLPath string, recursive bool) ([]ListingEntry, error) {
 	var entries []ListingEntry
-	targetStr := dirTarget.String()
-
 	if recursive {
 		err := filepath.WalkDir(targetStr, func(path string, d fs.DirEntry, err error) error {
 			if err != nil {
@@ -321,18 +271,12 @@ func serveListing(resp httpzserver.Resp, req *httpzrequest.Req, dirTarget *pathz
 			return nil
 		})
 		if err != nil {
-			w := resp(http.StatusInternalServerError, nil)
-			_, err = w.Write([]byte("Internal Server Error"))
-			errorz.Check(err)
-			return
+			return nil, fmt.Errorf("failed to walk directory %s: %w", targetStr, err)
 		}
 	} else {
 		dirEntries, err := os.ReadDir(targetStr)
 		if err != nil {
-			w := resp(http.StatusInternalServerError, nil)
-			_, err = w.Write([]byte("Internal Server Error"))
-			errorz.Check(err)
-			return
+			return nil, fmt.Errorf("failed to read directory %s: %w", targetStr, err)
 		}
 		for _, entry := range dirEntries {
 			name := entry.Name()
@@ -355,18 +299,38 @@ func serveListing(resp httpzserver.Resp, req *httpzrequest.Req, dirTarget *pathz
 			})
 		}
 	}
-
-	if format == "json" {
-		serveJSONListing(resp, req, dirURLPath, recursive, entries, opts)
-	} else {
-		serveHTMLListing(resp, req, dirURLPath, recursive, entries, opts)
-	}
-}
-
-func serveJSONListing(resp httpzserver.Resp, req *httpzrequest.Req, dirURLPath string, recursive bool, entries []ListingEntry, opts Options) {
 	if entries == nil {
 		entries = []ListingEntry{}
 	}
+	return entries, nil
+}
+
+func serveListing(resp httpzserver.Resp, req *httpzrequest.Req, dirTarget *pathz.Path, customHeaders http.Header) {
+	format, recursive, err := parseListingQuery(req.Query)
+	if err != nil {
+		sendError(resp, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	dirURLPath := req.Path.String()
+	if !strings.HasSuffix(dirURLPath, "/") {
+		dirURLPath += "/"
+	}
+
+	entries, err := collectEntries(dirTarget.String(), dirURLPath, recursive)
+	if err != nil {
+		sendError(resp, http.StatusInternalServerError, "Internal Server Error")
+		return
+	}
+
+	if format == "json" {
+		serveJSONListing(resp, req, dirURLPath, recursive, entries, customHeaders)
+	} else {
+		serveHTMLListing(resp, req, dirURLPath, recursive, entries, customHeaders)
+	}
+}
+
+func serveJSONListing(resp httpzserver.Resp, req *httpzrequest.Req, dirURLPath string, recursive bool, entries []ListingEntry, customHeaders http.Header) {
 	responseObj := ListingResponse{
 		Path:      dirURLPath,
 		Recursive: recursive,
@@ -375,31 +339,14 @@ func serveJSONListing(resp httpzserver.Resp, req *httpzrequest.Req, dirURLPath s
 
 	jsonBytes, err := json.MarshalIndent(responseObj, "", "  ")
 	if err != nil {
-		w := resp(http.StatusInternalServerError, nil)
-		_, err = w.Write([]byte("Internal Server Error"))
-		errorz.Check(err)
+		sendError(resp, http.StatusInternalServerError, "Internal Server Error")
 		return
 	}
 
-	headers := make(http.Header)
-	if opts.Headers != nil {
-		for k, v := range opts.Headers {
-			headers[k] = v
-		}
-	}
-	headers.Set("Content-Type", "application/json; charset=utf-8")
-	headers.Set("Content-Length", strconv.Itoa(len(jsonBytes)))
-
-	w := resp(http.StatusOK, headers)
-	if req.Method == http.MethodHead {
-		return
-	}
-
-	_, err = w.Write(jsonBytes)
-	errorz.Check(err)
+	sendPayload(resp, req, "application/json; charset=utf-8", jsonBytes, customHeaders)
 }
 
-func serveHTMLListing(resp httpzserver.Resp, req *httpzrequest.Req, dirURLPath string, recursive bool, entries []ListingEntry, opts Options) {
+func serveHTMLListing(resp httpzserver.Resp, req *httpzrequest.Req, dirURLPath string, recursive bool, entries []ListingEntry, customHeaders http.Header) {
 	var buf bytes.Buffer
 	titleSuffix := ""
 	if recursive {
@@ -452,23 +399,7 @@ func serveHTMLListing(resp httpzserver.Resp, req *httpzrequest.Req, dirURLPath s
 
 	buf.WriteString("</tbody>\n</table>\n<hr>\n</body>\n</html>\n")
 
-	htmlBytes := buf.Bytes()
-	headers := make(http.Header)
-	if opts.Headers != nil {
-		for k, v := range opts.Headers {
-			headers[k] = v
-		}
-	}
-	headers.Set("Content-Type", "text/html; charset=utf-8")
-	headers.Set("Content-Length", strconv.Itoa(len(htmlBytes)))
-
-	w := resp(http.StatusOK, headers)
-	if req.Method == http.MethodHead {
-		return
-	}
-
-	_, err := w.Write(htmlBytes)
-	errorz.Check(err)
+	sendPayload(resp, req, "text/html; charset=utf-8", buf.Bytes(), customHeaders)
 }
 
 func formatSize(size int64) string {

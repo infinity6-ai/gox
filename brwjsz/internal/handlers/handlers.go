@@ -5,11 +5,14 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strings"
 
 	"github.com/infinity6-ai/gox/brwjsz/brwclient"
 	"github.com/infinity6-ai/gox/brwjsz/internal/internal/stzfiles"
+	"github.com/infinity6-ai/gox/commonz/pathz"
 	"github.com/infinity6-ai/gox/httpz/httpzrequest"
 	"github.com/infinity6-ai/gox/httpz/httpzserver"
+	"github.com/infinity6-ai/gox/httpz/httpzserver/httpzserverdisk"
 	"github.com/infinity6-ai/gox/httpz/httpzserver/httpzserverstatic"
 )
 
@@ -18,8 +21,15 @@ const ControllerPath = BasePath + "/controller.html"
 const EventsPath = "/api/brwjs/events"
 const ReplyPath = "/api/brwjs/reply"
 
-// AddHandlers registers the static file handler, SSE event stream, and reply endpoint on the server.
-func AddHandlers(ctx context.Context, s *httpzserver.Server, hub *Hub) {
+// SiteOptions configures serving static files from a disk directory on the server.
+type SiteOptions struct {
+	Disk *pathz.Path
+	Path string // default "/*"
+}
+
+// AddHandlers registers the static file handler, SSE event stream, reply endpoint,
+// and optional disk site handler on the server.
+func AddHandlers(ctx context.Context, s *httpzserver.Server, hub *Hub, site ...SiteOptions) {
 	// Serve static assets from embedded stzfiles
 	s.AddHandler("GET", BasePath+"/*", httpzserverstatic.Handler(stzfiles.Name, httpzserverstatic.Options{
 		Prefix:  BasePath,
@@ -82,6 +92,25 @@ func AddHandlers(ctx context.Context, s *httpzserver.Server, hub *Hub) {
 		w := resp(http.StatusOK, nil)
 		_, _ = w.Write([]byte("ok"))
 	})
+
+	// Optional disk site handler added last
+	if len(site) > 0 && site[0].Disk != nil {
+		path := site[0].Path
+		if path == "" {
+			path = "/*"
+		}
+		prefix := strings.TrimSuffix(path, "/*")
+		prefix = strings.TrimSuffix(prefix, "*")
+		prefix = strings.TrimSuffix(prefix, "/")
+		if prefix != "" && !strings.HasPrefix(prefix, "/") {
+			prefix = "/" + prefix
+		}
+		s.AddHandler("GET", path, httpzserverdisk.Handler(httpzserverdisk.Options{
+			Base:    site[0].Disk,
+			Prefix:  prefix,
+			Listing: true,
+		}))
+	}
 }
 
 // AddHanlers is an alias for backwards compatibility.

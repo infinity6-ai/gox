@@ -15,8 +15,12 @@ import (
 	"github.com/infinity6-ai/gox/httpz/httpzserver"
 )
 
+// SiteOptions configures serving static files from a disk directory on the internal server.
+type SiteOptions = handlers.SiteOptions
+
 // Options configures the Browser instance, command arguments, and HTTP server.
 type Options struct {
+	Site            SiteOptions
 	Command         execz.Options
 	Server          httpzserver.Options
 	tempUserDataDir string
@@ -81,7 +85,7 @@ type Browser struct {
 func New(ctx context.Context, opts Options) *Browser {
 	hub := handlers.NewHub()
 	srv := httpzserver.New(ctx, opts.Server)
-	handlers.AddHandlers(ctx, srv, hub)
+	handlers.AddHandlers(ctx, srv, hub, opts.Site)
 
 	ret := &Browser{
 		tempUserDataDir: opts.tempUserDataDir,
