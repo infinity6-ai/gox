@@ -26,7 +26,7 @@ func TestUnitBasicRun(t *testing.T) {
 			Bin:  s.bin,
 			Args: s.args,
 		})
-		err := proc.Run(ctx)
+		err := proc.Run(ctx, 0)
 		if s.expectError {
 			require.Error(t, err)
 			if s.errMsg != "" {
@@ -96,7 +96,7 @@ func TestUnitGetStdoutAndGetStderr(t *testing.T) {
 			}
 		}()
 
-		require.NoError(t, proc.WaitFor(ctx))
+		require.NoError(t, proc.WaitFor(ctx, 0))
 		wg.Wait()
 
 		require.Equal(t, s.wantOut, gotOut)
@@ -160,7 +160,7 @@ func TestUnitLineBufferSize(t *testing.T) {
 	for line := range proc.GetStdout() {
 		gotOut = append(gotOut, line)
 	}
-	require.NoError(t, proc.WaitFor(ctx))
+	require.NoError(t, proc.WaitFor(ctx, 0))
 
 	expected := []execzv2.Line{
 		{Line: "1234", Partial: true},
@@ -194,7 +194,7 @@ func TestUnitGetStdinAndClose(t *testing.T) {
 	require.NoError(t, proc.Close())
 
 	<-done
-	require.NoError(t, proc.WaitFor(ctx))
+	require.NoError(t, proc.WaitFor(ctx, 0))
 	require.Equal(t, []execzv2.Line{
 		{Line: "HELLO", Partial: false},
 		{Line: "WORLD", Partial: false},
@@ -224,7 +224,7 @@ func TestUnitCloseViaChannel(t *testing.T) {
 	close(proc.GetStdin())
 
 	<-done
-	require.NoError(t, proc.WaitFor(ctx))
+	require.NoError(t, proc.WaitFor(ctx, 0))
 	require.Equal(t, []execzv2.Line{
 		{Line: "CHANNEL-CLOSE", Partial: false},
 	}, gotOut)
@@ -253,7 +253,7 @@ func TestUnitStdinPartial(t *testing.T) {
 	close(proc.GetStdin())
 
 	<-done
-	require.NoError(t, proc.WaitFor(ctx))
+	require.NoError(t, proc.WaitFor(ctx, 0))
 	require.Equal(t, []execzv2.Line{
 		{Line: "hello", Partial: true},
 	}, gotOut)
@@ -269,7 +269,7 @@ func TestUnitDiscardByDefault(t *testing.T) {
 	require.Nil(t, proc.GetStderr())
 	require.Nil(t, proc.GetStdin())
 
-	require.NoError(t, proc.Run(ctx))
+	require.NoError(t, proc.Run(ctx, 0))
 }
 
 func TestUnitEnvsAndDir(t *testing.T) {
@@ -293,7 +293,7 @@ func TestUnitEnvsAndDir(t *testing.T) {
 	for line := range proc.GetStdout() {
 		gotOut = append(gotOut, line.Line)
 	}
-	require.NoError(t, proc.WaitFor(ctx))
+	require.NoError(t, proc.WaitFor(ctx, 0))
 
 	require.Equal(t, []string{"custom_value", realTmpDir}, gotOut)
 }
@@ -312,7 +312,7 @@ func TestUnitLargeOutputChannel(t *testing.T) {
 		require.False(t, line.Partial)
 		count++
 	}
-	require.NoError(t, proc.WaitFor(ctx))
+	require.NoError(t, proc.WaitFor(ctx, 0))
 	require.Equal(t, 10000, count)
 }
 
@@ -328,7 +328,7 @@ func TestUnitKillDeadline(t *testing.T) {
 	err := proc.Kill(ctx, 100*time.Millisecond)
 	require.Error(t, err)
 	require.ErrorIs(t, err, execzv2.ErrKilled)
-	require.ErrorIs(t, proc.WaitFor(ctx), execzv2.ErrKilled)
+	require.ErrorIs(t, proc.WaitFor(ctx, 0), execzv2.ErrKilled)
 }
 
 func TestUnitKillGraceful(t *testing.T) {
@@ -375,11 +375,11 @@ func TestUnitProcessAlreadyStarted(t *testing.T) {
 	require.Error(t, err)
 	require.Contains(t, err.Error(), "process already started")
 
-	err2 := proc.Run(ctx)
+	err2 := proc.Run(ctx, 0)
 	require.Error(t, err2)
 	require.Contains(t, err2.Error(), "process already started")
 
-	require.NoError(t, proc.WaitFor(ctx))
+	require.NoError(t, proc.WaitFor(ctx, 0))
 }
 
 func TestUnitConcurrentWait(t *testing.T) {
@@ -394,7 +394,7 @@ func TestUnitConcurrentWait(t *testing.T) {
 	errs := make(chan error, numWaiters)
 	for i := 0; i < numWaiters; i++ {
 		go func() {
-			errs <- proc.WaitFor(ctx)
+			errs <- proc.WaitFor(ctx, 0)
 		}()
 	}
 
@@ -431,9 +431,9 @@ func TestUnitExitCode(t *testing.T) {
 		Bin:  "bash",
 		Args: []string{"-c", "exit 42"},
 	})
-	err := proc.Run(ctx)
+	err := proc.Run(ctx, 0)
 	require.Error(t, err)
-	require.ErrorIs(t, proc.WaitFor(ctx), proc.Err)
+	require.ErrorIs(t, proc.WaitFor(ctx, 0), proc.Err)
 }
 
 func TestUnitUtf8Stdin(t *testing.T) {
@@ -452,7 +452,7 @@ func TestUnitUtf8Stdin(t *testing.T) {
 	for line := range proc.GetStdout() {
 		got = append(got, line)
 	}
-	require.NoError(t, proc.WaitFor(ctx))
+	require.NoError(t, proc.WaitFor(ctx, 0))
 	require.Equal(t, []execzv2.Line{
 		{Line: "Hello 世界 🚀", Partial: false},
 	}, got)
@@ -469,11 +469,10 @@ func TestUnitWaitForContextCancelled(t *testing.T) {
 	waitCtx, cancel := context.WithTimeout(ctx, 50*time.Millisecond)
 	defer cancel()
 
-	err := proc.WaitFor(waitCtx)
+	err := proc.WaitFor(waitCtx, 0)
 	require.Error(t, err)
 	require.Contains(t, err.Error(), "context cancelled while waiting for process")
 
-	// Cleanup
 	_ = proc.Kill(ctx, 100*time.Millisecond)
 }
 
@@ -489,4 +488,30 @@ func TestUnitStartContextCancelled(t *testing.T) {
 	err := proc.Start(ctx)
 	require.Error(t, err)
 	require.Contains(t, err.Error(), "context cancelled before starting process")
+}
+
+func TestUnitRunDeadlineExceeded(t *testing.T) {
+	ctx := context.Background()
+	proc := execzv2.New(ctx, execzv2.Options{
+		Bin:  "sleep",
+		Args: []string{"5"},
+	})
+	err := proc.Run(ctx, 50*time.Millisecond)
+	require.Error(t, err)
+	require.ErrorIs(t, err, context.DeadlineExceeded)
+}
+
+func TestUnitWaitForDeadlineExceeded(t *testing.T) {
+	ctx := context.Background()
+	proc := execzv2.New(ctx, execzv2.Options{
+		Bin:  "sleep",
+		Args: []string{"5"},
+	})
+	require.NoError(t, proc.Start(ctx))
+
+	err := proc.WaitFor(ctx, 50*time.Millisecond)
+	require.Error(t, err)
+	require.ErrorIs(t, err, context.DeadlineExceeded)
+
+	_ = proc.Kill(ctx, 100*time.Millisecond)
 }

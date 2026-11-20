@@ -352,20 +352,33 @@ func (p *Process) Start(ctx context.Context) error {
 	return nil
 }
 
-// Run starts the process and blocks until it completes or ctx is cancelled, returning any exit error.
-func (p *Process) Run(ctx context.Context) error {
+// Run starts the process and blocks until it completes or ctx is cancelled / deadline expires,
+// returning any exit error.
+func (p *Process) Run(ctx context.Context, deadline time.Duration) error {
+	if deadline > 0 {
+		var cancel context.CancelFunc
+		ctx, cancel = context.WithDeadline(ctx, time.Now().Add(deadline))
+		defer cancel()
+	}
+
 	if err := p.Start(ctx); err != nil {
 		return fmt.Errorf("failed to start process: %w", err)
 	}
-	if err := p.WaitFor(ctx); err != nil {
+	if err := p.WaitFor(ctx, 0); err != nil {
 		return fmt.Errorf("failed to wait for process: %w", err)
 	}
 	return nil
 }
 
 // WaitFor blocks until the process exits and all captured streams have closed,
-// or until ctx is cancelled. It is safe to call concurrently and repeatedly.
-func (p *Process) WaitFor(ctx context.Context) error {
+// or until ctx is cancelled / deadline expires. It is safe to call concurrently and repeatedly.
+func (p *Process) WaitFor(ctx context.Context, deadline time.Duration) error {
+	if deadline > 0 {
+		var cancel context.CancelFunc
+		ctx, cancel = context.WithDeadline(ctx, time.Now().Add(deadline))
+		defer cancel()
+	}
+
 	select {
 	case <-ctx.Done():
 		return fmt.Errorf("context cancelled while waiting for process: %w", ctx.Err())
@@ -408,7 +421,7 @@ func (p *Process) Kill(ctx context.Context, deadline time.Duration) error {
 
 	done := make(chan error, 1)
 	go func() {
-		done <- p.WaitFor(ctx)
+		done <- p.WaitFor(ctx, 0)
 	}()
 
 	select {
