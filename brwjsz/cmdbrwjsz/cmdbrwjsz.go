@@ -26,6 +26,8 @@ func Prepare(ctx context.Context) *cobra.Command {
 		},
 	})
 
+	rootCmd.AddCommand(newExecCmd())
+
 	return rootCmd
 }
 

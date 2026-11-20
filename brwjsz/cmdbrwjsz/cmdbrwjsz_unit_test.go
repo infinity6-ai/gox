@@ -38,4 +38,12 @@ func TestUnitCmdBrwjszPrepare(t *testing.T) {
 		require.NotNil(t, verCmd)
 		require.Equal(t, "version", verCmd.Use)
 	})
+
+	t.Run("Root command contains exec subcommand", func(t *testing.T) {
+		cmd := cmdbrwjsz.Prepare(ctx)
+		execCmd, _, err := cmd.Find([]string{"exec"})
+		require.NoError(t, err)
+		require.NotNil(t, execCmd)
+		require.Equal(t, "exec [code]", execCmd.Use)
+	})
 }
