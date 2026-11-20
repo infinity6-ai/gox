@@ -43,16 +43,17 @@ func TestUnitDiskHandler(t *testing.T) {
 	})
 
 	type testScenario struct {
-		name           string
-		method         string
-		path           string
-		mountPath      string
-		mountMethod    string
-		options        httpzserverdisk.Options
-		expectedStatus int
-		expectedBody   string
-		expectedCType  string
-		expectedHeader map[string]string
+		name              string
+		method            string
+		path              string
+		mountPath         string
+		mountMethod       string
+		options           httpzserverdisk.Options
+		expectedStatus    int
+		expectedBody      string
+		expectedBodyMatch []string
+		expectedCType     string
+		expectedHeader    map[string]string
 	}
 
 	check := func(t *testing.T, s testScenario) {
@@ -94,7 +95,12 @@ func TestUnitDiskHandler(t *testing.T) {
 		require.NoError(t, err)
 
 		if s.method != http.MethodHead {
-			require.Equal(t, s.expectedBody, string(body))
+			if s.expectedBody != "" {
+				require.Equal(t, s.expectedBody, string(body))
+			}
+			for _, match := range s.expectedBodyMatch {
+				require.Contains(t, string(body), match)
+			}
 		} else {
 			require.Empty(t, string(body))
 		}
@@ -246,22 +252,109 @@ func TestUnitDiskHandler(t *testing.T) {
 		})
 	})
 
-	t.Run("404 Not Found for directory if NoIndex is true", func(t *testing.T) {
+	t.Run("404 Not Found for directory if NoIndex is true and Listing is false", func(t *testing.T) {
 		check(t, testScenario{
 			method:         http.MethodGet,
 			path:           "/",
-			options:        httpzserverdisk.Options{NoIndex: true},
+			options:        httpzserverdisk.Options{NoIndex: true, Listing: false},
 			expectedStatus: http.StatusNotFound,
 			expectedBody:   "Not Found",
 		})
 	})
 
-	t.Run("404 Not Found for directory without index file", func(t *testing.T) {
+	t.Run("404 Not Found for directory without index file when Listing is false", func(t *testing.T) {
 		check(t, testScenario{
 			method:         http.MethodGet,
 			path:           "/deep",
+			options:        httpzserverdisk.Options{Listing: false},
 			expectedStatus: http.StatusNotFound,
 			expectedBody:   "Not Found",
+		})
+	})
+
+	t.Run("404 Not Found for directory trailing slash without index when Listing is false", func(t *testing.T) {
+		check(t, testScenario{
+			method:         http.MethodGet,
+			path:           "/deep/",
+			options:        httpzserverdisk.Options{Listing: false},
+			expectedStatus: http.StatusNotFound,
+			expectedBody:   "Not Found",
+		})
+	})
+
+	t.Run("Directory listing rendered when NoIndex is true and Listing is true", func(t *testing.T) {
+		check(t, testScenario{
+			method:         http.MethodGet,
+			path:           "/",
+			options:        httpzserverdisk.Options{NoIndex: true, Listing: true},
+			expectedStatus: http.StatusOK,
+			expectedCType:  "text/html",
+			expectedBodyMatch: []string{
+				"<title>Index of /</title>",
+				"<h1>Index of /</h1>",
+				`<a href="/style.css">style.css</a>`,
+				`<a href="/app.js">app.js</a>`,
+				`<a href="/sub/">sub/</a>`,
+			},
+		})
+	})
+
+	t.Run("Directory listing rendered for subdirectory without index (trailing slash)", func(t *testing.T) {
+		check(t, testScenario{
+			method:         http.MethodGet,
+			path:           "/deep/",
+			options:        httpzserverdisk.Options{Listing: true},
+			expectedStatus: http.StatusOK,
+			expectedCType:  "text/html",
+			expectedBodyMatch: []string{
+				"<title>Index of /deep/</title>",
+				"<h1>Index of /deep/</h1>",
+				`<a href="/">../</a>`,
+				`<a href="/deep/path/">path/</a>`,
+			},
+		})
+	})
+
+	t.Run("Directory listing rendered for subdirectory without index (no trailing slash)", func(t *testing.T) {
+		check(t, testScenario{
+			method:         http.MethodGet,
+			path:           "/deep",
+			options:        httpzserverdisk.Options{Listing: true},
+			expectedStatus: http.StatusOK,
+			expectedCType:  "text/html",
+			expectedBodyMatch: []string{
+				"<title>Index of /deep/</title>",
+				"<h1>Index of /deep/</h1>",
+				`<a href="/">../</a>`,
+				`<a href="/deep/path/">path/</a>`,
+			},
+		})
+	})
+
+	t.Run("Directory listing with Prefix preserves prefix in links", func(t *testing.T) {
+		check(t, testScenario{
+			method:         http.MethodGet,
+			path:           "/files/deep/",
+			mountPath:      "/files/*",
+			options:        httpzserverdisk.Options{Prefix: "/files", Listing: true},
+			expectedStatus: http.StatusOK,
+			expectedCType:  "text/html",
+			expectedBodyMatch: []string{
+				"<title>Index of /files/deep/</title>",
+				"<h1>Index of /files/deep/</h1>",
+				`<a href="/files/">../</a>`,
+				`<a href="/files/deep/path/">path/</a>`,
+			},
+		})
+	})
+
+	t.Run("HEAD request on directory listing returns headers with empty body", func(t *testing.T) {
+		check(t, testScenario{
+			method:         http.MethodHead,
+			path:           "/deep/",
+			options:        httpzserverdisk.Options{Listing: true},
+			expectedStatus: http.StatusOK,
+			expectedCType:  "text/html",
 		})
 	})
 
