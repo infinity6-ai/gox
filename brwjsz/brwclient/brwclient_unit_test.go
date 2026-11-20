@@ -201,5 +201,9 @@ func TestUnitClientOperations(t *testing.T) {
 		require.NoError(t, err)
 		require.Equal(t, "HTMLCanvasElement", dump["ref-1"])
 		require.Equal(t, "Function", dump["ref-2"])
+
+		dumpSelective, err := brwclient.RefDump(t.Context(), c, "ref-1")
+		require.NoError(t, err)
+		require.Equal(t, "HTMLCanvasElement", dumpSelective["ref-1"])
 	})
 }

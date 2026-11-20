@@ -137,10 +137,15 @@ func TestUnitBrowserE2E(t *testing.T) {
 	canvasRef := brwclient.MustFunc[any](ctx, client, `() => document.createElement('canvas')`)
 	ctx2dRef := brwclient.MustFunc[any](ctx, client, `(c) => c.getContext('2d')`, canvasRef)
 
-	// Perform RefDump
-	dump := brwclient.MustRefDump(ctx, client)
-	require.Contains(t, dump[string(canvasRef)], "HTMLCanvasElement")
-	require.Contains(t, dump[string(ctx2dRef)], "CanvasRenderingContext2D")
+	// Perform RefDump (all active refs)
+	dumpAll := brwclient.MustRefDump(ctx, client)
+	require.Contains(t, dumpAll[string(canvasRef)], "HTMLCanvasElement")
+	require.Contains(t, dumpAll[string(ctx2dRef)], "CanvasRenderingContext2D")
+
+	// Perform selective RefDump (only canvasRef)
+	dumpSelective := brwclient.MustRefDump(ctx, client, canvasRef)
+	require.Contains(t, dumpSelective[string(canvasRef)], "HTMLCanvasElement")
+	require.NotContains(t, dumpSelective, string(ctx2dRef))
 
 	brwclient.MustDelete(ctx, client, canvasRef)
 	brwclient.MustDelete(ctx, client, ctx2dRef)

@@ -156,18 +156,38 @@
         });
     }
 
-    function refDump() {
+    function refDump(targetRefs) {
         const summary = {};
-        console.log(`[brwjsz] RefDump (${refs.size} active refs):`);
-        for (const [id, val] of refs.entries()) {
-            let desc = typeof val;
-            try {
-                if (val && val.constructor && val.constructor.name) {
-                    desc = val.constructor.name;
-                } else if (val !== null && val !== undefined) {
-                    desc = String(val);
+        const isTargeted = Array.isArray(targetRefs) && targetRefs.length > 0;
+        const entries = [];
+
+        if (isTargeted) {
+            for (const item of targetRefs) {
+                const id = String(item);
+                if (refs.has(id)) {
+                    entries.push([id, refs.get(id)]);
+                } else {
+                    entries.push([id, undefined]);
                 }
-            } catch (_) {}
+            }
+        } else {
+            for (const [id, val] of refs.entries()) {
+                entries.push([id, val]);
+            }
+        }
+
+        console.log(`[brwjsz] RefDump (${entries.length} refs):`);
+        for (const [id, val] of entries) {
+            let desc;
+            if (val === undefined) {
+                desc = '<not found>';
+            } else if (val && val.constructor && val.constructor.name) {
+                desc = val.constructor.name;
+            } else if (val !== null && val !== undefined) {
+                desc = String(val);
+            } else {
+                desc = typeof val;
+            }
             console.log(`  - [${id}] (${desc}):`, val);
             summary[id] = desc;
         }

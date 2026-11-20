@@ -39,6 +39,10 @@ type Dispatcher interface {
 // Ref represents a typed reference to a JavaScript object in the browser.
 type Ref[T any] string
 
+func (r Ref[T]) String() string {
+	return string(r)
+}
+
 func (r Ref[T]) MarshalJSON() ([]byte, error) {
 	return json.Marshal(map[string]string{"$ref": string(r)})
 }
@@ -296,15 +300,20 @@ func MustGet[T any](ctx context.Context, c *Client, ref Ref[T]) T {
 	return ret
 }
 
-// RefDump instructs the browser controller to log all active references to console.log
+// RefDump instructs the browser controller to log active references to console.log
 // and returns a summary map of ref ID -> type/description.
-func RefDump(ctx context.Context, c *Client) (map[string]string, error) {
-	return Call[map[string]string](ctx, c, `() => window.brwjsz.refDump()`)
+// If no refs are specified, all active references are dumped; otherwise only the specified refs are dumped.
+func RefDump(ctx context.Context, c *Client, refs ...any) (map[string]string, error) {
+	var ids []string
+	for _, r := range refs {
+		ids = append(ids, fmt.Sprint(r))
+	}
+	return Call[map[string]string](ctx, c, `(targets) => window.brwjsz.refDump(targets)`, ids)
 }
 
 // MustRefDump logs active references in the browser and returns a summary map, panicking on failure.
-func MustRefDump(ctx context.Context, c *Client) map[string]string {
-	ret, err := RefDump(ctx, c)
+func MustRefDump(ctx context.Context, c *Client, refs ...any) map[string]string {
+	ret, err := RefDump(ctx, c, refs...)
 	errorz.Check(err)
 	return ret
 }
