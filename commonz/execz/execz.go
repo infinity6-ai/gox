@@ -23,14 +23,14 @@ type tlogger logz.Type
 
 var logger = logz.Create(tlogger(true))
 
-// ErrKilled is returned when a process does not exit within the grace period deadline and is terminated via SIGKILL.
+// ErrKilled is returned when a process does not exit within the grace period timeout and is terminated via SIGKILL.
 var ErrKilled = errors.New("ErrKilled")
 
 // DefaultLineBufferSize is the default maximum byte size of a line fragment (64 KB).
 const DefaultLineBufferSize = 64 * 1024
 
-// DefaultKillDeadline is the default grace period given to a process to terminate via SIGTERM before SIGKILL is sent during Close().
-const DefaultKillDeadline = 3 * time.Second
+// DefaultKillTimeout is the default grace period given to a process to terminate via SIGTERM before SIGKILL is sent during Close().
+const DefaultKillTimeout = 3 * time.Second
 
 // Line represents a streamed input or output line.
 // For output:
@@ -366,17 +366,17 @@ func (p *Process) Start(ctx context.Context) error {
 	return nil
 }
 
-// Run starts the process and blocks until it completes or ctx is cancelled / deadline expires,
-// returning any exit error. If Start succeeds, it defers terminating the process via Kill with graceDeadline
-// (or DefaultKillDeadline if graceDeadline <= 0) if WaitFor returns early (e.g. on context cancellation or deadline expiration).
-func (p *Process) Run(ctx context.Context, deadline time.Duration, graceDeadline time.Duration) error {
-	if graceDeadline <= 0 {
-		graceDeadline = DefaultKillDeadline
+// Run starts the process and blocks until it completes or ctx is cancelled / timeout expires,
+// returning any exit error. If Start succeeds, it defers terminating the process via Kill with graceTimeout
+// (or DefaultKillTimeout if graceTimeout <= 0) if WaitFor returns early (e.g. on context cancellation or timeout expiration).
+func (p *Process) Run(ctx context.Context, timeout time.Duration, graceTimeout time.Duration) error {
+	if graceTimeout <= 0 {
+		graceTimeout = DefaultKillTimeout
 	}
 
-	if deadline > 0 {
+	if timeout > 0 {
 		var cancel context.CancelFunc
-		ctx, cancel = context.WithDeadline(ctx, time.Now().Add(deadline))
+		ctx, cancel = context.WithTimeout(ctx, timeout)
 		defer cancel()
 	}
 
@@ -384,7 +384,7 @@ func (p *Process) Run(ctx context.Context, deadline time.Duration, graceDeadline
 		return fmt.Errorf("failed to start process: %w", err)
 	}
 	defer func() {
-		_ = p.Kill(context.Background(), graceDeadline)
+		_ = p.Kill(context.Background(), graceTimeout)
 	}()
 
 	if err := p.WaitFor(ctx, 0); err != nil {
@@ -394,11 +394,11 @@ func (p *Process) Run(ctx context.Context, deadline time.Duration, graceDeadline
 }
 
 // WaitFor blocks until the process exits and all captured streams have closed,
-// or until ctx is cancelled / deadline expires. It is safe to call concurrently and repeatedly.
-func (p *Process) WaitFor(ctx context.Context, deadline time.Duration) error {
-	if deadline > 0 {
+// or until ctx is cancelled / timeout expires. It is safe to call concurrently and repeatedly.
+func (p *Process) WaitFor(ctx context.Context, timeout time.Duration) error {
+	if timeout > 0 {
 		var cancel context.CancelFunc
-		ctx, cancel = context.WithDeadline(ctx, time.Now().Add(deadline))
+		ctx, cancel = context.WithTimeout(ctx, timeout)
 		defer cancel()
 	}
 
@@ -432,7 +432,7 @@ func (p *Process) CloseStdin() error {
 	return nil
 }
 
-// Close terminates the process if it is currently running by calling Kill with DefaultKillDeadline.
+// Close terminates the process if it is currently running by calling Kill with DefaultKillTimeout.
 // If the process has not yet started, Close marks it as finished so it cannot be started.
 // If the process has already terminated, Close is a no-op and returns nil.
 // It is intended to be called via defer proc.Close() immediately after New.
@@ -445,16 +445,16 @@ func (p *Process) Close() error {
 	}
 	p.mu.Unlock()
 
-	return p.Kill(context.Background(), DefaultKillDeadline)
+	return p.Kill(context.Background(), DefaultKillTimeout)
 }
 
-// Kill attempts to gracefully stop the process group via SIGTERM. It creates a deadline context
-// (if deadline > 0) after sending the initial signal. If the process does not terminate within the deadline
+// Kill attempts to gracefully stop the process group via SIGTERM. It creates a timeout context
+// (if graceTimeout > 0) after sending the initial signal. If the process does not terminate within graceTimeout
 // or if ctx is cancelled, it forcefully terminates the group via SIGKILL and returns an error wrapping
 // both ErrKilled and the context error (context.DeadlineExceeded or context.Canceled).
 //
 // If the process is not currently running, Kill is a no-op and returns nil.
-func (p *Process) Kill(ctx context.Context, deadline time.Duration) error {
+func (p *Process) Kill(ctx context.Context, graceTimeout time.Duration) error {
 	p.mu.Lock()
 	if p.state != stateStarted || p.cmd == nil || p.cmd.Process == nil {
 		p.mu.Unlock()
@@ -468,13 +468,13 @@ func (p *Process) Kill(ctx context.Context, deadline time.Duration) error {
 		_ = p.cmd.Process.Signal(syscall.SIGTERM)
 	}
 
-	if deadline > 0 {
+	if graceTimeout > 0 {
 		var cancel context.CancelFunc
-		ctx, cancel = context.WithDeadline(ctx, time.Now().Add(deadline))
+		ctx, cancel = context.WithTimeout(ctx, graceTimeout)
 		defer cancel()
-	} else if deadline == 0 {
+	} else if graceTimeout == 0 {
 		var cancel context.CancelFunc
-		ctx, cancel = context.WithDeadline(ctx, time.Now())
+		ctx, cancel = context.WithTimeout(ctx, 0)
 		defer cancel()
 	}
 

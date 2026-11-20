@@ -326,7 +326,7 @@ func TestUnitLargeOutputChannel(t *testing.T) {
 	require.Equal(t, 10000, count)
 }
 
-func TestUnitKillDeadline(t *testing.T) {
+func TestUnitKillTimeout(t *testing.T) {
 	ctx := context.Background()
 	proc := execz.New(ctx, execz.Options{
 		Bin:  "bash",
@@ -517,7 +517,7 @@ func TestUnitStartContextCancelled(t *testing.T) {
 	require.Contains(t, err.Error(), "context cancelled before starting process")
 }
 
-func TestUnitRunDeadlineExceeded(t *testing.T) {
+func TestUnitRunTimeoutExceeded(t *testing.T) {
 	ctx := context.Background()
 	proc := execz.New(ctx, execz.Options{
 		Bin:  "sleep",
@@ -530,7 +530,7 @@ func TestUnitRunDeadlineExceeded(t *testing.T) {
 	require.False(t, proc.IsRunning())
 }
 
-func TestUnitWaitForDeadlineExceeded(t *testing.T) {
+func TestUnitWaitForTimeoutExceeded(t *testing.T) {
 	ctx := context.Background()
 	proc := execz.New(ctx, execz.Options{
 		Bin:  "sleep",
