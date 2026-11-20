@@ -527,6 +527,7 @@ func TestUnitRunDeadlineExceeded(t *testing.T) {
 	err := proc.Run(ctx, 50*time.Millisecond)
 	require.Error(t, err)
 	require.ErrorIs(t, err, context.DeadlineExceeded)
+	require.False(t, proc.IsRunning())
 }
 
 func TestUnitWaitForDeadlineExceeded(t *testing.T) {

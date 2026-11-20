@@ -367,7 +367,8 @@ func (p *Process) Start(ctx context.Context) error {
 }
 
 // Run starts the process and blocks until it completes or ctx is cancelled / deadline expires,
-// returning any exit error.
+// returning any exit error. If Start succeeds, it defers Close to guarantee the process is terminated
+// if WaitFor returns early (e.g. on context cancellation or deadline expiration).
 func (p *Process) Run(ctx context.Context, deadline time.Duration) error {
 	if deadline > 0 {
 		var cancel context.CancelFunc
@@ -378,6 +379,8 @@ func (p *Process) Run(ctx context.Context, deadline time.Duration) error {
 	if err := p.Start(ctx); err != nil {
 		return fmt.Errorf("failed to start process: %w", err)
 	}
+	defer p.Close()
+
 	if err := p.WaitFor(ctx, 0); err != nil {
 		return fmt.Errorf("failed to wait for process: %w", err)
 	}
