@@ -146,18 +146,18 @@ function cmd_server_lifecycle() {
 
   # 2. Exec inline code on running daemon
   local res1
-  res1="$($BIN server exec --state "$state_file" --code "21 * 2")"
+  res1="$($BIN exec --state "$state_file" --code "21 * 2")"
   assert_eq "42" "$res1" "server exec 21 * 2"
 
   # 3. Exec with function and arguments
   local res2
-  res2="$($BIN server exec --state "$state_file" --code "(a, b) => a + b" --arg 10 --arg 20)"
+  res2="$($BIN exec --state "$state_file" --code "(a, b) => a + b" --arg 10 --arg 20)"
   assert_eq "30" "$res2" "server exec (a, b) => a + b"
 
   # 4. State persistence across calls: set global in call 1, read it in call 2
-  $BIN server exec --state "$state_file" --code "window.myCounter = 100" > /dev/null
+  $BIN exec --state "$state_file" --code "window.myCounter = 100" > /dev/null
   local res3
-  res3="$($BIN server exec --state "$state_file" --code "window.myCounter += 25; window.myCounter")"
+  res3="$($BIN exec --state "$state_file" --code "window.myCounter += 25; window.myCounter")"
   assert_eq "125" "$res3" "server state persistence between calls"
 
   # 5. Stop the daemon

@@ -26,6 +26,7 @@ func TestUnitCmdExecPrepare(t *testing.T) {
 	require.NotNil(t, cmd.Flags().Lookup("code"))
 	require.NotNil(t, cmd.Flags().Lookup("file"))
 	require.NotNil(t, cmd.Flags().Lookup("site"))
+	require.NotNil(t, cmd.Flags().Lookup("state"))
 	require.NotNil(t, cmd.Flags().Lookup("arg"))
 	require.NotNil(t, cmd.Flags().Lookup("arg-file"))
 	require.NotNil(t, cmd.Flags().Lookup("raw"))

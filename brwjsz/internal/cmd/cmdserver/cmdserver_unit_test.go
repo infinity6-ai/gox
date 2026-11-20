@@ -23,14 +23,13 @@ func TestUnitCmdServerPrepare(t *testing.T) {
 	require.NotNil(t, startCmd.Flags().Lookup("state"))
 	require.NotNil(t, startCmd.Flags().Lookup("detach"))
 
-	execCmd, _, err := cmd.Find([]string{"exec"})
-	require.NoError(t, err)
-	require.NotNil(t, execCmd)
-	require.NotNil(t, execCmd.Flags().Lookup("state"))
-	require.NotNil(t, execCmd.Flags().Lookup("code"))
-
 	stopCmd, _, err := cmd.Find([]string{"stop"})
 	require.NoError(t, err)
 	require.NotNil(t, stopCmd)
 	require.NotNil(t, stopCmd.Flags().Lookup("state"))
+
+	// Ensure exec is not a subcommand of server (exec is top-level brwjsz exec)
+	execCmd, _, err := cmd.Find([]string{"exec"})
+	require.NoError(t, err)
+	require.NotEqual(t, "exec", execCmd.Name())
 }
