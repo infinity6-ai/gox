@@ -158,6 +158,11 @@ func (b *Browser) Process() *execz.Process {
 	return b.prc
 }
 
+// Server returns the underlying HTTP server instance.
+func (b *Browser) Server() *httpzserver.Server {
+	return b.server
+}
+
 // Client returns a Client handle to communicate with the browser controller.
 func (b *Browser) Client() *brwclient.Client {
 	u := b.server.Base().Clone()

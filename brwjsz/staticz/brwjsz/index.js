@@ -67,6 +67,26 @@
                     await sendReply({ id: id, ok: true, result: res });
                     break;
                 }
+                case 'call': {
+                    const resolvedArgs = (args || []).map(resolveArg);
+                    let target;
+                    try {
+                        target = (0, eval)('(' + fn + ')');
+                    } catch (_) {
+                        target = (0, eval)(fn);
+                    }
+                    let res;
+                    if (typeof target === 'function') {
+                        res = target.apply(window, resolvedArgs);
+                    } else {
+                        res = target;
+                    }
+                    if (res && typeof res.then === 'function') {
+                        res = await res;
+                    }
+                    await sendReply({ id: id, ok: true, result: res });
+                    break;
+                }
                 case 'func': {
                     const resolvedArgs = (args || []).map(resolveArg);
                     let target;

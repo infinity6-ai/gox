@@ -71,7 +71,7 @@ func TestUnitClientOperations(t *testing.T) {
 					return &brwclient.Reply{ID: cmd.ID, Ok: false, Error: "ReferenceError: foo is not defined"}, nil
 				}
 				var rawRes json.RawMessage
-				if cmd.Action == "eval" || cmd.Action == "get" {
+				if cmd.Action == "eval" || cmd.Action == "get" || cmd.Action == "call" {
 					rawRes = json.RawMessage(`"hello world"`)
 				}
 				return &brwclient.Reply{
@@ -130,6 +130,21 @@ func TestUnitClientOperations(t *testing.T) {
 				return nil
 			},
 			wantAction: "eval",
+		})
+	})
+
+	t.Run("Call executes function with arguments and returns value", func(t *testing.T) {
+		check(t, testScenario{
+			name: "call success",
+			action: func(ctx context.Context, c *brwclient.Client) error {
+				val, err := brwclient.Call[string](ctx, c, `(a, b) => a + " " + b`, "hello", "world")
+				if err != nil {
+					return err
+				}
+				require.Equal(t, "hello world", val)
+				return nil
+			},
+			wantAction: "call",
 		})
 	})
 

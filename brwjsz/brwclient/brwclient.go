@@ -190,6 +190,42 @@ func MustFunc[T any](ctx context.Context, c *Client, fn string, args ...any) Ref
 	return ret
 }
 
+// Call executes a function with arguments, awaits any returned Promise, and decodes the JSON result into T.
+func Call[T any](ctx context.Context, c *Client, fn string, args ...any) (T, error) {
+	var zero T
+	if c == nil || c.Dispatcher == nil {
+		return zero, fmt.Errorf("dispatcher is not configured")
+	}
+	cmd := &Command{
+		ID:     idgen.B64(),
+		Action: "call",
+		Fn:     fn,
+		Args:   args,
+	}
+	reply, err := c.Dispatcher.Dispatch(ctx, cmd)
+	if err != nil {
+		return zero, fmt.Errorf("error calling function: %w", err)
+	}
+	if !reply.Ok {
+		return zero, fmt.Errorf("javascript error in call: %s", reply.Error)
+	}
+	if len(reply.Result) == 0 {
+		return zero, nil
+	}
+	var ret T
+	if err := json.Unmarshal(reply.Result, &ret); err != nil {
+		return zero, fmt.Errorf("failed to unmarshal call result: %w", err)
+	}
+	return ret, nil
+}
+
+// MustCall executes a function on the browser, panicking on failure.
+func MustCall[T any](ctx context.Context, c *Client, fn string, args ...any) T {
+	ret, err := Call[T](ctx, c, fn, args...)
+	errorz.Check(err)
+	return ret
+}
+
 // Eval evaluates a JavaScript expression on the browser and decodes the JSON result into T.
 func Eval[T any](ctx context.Context, c *Client, expr string) (T, error) {
 	var zero T
