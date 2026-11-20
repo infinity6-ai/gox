@@ -175,6 +175,11 @@ func (b *Browser) Server() *httpzserver.Server {
 	return b.server
 }
 
+// WaitStop returns a channel that is closed when a stop request is received by the server.
+func (b *Browser) WaitStop() <-chan struct{} {
+	return b.hub.WaitStop()
+}
+
 // Client returns a Client handle to communicate with the browser controller.
 func (b *Browser) Client() *brwclient.Client {
 	u := b.server.Base().Clone()

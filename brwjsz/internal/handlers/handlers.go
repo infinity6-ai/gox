@@ -6,9 +6,11 @@ import (
 	"fmt"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/infinity6-ai/gox/brwjsz/brwclient"
 	"github.com/infinity6-ai/gox/brwjsz/internal/internal/stzfiles"
+	"github.com/infinity6-ai/gox/commonz/idgen"
 	"github.com/infinity6-ai/gox/commonz/pathz"
 	"github.com/infinity6-ai/gox/httpz/httpzrequest"
 	"github.com/infinity6-ai/gox/httpz/httpzserver"
@@ -20,11 +22,13 @@ const BasePath = "/api/brwjs/f"
 const ControllerPath = BasePath + "/controller.html"
 const EventsPath = "/api/brwjs/events"
 const ReplyPath = "/api/brwjs/reply"
+const ExecPath = "/api/brwjs/exec"
+const StopPath = "/api/brwjs/stop"
 
 // Site configures serving static files from a disk directory on the server.
 type Site struct {
 	Disk *pathz.Path
-	Path *pathz.Path // default "/*"
+	Path string // default "/*"
 }
 
 // AddHandlers registers all internal handlers and an optional disk site on the server.
@@ -32,6 +36,8 @@ func AddHandlers(ctx context.Context, s *httpzserver.Server, hub *Hub, site *Sit
 	addStatic(s)
 	addEvents(s, hub)
 	addReply(s, hub)
+	addExec(s, hub)
+	addStop(s, hub)
 	addSite(s, site)
 }
 
@@ -101,29 +107,113 @@ func addReply(s *httpzserver.Server, hub *Hub) {
 	})
 }
 
+// ExecRequest represents the JSON payload sent to /api/brwjs/exec.
+type ExecRequest struct {
+	Code string `json:"code"`
+	Args []any  `json:"args,omitempty"`
+}
+
+// ExecResponse represents the JSON response returned by /api/brwjs/exec.
+type ExecResponse struct {
+	Ok     bool   `json:"ok"`
+	Result any    `json:"result,omitempty"`
+	Error  string `json:"error,omitempty"`
+}
+
+func addExec(s *httpzserver.Server, hub *Hub) {
+	s.AddHandler("POST", ExecPath, func(ctx context.Context, resp httpzserver.Resp, req *httpzrequest.Req, params map[string]string) {
+		headers := make(http.Header)
+		headers.Set("Content-Type", "application/json")
+
+		if req.Body == nil {
+			w := resp(http.StatusBadRequest, headers)
+			_ = json.NewEncoder(w).Encode(ExecResponse{Ok: false, Error: "missing body"})
+			return
+		}
+		var execReq ExecRequest
+		if err := json.NewDecoder(req.Body).Decode(&execReq); err != nil {
+			w := resp(http.StatusBadRequest, headers)
+			_ = json.NewEncoder(w).Encode(ExecResponse{Ok: false, Error: fmt.Sprintf("invalid json: %s", err)})
+			return
+		}
+
+		wrapper := `async (code, args) => {
+			window.args = args;
+			let target;
+			try {
+				target = (0, eval)('(' + code + ')');
+			} catch (_) {
+				target = (0, eval)(code);
+			}
+			if (typeof target === 'function') {
+				let res = target.apply(window, args);
+				if (res && typeof res.then === 'function') {
+					res = await res;
+				}
+				return res;
+			}
+			if (target && typeof target.then === 'function') {
+				target = await target;
+			}
+			return target;
+		}`
+
+		cmd := &brwclient.Command{
+			ID:     idgen.B64(),
+			Action: "call",
+			Fn:     wrapper,
+			Args:   []any{execReq.Code, execReq.Args},
+		}
+
+		reply, err := hub.Dispatch(ctx, cmd)
+		if err != nil {
+			w := resp(http.StatusInternalServerError, headers)
+			_ = json.NewEncoder(w).Encode(ExecResponse{Ok: false, Error: err.Error()})
+			return
+		}
+		if !reply.Ok {
+			w := resp(http.StatusOK, headers)
+			_ = json.NewEncoder(w).Encode(ExecResponse{Ok: false, Error: reply.Error})
+			return
+		}
+
+		var resVal any
+		if len(reply.Result) > 0 {
+			_ = json.Unmarshal(reply.Result, &resVal)
+		}
+		w := resp(http.StatusOK, headers)
+		_ = json.NewEncoder(w).Encode(ExecResponse{Ok: true, Result: resVal})
+	})
+}
+
+func addStop(s *httpzserver.Server, hub *Hub) {
+	s.AddHandler("POST", StopPath, func(ctx context.Context, resp httpzserver.Resp, req *httpzrequest.Req, params map[string]string) {
+		headers := make(http.Header)
+		headers.Set("Content-Type", "application/json")
+		w := resp(http.StatusOK, headers)
+		_ = json.NewEncoder(w).Encode(map[string]any{"ok": true})
+		go func() {
+			time.Sleep(50 * time.Millisecond)
+			hub.RequestStop()
+		}()
+	})
+}
+
 func addSite(s *httpzserver.Server, site *Site) {
 	if site == nil || site.Disk == nil {
 		return
 	}
-	mountPath := "/*"
-	prefix := ""
-	if site.Path != nil {
-		p := site.Path.String()
-		if !strings.HasPrefix(p, "/") {
-			p = "/" + p
-		}
-		clean := strings.TrimSuffix(p, "/*")
-		clean = strings.TrimSuffix(clean, "*")
-		clean = strings.TrimSuffix(clean, "/")
-		if clean == "" {
-			mountPath = "/*"
-			prefix = ""
-		} else {
-			mountPath = clean + "/*"
-			prefix = clean
-		}
+	path := site.Path
+	if path == "" {
+		path = "/*"
 	}
-	s.AddHandler("GET", mountPath, httpzserverdisk.Handler(httpzserverdisk.Options{
+	prefix := strings.TrimSuffix(path, "/*")
+	prefix = strings.TrimSuffix(prefix, "*")
+	prefix = strings.TrimSuffix(prefix, "/")
+	if prefix != "" && !strings.HasPrefix(prefix, "/") {
+		prefix = "/" + prefix
+	}
+	s.AddHandler("GET", path, httpzserverdisk.Handler(httpzserverdisk.Options{
 		Base:    site.Disk,
 		Prefix:  prefix,
 		Listing: true,

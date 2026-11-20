@@ -19,6 +19,8 @@ type Hub struct {
 	conn        *controllerConn
 	readyNotify chan struct{}
 	readyOnce   sync.Once
+	stopNotify  chan struct{}
+	stopOnce    sync.Once
 	pending     map[string]chan *brwclient.Reply
 }
 
@@ -26,8 +28,21 @@ type Hub struct {
 func NewHub() *Hub {
 	return &Hub{
 		readyNotify: make(chan struct{}),
+		stopNotify:  make(chan struct{}),
 		pending:     make(map[string]chan *brwclient.Reply),
 	}
+}
+
+// RequestStop signals that the server and browser should stop.
+func (h *Hub) RequestStop() {
+	h.stopOnce.Do(func() {
+		close(h.stopNotify)
+	})
+}
+
+// WaitStop returns a channel that is closed when a stop is requested.
+func (h *Hub) WaitStop() <-chan struct{} {
+	return h.stopNotify
 }
 
 // RegisterController registers an active SSE connection for the browser controller.

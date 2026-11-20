@@ -176,7 +176,7 @@ func TestUnitHandlersDiskSiteCustomPath(t *testing.T) {
 	hub := handlers.NewHub()
 	handlers.AddHandlers(ctx, srv, hub, &handlers.Site{
 		Disk: pathz.MustParse(tempDir),
-		Path: pathz.MustParse("/myfiles"),
+		Path: "/myfiles/*",
 	})
 	srv.Listen()
 	srv.Start()

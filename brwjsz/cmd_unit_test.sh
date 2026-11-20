@@ -135,6 +135,38 @@ function cmd_exec_error() {
   echo "  OK: exec error handling"
 }
 
+function cmd_server_lifecycle() {
+  ensure_binary
+  echo "--- Testing: server start/exec/stop lifecycle ---"
+  local state_file="$TMP_DIR/server.state"
+
+  # 1. Start detached daemon
+  $BIN server start --state "$state_file" --detach
+  [ -f "$state_file" ] || { echo "ERROR: state file not created"; exit 1; }
+
+  # 2. Exec inline code on running daemon
+  local res1
+  res1="$($BIN server exec --state "$state_file" --code "21 * 2")"
+  assert_eq "42" "$res1" "server exec 21 * 2"
+
+  # 3. Exec with function and arguments
+  local res2
+  res2="$($BIN server exec --state "$state_file" --code "(a, b) => a + b" --arg 10 --arg 20)"
+  assert_eq "30" "$res2" "server exec (a, b) => a + b"
+
+  # 4. State persistence across calls: set global in call 1, read it in call 2
+  $BIN server exec --state "$state_file" --code "window.myCounter = 100" > /dev/null
+  local res3
+  res3="$($BIN server exec --state "$state_file" --code "window.myCounter += 25; window.myCounter")"
+  assert_eq "125" "$res3" "server state persistence between calls"
+
+  # 5. Stop the daemon
+  $BIN server stop --state "$state_file"
+  [ ! -f "$state_file" ] || { echo "ERROR: state file still exists after stop"; exit 1; }
+
+  echo "  OK: server start/exec/stop lifecycle"
+}
+
 function cmd_all() {
   echo "=========================================="
   echo "Running all brwjsz CLI command tests"
@@ -150,6 +182,7 @@ function cmd_all() {
   cmd_exec_site
   cmd_exec_async
   cmd_exec_error
+  cmd_server_lifecycle
   echo "=========================================="
   echo "All brwjsz CLI tests passed successfully!"
   echo "=========================================="
