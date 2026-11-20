@@ -14,6 +14,7 @@ function cmd_comps_list() {
   echo "msgz"
   echo "storez"
   echo "bqz"
+  echo "brwjsz"
 }
 
 function cmd_comps_exec() {
