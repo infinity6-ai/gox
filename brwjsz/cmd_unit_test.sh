@@ -167,6 +167,58 @@ function cmd_server_lifecycle() {
   echo "  OK: server start/exec/stop lifecycle"
 }
 
+function cmd_qunit_standalone() {
+  ensure_binary
+  echo "--- Testing: qunit standalone discovery ---"
+  local test_site="$TMP_DIR/qunit_site"
+  mkdir -p "$test_site/sub"
+  cat << 'EOF' > "$test_site/calc-test.js"
+QUnit.module('CalcSuite', () => {
+  QUnit.test('add', (assert) => {
+    assert.equal(10 + 20, 30, '10 + 20 = 30');
+  });
+});
+EOF
+
+  cat << 'EOF' > "$test_site/sub/nested-test.js"
+QUnit.module('NestedSuite', () => {
+  QUnit.test('mult', (assert) => {
+    assert.equal(6 * 7, 42, '6 * 7 = 42');
+  });
+});
+EOF
+
+  local res
+  res="$($BIN qunit --site "$test_site")"
+  echo "$res" | grep -q "PASS: 2/2 tests passed" || { echo "qunit standalone failed: $res"; exit 1; }
+  echo "  OK: qunit standalone discovery"
+}
+
+function cmd_qunit_state() {
+  ensure_binary
+  echo "--- Testing: qunit against running daemon via --state ---"
+  local state_file="$TMP_DIR/qunit.state"
+  local site_dir="$TMP_DIR/daemon_site"
+  mkdir -p "$site_dir"
+  cat << 'EOF' > "$site_dir/daemon-test.js"
+QUnit.module('DaemonSuite', () => {
+  QUnit.test('check', (assert) => {
+    assert.ok(true, 'running on daemon');
+  });
+});
+EOF
+
+  $BIN server start --state "$state_file" --site "$site_dir" --detach
+  [ -f "$state_file" ] || { echo "ERROR: state file not created"; exit 1; }
+
+  local res
+  res="$($BIN qunit --state "$state_file")"
+  echo "$res" | grep -q "PASS: 1/1 tests passed" || { echo "qunit daemon failed: $res"; exit 1; }
+
+  $BIN server stop --state "$state_file"
+  echo "  OK: qunit against running daemon"
+}
+
 function cmd_all() {
   echo "=========================================="
   echo "Running all brwjsz CLI command tests"
@@ -183,6 +235,8 @@ function cmd_all() {
   cmd_exec_async
   cmd_exec_error
   cmd_server_lifecycle
+  cmd_qunit_standalone
+  cmd_qunit_state
   echo "=========================================="
   echo "All brwjsz CLI tests passed successfully!"
   echo "=========================================="

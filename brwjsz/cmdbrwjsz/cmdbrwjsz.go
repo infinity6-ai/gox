@@ -7,6 +7,7 @@ import (
 	"os"
 
 	"github.com/infinity6-ai/gox/brwjsz/internal/cmd/cmdexec"
+	"github.com/infinity6-ai/gox/brwjsz/internal/cmd/cmdqunit"
 	"github.com/infinity6-ai/gox/brwjsz/internal/cmd/cmdserver"
 	"github.com/infinity6-ai/gox/brwjsz/version"
 	"github.com/spf13/cobra"
@@ -29,6 +30,7 @@ func Prepare(ctx context.Context) *cobra.Command {
 	})
 
 	cmdexec.Prepare(ctx, rootCmd)
+	cmdqunit.Prepare(ctx, rootCmd)
 	cmdserver.Prepare(ctx, rootCmd)
 
 	return rootCmd
