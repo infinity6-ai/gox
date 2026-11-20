@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/infinity6-ai/gox/brwjsz/brwclient"
 	"github.com/infinity6-ai/gox/brwjsz/internal/handlers"
 	"github.com/infinity6-ai/gox/commonz/execz"
 	"github.com/infinity6-ai/gox/httpz/httpzserver"
@@ -75,4 +76,8 @@ func (b *Browser) fixArgs() {
 	if !d {
 		b.cmdOpts.Args = append(b.cmdOpts.Args, u.String())
 	}
+}
+
+func (b *Browser) Client() *brwclient.Client {
+	return &brwclient.Client{BaseUrl: b.server.Base().MustJoinPathString(handlers.BasePath)}
 }
