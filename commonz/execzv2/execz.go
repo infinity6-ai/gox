@@ -29,6 +29,9 @@ var ErrKilled = errors.New("ErrKilled")
 // DefaultLineBufferSize is the default maximum byte size of a line fragment (64 KB).
 const DefaultLineBufferSize = 64 * 1024
 
+// DefaultKillDeadline is the default grace period given to a process to terminate via SIGTERM before SIGKILL is sent during Close().
+const DefaultKillDeadline = 3 * time.Second
+
 // Line represents a streamed input or output line.
 // For output:
 //   - Partial is false when the line was completed by a newline (\n or \r\n), with the newline stripped.
@@ -79,8 +82,7 @@ type Process struct {
 	Options
 	cmd *exec.Cmd
 
-	// Err holds the process exit error or failure reason after termination.
-	Err error
+	err error
 
 	mu             sync.Mutex
 	state          stateType
@@ -128,7 +130,7 @@ func New(ctx context.Context, opts Options) *Process {
 		p.stdinChan = make(chan Line, opts.EnableStdin)
 		stdinPipe, err := p.cmd.StdinPipe()
 		if err != nil {
-			p.Err = fmt.Errorf("failed to create stdin pipe: %w", err)
+			p.err = fmt.Errorf("failed to create stdin pipe: %w", err)
 		}
 		p.stdinPipe = stdinPipe
 	}
@@ -136,8 +138,8 @@ func New(ctx context.Context, opts Options) *Process {
 	if opts.CaptureStdout > 0 {
 		p.stdoutChan = make(chan Line, opts.CaptureStdout)
 		stdoutPipe, err := p.cmd.StdoutPipe()
-		if err != nil && p.Err == nil {
-			p.Err = fmt.Errorf("failed to create stdout pipe: %w", err)
+		if err != nil && p.err == nil {
+			p.err = fmt.Errorf("failed to create stdout pipe: %w", err)
 		}
 		p.stdoutPipe = stdoutPipe
 	}
@@ -145,13 +147,20 @@ func New(ctx context.Context, opts Options) *Process {
 	if opts.CaptureStderr > 0 {
 		p.stderrChan = make(chan Line, opts.CaptureStderr)
 		stderrPipe, err := p.cmd.StderrPipe()
-		if err != nil && p.Err == nil {
-			p.Err = fmt.Errorf("failed to create stderr pipe: %w", err)
+		if err != nil && p.err == nil {
+			p.err = fmt.Errorf("failed to create stderr pipe: %w", err)
 		}
 		p.stderrPipe = stderrPipe
 	}
 
 	return p
+}
+
+// Err returns the process exit error or termination error, if any.
+func (p *Process) Err() error {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	return p.err
 }
 
 // GetStdout returns a receive-only channel streaming lines read from the process's standard output.
@@ -168,7 +177,7 @@ func (p *Process) GetStderr() <-chan Line {
 
 // GetStdin returns a send-only channel for streaming lines into the process's standard input.
 // Returns nil if EnableStdin was not enabled (> 0).
-// Closing this channel or calling Close() sends EOF to the process's stdin.
+// Closing this channel or calling CloseStdin() sends EOF to the process's stdin.
 func (p *Process) GetStdin() chan<- Line {
 	return p.stdinChan
 }
@@ -293,8 +302,8 @@ func (p *Process) startGoroutines() {
 		p.wg.Wait()
 		waitErr := p.cmd.Wait()
 		p.mu.Lock()
-		if p.Err == nil && waitErr != nil {
-			p.Err = fmt.Errorf("process execution failed: %w", waitErr)
+		if p.err == nil && waitErr != nil {
+			p.err = fmt.Errorf("process execution failed: %w", waitErr)
 		}
 		p.state = stateFinished
 		close(p.waitChan)
@@ -305,15 +314,20 @@ func (p *Process) startGoroutines() {
 // Start begins execution of the process asynchronously.
 // If ctx is cancelled before or during process execution, the process is terminated.
 // Returns an error if the process has already been started or if startup fails.
+// A Process instance cannot be restarted once started or closed.
 func (p *Process) Start(ctx context.Context) error {
 	p.mu.Lock()
+	if p.state == stateFinished {
+		p.mu.Unlock()
+		return fmt.Errorf("process already finished or closed")
+	}
 	if p.state != stateCreated {
 		p.mu.Unlock()
 		return fmt.Errorf("process already started")
 	}
-	if p.Err != nil {
+	if p.err != nil {
 		p.mu.Unlock()
-		return fmt.Errorf("process initialization error: %w", p.Err)
+		return fmt.Errorf("process initialization error: %w", p.err)
 	}
 	if err := ctx.Err(); err != nil {
 		p.mu.Unlock()
@@ -323,7 +337,7 @@ func (p *Process) Start(ctx context.Context) error {
 	err := p.cmd.Start()
 	if err != nil {
 		p.state = stateFinished
-		p.Err = fmt.Errorf("failed to start process: %w", err)
+		p.err = fmt.Errorf("failed to start process: %w", err)
 		if p.stdoutChan != nil {
 			close(p.stdoutChan)
 		}
@@ -332,7 +346,7 @@ func (p *Process) Start(ctx context.Context) error {
 		}
 		close(p.waitChan)
 		p.mu.Unlock()
-		return p.Err
+		return p.err
 	}
 	p.mu.Unlock()
 
@@ -385,8 +399,8 @@ func (p *Process) WaitFor(ctx context.Context, deadline time.Duration) error {
 	case <-p.waitChan:
 		p.mu.Lock()
 		defer p.mu.Unlock()
-		if p.Err != nil {
-			return p.Err
+		if p.err != nil {
+			return p.err
 		}
 		return nil
 	}
@@ -399,8 +413,8 @@ func (p *Process) IsRunning() bool {
 	return p.state == stateStarted
 }
 
-// Close closes the standard input stream idempotently, signaling EOF to the child process.
-func (p *Process) Close() error {
+// CloseStdin closes the standard input stream idempotently, signaling EOF to the child process.
+func (p *Process) CloseStdin() error {
 	p.closeStdinOnce.Do(func() {
 		if p.stdinChan != nil {
 			close(p.stdinChan)
@@ -409,13 +423,31 @@ func (p *Process) Close() error {
 	return nil
 }
 
+// Close terminates the process if it is currently running by calling Kill with DefaultKillDeadline.
+// If the process has not yet started, Close marks it as finished so it cannot be started.
+// If the process has already terminated, Close is a no-op and returns nil.
+// It is intended to be called via defer proc.Close() immediately after New.
+func (p *Process) Close() error {
+	p.mu.Lock()
+	if p.state == stateCreated {
+		p.state = stateFinished
+		p.mu.Unlock()
+		return nil
+	}
+	p.mu.Unlock()
+
+	return p.Kill(context.Background(), DefaultKillDeadline)
+}
+
 // Kill attempts to gracefully stop the process group via SIGTERM. It creates a deadline context
 // (if deadline > 0) after sending the initial signal. If the process does not terminate within the deadline
 // or if ctx is cancelled, it forcefully terminates the group via SIGKILL and returns an error wrapping
 // both ErrKilled and the context error (context.DeadlineExceeded or context.Canceled).
+//
+// If the process is not currently running, Kill is a no-op and returns nil.
 func (p *Process) Kill(ctx context.Context, deadline time.Duration) error {
 	p.mu.Lock()
-	if p.cmd == nil || p.cmd.Process == nil {
+	if p.state != stateStarted || p.cmd == nil || p.cmd.Process == nil {
 		p.mu.Unlock()
 		return nil
 	}
@@ -437,7 +469,7 @@ func (p *Process) Kill(ctx context.Context, deadline time.Duration) error {
 	go func() {
 		<-p.waitChan
 		p.mu.Lock()
-		err := p.Err
+		err := p.err
 		p.mu.Unlock()
 		done <- err
 	}()
@@ -457,7 +489,7 @@ func (p *Process) Kill(ctx context.Context, deadline time.Duration) error {
 		}
 		killErr := fmt.Errorf("Killed %d: %s [%s], %w: %w", pid, p.cmd.Path, p.cmd.Args, ErrKilled, ctx.Err())
 		p.mu.Lock()
-		p.Err = killErr
+		p.err = killErr
 		p.mu.Unlock()
 		<-p.waitChan
 		return killErr
