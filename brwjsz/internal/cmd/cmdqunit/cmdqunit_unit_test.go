@@ -27,6 +27,6 @@ func TestUnitCmdQunitPrepare(t *testing.T) {
 	require.NotNil(t, cmd.Flags().Lookup("suffix"))
 	require.NotNil(t, cmd.Flags().Lookup("state"))
 	require.NotNil(t, cmd.Flags().Lookup("bin"))
-	require.NotNil(t, cmd.Flags().Lookup("headless"))
+	require.NotNil(t, cmd.Flags().Lookup("disable-headless"))
 	require.NotNil(t, cmd.Flags().Lookup("timeout"))
 }

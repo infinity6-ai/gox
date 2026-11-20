@@ -22,6 +22,7 @@ func TestUnitCmdServerPrepare(t *testing.T) {
 	require.NotNil(t, startCmd)
 	require.NotNil(t, startCmd.Flags().Lookup("state"))
 	require.NotNil(t, startCmd.Flags().Lookup("detach"))
+	require.NotNil(t, startCmd.Flags().Lookup("disable-headless"))
 
 	stopCmd, _, err := cmd.Find([]string{"stop"})
 	require.NoError(t, err)

@@ -19,12 +19,12 @@ import (
 )
 
 type qunitOptions struct {
-	site     string
-	suffix   string
-	state    string
-	bin      string
-	headless bool
-	timeout  time.Duration
+	site            string
+	suffix          string
+	state           string
+	bin             string
+	disableHeadless bool
+	timeout         time.Duration
 }
 
 const discoveryRunnerJs = `async (suffix) => {
@@ -181,7 +181,7 @@ func Prepare(ctx context.Context, parent *cobra.Command) *cobra.Command {
 					Disk: pathz.MustParse(siteDir),
 				},
 			}
-			brwOpts.Chrome(opts.bin, opts.headless, "")
+			brwOpts.Chrome(opts.bin, !opts.disableHeadless, "")
 
 			b := brwjsz.New(cmdCtx, brwOpts)
 			defer b.Close()
@@ -203,7 +203,7 @@ func Prepare(ctx context.Context, parent *cobra.Command) *cobra.Command {
 	cmd.Flags().StringVar(&opts.suffix, "suffix", "-test.js", "Filename suffix for test discovery (recursively matched)")
 	cmd.Flags().StringVar(&opts.state, "state", "", "Path to state file of running server daemon")
 	cmd.Flags().StringVar(&opts.bin, "bin", "", "Browser binary path (defaults to auto-detect)")
-	cmd.Flags().BoolVar(&opts.headless, "headless", true, "Run browser in headless mode")
+	cmd.Flags().BoolVar(&opts.disableHeadless, "disable-headless", false, "Disable headless browser mode")
 	cmd.Flags().DurationVar(&opts.timeout, "timeout", 30*time.Second, "Execution timeout")
 
 	if parent != nil {

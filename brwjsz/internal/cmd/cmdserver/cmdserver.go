@@ -68,7 +68,7 @@ func newStartCmd() *cobra.Command {
 	var statePath string
 	var sitePath string
 	var binPath string
-	var headless bool
+	var disableHeadless bool
 	var detach bool
 
 	cmd := &cobra.Command{
@@ -106,7 +106,7 @@ func newStartCmd() *cobra.Command {
 
 			ctx := cmd.Context()
 			opts := brwjsz.Options{}
-			opts.Chrome(binPath, headless, "")
+			opts.Chrome(binPath, !disableHeadless, "")
 			if sitePath != "" {
 				opts.Site = &brwjsz.Site{
 					Disk: pathz.MustParse(sitePath),
@@ -148,7 +148,7 @@ func newStartCmd() *cobra.Command {
 	cmd.Flags().StringVar(&statePath, "state", "", "Path to state file (required)")
 	cmd.Flags().StringVar(&sitePath, "site", "", "Disk directory path to serve as a static site")
 	cmd.Flags().StringVar(&binPath, "bin", "", "Browser binary path (defaults to auto-detect)")
-	cmd.Flags().BoolVar(&headless, "headless", true, "Run browser in headless mode")
+	cmd.Flags().BoolVar(&disableHeadless, "disable-headless", false, "Disable headless browser mode")
 	cmd.Flags().BoolVarP(&detach, "detach", "d", false, "Run server in the background")
 
 	return cmd

@@ -22,14 +22,14 @@ import (
 type execOptions struct {
 	code     string
 	file     string
-	site     string
-	state    string
-	args     []string
-	argFiles []string
-	raw      bool
-	headless bool
-	bin      string
-	timeout  time.Duration
+	site            string
+	state           string
+	args            []string
+	argFiles        []string
+	raw             bool
+	disableHeadless bool
+	bin             string
+	timeout         time.Duration
 }
 
 func parseArgValue(s string) any {
@@ -150,7 +150,7 @@ func Prepare(ctx context.Context, parent *cobra.Command) *cobra.Command {
 			}
 
 			brwOpts := brwjsz.Options{}
-			brwOpts.Chrome(opts.bin, opts.headless, "")
+			brwOpts.Chrome(opts.bin, !opts.disableHeadless, "")
 			if opts.site != "" {
 				brwOpts.Site = &brwjsz.Site{
 					Disk: pathz.MustParse(opts.site),
@@ -201,7 +201,7 @@ func Prepare(ctx context.Context, parent *cobra.Command) *cobra.Command {
 	cmd.Flags().StringArrayVar(&opts.args, "arg", nil, "Argument to pass to the function (can be specified multiple times)")
 	cmd.Flags().StringArrayVar(&opts.argFiles, "arg-file", nil, "File containing argument value (can be specified multiple times)")
 	cmd.Flags().BoolVar(&opts.raw, "raw", false, "Print string output without JSON quotes")
-	cmd.Flags().BoolVar(&opts.headless, "headless", true, "Run browser in headless mode")
+	cmd.Flags().BoolVar(&opts.disableHeadless, "disable-headless", false, "Disable headless browser mode")
 	cmd.Flags().StringVar(&opts.bin, "bin", "", "Browser binary path (defaults to auto-detect)")
 	cmd.Flags().DurationVar(&opts.timeout, "timeout", 30*time.Second, "Execution timeout")
 
