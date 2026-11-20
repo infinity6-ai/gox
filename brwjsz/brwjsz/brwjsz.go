@@ -16,4 +16,5 @@ type Browser struct {
 }
 
 func New(ctx context.Context, opts Options) *Browser {
+	panic("implement it")
 }
