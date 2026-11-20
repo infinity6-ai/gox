@@ -63,8 +63,8 @@ func TestUnitBasicRun(t *testing.T) {
 func TestUnitGetStdoutAndGetStderr(t *testing.T) {
 	type testScenario struct {
 		command string
-		wantOut []string
-		wantErr []string
+		wantOut []execzv2.Line
+		wantErr []execzv2.Line
 	}
 
 	check := func(t *testing.T, s testScenario) {
@@ -78,8 +78,8 @@ func TestUnitGetStdoutAndGetStderr(t *testing.T) {
 		})
 		require.NoError(t, proc.Start())
 
-		var gotOut []string
-		var gotErr []string
+		var gotOut []execzv2.Line
+		var gotErr []execzv2.Line
 		var wg sync.WaitGroup
 
 		wg.Add(2)
@@ -106,7 +106,7 @@ func TestUnitGetStdoutAndGetStderr(t *testing.T) {
 	t.Run("Single line stdout", func(t *testing.T) {
 		check(t, testScenario{
 			command: "echo hello",
-			wantOut: []string{"hello"},
+			wantOut: []execzv2.Line{{Line: "hello", Partial: false}},
 			wantErr: nil,
 		})
 	})
@@ -114,15 +114,21 @@ func TestUnitGetStdoutAndGetStderr(t *testing.T) {
 	t.Run("Multi-line stdout and stderr", func(t *testing.T) {
 		check(t, testScenario{
 			command: "echo out1; echo err1 >&2; echo out2; echo err2 >&2",
-			wantOut: []string{"out1", "out2"},
-			wantErr: []string{"err1", "err2"},
+			wantOut: []execzv2.Line{
+				{Line: "out1", Partial: false},
+				{Line: "out2", Partial: false},
+			},
+			wantErr: []execzv2.Line{
+				{Line: "err1", Partial: false},
+				{Line: "err2", Partial: false},
+			},
 		})
 	})
 
-	t.Run("No newline stdout", func(t *testing.T) {
+	t.Run("No newline stdout yields partial line", func(t *testing.T) {
 		check(t, testScenario{
 			command: "printf 'no-nl'",
-			wantOut: []string{"no-nl"},
+			wantOut: []execzv2.Line{{Line: "no-nl", Partial: true}},
 			wantErr: nil,
 		})
 	})
@@ -130,10 +136,39 @@ func TestUnitGetStdoutAndGetStderr(t *testing.T) {
 	t.Run("Empty lines preserved", func(t *testing.T) {
 		check(t, testScenario{
 			command: "echo ''; echo 'non-empty'; echo ''",
-			wantOut: []string{"", "non-empty", ""},
+			wantOut: []execzv2.Line{
+				{Line: "", Partial: false},
+				{Line: "non-empty", Partial: false},
+				{Line: "", Partial: false},
+			},
 			wantErr: nil,
 		})
 	})
+}
+
+func TestUnitLineBufferSize(t *testing.T) {
+	ctx := context.Background()
+	proc := execzv2.New(ctx, execzv2.Options{
+		Bin:            "bash",
+		Args:           []string{"-c", "echo '1234567890'"},
+		CaptureStdout:  64,
+		LineBufferSize: 4,
+	})
+	require.NoError(t, proc.Start())
+
+	var gotOut []execzv2.Line
+	for line := range proc.GetStdout() {
+		gotOut = append(gotOut, line)
+	}
+	require.NoError(t, proc.WaitFor())
+
+	// 10 chars with LineBufferSize 4 yields: "1234" (partial), "5678" (partial), "90" (not partial because \n terminates it)
+	expected := []execzv2.Line{
+		{Line: "1234", Partial: true},
+		{Line: "5678", Partial: true},
+		{Line: "90", Partial: false},
+	}
+	require.Equal(t, expected, gotOut)
 }
 
 func TestUnitGetStdinAndClose(t *testing.T) {
@@ -146,7 +181,7 @@ func TestUnitGetStdinAndClose(t *testing.T) {
 	})
 	require.NoError(t, proc.Start())
 
-	var gotOut []string
+	var gotOut []execzv2.Line
 	done := make(chan struct{})
 	go func() {
 		defer close(done)
@@ -155,26 +190,29 @@ func TestUnitGetStdinAndClose(t *testing.T) {
 		}
 	}()
 
-	proc.GetStdin() <- "hello\n"
-	proc.GetStdin() <- "world\n"
+	// Partial: false automatically appends newline if missing
+	proc.GetStdin() <- execzv2.Line{Line: "hello", Partial: false}
+	proc.GetStdin() <- execzv2.Line{Line: "world", Partial: false}
 	require.NoError(t, proc.Close())
 
 	<-done
 	require.NoError(t, proc.WaitFor())
-	require.Equal(t, []string{"HELLO", "WORLD"}, gotOut)
+	require.Equal(t, []execzv2.Line{
+		{Line: "HELLO", Partial: false},
+		{Line: "WORLD", Partial: false},
+	}, gotOut)
 }
 
-func TestUnitCloseViaChannel(t *testing.T) {
+func TestUnitStdinPartial(t *testing.T) {
 	ctx := context.Background()
 	proc := execzv2.New(ctx, execzv2.Options{
-		Bin:           "tr",
-		Args:          []string{"a-z", "A-Z"},
+		Bin:           "cat",
 		CaptureStdout: 64,
 		EnableStdin:   64,
 	})
 	require.NoError(t, proc.Start())
 
-	var gotOut []string
+	var gotOut []execzv2.Line
 	done := make(chan struct{})
 	go func() {
 		defer close(done)
@@ -183,12 +221,16 @@ func TestUnitCloseViaChannel(t *testing.T) {
 		}
 	}()
 
-	proc.GetStdin() <- "channel-close\n"
+	// Send partial chunks that together form one line terminated at EOF
+	proc.GetStdin() <- execzv2.Line{Line: "hel", Partial: true}
+	proc.GetStdin() <- execzv2.Line{Line: "lo", Partial: true}
 	close(proc.GetStdin())
 
 	<-done
 	require.NoError(t, proc.WaitFor())
-	require.Equal(t, []string{"CHANNEL-CLOSE"}, gotOut)
+	require.Equal(t, []execzv2.Line{
+		{Line: "hello", Partial: true},
+	}, gotOut)
 }
 
 func TestUnitDiscardByDefault(t *testing.T) {
@@ -201,7 +243,7 @@ func TestUnitDiscardByDefault(t *testing.T) {
 	require.Nil(t, proc.GetStderr())
 	require.Nil(t, proc.GetStdin())
 
-	// Runs without hanging because output goes to io.Discard
+	// Runs without hanging because output goes to nil (/dev/null)
 	require.NoError(t, proc.Run())
 }
 
@@ -224,7 +266,7 @@ func TestUnitEnvsAndDir(t *testing.T) {
 
 	var gotOut []string
 	for line := range proc.GetStdout() {
-		gotOut = append(gotOut, line)
+		gotOut = append(gotOut, line.Line)
 	}
 	require.NoError(t, proc.WaitFor())
 
@@ -241,7 +283,8 @@ func TestUnitLargeOutputChannel(t *testing.T) {
 	require.NoError(t, proc.Start())
 
 	count := 0
-	for range proc.GetStdout() {
+	for line := range proc.GetStdout() {
+		require.False(t, line.Partial)
 		count++
 	}
 	require.NoError(t, proc.WaitFor())
@@ -367,7 +410,7 @@ func TestUnitNilContext(t *testing.T) {
 
 	var got []string
 	for line := range proc.GetStdout() {
-		got = append(got, line)
+		got = append(got, line.Line)
 	}
 	require.NoError(t, proc.WaitFor())
 	require.Equal(t, []string{"nil_ctx"}, got)
@@ -393,15 +436,17 @@ func TestUnitUtf8Stdin(t *testing.T) {
 	})
 	require.NoError(t, proc.Start())
 
-	proc.GetStdin() <- "Hello 世界 🚀\n"
+	proc.GetStdin() <- execzv2.Line{Line: "Hello 世界 🚀", Partial: false}
 	require.NoError(t, proc.Close())
 
-	var got []string
+	var got []execzv2.Line
 	for line := range proc.GetStdout() {
 		got = append(got, line)
 	}
 	require.NoError(t, proc.WaitFor())
-	require.Equal(t, []string{"Hello 世界 🚀"}, got)
+	require.Equal(t, []execzv2.Line{
+		{Line: "Hello 世界 🚀", Partial: false},
+	}, got)
 }
 
 func TestUnitMethodAliases(t *testing.T) {
@@ -411,7 +456,7 @@ func TestUnitMethodAliases(t *testing.T) {
 		CaptureStderr: 10,
 		EnableStdin:   10,
 	})
-	require.Equal(t, (<-chan string)(proc.GetStdout()), proc.GetStdOut())
-	require.Equal(t, (<-chan string)(proc.GetStderr()), proc.GetStdErr())
-	require.Equal(t, (chan<- string)(proc.GetStdin()), proc.GetStdIn())
+	require.Equal(t, (<-chan execzv2.Line)(proc.GetStdout()), proc.GetStdOut())
+	require.Equal(t, (<-chan execzv2.Line)(proc.GetStderr()), proc.GetStdErr())
+	require.Equal(t, (chan<- execzv2.Line)(proc.GetStdin()), proc.GetStdIn())
 }

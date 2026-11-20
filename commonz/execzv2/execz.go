@@ -1,7 +1,7 @@
 package execzv2
 
 import (
-	"bufio"
+	"bytes"
 	"context"
 	"errors"
 	"fmt"
@@ -22,14 +22,22 @@ var logger = logz.Create(tlogger(true))
 
 var ErrKilled = errors.New("ErrKilled")
 
+const DefaultLineBufferSize = 64 * 1024
+
+type Line struct {
+	Line    string
+	Partial bool
+}
+
 type Options struct {
-	Bin           string
-	Args          []string
-	Envs          map[string]string
-	Dir           string
-	CaptureStdout int
-	CaptureStderr int
-	EnableStdin   int
+	Bin            string
+	Args           []string
+	Envs           map[string]string
+	Dir            string
+	CaptureStdout  int
+	CaptureStderr  int
+	EnableStdin    int
+	LineBufferSize int
 }
 
 type stateType string
@@ -54,9 +62,9 @@ type Process struct {
 	stdinPipe      io.WriteCloser
 	stdoutPipe     io.ReadCloser
 	stderrPipe     io.ReadCloser
-	stdinChan      chan string
-	stdoutChan     chan string
-	stderrChan     chan string
+	stdinChan      chan Line
+	stdoutChan     chan Line
+	stderrChan     chan Line
 	closeStdinOnce sync.Once
 	wg             sync.WaitGroup
 }
@@ -64,6 +72,10 @@ type Process struct {
 func New(ctx context.Context, opts Options) *Process {
 	if ctx == nil {
 		ctx = context.Background()
+	}
+
+	if opts.LineBufferSize <= 0 {
+		opts.LineBufferSize = DefaultLineBufferSize
 	}
 
 	p := &Process{
@@ -88,7 +100,7 @@ func New(ctx context.Context, opts Options) *Process {
 	}
 
 	if opts.EnableStdin > 0 {
-		p.stdinChan = make(chan string, opts.EnableStdin)
+		p.stdinChan = make(chan Line, opts.EnableStdin)
 		stdinPipe, err := p.cmd.StdinPipe()
 		if err != nil {
 			p.Err = fmt.Errorf("failed to create stdin pipe: %w", err)
@@ -97,7 +109,7 @@ func New(ctx context.Context, opts Options) *Process {
 	}
 
 	if opts.CaptureStdout > 0 {
-		p.stdoutChan = make(chan string, opts.CaptureStdout)
+		p.stdoutChan = make(chan Line, opts.CaptureStdout)
 		stdoutPipe, err := p.cmd.StdoutPipe()
 		if err != nil && p.Err == nil {
 			p.Err = fmt.Errorf("failed to create stdout pipe: %w", err)
@@ -106,7 +118,7 @@ func New(ctx context.Context, opts Options) *Process {
 	}
 
 	if opts.CaptureStderr > 0 {
-		p.stderrChan = make(chan string, opts.CaptureStderr)
+		p.stderrChan = make(chan Line, opts.CaptureStderr)
 		stderrPipe, err := p.cmd.StderrPipe()
 		if err != nil && p.Err == nil {
 			p.Err = fmt.Errorf("failed to create stderr pipe: %w", err)
@@ -117,28 +129,99 @@ func New(ctx context.Context, opts Options) *Process {
 	return p
 }
 
-func (p *Process) GetStdout() <-chan string {
+func (p *Process) GetStdout() <-chan Line {
 	return p.stdoutChan
 }
 
-func (p *Process) GetStdOut() <-chan string {
+func (p *Process) GetStdOut() <-chan Line {
 	return p.GetStdout()
 }
 
-func (p *Process) GetStderr() <-chan string {
+func (p *Process) GetStderr() <-chan Line {
 	return p.stderrChan
 }
 
-func (p *Process) GetStdErr() <-chan string {
+func (p *Process) GetStdErr() <-chan Line {
 	return p.GetStderr()
 }
 
-func (p *Process) GetStdin() chan<- string {
+func (p *Process) GetStdin() chan<- Line {
 	return p.stdinChan
 }
 
-func (p *Process) GetStdIn() chan<- string {
+func (p *Process) GetStdIn() chan<- Line {
 	return p.GetStdin()
+}
+
+func readStreamLines(r io.Reader, maxBuf int, killChan <-chan struct{}, outChan chan<- Line) {
+	defer close(outChan)
+	if r == nil {
+		return
+	}
+
+	buf := make([]byte, 4096)
+	var lineBuf []byte
+
+	sendLine := func(l Line) bool {
+		select {
+		case <-killChan:
+			return false
+		case outChan <- l:
+			return true
+		}
+	}
+
+	for {
+		n, err := r.Read(buf)
+		if n > 0 {
+			chunk := buf[:n]
+			for len(chunk) > 0 {
+				idx := bytes.IndexByte(chunk, '\n')
+				if idx >= 0 {
+					lineBuf = append(lineBuf, chunk[:idx]...)
+					chunk = chunk[idx+1:]
+					for len(lineBuf) >= maxBuf {
+						part := string(lineBuf[:maxBuf])
+						lineBuf = append([]byte(nil), lineBuf[maxBuf:]...)
+						if !sendLine(Line{Line: part, Partial: true}) {
+							return
+						}
+					}
+					str := string(lineBuf)
+					str = strings.TrimSuffix(str, "\r")
+					lineBuf = lineBuf[:0]
+					if !sendLine(Line{Line: str, Partial: false}) {
+						return
+					}
+				} else {
+					lineBuf = append(lineBuf, chunk...)
+					chunk = nil
+					for len(lineBuf) >= maxBuf {
+						part := string(lineBuf[:maxBuf])
+						lineBuf = append([]byte(nil), lineBuf[maxBuf:]...)
+						if !sendLine(Line{Line: part, Partial: true}) {
+							return
+						}
+					}
+				}
+			}
+		}
+		if err != nil {
+			for len(lineBuf) >= maxBuf {
+				part := string(lineBuf[:maxBuf])
+				lineBuf = append([]byte(nil), lineBuf[maxBuf:]...)
+				if !sendLine(Line{Line: part, Partial: true}) {
+					return
+				}
+			}
+			if len(lineBuf) > 0 {
+				str := string(lineBuf)
+				str = strings.TrimSuffix(str, "\r")
+				_ = sendLine(Line{Line: str, Partial: true})
+			}
+			return
+		}
+	}
 }
 
 func (p *Process) startGoroutines() {
@@ -151,11 +234,15 @@ func (p *Process) startGoroutines() {
 					return
 				case <-p.waitChan:
 					return
-				case str, ok := <-p.stdinChan:
+				case item, ok := <-p.stdinChan:
 					if !ok {
 						return
 					}
-					_, err := p.stdinPipe.Write([]byte(str))
+					toWrite := item.Line
+					if !item.Partial && !strings.HasSuffix(toWrite, "\n") {
+						toWrite += "\n"
+					}
+					_, err := p.stdinPipe.Write([]byte(toWrite))
 					if err != nil {
 						return
 					}
@@ -168,23 +255,7 @@ func (p *Process) startGoroutines() {
 		p.wg.Add(1)
 		go func() {
 			defer p.wg.Done()
-			defer close(p.stdoutChan)
-			reader := bufio.NewReader(p.stdoutPipe)
-			for {
-				line, err := reader.ReadString('\n')
-				if len(line) > 0 {
-					line = strings.TrimSuffix(line, "\n")
-					line = strings.TrimSuffix(line, "\r")
-					select {
-					case <-p.killChan:
-						return
-					case p.stdoutChan <- line:
-					}
-				}
-				if err != nil {
-					break
-				}
-			}
+			readStreamLines(p.stdoutPipe, p.Options.LineBufferSize, p.killChan, p.stdoutChan)
 		}()
 	}
 
@@ -192,23 +263,7 @@ func (p *Process) startGoroutines() {
 		p.wg.Add(1)
 		go func() {
 			defer p.wg.Done()
-			defer close(p.stderrChan)
-			reader := bufio.NewReader(p.stderrPipe)
-			for {
-				line, err := reader.ReadString('\n')
-				if len(line) > 0 {
-					line = strings.TrimSuffix(line, "\n")
-					line = strings.TrimSuffix(line, "\r")
-					select {
-					case <-p.killChan:
-						return
-					case p.stderrChan <- line:
-					}
-				}
-				if err != nil {
-					break
-				}
-			}
+			readStreamLines(p.stderrPipe, p.Options.LineBufferSize, p.killChan, p.stderrChan)
 		}()
 	}
 
