@@ -163,3 +163,30 @@ func TestUnitHandlersDiskSiteServing(t *testing.T) {
 	require.NoError(t, err)
 	require.Contains(t, string(body), "brwjsz controller")
 }
+
+func TestUnitHandlersDiskSiteCustomPath(t *testing.T) {
+	ctx := t.Context()
+	tempDir := t.TempDir()
+	err := os.WriteFile(filepath.Join(tempDir, "custom.txt"), []byte("custom path content"), 0o644)
+	require.NoError(t, err)
+
+	srv := httpzserver.New(ctx, httpzserver.Options{LocalAddress: "localhost:0"})
+	defer srv.Close()
+
+	hub := handlers.NewHub()
+	handlers.AddHandlers(ctx, srv, hub, &handlers.Site{
+		Disk: pathz.MustParse(tempDir),
+		Path: pathz.MustParse("/myfiles"),
+	})
+	srv.Listen()
+	srv.Start()
+
+	fileUrl := srv.Base().MustJoinPathString("/myfiles/custom.txt").String()
+	resp, err := http.Get(fileUrl)
+	require.NoError(t, err)
+	defer resp.Body.Close()
+	require.Equal(t, http.StatusOK, resp.StatusCode)
+	body, err := io.ReadAll(resp.Body)
+	require.NoError(t, err)
+	require.Equal(t, "custom path content", string(body))
+}

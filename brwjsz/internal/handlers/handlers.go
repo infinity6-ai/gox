@@ -24,7 +24,7 @@ const ReplyPath = "/api/brwjs/reply"
 // Site configures serving static files from a disk directory on the server.
 type Site struct {
 	Disk *pathz.Path
-	Path string // default "/*"
+	Path *pathz.Path // default "/*"
 }
 
 // AddHandlers registers all internal handlers and an optional disk site on the server.
@@ -105,17 +105,25 @@ func addSite(s *httpzserver.Server, site *Site) {
 	if site == nil || site.Disk == nil {
 		return
 	}
-	path := site.Path
-	if path == "" {
-		path = "/*"
+	mountPath := "/*"
+	prefix := ""
+	if site.Path != nil {
+		p := site.Path.String()
+		if !strings.HasPrefix(p, "/") {
+			p = "/" + p
+		}
+		clean := strings.TrimSuffix(p, "/*")
+		clean = strings.TrimSuffix(clean, "*")
+		clean = strings.TrimSuffix(clean, "/")
+		if clean == "" {
+			mountPath = "/*"
+			prefix = ""
+		} else {
+			mountPath = clean + "/*"
+			prefix = clean
+		}
 	}
-	prefix := strings.TrimSuffix(path, "/*")
-	prefix = strings.TrimSuffix(prefix, "*")
-	prefix = strings.TrimSuffix(prefix, "/")
-	if prefix != "" && !strings.HasPrefix(prefix, "/") {
-		prefix = "/" + prefix
-	}
-	s.AddHandler("GET", path, httpzserverdisk.Handler(httpzserverdisk.Options{
+	s.AddHandler("GET", mountPath, httpzserverdisk.Handler(httpzserverdisk.Options{
 		Base:    site.Disk,
 		Prefix:  prefix,
 		Listing: true,
