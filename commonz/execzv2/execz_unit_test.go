@@ -3,6 +3,7 @@ package execzv2_test
 import (
 	"context"
 	"path/filepath"
+	"sync"
 	"testing"
 	"time"
 
@@ -59,7 +60,7 @@ func TestUnitBasicRun(t *testing.T) {
 	})
 }
 
-func TestUnitStdOutAndStdErr(t *testing.T) {
+func TestUnitGetStdoutAndGetStderr(t *testing.T) {
 	type testScenario struct {
 		command string
 		wantOut []string
@@ -70,29 +71,35 @@ func TestUnitStdOutAndStdErr(t *testing.T) {
 		t.Helper()
 		ctx := context.Background()
 		proc := execzv2.New(ctx, execzv2.Options{
-			Bin:  "bash",
-			Args: []string{"-c", s.command},
+			Bin:           "bash",
+			Args:          []string{"-c", s.command},
+			CaptureStdout: 64,
+			CaptureStderr: 64,
 		})
-		require.NoError(t, proc.Run())
+		require.NoError(t, proc.Start())
 
 		var gotOut []string
-		for {
-			line, ok := proc.StdOut()
-			if !ok {
-				break
-			}
-			gotOut = append(gotOut, line)
-		}
-		require.Equal(t, s.wantOut, gotOut)
-
 		var gotErr []string
-		for {
-			line, ok := proc.StdErr()
-			if !ok {
-				break
+		var wg sync.WaitGroup
+
+		wg.Add(2)
+		go func() {
+			defer wg.Done()
+			for line := range proc.GetStdout() {
+				gotOut = append(gotOut, line)
 			}
-			gotErr = append(gotErr, line)
-		}
+		}()
+		go func() {
+			defer wg.Done()
+			for line := range proc.GetStderr() {
+				gotErr = append(gotErr, line)
+			}
+		}()
+
+		require.NoError(t, proc.WaitFor())
+		wg.Wait()
+
+		require.Equal(t, s.wantOut, gotOut)
 		require.Equal(t, s.wantErr, gotErr)
 	}
 
@@ -129,30 +136,73 @@ func TestUnitStdOutAndStdErr(t *testing.T) {
 	})
 }
 
-func TestUnitStdInAndClose(t *testing.T) {
+func TestUnitGetStdinAndClose(t *testing.T) {
 	ctx := context.Background()
 	proc := execzv2.New(ctx, execzv2.Options{
-		Bin:  "tr",
-		Args: []string{"a-z", "A-Z"},
+		Bin:           "tr",
+		Args:          []string{"a-z", "A-Z"},
+		CaptureStdout: 64,
+		EnableStdin:   64,
 	})
 	require.NoError(t, proc.Start())
 
-	proc.StdIn("hello\n")
-	proc.StdIn("world\n")
+	var gotOut []string
+	done := make(chan struct{})
+	go func() {
+		defer close(done)
+		for line := range proc.GetStdout() {
+			gotOut = append(gotOut, line)
+		}
+	}()
+
+	proc.GetStdin() <- "hello\n"
+	proc.GetStdin() <- "world\n"
 	require.NoError(t, proc.Close())
 
-	line1, ok1 := proc.StdOut()
-	require.True(t, ok1)
-	require.Equal(t, "HELLO", line1)
-
-	line2, ok2 := proc.StdOut()
-	require.True(t, ok2)
-	require.Equal(t, "WORLD", line2)
-
-	_, ok3 := proc.StdOut()
-	require.False(t, ok3)
-
+	<-done
 	require.NoError(t, proc.WaitFor())
+	require.Equal(t, []string{"HELLO", "WORLD"}, gotOut)
+}
+
+func TestUnitCloseViaChannel(t *testing.T) {
+	ctx := context.Background()
+	proc := execzv2.New(ctx, execzv2.Options{
+		Bin:           "tr",
+		Args:          []string{"a-z", "A-Z"},
+		CaptureStdout: 64,
+		EnableStdin:   64,
+	})
+	require.NoError(t, proc.Start())
+
+	var gotOut []string
+	done := make(chan struct{})
+	go func() {
+		defer close(done)
+		for line := range proc.GetStdout() {
+			gotOut = append(gotOut, line)
+		}
+	}()
+
+	proc.GetStdin() <- "channel-close\n"
+	close(proc.GetStdin())
+
+	<-done
+	require.NoError(t, proc.WaitFor())
+	require.Equal(t, []string{"CHANNEL-CLOSE"}, gotOut)
+}
+
+func TestUnitDiscardByDefault(t *testing.T) {
+	ctx := context.Background()
+	proc := execzv2.New(ctx, execzv2.Options{
+		Bin:  "bash",
+		Args: []string{"-c", "seq 1 50000"},
+	})
+	require.Nil(t, proc.GetStdout())
+	require.Nil(t, proc.GetStderr())
+	require.Nil(t, proc.GetStdin())
+
+	// Runs without hanging because output goes to io.Discard
+	require.NoError(t, proc.Run())
 }
 
 func TestUnitEnvsAndDir(t *testing.T) {
@@ -162,22 +212,40 @@ func TestUnitEnvsAndDir(t *testing.T) {
 	require.NoError(t, err)
 
 	proc := execzv2.New(ctx, execzv2.Options{
-		Bin:  "bash",
-		Args: []string{"-c", "echo $MY_VAR && pwd"},
-		Dir:  realTmpDir,
+		Bin:           "bash",
+		Args:          []string{"-c", "echo $MY_VAR && pwd"},
+		Dir:           realTmpDir,
+		CaptureStdout: 64,
 		Envs: map[string]string{
 			"MY_VAR": "custom_value",
 		},
 	})
-	require.NoError(t, proc.Run())
+	require.NoError(t, proc.Start())
 
-	line1, ok1 := proc.StdOut()
-	require.True(t, ok1)
-	require.Equal(t, "custom_value", line1)
+	var gotOut []string
+	for line := range proc.GetStdout() {
+		gotOut = append(gotOut, line)
+	}
+	require.NoError(t, proc.WaitFor())
 
-	line2, ok2 := proc.StdOut()
-	require.True(t, ok2)
-	require.Equal(t, realTmpDir, line2)
+	require.Equal(t, []string{"custom_value", realTmpDir}, gotOut)
+}
+
+func TestUnitLargeOutputChannel(t *testing.T) {
+	ctx := context.Background()
+	proc := execzv2.New(ctx, execzv2.Options{
+		Bin:           "bash",
+		Args:          []string{"-c", "seq 1 10000"},
+		CaptureStdout: 256,
+	})
+	require.NoError(t, proc.Start())
+
+	count := 0
+	for range proc.GetStdout() {
+		count++
+	}
+	require.NoError(t, proc.WaitFor())
+	require.Equal(t, 10000, count)
 }
 
 func TestUnitKillDeadline(t *testing.T) {
@@ -226,34 +294,6 @@ func TestUnitKillContextCancelled(t *testing.T) {
 	err := proc.Kill(ctx, 5*time.Second)
 	require.Error(t, err)
 	require.ErrorIs(t, err, execzv2.ErrKilled)
-}
-
-func TestUnitCustomOptions(t *testing.T) {
-	var capturedIn []string
-	ctx := context.Background()
-	proc := execzv2.New(ctx, execzv2.Options{
-		Bin:  "echo",
-		Args: []string{"test"},
-		StdOut: func() (string, bool) {
-			return "custom_out", true
-		},
-		StdErr: func() (string, bool) {
-			return "custom_err", true
-		},
-		StdIn: func(str string) {
-			capturedIn = append(capturedIn, str)
-		},
-	})
-	proc.StdIn("hello")
-	require.Equal(t, []string{"hello"}, capturedIn)
-
-	out, ok := proc.StdOut()
-	require.True(t, ok)
-	require.Equal(t, "custom_out", out)
-
-	errStr, ok := proc.StdErr()
-	require.True(t, ok)
-	require.Equal(t, "custom_err", errStr)
 }
 
 func TestUnitProcessAlreadyStarted(t *testing.T) {
@@ -309,8 +349,9 @@ func TestUnitKillNotStarted(t *testing.T) {
 func TestUnitCloseIdempotent(t *testing.T) {
 	ctx := context.Background()
 	proc := execzv2.New(ctx, execzv2.Options{
-		Bin:  "bash",
-		Args: []string{"-c", "exit 0"},
+		Bin:         "bash",
+		Args:        []string{"-c", "exit 0"},
+		EnableStdin: 10,
 	})
 	require.NoError(t, proc.Close())
 	require.NoError(t, proc.Close())
@@ -318,33 +359,18 @@ func TestUnitCloseIdempotent(t *testing.T) {
 
 func TestUnitNilContext(t *testing.T) {
 	proc := execzv2.New(nil, execzv2.Options{
-		Bin:  "bash",
-		Args: []string{"-c", "echo nil_ctx"},
+		Bin:           "bash",
+		Args:          []string{"-c", "echo nil_ctx"},
+		CaptureStdout: 10,
 	})
-	require.NoError(t, proc.Run())
+	require.NoError(t, proc.Start())
 
-	line, ok := proc.StdOut()
-	require.True(t, ok)
-	require.Equal(t, "nil_ctx", line)
-}
-
-func TestUnitLargeOutput(t *testing.T) {
-	ctx := context.Background()
-	proc := execzv2.New(ctx, execzv2.Options{
-		Bin:  "bash",
-		Args: []string{"-c", "seq 1 10000"},
-	})
-	require.NoError(t, proc.Run())
-
-	count := 0
-	for {
-		_, ok := proc.StdOut()
-		if !ok {
-			break
-		}
-		count++
+	var got []string
+	for line := range proc.GetStdout() {
+		got = append(got, line)
 	}
-	require.Equal(t, 10000, count)
+	require.NoError(t, proc.WaitFor())
+	require.Equal(t, []string{"nil_ctx"}, got)
 }
 
 func TestUnitExitCode(t *testing.T) {
@@ -358,22 +384,34 @@ func TestUnitExitCode(t *testing.T) {
 	require.ErrorIs(t, proc.WaitFor(), proc.Err)
 }
 
-func TestUnitUtf8StdIn(t *testing.T) {
+func TestUnitUtf8Stdin(t *testing.T) {
 	ctx := context.Background()
 	proc := execzv2.New(ctx, execzv2.Options{
-		Bin: "cat",
+		Bin:           "cat",
+		CaptureStdout: 10,
+		EnableStdin:   10,
 	})
 	require.NoError(t, proc.Start())
 
-	proc.StdIn("Hello 世界 🚀\n")
+	proc.GetStdin() <- "Hello 世界 🚀\n"
 	require.NoError(t, proc.Close())
 
-	line, ok := proc.StdOut()
-	require.True(t, ok)
-	require.Equal(t, "Hello 世界 🚀", line)
-
-	_, ok = proc.StdOut()
-	require.False(t, ok)
-
+	var got []string
+	for line := range proc.GetStdout() {
+		got = append(got, line)
+	}
 	require.NoError(t, proc.WaitFor())
+	require.Equal(t, []string{"Hello 世界 🚀"}, got)
+}
+
+func TestUnitMethodAliases(t *testing.T) {
+	proc := execzv2.New(context.Background(), execzv2.Options{
+		Bin:           "bash",
+		CaptureStdout: 10,
+		CaptureStderr: 10,
+		EnableStdin:   10,
+	})
+	require.Equal(t, (<-chan string)(proc.GetStdout()), proc.GetStdOut())
+	require.Equal(t, (<-chan string)(proc.GetStderr()), proc.GetStdErr())
+	require.Equal(t, (chan<- string)(proc.GetStdin()), proc.GetStdIn())
 }

@@ -23,13 +23,13 @@ var logger = logz.Create(tlogger(true))
 var ErrKilled = errors.New("ErrKilled")
 
 type Options struct {
-	Bin    string
-	Args   []string
-	Envs   map[string]string
-	Dir    string
-	StdOut func() (string, bool)
-	StdErr func() (string, bool)
-	StdIn  func(str string)
+	Bin           string
+	Args          []string
+	Envs          map[string]string
+	Dir           string
+	CaptureStdout int
+	CaptureStderr int
+	EnableStdin   int
 }
 
 type stateType string
@@ -40,70 +40,25 @@ const (
 	stateFinished stateType = "finished"
 )
 
-type fifoQueue struct {
-	mu     sync.Mutex
-	cond   *sync.Cond
-	items  []string
-	head   int
-	closed bool
-}
-
-func newFIFOQueue() *fifoQueue {
-	q := &fifoQueue{}
-	q.cond = sync.NewCond(&q.mu)
-	return q
-}
-
-func (q *fifoQueue) Push(item string) {
-	q.mu.Lock()
-	q.items = append(q.items, item)
-	q.cond.Signal()
-	q.mu.Unlock()
-}
-
-func (q *fifoQueue) Close() {
-	q.mu.Lock()
-	q.closed = true
-	q.cond.Broadcast()
-	q.mu.Unlock()
-}
-
-func (q *fifoQueue) Pop() (string, bool) {
-	q.mu.Lock()
-	defer q.mu.Unlock()
-	for q.head >= len(q.items) && !q.closed {
-		q.cond.Wait()
-	}
-	if q.head >= len(q.items) {
-		return "", false
-	}
-	item := q.items[q.head]
-	q.head++
-	if q.head >= len(q.items) {
-		q.items = nil
-		q.head = 0
-	} else if q.head > 1024 {
-		q.items = q.items[q.head:]
-		q.head = 0
-	}
-	return item, true
-}
-
 type Process struct {
 	Options
 	cmd *exec.Cmd
 
 	Err error
 
-	mu         sync.Mutex
-	state      stateType
-	waitChan   chan struct{}
-	stdinPipe  io.WriteCloser
-	stdoutPipe io.ReadCloser
-	stderrPipe io.ReadCloser
-	stdoutQ    *fifoQueue
-	stderrQ    *fifoQueue
-	wg         sync.WaitGroup
+	mu             sync.Mutex
+	state          stateType
+	waitChan       chan struct{}
+	killChan       chan struct{}
+	closeKillOnce  sync.Once
+	stdinPipe      io.WriteCloser
+	stdoutPipe     io.ReadCloser
+	stderrPipe     io.ReadCloser
+	stdinChan      chan string
+	stdoutChan     chan string
+	stderrChan     chan string
+	closeStdinOnce sync.Once
+	wg             sync.WaitGroup
 }
 
 func New(ctx context.Context, opts Options) *Process {
@@ -116,8 +71,7 @@ func New(ctx context.Context, opts Options) *Process {
 		cmd:      exec.CommandContext(ctx, opts.Bin, opts.Args...),
 		state:    stateCreated,
 		waitChan: make(chan struct{}),
-		stdoutQ:  newFIFOQueue(),
-		stderrQ:  newFIFOQueue(),
+		killChan: make(chan struct{}),
 	}
 	p.cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
 
@@ -133,100 +87,136 @@ func New(ctx context.Context, opts Options) *Process {
 		p.cmd.Dir = opts.Dir
 	}
 
-	stdinPipe, err := p.cmd.StdinPipe()
-	if err != nil {
-		p.Err = fmt.Errorf("failed to create stdin pipe: %w", err)
-	}
-	p.stdinPipe = stdinPipe
-
-	stdoutPipe, err := p.cmd.StdoutPipe()
-	if err != nil && p.Err == nil {
-		p.Err = fmt.Errorf("failed to create stdout pipe: %w", err)
-	}
-	p.stdoutPipe = stdoutPipe
-
-	stderrPipe, err := p.cmd.StderrPipe()
-	if err != nil && p.Err == nil {
-		p.Err = fmt.Errorf("failed to create stderr pipe: %w", err)
-	}
-	p.stderrPipe = stderrPipe
-
-	if opts.StdOut != nil {
-		p.StdOut = opts.StdOut
-	} else {
-		p.StdOut = p.stdoutQ.Pop
-	}
-
-	if opts.StdErr != nil {
-		p.StdErr = opts.StdErr
-	} else {
-		p.StdErr = p.stderrQ.Pop
-	}
-
-	if opts.StdIn != nil {
-		p.StdIn = func(str string) {
-			opts.StdIn(str)
-			p.mu.Lock()
-			defer p.mu.Unlock()
-			if p.stdinPipe != nil {
-				_, _ = p.stdinPipe.Write([]byte(str))
-			}
+	if opts.EnableStdin > 0 {
+		p.stdinChan = make(chan string, opts.EnableStdin)
+		stdinPipe, err := p.cmd.StdinPipe()
+		if err != nil {
+			p.Err = fmt.Errorf("failed to create stdin pipe: %w", err)
 		}
+		p.stdinPipe = stdinPipe
 	} else {
-		p.StdIn = func(str string) {
-			p.mu.Lock()
-			defer p.mu.Unlock()
-			if p.stdinPipe != nil {
-				_, _ = p.stdinPipe.Write([]byte(str))
-			}
+		p.cmd.Stdin = nil
+	}
+
+	if opts.CaptureStdout > 0 {
+		p.stdoutChan = make(chan string, opts.CaptureStdout)
+		stdoutPipe, err := p.cmd.StdoutPipe()
+		if err != nil && p.Err == nil {
+			p.Err = fmt.Errorf("failed to create stdout pipe: %w", err)
 		}
+		p.stdoutPipe = stdoutPipe
+	} else {
+		p.cmd.Stdout = io.Discard
+	}
+
+	if opts.CaptureStderr > 0 {
+		p.stderrChan = make(chan string, opts.CaptureStderr)
+		stderrPipe, err := p.cmd.StderrPipe()
+		if err != nil && p.Err == nil {
+			p.Err = fmt.Errorf("failed to create stderr pipe: %w", err)
+		}
+		p.stderrPipe = stderrPipe
+	} else {
+		p.cmd.Stderr = io.Discard
 	}
 
 	return p
 }
 
+func (p *Process) GetStdout() <-chan string {
+	return p.stdoutChan
+}
+
+func (p *Process) GetStdOut() <-chan string {
+	return p.GetStdout()
+}
+
+func (p *Process) GetStderr() <-chan string {
+	return p.stderrChan
+}
+
+func (p *Process) GetStdErr() <-chan string {
+	return p.GetStderr()
+}
+
+func (p *Process) GetStdin() chan<- string {
+	return p.stdinChan
+}
+
+func (p *Process) GetStdIn() chan<- string {
+	return p.GetStdin()
+}
+
 func (p *Process) startGoroutines() {
-	p.wg.Add(2)
+	if p.stdinPipe != nil && p.stdinChan != nil {
+		go func() {
+			defer p.stdinPipe.Close()
+			for {
+				select {
+				case <-p.killChan:
+					return
+				case <-p.waitChan:
+					return
+				case str, ok := <-p.stdinChan:
+					if !ok {
+						return
+					}
+					_, err := p.stdinPipe.Write([]byte(str))
+					if err != nil {
+						return
+					}
+				}
+			}
+		}()
+	}
 
-	go func() {
-		defer p.wg.Done()
-		defer p.stdoutQ.Close()
-		if p.stdoutPipe == nil {
-			return
-		}
-		reader := bufio.NewReader(p.stdoutPipe)
-		for {
-			line, err := reader.ReadString('\n')
-			if len(line) > 0 {
-				line = strings.TrimSuffix(line, "\n")
-				line = strings.TrimSuffix(line, "\r")
-				p.stdoutQ.Push(line)
+	if p.stdoutPipe != nil && p.stdoutChan != nil {
+		p.wg.Add(1)
+		go func() {
+			defer p.wg.Done()
+			defer close(p.stdoutChan)
+			reader := bufio.NewReader(p.stdoutPipe)
+			for {
+				line, err := reader.ReadString('\n')
+				if len(line) > 0 {
+					line = strings.TrimSuffix(line, "\n")
+					line = strings.TrimSuffix(line, "\r")
+					select {
+					case <-p.killChan:
+						return
+					case p.stdoutChan <- line:
+					}
+				}
+				if err != nil {
+					break
+				}
 			}
-			if err != nil {
-				break
-			}
-		}
-	}()
+		}()
+	}
 
-	go func() {
-		defer p.wg.Done()
-		defer p.stderrQ.Close()
-		if p.stderrPipe == nil {
-			return
-		}
-		reader := bufio.NewReader(p.stderrPipe)
-		for {
-			line, err := reader.ReadString('\n')
-			if len(line) > 0 {
-				line = strings.TrimSuffix(line, "\n")
-				line = strings.TrimSuffix(line, "\r")
-				p.stderrQ.Push(line)
+	if p.stderrPipe != nil && p.stderrChan != nil {
+		p.wg.Add(1)
+		go func() {
+			defer p.wg.Done()
+			defer close(p.stderrChan)
+			reader := bufio.NewReader(p.stderrPipe)
+			for {
+				line, err := reader.ReadString('\n')
+				if len(line) > 0 {
+					line = strings.TrimSuffix(line, "\n")
+					line = strings.TrimSuffix(line, "\r")
+					select {
+					case <-p.killChan:
+						return
+					case p.stderrChan <- line:
+					}
+				}
+				if err != nil {
+					break
+				}
 			}
-			if err != nil {
-				break
-			}
-		}
-	}()
+		}()
+	}
 
 	go func() {
 		p.wg.Wait()
@@ -256,8 +246,12 @@ func (p *Process) Start() error {
 	if err != nil {
 		p.state = stateFinished
 		p.Err = fmt.Errorf("failed to start process: %w", err)
-		p.stdoutQ.Close()
-		p.stderrQ.Close()
+		if p.stdoutChan != nil {
+			close(p.stdoutChan)
+		}
+		if p.stderrChan != nil {
+			close(p.stderrChan)
+		}
 		close(p.waitChan)
 		p.mu.Unlock()
 		return p.Err
@@ -289,15 +283,11 @@ func (p *Process) WaitFor() error {
 }
 
 func (p *Process) Close() error {
-	p.mu.Lock()
-	defer p.mu.Unlock()
-	if p.stdinPipe != nil {
-		err := p.stdinPipe.Close()
-		p.stdinPipe = nil
-		if err != nil && !errors.Is(err, os.ErrClosed) {
-			return fmt.Errorf("failed to close stdin: %w", err)
+	p.closeStdinOnce.Do(func() {
+		if p.stdinChan != nil {
+			close(p.stdinChan)
 		}
-	}
+	})
 	return nil
 }
 
@@ -327,6 +317,7 @@ func (p *Process) Kill(ctx context.Context, deadline time.Duration) error {
 	select {
 	case <-ctx.Done():
 		logger.Info(ctx, "context cancelled, killing", map[string]any{"pid": pid})
+		p.closeKillOnce.Do(func() { close(p.killChan) })
 		if err := syscall.Kill(-pid, syscall.SIGKILL); err != nil {
 			_ = p.cmd.Process.Kill()
 		}
@@ -344,6 +335,7 @@ func (p *Process) Kill(ctx context.Context, deadline time.Duration) error {
 		return killErr
 	case <-time.After(deadline):
 		logger.Info(ctx, "grace period expired, killing", map[string]any{"pid": pid})
+		p.closeKillOnce.Do(func() { close(p.killChan) })
 		if err := syscall.Kill(-pid, syscall.SIGKILL); err != nil {
 			_ = p.cmd.Process.Kill()
 		}
