@@ -4,12 +4,15 @@ import (
 	"context"
 	"io"
 	"net/http"
+	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 	"time"
 
 	"github.com/infinity6-ai/gox/brwjsz/brwclient"
 	"github.com/infinity6-ai/gox/brwjsz/internal/handlers"
+	"github.com/infinity6-ai/gox/commonz/pathz"
 	"github.com/infinity6-ai/gox/httpz/httpzserver"
 	"github.com/stretchr/testify/require"
 )
@@ -112,4 +115,51 @@ func TestUnitHubDispatchAndReply(t *testing.T) {
 	case <-time.After(2 * time.Second):
 		t.Fatal("timed out waiting for reply")
 	}
+}
+
+func TestUnitHandlersDiskSiteServing(t *testing.T) {
+	ctx := t.Context()
+	tempDir := t.TempDir()
+	err := os.WriteFile(filepath.Join(tempDir, "sample.txt"), []byte("sample disk content"), 0o644)
+	require.NoError(t, err)
+
+	srv := httpzserver.New(ctx, httpzserver.Options{LocalAddress: "localhost:0"})
+	defer srv.Close()
+
+	hub := handlers.NewHub()
+	handlers.AddHandlers(ctx, srv, hub, handlers.SiteOptions{
+		Disk: pathz.MustParse(tempDir),
+	})
+	srv.Listen()
+	srv.Start()
+
+	// 1. Verify file served
+	fileUrl := srv.Base().MustJoinPathString("/sample.txt").String()
+	resp, err := http.Get(fileUrl)
+	require.NoError(t, err)
+	defer resp.Body.Close()
+	require.Equal(t, http.StatusOK, resp.StatusCode)
+	body, err := io.ReadAll(resp.Body)
+	require.NoError(t, err)
+	require.Equal(t, "sample disk content", string(body))
+
+	// 2. Verify directory listing enabled (HTML by default)
+	rootUrl := srv.Base().MustJoinPathString("/").String()
+	resp, err = http.Get(rootUrl)
+	require.NoError(t, err)
+	defer resp.Body.Close()
+	require.Equal(t, http.StatusOK, resp.StatusCode)
+	body, err = io.ReadAll(resp.Body)
+	require.NoError(t, err)
+	require.Contains(t, string(body), "sample.txt")
+
+	// 3. Verify internal endpoints like controller.html still take precedence
+	ctrlUrl := srv.Base().MustJoinPathString(handlers.ControllerPath).String()
+	resp, err = http.Get(ctrlUrl)
+	require.NoError(t, err)
+	defer resp.Body.Close()
+	require.Equal(t, http.StatusOK, resp.StatusCode)
+	body, err = io.ReadAll(resp.Body)
+	require.NoError(t, err)
+	require.Contains(t, string(body), "brwjsz controller")
 }

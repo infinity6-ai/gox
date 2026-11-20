@@ -2,12 +2,15 @@ package brwjsz_test
 
 import (
 	"context"
+	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 	"time"
 
 	"github.com/infinity6-ai/gox/brwjsz/brwclient"
 	"github.com/infinity6-ai/gox/brwjsz/brwjsz"
+	"github.com/infinity6-ai/gox/commonz/pathz"
 	"github.com/stretchr/testify/require"
 )
 
@@ -160,4 +163,36 @@ func TestUnitBrowserE2E(t *testing.T) {
 
 	err = brwclient.Delete(ctx, client, calcRef)
 	require.NoError(t, err)
+}
+
+func TestUnitBrowserSite(t *testing.T) {
+	ctx, cancel := context.WithTimeout(t.Context(), 15*time.Second)
+	defer cancel()
+
+	tempDir := t.TempDir()
+	err := os.WriteFile(filepath.Join(tempDir, "data.json"), []byte(`{"message":"hello from disk site"}`), 0o644)
+	require.NoError(t, err)
+
+	opts := brwjsz.Options{
+		Site: brwjsz.SiteOptions{
+			Disk: pathz.MustParse(tempDir),
+		},
+	}
+	opts.Chrome("", true, "")
+
+	b := brwjsz.New(ctx, opts)
+	defer b.Close()
+
+	err = b.Start(ctx)
+	require.NoError(t, err)
+
+	client := b.Client()
+
+	fetched, err := brwclient.Call[string](ctx, client, `async () => {
+		const res = await fetch('/data.json');
+		const json = await res.json();
+		return json.message;
+	}`)
+	require.NoError(t, err)
+	require.Equal(t, "hello from disk site", fetched)
 }
