@@ -8,100 +8,69 @@ import (
 	"github.com/infinity6-ai/gox/brwjsz/brwclient"
 )
 
-type tabConnection struct {
-	tab     int
+type controllerConn struct {
 	cmdChan chan *brwclient.Command
 	done    chan struct{}
 }
 
-// Hub coordinates active browser tab connections, command dispatching, and reply handling.
+// Hub coordinates the active browser controller connection, command dispatching, and reply handling.
 type Hub struct {
 	mu          sync.Mutex
-	tabs        map[int]*tabConnection
-	readyTabs   map[int]bool
+	conn        *controllerConn
 	readyNotify chan struct{}
+	readyOnce   sync.Once
 	pending     map[string]chan *brwclient.Reply
 }
 
 // NewHub creates a new Hub instance.
 func NewHub() *Hub {
 	return &Hub{
-		tabs:        make(map[int]*tabConnection),
-		readyTabs:   make(map[int]bool),
-		readyNotify: make(chan struct{}, 1),
+		readyNotify: make(chan struct{}),
 		pending:     make(map[string]chan *brwclient.Reply),
 	}
 }
 
-// RegisterTab registers an active SSE connection for a tab and returns its connection struct.
-func (h *Hub) RegisterTab(tab int) (*tabConnection, func()) {
+// RegisterController registers an active SSE connection for the browser controller.
+func (h *Hub) RegisterController() (*controllerConn, func()) {
 	h.mu.Lock()
-	conn := &tabConnection{
-		tab:     tab,
+	conn := &controllerConn{
 		cmdChan: make(chan *brwclient.Command, 32),
 		done:    make(chan struct{}),
 	}
-	h.tabs[tab] = conn
-	h.readyTabs[tab] = true
-
-	// Notify any waiters that a tab has checked in
-	select {
-	case h.readyNotify <- struct{}{}:
-	default:
-	}
+	h.conn = conn
+	h.readyOnce.Do(func() {
+		close(h.readyNotify)
+	})
 	h.mu.Unlock()
 
 	cleanup := func() {
 		h.mu.Lock()
 		defer h.mu.Unlock()
 		close(conn.done)
-		delete(h.tabs, tab)
+		if h.conn == conn {
+			h.conn = nil
+		}
 	}
 	return conn, cleanup
 }
 
-// WaitReady blocks until all tabs from 0 to tabCount-1 have registered their SSE connections.
-func (h *Hub) WaitReady(ctx context.Context, tabCount int) error {
-	for {
-		h.mu.Lock()
-		allReady := true
-		for i := 0; i < tabCount; i++ {
-			if !h.readyTabs[i] {
-				allReady = false
-				break
-			}
-		}
-		notify := h.readyNotify
-		h.mu.Unlock()
-
-		if allReady {
-			return nil
-		}
-
-		select {
-		case <-notify:
-			// A new tab connected, check again
-		case <-ctx.Done():
-			h.mu.Lock()
-			var connected []int
-			for i := 0; i < tabCount; i++ {
-				if h.readyTabs[i] {
-					connected = append(connected, i)
-				}
-			}
-			h.mu.Unlock()
-			return fmt.Errorf("timeout waiting for %d tabs to connect (connected: %v): %w", tabCount, connected, ctx.Err())
-		}
+// WaitReady blocks until the browser controller has connected via SSE.
+func (h *Hub) WaitReady(ctx context.Context) error {
+	select {
+	case <-h.readyNotify:
+		return nil
+	case <-ctx.Done():
+		return fmt.Errorf("timeout waiting for browser controller to connect: %w", ctx.Err())
 	}
 }
 
-// Dispatch sends a command to the specified tab and awaits the corresponding reply.
-func (h *Hub) Dispatch(ctx context.Context, tab int, cmd *brwclient.Command) (*brwclient.Reply, error) {
+// Dispatch sends a command to the browser controller and awaits the corresponding reply.
+func (h *Hub) Dispatch(ctx context.Context, cmd *brwclient.Command) (*brwclient.Reply, error) {
 	h.mu.Lock()
-	conn, ok := h.tabs[tab]
-	if !ok {
+	conn := h.conn
+	if conn == nil {
 		h.mu.Unlock()
-		return nil, fmt.Errorf("tab %d is not connected", tab)
+		return nil, fmt.Errorf("browser controller is not connected")
 	}
 	replyChan := make(chan *brwclient.Reply, 1)
 	h.pending[cmd.ID] = replyChan
@@ -116,22 +85,22 @@ func (h *Hub) Dispatch(ctx context.Context, tab int, cmd *brwclient.Command) (*b
 	select {
 	case conn.cmdChan <- cmd:
 	case <-conn.done:
-		return nil, fmt.Errorf("tab %d disconnected before command was sent", tab)
+		return nil, fmt.Errorf("browser disconnected before command was sent")
 	case <-ctx.Done():
-		return nil, fmt.Errorf("failed to send command to tab %d: %w", tab, ctx.Err())
+		return nil, fmt.Errorf("failed to send command to browser: %w", ctx.Err())
 	}
 
 	select {
 	case reply := <-replyChan:
 		return reply, nil
 	case <-conn.done:
-		return nil, fmt.Errorf("tab %d disconnected while waiting for reply", tab)
+		return nil, fmt.Errorf("browser disconnected while waiting for reply")
 	case <-ctx.Done():
-		return nil, fmt.Errorf("command execution timed out or canceled on tab %d: %w", tab, ctx.Err())
+		return nil, fmt.Errorf("command execution timed out or canceled: %w", ctx.Err())
 	}
 }
 
-// HandleReply routes a reply received from a browser controller to its pending dispatch caller.
+// HandleReply routes a reply received from the browser controller to its pending dispatch caller.
 func (h *Hub) HandleReply(reply *brwclient.Reply) bool {
 	h.mu.Lock()
 	replyChan, ok := h.pending[reply.ID]

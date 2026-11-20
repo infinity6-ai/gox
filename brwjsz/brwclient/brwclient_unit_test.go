@@ -11,12 +11,12 @@ import (
 )
 
 type mockDispatcher struct {
-	dispatchFunc func(ctx context.Context, tab int, cmd *brwclient.Command) (*brwclient.Reply, error)
+	dispatchFunc func(ctx context.Context, cmd *brwclient.Command) (*brwclient.Reply, error)
 }
 
-func (m *mockDispatcher) Dispatch(ctx context.Context, tab int, cmd *brwclient.Command) (*brwclient.Reply, error) {
+func (m *mockDispatcher) Dispatch(ctx context.Context, cmd *brwclient.Command) (*brwclient.Reply, error) {
 	if m.dispatchFunc != nil {
-		return m.dispatchFunc(ctx, tab, cmd)
+		return m.dispatchFunc(ctx, cmd)
 	}
 	return &brwclient.Reply{ID: cmd.ID, Ok: true}, nil
 }
@@ -62,7 +62,7 @@ func TestUnitClientOperations(t *testing.T) {
 		t.Helper()
 		var capturedCmd *brwclient.Command
 		mock := &mockDispatcher{
-			dispatchFunc: func(ctx context.Context, tab int, cmd *brwclient.Command) (*brwclient.Reply, error) {
+			dispatchFunc: func(ctx context.Context, cmd *brwclient.Command) (*brwclient.Reply, error) {
 				capturedCmd = cmd
 				if s.wantErr != "" && s.wantErr == "dispatch_failed" {
 					return nil, fmt.Errorf("network error")
@@ -83,7 +83,7 @@ func TestUnitClientOperations(t *testing.T) {
 			},
 		}
 
-		c := &brwclient.Client{Tab: 0, Dispatcher: mock}
+		c := &brwclient.Client{Dispatcher: mock}
 		err := s.action(t.Context(), c)
 
 		if s.wantErr != "" {
@@ -151,7 +151,7 @@ func TestUnitClientOperations(t *testing.T) {
 	t.Run("Set and Closer deletes reference", func(t *testing.T) {
 		deletedRef := ""
 		mock := &mockDispatcher{
-			dispatchFunc: func(ctx context.Context, tab int, cmd *brwclient.Command) (*brwclient.Reply, error) {
+			dispatchFunc: func(ctx context.Context, cmd *brwclient.Command) (*brwclient.Reply, error) {
 				if cmd.Action == "delete" {
 					deletedRef = cmd.Ref
 				}
@@ -159,7 +159,7 @@ func TestUnitClientOperations(t *testing.T) {
 			},
 		}
 
-		c := &brwclient.Client{Tab: 0, Dispatcher: mock}
+		c := &brwclient.Client{Dispatcher: mock}
 		ref := brwclient.MustCreate[string]()
 		closer, err := brwclient.Set(t.Context(), c, ref, "test-value")
 		require.NoError(t, err)

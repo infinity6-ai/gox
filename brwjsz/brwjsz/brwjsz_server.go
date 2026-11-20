@@ -11,17 +11,12 @@ import (
 	"github.com/infinity6-ai/gox/brwjsz/internal/handlers"
 	"github.com/infinity6-ai/gox/commonz/errorz"
 	"github.com/infinity6-ai/gox/commonz/execz"
-	"github.com/infinity6-ai/gox/commonz/logz"
+	"github.com/infinity6-ai/gox/commonz/pathz"
 	"github.com/infinity6-ai/gox/httpz/httpzserver"
 )
 
-type tlogger logz.Type
-
-var logger = logz.Create(tlogger(true))
-
-// Options configures the Browser instance, tab count, command arguments, and HTTP server.
+// Options configures the Browser instance, command arguments, and HTTP server.
 type Options struct {
-	TabCount        int
 	Command         execz.Options
 	Server          httpzserver.Options
 	tempUserDataDir string
@@ -36,7 +31,7 @@ func findChrome() string {
 	return "google-chrome"
 }
 
-// Chrome configures default browser flags, anti-throttling options, headless mode, and isolated user profile.
+// Chrome configures default browser flags, logging, headless mode, and isolated user profile.
 // If binPath is empty, it discovers google-chrome/chromium in PATH.
 // If userDataDir is empty, a temporary profile directory is created and cleaned up on Browser.Close().
 func (o *Options) Chrome(binPath string, headless bool, userDataDir string) *Options {
@@ -57,27 +52,23 @@ func (o *Options) Chrome(binPath string, headless bool, userDataDir string) *Opt
 		"--no-sandbox",
 		"--disable-dev-shm-usage",
 		"--disable-gpu",
+		"--enable-logging=stderr",
 		"--no-first-run",
 		"--no-default-browser-check",
 		"--disable-sync",
-		"--disable-popup-blocking",
-		"--disable-background-timer-throttling",
-		"--disable-backgrounding-occluded-windows",
-		"--disable-renderer-backgrounding",
 		"--disable-component-update",
 		"--disable-features=Translate,OptimizationHints",
 	}
 	if headless {
-		flags = append(flags, "--headless=new")
+		flags = append(flags, "--headless", "--ozone-platform=headless")
 	}
 
 	o.Command.Args = append(flags, o.Command.Args...)
 	return o
 }
 
-// Browser manages an HTTP server, a spawned browser OS process, and tab controllers.
+// Browser manages an HTTP server, a spawned browser OS process, and controller IPC.
 type Browser struct {
-	tabCount        int
 	tempUserDataDir string
 	originalArgs    []string
 	cmdOpts         execz.Options
@@ -88,16 +79,11 @@ type Browser struct {
 
 // New creates and configures a Browser instance.
 func New(ctx context.Context, opts Options) *Browser {
-	tabCount := opts.TabCount
-	if tabCount <= 0 {
-		tabCount = 1
-	}
 	hub := handlers.NewHub()
 	srv := httpzserver.New(ctx, opts.Server)
 	handlers.AddHandlers(ctx, srv, hub)
 
 	ret := &Browser{
-		tabCount:        tabCount,
 		tempUserDataDir: opts.tempUserDataDir,
 		server:          srv,
 		hub:             hub,
@@ -126,7 +112,7 @@ func (b *Browser) Close() error {
 	return nil
 }
 
-// Start launches the internal HTTP server, starts the browser process, and waits for all tabs to report ready.
+// Start launches the internal HTTP server, starts the browser process, and waits for the controller to report ready.
 func (b *Browser) Start(ctx context.Context) error {
 	b.server.Listen()
 	b.server.Start()
@@ -139,47 +125,31 @@ func (b *Browser) Start(ctx context.Context) error {
 		return fmt.Errorf("error starting browser process: %w", err)
 	}
 
-	go func() {
-		for line := range b.Process().GetStderr() {
-			logger.Info(ctx, "Chrome stderr", map[string]any{"p": line.Partial, "l": line.Line})
-		}
-	}()
-	go func() {
-		for line := range b.Process().GetStdout() {
-			logger.Info(ctx, "Chrome stdout", map[string]any{"p": line.Partial, "l": line.Line})
-		}
-	}()
-
-	err = b.hub.WaitReady(ctx, b.tabCount)
+	err = b.hub.WaitReady(ctx)
 	if err != nil {
-		return fmt.Errorf("error waiting for tabs ready: %w", err)
+		return fmt.Errorf("error waiting for browser controller ready: %w", err)
 	}
 
 	return nil
 }
 
 func (b *Browser) fixArgs() {
-	tabCount := b.tabCount
-	if tabCount <= 0 {
-		tabCount = 1
-	}
-
-	u := b.server.Base().MustJoinPathString(handlers.ControllerPath)
-	u.Query = fmt.Sprintf("tab=0&count=%d", tabCount)
-	targetUrl := u.String()
+	u := b.server.Base().Clone()
+	u.Path = pathz.MustParse(handlers.ControllerPath)
+	urlStr := u.String()
 
 	b.cmdOpts.Args = make([]string, 0, len(b.originalArgs)+1)
 	urlReplaced := false
 	for _, arg := range b.originalArgs {
 		if arg == "URL" {
-			b.cmdOpts.Args = append(b.cmdOpts.Args, targetUrl)
+			b.cmdOpts.Args = append(b.cmdOpts.Args, urlStr)
 			urlReplaced = true
 		} else {
 			b.cmdOpts.Args = append(b.cmdOpts.Args, arg)
 		}
 	}
 	if !urlReplaced {
-		b.cmdOpts.Args = append(b.cmdOpts.Args, targetUrl)
+		b.cmdOpts.Args = append(b.cmdOpts.Args, urlStr)
 	}
 }
 
@@ -188,16 +158,12 @@ func (b *Browser) Process() *execz.Process {
 	return b.prc
 }
 
-// Tab returns a Client handle scoped to the specified tab index.
-func (b *Browser) Tab(index int) *brwclient.Client {
+// Client returns a Client handle to communicate with the browser controller.
+func (b *Browser) Client() *brwclient.Client {
+	u := b.server.Base().Clone()
+	u.Path = pathz.MustParse(handlers.BasePath)
 	return &brwclient.Client{
-		BaseUrl:    b.server.Base().MustJoinPathString(handlers.BasePath),
-		Tab:        index,
+		BaseUrl:    u,
 		Dispatcher: b.hub,
 	}
-}
-
-// Client returns a Client handle scoped to Tab 0.
-func (b *Browser) Client() *brwclient.Client {
-	return b.Tab(0)
 }

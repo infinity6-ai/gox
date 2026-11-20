@@ -31,9 +31,9 @@ type Reply struct {
 	Error  string          `json:"error,omitempty"`
 }
 
-// Dispatcher defines the interface for delivering commands to a browser tab.
+// Dispatcher defines the interface for delivering commands to the browser controller.
 type Dispatcher interface {
-	Dispatch(ctx context.Context, tab int, cmd *Command) (*Reply, error)
+	Dispatch(ctx context.Context, cmd *Command) (*Reply, error)
 }
 
 // Ref represents a typed reference to a JavaScript object in the browser.
@@ -57,20 +57,10 @@ func (r *Ref[T]) UnmarshalJSON(data []byte) error {
 	return fmt.Errorf("invalid ref json: %s", string(data))
 }
 
-// Client represents a handle to communicate with a browser tab.
+// Client represents a handle to communicate with the browser controller.
 type Client struct {
 	BaseUrl    *urlz.Url
-	Tab        int
 	Dispatcher Dispatcher
-}
-
-// ForTab returns a shallow copy of Client targeting a different tab index.
-func (c *Client) ForTab(tab int) *Client {
-	return &Client{
-		BaseUrl:    c.BaseUrl,
-		Tab:        tab,
-		Dispatcher: c.Dispatcher,
-	}
 }
 
 // Create generates a unique Ref locally with zero network RPC.
@@ -83,7 +73,7 @@ func MustCreate[T any]() Ref[T] {
 	return Create[T]()
 }
 
-// Set binds a value in the browser tab's reference registry under the given ref.
+// Set binds a value in the browser's reference registry under the given ref.
 // It returns an io.Closer that deletes the reference when closed.
 func Set[T any](ctx context.Context, c *Client, ref Ref[T], v T) (io.Closer, error) {
 	if c == nil || c.Dispatcher == nil {
@@ -95,12 +85,12 @@ func Set[T any](ctx context.Context, c *Client, ref Ref[T], v T) (io.Closer, err
 		Ref:    string(ref),
 		Value:  v,
 	}
-	reply, err := c.Dispatcher.Dispatch(ctx, c.Tab, cmd)
+	reply, err := c.Dispatcher.Dispatch(ctx, cmd)
 	if err != nil {
-		return nil, fmt.Errorf("error setting ref %s on tab %d: %w", ref, c.Tab, err)
+		return nil, fmt.Errorf("error setting ref %s: %w", ref, err)
 	}
 	if !reply.Ok {
-		return nil, fmt.Errorf("error setting ref %s on tab %d: %s", ref, c.Tab, reply.Error)
+		return nil, fmt.Errorf("error setting ref %s: %s", ref, reply.Error)
 	}
 	closer := ioz.Closer(func() error {
 		return Delete(ctx, c, ref)
@@ -108,14 +98,14 @@ func Set[T any](ctx context.Context, c *Client, ref Ref[T], v T) (io.Closer, err
 	return closer, nil
 }
 
-// MustSet binds a value in the browser tab's reference registry, panicking on failure.
+// MustSet binds a value in the browser's reference registry, panicking on failure.
 func MustSet[T any](ctx context.Context, c *Client, ref Ref[T], v T) io.Closer {
 	closer, err := Set(ctx, c, ref, v)
 	errorz.Check(err)
 	return closer
 }
 
-// Delete deletes the reference from the browser tab's registry.
+// Delete deletes the reference from the browser's registry.
 func Delete[T any](ctx context.Context, c *Client, ref Ref[T]) error {
 	if c == nil || c.Dispatcher == nil {
 		return fmt.Errorf("dispatcher is not configured")
@@ -125,23 +115,23 @@ func Delete[T any](ctx context.Context, c *Client, ref Ref[T]) error {
 		Action: "delete",
 		Ref:    string(ref),
 	}
-	reply, err := c.Dispatcher.Dispatch(ctx, c.Tab, cmd)
+	reply, err := c.Dispatcher.Dispatch(ctx, cmd)
 	if err != nil {
-		return fmt.Errorf("error deleting ref %s on tab %d: %w", ref, c.Tab, err)
+		return fmt.Errorf("error deleting ref %s: %w", ref, err)
 	}
 	if !reply.Ok {
-		return fmt.Errorf("error deleting ref %s on tab %d: %s", ref, c.Tab, reply.Error)
+		return fmt.Errorf("error deleting ref %s: %s", ref, reply.Error)
 	}
 	return nil
 }
 
-// MustDelete deletes the reference from the browser tab's registry, panicking on failure.
+// MustDelete deletes the reference from the browser's registry, panicking on failure.
 func MustDelete[T any](ctx context.Context, c *Client, ref Ref[T]) {
 	err := Delete(ctx, c, ref)
 	errorz.Check(err)
 }
 
-// Proc executes a procedure or JavaScript expression on the tab without expecting a return value.
+// Proc executes a procedure or JavaScript expression on the browser without expecting a return value.
 func Proc(ctx context.Context, c *Client, fn string, args ...any) error {
 	if c == nil || c.Dispatcher == nil {
 		return fmt.Errorf("dispatcher is not configured")
@@ -152,23 +142,23 @@ func Proc(ctx context.Context, c *Client, fn string, args ...any) error {
 		Fn:     fn,
 		Args:   args,
 	}
-	reply, err := c.Dispatcher.Dispatch(ctx, c.Tab, cmd)
+	reply, err := c.Dispatcher.Dispatch(ctx, cmd)
 	if err != nil {
-		return fmt.Errorf("error executing proc on tab %d: %w", c.Tab, err)
+		return fmt.Errorf("error executing proc: %w", err)
 	}
 	if !reply.Ok {
-		return fmt.Errorf("javascript error in proc on tab %d: %s", c.Tab, reply.Error)
+		return fmt.Errorf("javascript error in proc: %s", reply.Error)
 	}
 	return nil
 }
 
-// MustProc executes a procedure on the tab, panicking on failure.
+// MustProc executes a procedure on the browser, panicking on failure.
 func MustProc(ctx context.Context, c *Client, fn string, args ...any) {
 	err := Proc(ctx, c, fn, args...)
 	errorz.Check(err)
 }
 
-// Func executes a function or callable expression, stores the result in the tab's reference registry,
+// Func executes a function or callable expression, stores the result in the reference registry,
 // and returns a typed Ref[T] handle to it.
 func Func[T any](ctx context.Context, c *Client, fn string, args ...any) (Ref[T], error) {
 	var zero Ref[T]
@@ -183,24 +173,24 @@ func Func[T any](ctx context.Context, c *Client, fn string, args ...any) (Ref[T]
 		Ref:    string(ref),
 		Args:   args,
 	}
-	reply, err := c.Dispatcher.Dispatch(ctx, c.Tab, cmd)
+	reply, err := c.Dispatcher.Dispatch(ctx, cmd)
 	if err != nil {
-		return zero, fmt.Errorf("error executing func on tab %d: %w", c.Tab, err)
+		return zero, fmt.Errorf("error executing func: %w", err)
 	}
 	if !reply.Ok {
-		return zero, fmt.Errorf("javascript error in func on tab %d: %s", c.Tab, reply.Error)
+		return zero, fmt.Errorf("javascript error in func: %s", reply.Error)
 	}
 	return ref, nil
 }
 
-// MustFunc executes a function on the tab and returns a typed Ref handle, panicking on failure.
+// MustFunc executes a function on the browser and returns a typed Ref handle, panicking on failure.
 func MustFunc[T any](ctx context.Context, c *Client, fn string, args ...any) Ref[T] {
 	ret, err := Func[T](ctx, c, fn, args...)
 	errorz.Check(err)
 	return ret
 }
 
-// Eval evaluates a JavaScript expression on the tab and decodes the JSON result into T.
+// Eval evaluates a JavaScript expression on the browser and decodes the JSON result into T.
 func Eval[T any](ctx context.Context, c *Client, expr string) (T, error) {
 	var zero T
 	if c == nil || c.Dispatcher == nil {
@@ -211,12 +201,12 @@ func Eval[T any](ctx context.Context, c *Client, expr string) (T, error) {
 		Action: "eval",
 		Fn:     expr,
 	}
-	reply, err := c.Dispatcher.Dispatch(ctx, c.Tab, cmd)
+	reply, err := c.Dispatcher.Dispatch(ctx, cmd)
 	if err != nil {
-		return zero, fmt.Errorf("error evaluating on tab %d: %w", c.Tab, err)
+		return zero, fmt.Errorf("error evaluating: %w", err)
 	}
 	if !reply.Ok {
-		return zero, fmt.Errorf("javascript error evaluating on tab %d: %s", c.Tab, reply.Error)
+		return zero, fmt.Errorf("javascript error evaluating: %s", reply.Error)
 	}
 	if len(reply.Result) == 0 {
 		return zero, nil
@@ -228,14 +218,14 @@ func Eval[T any](ctx context.Context, c *Client, expr string) (T, error) {
 	return ret, nil
 }
 
-// MustEval evaluates a JavaScript expression on the tab, panicking on failure.
+// MustEval evaluates a JavaScript expression on the browser, panicking on failure.
 func MustEval[T any](ctx context.Context, c *Client, expr string) T {
 	ret, err := Eval[T](ctx, c, expr)
 	errorz.Check(err)
 	return ret
 }
 
-// Get retrieves the current value of a Ref from the browser tab and decodes it into T.
+// Get retrieves the current value of a Ref from the browser and decodes it into T.
 func Get[T any](ctx context.Context, c *Client, ref Ref[T]) (T, error) {
 	var zero T
 	if c == nil || c.Dispatcher == nil {
@@ -246,12 +236,12 @@ func Get[T any](ctx context.Context, c *Client, ref Ref[T]) (T, error) {
 		Action: "get",
 		Ref:    string(ref),
 	}
-	reply, err := c.Dispatcher.Dispatch(ctx, c.Tab, cmd)
+	reply, err := c.Dispatcher.Dispatch(ctx, cmd)
 	if err != nil {
-		return zero, fmt.Errorf("error getting ref %s on tab %d: %w", ref, c.Tab, err)
+		return zero, fmt.Errorf("error getting ref %s: %w", ref, err)
 	}
 	if !reply.Ok {
-		return zero, fmt.Errorf("javascript error getting ref %s on tab %d: %s", ref, c.Tab, reply.Error)
+		return zero, fmt.Errorf("javascript error getting ref %s: %s", ref, reply.Error)
 	}
 	if len(reply.Result) == 0 {
 		return zero, nil

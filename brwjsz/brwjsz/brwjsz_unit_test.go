@@ -16,7 +16,6 @@ func TestUnitChromeOptions(t *testing.T) {
 		name        string
 		headless    bool
 		userDataDir string
-		wantTemp    bool
 		wantFlag    string
 	}
 
@@ -29,7 +28,7 @@ func TestUnitChromeOptions(t *testing.T) {
 
 		foundHeadless := false
 		foundUserData := false
-		foundThrottle := false
+		foundLogging := false
 		for _, arg := range opts.Command.Args {
 			if strings.HasPrefix(arg, "--headless") {
 				foundHeadless = true
@@ -37,13 +36,13 @@ func TestUnitChromeOptions(t *testing.T) {
 			if strings.HasPrefix(arg, "--user-data-dir") {
 				foundUserData = true
 			}
-			if strings.HasPrefix(arg, "--disable-background-timer-throttling") {
-				foundThrottle = true
+			if arg == "--enable-logging=stderr" {
+				foundLogging = true
 			}
 		}
 
 		require.True(t, foundUserData, "user-data-dir flag should be present")
-		require.True(t, foundThrottle, "anti-throttling flag should be present")
+		require.True(t, foundLogging, "--enable-logging=stderr flag should be present")
 		require.Equal(t, s.headless, foundHeadless)
 	}
 
@@ -52,7 +51,6 @@ func TestUnitChromeOptions(t *testing.T) {
 			name:        "headless auto temp",
 			headless:    true,
 			userDataDir: "",
-			wantTemp:    true,
 		})
 	})
 
@@ -61,70 +59,84 @@ func TestUnitChromeOptions(t *testing.T) {
 			name:        "headed custom dir",
 			headless:    false,
 			userDataDir: "/tmp/custom-profile",
-			wantTemp:    false,
 		})
 	})
 }
 
 func TestUnitBrowserE2E(t *testing.T) {
-	ctx, cancel := context.WithTimeout(t.Context(), 30*time.Second)
+	ctx, cancel := context.WithTimeout(t.Context(), 15*time.Second)
 	defer cancel()
 
-	opts := brwjsz.Options{
-		TabCount: 2,
-	}
-	opts.Chrome("", false, "") // # let is non headless
+	opts := brwjsz.Options{}
+	opts.Chrome("", true, "")
 	opts.Command.CaptureStderr = 100
-	opts.Command.CaptureStdout = 100
 
 	b := brwjsz.New(ctx, opts)
 	defer b.Close()
 
 	err := b.Start(ctx)
+	if err != nil {
+		t.Logf("Error starting: %v", err)
+		if b.Process() != nil && b.Process().GetStderr() != nil {
+			for {
+				select {
+				case line := <-b.Process().GetStderr():
+					t.Logf("Chrome stderr: %s", line.Line)
+				default:
+					goto doneStderr
+				}
+			}
+		}
+	doneStderr:
+	}
 	require.NoError(t, err)
 
-	tab0 := b.Tab(0)
-	tab1 := b.Tab(1)
+	client := b.Client()
 
-	// Tab 0 operations
-	err = brwclient.Proc(ctx, tab0, "console.log", "hello tab 0")
+	// 1. Proc with standard function
+	err = brwclient.Proc(ctx, client, "console.log", "hello from Go")
 	require.NoError(t, err)
 
-	// Arrow function evaluation
-	err = brwclient.Proc(ctx, tab0, "((x) => console.log('Arrow:', x))", "tested successfully")
+	// 2. Proc with anonymous arrow function
+	err = brwclient.Proc(ctx, client, "((x) => console.log('Arrow received:', x))", "tested successfully")
 	require.NoError(t, err)
 
-	// Eval arithmetic
-	val, err := brwclient.Eval[int](ctx, tab0, "21 * 2")
+	// 3. Eval arithmetic expression
+	val, err := brwclient.Eval[int](ctx, client, "21 * 2")
 	require.NoError(t, err)
 	require.Equal(t, 42, val)
 
-	// Reference creation and usage
+	// 4. Remote reference creation and lifecycle
 	type UserInfo struct {
 		Name  string `json:"name"`
 		Score int    `json:"score"`
 	}
 
 	userRef := brwclient.MustCreate[UserInfo]()
-	closer, err := brwclient.Set(ctx, tab0, userRef, UserInfo{Name: "Alice", Score: 100})
-	require.NoError(t, err)
-	defer closer.Close()
-
-	// Use ref in function
-	err = brwclient.Proc(ctx, tab0, `(u) => { window.__aliceName = u.Name; }`, userRef)
+	closer, err := brwclient.Set(ctx, client, userRef, UserInfo{Name: "Alice", Score: 100})
 	require.NoError(t, err)
 
-	aliceName, err := brwclient.Eval[string](ctx, tab0, "window.__aliceName")
+	// Use ref inside JS function
+	err = brwclient.Proc(ctx, client, `(u) => { window.__aliceName = u.name; }`, userRef)
+	require.NoError(t, err)
+
+	aliceName, err := brwclient.Eval[string](ctx, client, "window.__aliceName")
 	require.NoError(t, err)
 	require.Equal(t, "Alice", aliceName)
 
-	// Tab 1 operations (isolated from Tab 0)
-	valTab1, err := brwclient.Eval[int](ctx, tab1, "100 + 200")
+	// Func returning a calculated reference
+	calcRef, err := brwclient.Func[int](ctx, client, `(u) => u.score * 3`, userRef)
 	require.NoError(t, err)
-	require.Equal(t, 300, valTab1)
+	require.NotEmpty(t, calcRef)
 
-	// Tab 1 should not have Tab 0's window.__aliceName
-	hasAlice, err := brwclient.Eval[bool](ctx, tab1, "typeof window.__aliceName !== 'undefined'")
+	calcVal, err := brwclient.Get[int](ctx, client, calcRef)
 	require.NoError(t, err)
-	require.False(t, hasAlice)
+	require.Equal(t, 300, calcVal)
+
+	// Clean up references
+	err = closer.Close()
+	require.NoError(t, err)
+
+	err = brwclient.Delete(ctx, client, calcRef)
+	require.NoError(t, err)
 }

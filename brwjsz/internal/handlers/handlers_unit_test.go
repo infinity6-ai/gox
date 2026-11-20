@@ -70,16 +70,16 @@ func TestUnitHubDispatchAndReply(t *testing.T) {
 	srv.Listen()
 	srv.Start()
 
-	// 1. Simulate Tab 0 connecting via SSE
-	eventsUrl := srv.Base().MustJoinPathString(handlers.EventsPath).String() + "?tab=0"
+	// 1. Simulate Controller connecting via SSE
+	eventsUrl := srv.Base().MustJoinPathString(handlers.EventsPath).String()
 	sseResp, err := http.Get(eventsUrl)
 	require.NoError(t, err)
 	defer sseResp.Body.Close()
 
-	// WaitReady should succeed immediately since tab 0 is connected
+	// WaitReady should succeed immediately since controller is connected
 	waitCtx, cancel := context.WithTimeout(ctx, 1*time.Second)
 	defer cancel()
-	err = hub.WaitReady(waitCtx, 1)
+	err = hub.WaitReady(waitCtx)
 	require.NoError(t, err)
 
 	// 2. Dispatch a command in background
@@ -91,12 +91,12 @@ func TestUnitHubDispatchAndReply(t *testing.T) {
 
 	replyReceived := make(chan *brwclient.Reply, 1)
 	go func() {
-		reply, dispatchErr := hub.Dispatch(ctx, 0, cmd)
+		reply, dispatchErr := hub.Dispatch(ctx, cmd)
 		require.NoError(t, dispatchErr)
 		replyReceived <- reply
 	}()
 
-	// 3. Tab replies to /api/brwjs/reply
+	// 3. Controller replies to /api/brwjs/reply
 	replyPayload := `{"id":"test-cmd-1","ok":true}`
 	replyUrl := srv.Base().MustJoinPathString(handlers.ReplyPath).String()
 	postResp, err := http.Post(replyUrl, "application/json", strings.NewReader(replyPayload))
