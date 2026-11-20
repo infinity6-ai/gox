@@ -1,12 +1,15 @@
+<!DOCTYPE html>
 <html>
     <head>
+        <meta charset="utf-8">
         <title>brwjsz controller</title>
-        <script type="module" src="brwjsz/index.js"></script>
+        <script src="brwjsz/index.js"></script>
     </head>
     <body>
-
         <script>
-            window.brwjsz.init()                    
+            if (window.brwjsz && window.brwjsz.init) {
+                window.brwjsz.init();
+            }
         </script>
     </body>
 </html>
