@@ -367,9 +367,13 @@ func (p *Process) Start(ctx context.Context) error {
 }
 
 // Run starts the process and blocks until it completes or ctx is cancelled / deadline expires,
-// returning any exit error. If Start succeeds, it defers Close to guarantee the process is terminated
-// if WaitFor returns early (e.g. on context cancellation or deadline expiration).
-func (p *Process) Run(ctx context.Context, deadline time.Duration) error {
+// returning any exit error. If Start succeeds, it defers terminating the process via Kill with graceDeadline
+// (or DefaultKillDeadline if graceDeadline <= 0) if WaitFor returns early (e.g. on context cancellation or deadline expiration).
+func (p *Process) Run(ctx context.Context, deadline time.Duration, graceDeadline time.Duration) error {
+	if graceDeadline <= 0 {
+		graceDeadline = DefaultKillDeadline
+	}
+
 	if deadline > 0 {
 		var cancel context.CancelFunc
 		ctx, cancel = context.WithDeadline(ctx, time.Now().Add(deadline))
@@ -379,7 +383,9 @@ func (p *Process) Run(ctx context.Context, deadline time.Duration) error {
 	if err := p.Start(ctx); err != nil {
 		return fmt.Errorf("failed to start process: %w", err)
 	}
-	defer p.Close()
+	defer func() {
+		_ = p.Kill(context.Background(), graceDeadline)
+	}()
 
 	if err := p.WaitFor(ctx, 0); err != nil {
 		return fmt.Errorf("failed to wait for process: %w", err)
@@ -465,6 +471,10 @@ func (p *Process) Kill(ctx context.Context, deadline time.Duration) error {
 	if deadline > 0 {
 		var cancel context.CancelFunc
 		ctx, cancel = context.WithDeadline(ctx, time.Now().Add(deadline))
+		defer cancel()
+	} else if deadline == 0 {
+		var cancel context.CancelFunc
+		ctx, cancel = context.WithDeadline(ctx, time.Now())
 		defer cancel()
 	}
 

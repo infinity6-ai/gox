@@ -28,7 +28,7 @@ func TestUnitBasicRun(t *testing.T) {
 		})
 		defer proc.Close()
 
-		err := proc.Run(ctx, 0)
+		err := proc.Run(ctx, 0, 0)
 		if s.expectError {
 			require.Error(t, err)
 			if s.errMsg != "" {
@@ -277,7 +277,7 @@ func TestUnitDiscardByDefault(t *testing.T) {
 	require.Nil(t, proc.GetStderr())
 	require.Nil(t, proc.GetStdin())
 
-	require.NoError(t, proc.Run(ctx, 0))
+	require.NoError(t, proc.Run(ctx, 0, 0))
 }
 
 func TestUnitEnvsAndDir(t *testing.T) {
@@ -391,7 +391,7 @@ func TestUnitProcessAlreadyStarted(t *testing.T) {
 	require.Error(t, err)
 	require.Contains(t, err.Error(), "process already started")
 
-	err2 := proc.Run(ctx, 0)
+	err2 := proc.Run(ctx, 0, 0)
 	require.Error(t, err2)
 	require.Contains(t, err2.Error(), "process already started")
 
@@ -452,7 +452,7 @@ func TestUnitExitCode(t *testing.T) {
 		Args: []string{"-c", "exit 42"},
 	})
 	defer proc.Close()
-	err := proc.Run(ctx, 0)
+	err := proc.Run(ctx, 0, 0)
 	require.Error(t, err)
 	require.ErrorIs(t, proc.WaitFor(ctx, 0), proc.Err())
 }
@@ -524,7 +524,7 @@ func TestUnitRunDeadlineExceeded(t *testing.T) {
 		Args: []string{"5"},
 	})
 	defer proc.Close()
-	err := proc.Run(ctx, 50*time.Millisecond)
+	err := proc.Run(ctx, 50*time.Millisecond, 50*time.Millisecond)
 	require.Error(t, err)
 	require.ErrorIs(t, err, context.DeadlineExceeded)
 	require.False(t, proc.IsRunning())
@@ -602,7 +602,7 @@ func TestUnitDeferCloseAfterNew(t *testing.T) {
 			Args: []string{"-c", "exit 0"},
 		})
 		defer proc.Close()
-		require.NoError(t, proc.Run(ctx, 0))
+		require.NoError(t, proc.Run(ctx, 0, 0))
 		require.False(t, proc.IsRunning())
 	}()
 }
@@ -626,12 +626,12 @@ func TestUnitCannotRestart(t *testing.T) {
 		Args: []string{"-c", "exit 0"},
 	})
 	defer proc2.Close()
-	require.NoError(t, proc2.Run(ctx, 0))
+	require.NoError(t, proc2.Run(ctx, 0, 0))
 	err2 := proc2.Start(ctx)
 	require.Error(t, err2)
 	require.Contains(t, err2.Error(), "already finished or closed")
 
-	err3 := proc2.Run(ctx, 0)
+	err3 := proc2.Run(ctx, 0, 0)
 	require.Error(t, err3)
 	require.Contains(t, err3.Error(), "already finished or closed")
 }

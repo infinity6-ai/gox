@@ -34,7 +34,7 @@ func (s *Service25519Openssl) PrivKeyCreate() ed25519.PrivateKey {
 	err := execz.New(s.ctx, execz.Options{
 		Bin:  "openssl",
 		Args: []string{"genpkey", "-algorithm", "ED25519", "-out", privKeyFilePath},
-	}).Run(s.ctx, 0)
+	}).Run(s.ctx, 0, 0)
 	errorz.Check(err)
 
 	keyData := filez.MustReadFile(privKeyFilePath, 4096)
@@ -78,7 +78,7 @@ func (s *Service25519Openssl) Sign(privateKey ed25519.PrivateKey, message []byte
 	err := execz.New(s.ctx, execz.Options{
 		Bin:  "openssl",
 		Args: []string{"pkeyutl", "-sign", "-inkey", privKeyFilePath, "-rawin", "-in", msgFilePath, "-out", sigFilePath},
-	}).Run(s.ctx, 0)
+	}).Run(s.ctx, 0, 0)
 	errorz.Check(err)
 
 	signature := filez.MustReadFile(sigFilePath, 256)
@@ -98,7 +98,7 @@ func (s *Service25519Openssl) Verify(publicKey ed25519.PublicKey, message []byte
 	err := execz.New(s.ctx, execz.Options{
 		Bin:  "openssl",
 		Args: []string{"pkeyutl", "-verify", "-pubin", "-inkey", pubKeyFilePath, "-rawin", "-in", msgFilePath, "-sigfile", sigFilePath},
-	}).Run(s.ctx, 0)
+	}).Run(s.ctx, 0, 0)
 	return err == nil
 }
 
