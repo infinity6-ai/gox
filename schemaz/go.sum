@@ -1,10 +1,10 @@
 github.com/cpuguy83/go-md2man/v2 v2.0.6/go.mod h1:oOW0eioCTA6cOiMLiUPZOpcVxMig6NIQQ7OS05n1F4g=
 github.com/inconshreveable/mousetrap v1.1.0 h1:wN+x4NVGpMsO7ErUn/mUI3vEoE6Jt13X2s0bqwp9tc8=
 github.com/inconshreveable/mousetrap v1.1.0/go.mod h1:vpF70FUmC8bwa3OWnCshd2FqLfsEA9PFc4w1p2J65bw=
-github.com/infinity6-ai/gox/commonz v0.0.75 h1:+kmNELTK1SitTSrVwZOVlYuO4C7jdS/Sr8L6FWlFmZg=
-github.com/infinity6-ai/gox/commonz v0.0.75/go.mod h1:2wnwdFQdf8rOaSZO1GSWjK39/4jV/2gS2tjXlrkK+OE=
-github.com/infinity6-ai/gox/versionz v0.0.75 h1:ivLf5mPkXAxC3ZxJmbZw9PkPYrqqwg6q/j53IsYr26M=
-github.com/infinity6-ai/gox/versionz v0.0.75/go.mod h1:/wIO1egpVS5CZ8hdbGDIeItr54luGEOcqcb7TnMUqsY=
+github.com/infinity6-ai/gox/commonz v0.0.76 h1:kyz1pWVtBET5WIxHrfc8pbPF1JrwrSXAzKbP/VLuXWM=
+github.com/infinity6-ai/gox/commonz v0.0.76/go.mod h1:SuaSVSd7PVXjngVvQ3N7fDG+iiyW3VoZMX2Qg1fN0ZY=
+github.com/infinity6-ai/gox/versionz v0.0.76 h1:4cZvem1lHXNZ7DR5ThvAL0VGU4ZD3dl+bs6oEufkCdo=
+github.com/infinity6-ai/gox/versionz v0.0.76/go.mod h1:/wIO1egpVS5CZ8hdbGDIeItr54luGEOcqcb7TnMUqsY=
 github.com/russross/blackfriday/v2 v2.1.0/go.mod h1:+Rmxgy9KzJVeS9/2gXHxylqXiyQDYRxCVz55jmeOWTM=
 github.com/spf13/cobra v1.10.2 h1:DMTTonx5m65Ic0GOoRY2c16WCbHxOOw6xxezuLaBpcU=
 github.com/spf13/cobra v1.10.2/go.mod h1:7C1pvHqHw5A4vrJfjNwvOdzYu0Gml16OCs2GRiTUUS4=
