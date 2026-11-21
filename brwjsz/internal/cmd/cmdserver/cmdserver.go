@@ -10,6 +10,7 @@ import (
 	"os"
 	"os/exec"
 	"os/signal"
+	"path/filepath"
 	"strings"
 	"syscall"
 	"time"
@@ -117,8 +118,12 @@ func newStartCmd() *cobra.Command {
 			opts := brwjsz.Options{}
 			opts.Chrome(binPath, !disableHeadless, "")
 			if sitePath != "" {
+				absSite, err := filepath.Abs(sitePath)
+				if err != nil {
+					return fmt.Errorf("failed to resolve absolute site path %q: %w", sitePath, err)
+				}
 				opts.Site = &brwjsz.Site{
-					Disk: pathz.MustParse(sitePath),
+					Disk: pathz.MustParse(absSite),
 				}
 			}
 

@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"path/filepath"
 	"time"
 
 	"github.com/infinity6-ai/gox/brwjsz/brwclient"
@@ -193,6 +194,10 @@ func Prepare(ctx context.Context, parent *cobra.Command) *cobra.Command {
 			if siteDir == "" {
 				siteDir = "."
 			}
+			absSite, err := filepath.Abs(siteDir)
+			if err != nil {
+				return fmt.Errorf("failed to resolve absolute site path %q: %w", siteDir, err)
+			}
 
 			cmdCtx := cmd.Context()
 			if opts.timeout > 0 {
@@ -203,7 +208,7 @@ func Prepare(ctx context.Context, parent *cobra.Command) *cobra.Command {
 
 			brwOpts := brwjsz.Options{
 				Site: &brwjsz.Site{
-					Disk: pathz.MustParse(siteDir),
+					Disk: pathz.MustParse(absSite),
 				},
 			}
 			brwOpts.Chrome(opts.bin, !opts.disableHeadless, "")
