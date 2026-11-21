@@ -9,7 +9,7 @@ import (
 	"time"
 
 	"github.com/infinity6-ai/gox/brwjsz/brwclient"
-	"github.com/infinity6-ai/gox/brwjsz/internal/internal/stzfiles"
+	"github.com/infinity6-ai/gox/brwjsz/internal/stzfiles"
 	"github.com/infinity6-ai/gox/commonz/idgen"
 	"github.com/infinity6-ai/gox/commonz/pathz"
 	"github.com/infinity6-ai/gox/httpz/httpzrequest"
