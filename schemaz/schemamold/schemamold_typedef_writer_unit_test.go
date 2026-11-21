@@ -1,9 +1,9 @@
-package jsschemaz_test
+package schemamold_test
 
 import (
 	"testing"
 
-	"github.com/infinity6-ai/gox/schemaz/jsschemaz"
+	"github.com/infinity6-ai/gox/schemaz/schemamold"
 	"github.com/infinity6-ai/gox/schemaz/typeastz"
 	"github.com/stretchr/testify/require"
 )
@@ -17,7 +17,7 @@ func TestUnitFormatTypedefs(t *testing.T) {
 
 	check := func(t *testing.T, s testScenario) {
 		t.Helper()
-		got := jsschemaz.FormatTypedefs(&s.in)
+		got := schemamold.FormatTypedefs(&s.in)
 		require.Equal(t, s.want, got)
 	}
 

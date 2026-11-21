@@ -8,7 +8,7 @@ import (
 	"github.com/infinity6-ai/gox/commonz/stringz/camelz"
 	"github.com/infinity6-ai/gox/commonz/validation/checker"
 	"github.com/infinity6-ai/gox/routez/apiz"
-	"github.com/infinity6-ai/gox/schemaz/jsschemaz"
+	"github.com/infinity6-ai/gox/schemaz/schemamold"
 	"github.com/infinity6-ai/gox/schemaz/typeastz"
 	"github.com/infinity6-ai/gox/schemaz/schemaz"
 )
@@ -47,12 +47,12 @@ type Apis struct {
 }
 
 type Parser struct {
-	schemaParser *jsschemaz.Parser
+	schemaParser *schemamold.Parser
 }
 
-func New(schemaParser *jsschemaz.Parser) *Parser {
+func New(schemaParser *schemamold.Parser) *Parser {
 	if schemaParser == nil {
-		schemaParser = jsschemaz.New()
+		schemaParser = schemamold.New()
 	}
 	return &Parser{schemaParser: schemaParser}
 }

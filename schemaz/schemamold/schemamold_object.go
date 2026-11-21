@@ -1,4 +1,4 @@
-package jsschemaz
+package schemamold
 
 import (
 	"context"
