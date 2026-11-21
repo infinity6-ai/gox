@@ -6,15 +6,10 @@ import (
 	"reflect"
 
 	"github.com/infinity6-ai/gox/commonz/jsonz/jsonzembedded"
-	"github.com/infinity6-ai/gox/commonz/logz"
 	"github.com/infinity6-ai/gox/commonz/validation/checker"
 	"github.com/infinity6-ai/gox/schemaz/jstypez"
 	"github.com/infinity6-ai/gox/schemaz/schemaz"
 )
-
-type tlogger logz.Type
-
-var logger = logz.Create(tlogger(true))
 
 func (p *Parser) ParseAny(ctx context.Context, baseId string, v any) (*jstypez.Typedef, *jstypez.Typedefs) {
 	if v == nil {
@@ -147,9 +142,6 @@ func (p *Parser) checkSchema(ctx context.Context, baseId string, val reflect.Val
 func checkCustom(ctx context.Context, baseId string, val reflect.Value) (*jstypez.Typedef, *jstypez.Typedefs) {
 	v := val.Interface()
 	if ret, tdfs := Resolve(v); ret != nil {
-		if ret.Head.Typ != jstypez.TypBoolean && ret.Head.Typ != jstypez.TypString && ret.Head.Typ != jstypez.TypNumber {
-			logger.Info(ctx, "non basic parser custom detected", map[string]any{"typ": ret.Head.Typ, "base": baseId})
-		}
 		return ret, tdfs
 	}
 	return nil, nil
