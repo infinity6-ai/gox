@@ -1,10 +1,10 @@
-package jsapiz_test
+package apispecz_test
 
 import (
 	"testing"
 
 	"github.com/infinity6-ai/gox/commonz/jsonz"
-	"github.com/infinity6-ai/gox/routez/jsapiz"
+	"github.com/infinity6-ai/gox/routez/apispecz"
 	"github.com/infinity6-ai/gox/routez/sampleroutez/routezsamplefraction"
 	"github.com/infinity6-ai/gox/schemaz/typeastz"
 	"github.com/infinity6-ai/gox/schemaz/schemaz"
@@ -14,12 +14,12 @@ import (
 func TestUnitFractionSample(t *testing.T) {
 	ctx := t.Context()
 	api := routezsamplefraction.NewService().Api()
-	parser := jsapiz.New(nil)
+	parser := apispecz.New(nil)
 	actual := parser.ParseApi(ctx, api)
 	jsonz.MustParse(jsonz.MustFormat(actual).String(), &actual)
 
-	expected := &jsapiz.Api{
-		Spec: jsapiz.ApiSpec{
+	expected := &apispecz.Api{
+		Spec: apispecz.ApiSpec{
 			Id:      "sample-fraction",
 			CamelId: "apiSampleFraction",
 			Desc: &schemaz.Desc{
@@ -110,7 +110,7 @@ func TestUnitFractionSample(t *testing.T) {
 				Head: &typeastz.Tuple{Typ: "string", Name: "dszTime", Summary: "Missing Summary"},
 			},
 		}),
-		Req: jsapiz.Req{
+		Req: apispecz.Req{
 			Params: typeastz.Typedef{
 				Head:       &typeastz.Tuple{Typ: "apiSampleFractionParams", Name: "params"},
 				Properties: typeastz.NewTuples(nil),
@@ -128,7 +128,7 @@ func TestUnitFractionSample(t *testing.T) {
 				Properties: typeastz.NewTuples(nil),
 			},
 		},
-		Resp: jsapiz.Resp{
+		Resp: apispecz.Resp{
 			Headers: typeastz.Typedef{
 				Head:       &typeastz.Tuple{Typ: "apiSampleFractionRespHeaders", Name: "respHeaders"},
 				Properties: typeastz.NewTuples(nil),

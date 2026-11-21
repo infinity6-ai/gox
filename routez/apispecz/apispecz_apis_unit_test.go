@@ -1,11 +1,11 @@
-package jsapiz_test
+package apispecz_test
 
 import (
 	"testing"
 
 	"github.com/infinity6-ai/gox/commonz/jsonz"
 	"github.com/infinity6-ai/gox/routez/apiz"
-	"github.com/infinity6-ai/gox/routez/jsapiz"
+	"github.com/infinity6-ai/gox/routez/apispecz"
 	"github.com/infinity6-ai/gox/routez/sampleroutez/routezsamplefraction"
 	"github.com/infinity6-ai/gox/schemaz/typeastz"
 	"github.com/stretchr/testify/require"
@@ -15,15 +15,15 @@ func TestUnitParseApis(t *testing.T) {
 	ctx := t.Context()
 	type testScenario struct {
 		in   []apiz.Api
-		want *jsapiz.Apis
+		want *apispecz.Apis
 	}
 
-	parser := jsapiz.New(nil)
+	parser := apispecz.New(nil)
 
 	check := func(t *testing.T, s testScenario) {
 		t.Helper()
 		actual := parser.ParseApis(ctx, s.in)
-		var expected *jsapiz.Apis
+		var expected *apispecz.Apis
 		if s.want != nil {
 			jsonz.MustParse(jsonz.MustFormat(s.want).String(), &expected)
 		}
@@ -34,8 +34,8 @@ func TestUnitParseApis(t *testing.T) {
 	t.Run("empty apis slice", func(t *testing.T) {
 		check(t, testScenario{
 			in: []apiz.Api{},
-			want: &jsapiz.Apis{
-				Apis:     []*jsapiz.Api{},
+			want: &apispecz.Apis{
+				Apis:     []*apispecz.Api{},
 				Typedefs: typeastz.NewTypedefs(nil),
 			},
 		})
@@ -44,8 +44,8 @@ func TestUnitParseApis(t *testing.T) {
 	t.Run("nil apis slice", func(t *testing.T) {
 		check(t, testScenario{
 			in: nil,
-			want: &jsapiz.Apis{
-				Apis:     []*jsapiz.Api{},
+			want: &apispecz.Apis{
+				Apis:     []*apispecz.Api{},
 				Typedefs: typeastz.NewTypedefs(nil),
 			},
 		})
@@ -56,8 +56,8 @@ func TestUnitParseApis(t *testing.T) {
 		expectedApi := parser.ParseApi(ctx, api)
 		check(t, testScenario{
 			in: []apiz.Api{api},
-			want: &jsapiz.Apis{
-				Apis:     []*jsapiz.Api{expectedApi},
+			want: &apispecz.Apis{
+				Apis:     []*apispecz.Api{expectedApi},
 				Typedefs: expectedApi.Typedefs,
 			},
 		})
@@ -70,8 +70,8 @@ func TestUnitParseApis(t *testing.T) {
 
 		check(t, testScenario{
 			in: []apiz.Api{api1, api2},
-			want: &jsapiz.Apis{
-				Apis:     []*jsapiz.Api{expectedApi, expectedApi},
+			want: &apispecz.Apis{
+				Apis:     []*apispecz.Api{expectedApi, expectedApi},
 				Typedefs: expectedApi.Typedefs,
 			},
 		})

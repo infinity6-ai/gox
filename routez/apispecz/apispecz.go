@@ -1,4 +1,4 @@
-package jsapiz
+package apispecz
 
 import (
 	"context"

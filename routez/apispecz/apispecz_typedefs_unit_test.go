@@ -1,33 +1,33 @@
-package jsapiz_test
+package apispecz_test
 
 import (
 	"testing"
 
-	"github.com/infinity6-ai/gox/routez/jsapiz"
+	"github.com/infinity6-ai/gox/routez/apispecz"
 	"github.com/infinity6-ai/gox/schemaz/typeastz"
 	"github.com/stretchr/testify/require"
 )
 
 func TestUnitExtractTypedefs(t *testing.T) {
-	api := &jsapiz.Api{
-		Spec: jsapiz.ApiSpec{
+	api := &apispecz.Api{
+		Spec: apispecz.ApiSpec{
 			CamelId: "apiCustomAction",
 			Method:  "POST",
 			Path:    "/api/custom/action",
 		},
-		Req: jsapiz.Req{
+		Req: apispecz.Req{
 			Payload: typeastz.Typedef{
 				Head: &typeastz.Tuple{Typ: "apiCustomActionReqPayload", GoTyp: "models.CustomReq", Name: "payload"},
 			},
 		},
-		Resp: jsapiz.Resp{
+		Resp: apispecz.Resp{
 			Payload: typeastz.Typedef{
 				Head: &typeastz.Tuple{Typ: "apiCustomActionRespPayload", GoTyp: "models.CustomResp", Name: "payload"},
 			},
 		},
 	}
 
-	tds := jsapiz.ExtractTypedefs([]*jsapiz.Api{api})
+	tds := apispecz.ExtractTypedefs([]*apispecz.Api{api})
 	allTds := tds.All()
 	require.Len(t, allTds, 2)
 
