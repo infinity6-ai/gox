@@ -5,20 +5,20 @@ import (
 	"reflect"
 	"time"
 
-	"github.com/infinity6-ai/gox/schemaz/jstypez"
+	"github.com/infinity6-ai/gox/schemaz/typeastz"
 	"github.com/infinity6-ai/gox/schemaz/schemaz"
 )
 
 type Parser struct {
-	known map[reflect.Type]*jstypez.Tuple
+	known map[reflect.Type]*typeastz.Tuple
 }
 
 // New creates a new base Parser initialized with standard library types (e.g. time.Time).
 func New() *Parser {
 	p := &Parser{
-		known: make(map[reflect.Type]*jstypez.Tuple),
+		known: make(map[reflect.Type]*typeastz.Tuple),
 	}
-	p.AddKnownType(time.Time{}, jstypez.TypTime)
+	p.AddKnownType(time.Time{}, typeastz.TypTime)
 	return p
 }
 
@@ -26,14 +26,14 @@ func New() *Parser {
 // Supports fluent chaining: p.AddKnownType(...).AddKnownType(...)
 func (p *Parser) AddKnownType(sample any, jsType string) *Parser {
 	t := reflect.TypeOf(sample)
-	p.known[t] = &jstypez.Tuple{
+	p.known[t] = &typeastz.Tuple{
 		Typ:   jsType,
 		GoTyp: t.String(),
 	}
 	return p
 }
 
-func (p *Parser) knownTypes(ctx context.Context, baseId string, val reflect.Value) (*jstypez.Typedef, *jstypez.Typedefs) {
+func (p *Parser) knownTypes(ctx context.Context, baseId string, val reflect.Value) (*typeastz.Typedef, *typeastz.Typedefs) {
 	if !val.IsValid() {
 		return nil, nil
 	}
@@ -51,8 +51,8 @@ func (p *Parser) knownTypes(ctx context.Context, baseId string, val reflect.Valu
 
 	t := reflect.TypeOf(v)
 	if tuple, ok := p.known[t]; ok {
-		return &jstypez.Typedef{
-			Head: &jstypez.Tuple{
+		return &typeastz.Typedef{
+			Head: &typeastz.Tuple{
 				Typ:   tuple.Typ,
 				GoTyp: tuple.GoTyp,
 			},

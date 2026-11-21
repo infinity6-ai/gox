@@ -7,7 +7,7 @@ import (
 	"github.com/infinity6-ai/gox/routez/apiz"
 	"github.com/infinity6-ai/gox/routez/jsapiz"
 	"github.com/infinity6-ai/gox/routez/sampleroutez/routezsamplefraction"
-	"github.com/infinity6-ai/gox/schemaz/jstypez"
+	"github.com/infinity6-ai/gox/schemaz/typeastz"
 	"github.com/stretchr/testify/require"
 )
 
@@ -36,7 +36,7 @@ func TestUnitParseApis(t *testing.T) {
 			in: []apiz.Api{},
 			want: &jsapiz.Apis{
 				Apis:     []*jsapiz.Api{},
-				Typedefs: jstypez.NewTypedefs(nil),
+				Typedefs: typeastz.NewTypedefs(nil),
 			},
 		})
 	})
@@ -46,7 +46,7 @@ func TestUnitParseApis(t *testing.T) {
 			in: nil,
 			want: &jsapiz.Apis{
 				Apis:     []*jsapiz.Api{},
-				Typedefs: jstypez.NewTypedefs(nil),
+				Typedefs: typeastz.NewTypedefs(nil),
 			},
 		})
 	})

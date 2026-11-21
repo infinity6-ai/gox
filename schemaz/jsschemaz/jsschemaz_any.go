@@ -7,13 +7,13 @@ import (
 
 	"github.com/infinity6-ai/gox/commonz/jsonz/jsonzembedded"
 	"github.com/infinity6-ai/gox/commonz/validation/checker"
-	"github.com/infinity6-ai/gox/schemaz/jstypez"
+	"github.com/infinity6-ai/gox/schemaz/typeastz"
 	"github.com/infinity6-ai/gox/schemaz/schemaz"
 )
 
-func (p *Parser) ParseAny(ctx context.Context, baseId string, v any) (*jstypez.Typedef, *jstypez.Typedefs) {
+func (p *Parser) ParseAny(ctx context.Context, baseId string, v any) (*typeastz.Typedef, *typeastz.Typedefs) {
 	if v == nil {
-		return &jstypez.Typedef{Head: &jstypez.Tuple{Typ: "any", GoTyp: "any"}}, nil
+		return &typeastz.Typedef{Head: &typeastz.Tuple{Typ: "any", GoTyp: "any"}}, nil
 	}
 
 	val := reflect.ValueOf(v)
@@ -30,10 +30,10 @@ func (p *Parser) ParseAny(ctx context.Context, baseId string, v any) (*jstypez.T
 		a, b := p.ParseAny(ctx, baseId, v)
 		a.Head.Name = baseId
 		if b == nil {
-			b = &jstypez.Typedefs{}
+			b = &typeastz.Typedefs{}
 		}
 		b.Add(a)
-		a = &jstypez.Typedef{Head: &jstypez.Tuple{Typ: "i6JsonEmbedded<" + a.Head.Name + ">", GoTyp: ""}}
+		a = &typeastz.Typedef{Head: &typeastz.Tuple{Typ: "i6JsonEmbedded<" + a.Head.Name + ">", GoTyp: ""}}
 		return a, b
 	}
 
@@ -57,16 +57,16 @@ func (p *Parser) ParseAny(ctx context.Context, baseId string, v any) (*jstypez.T
 	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64,
 		reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64,
 		reflect.Float32, reflect.Float64:
-		return &jstypez.Typedef{Head: &jstypez.Tuple{Typ: jstypez.TypNumber, GoTyp: t.String()}}, nil
+		return &typeastz.Typedef{Head: &typeastz.Tuple{Typ: typeastz.TypNumber, GoTyp: t.String()}}, nil
 
 	case reflect.String:
-		return &jstypez.Typedef{Head: &jstypez.Tuple{Typ: jstypez.TypString, GoTyp: t.String()}}, nil
+		return &typeastz.Typedef{Head: &typeastz.Tuple{Typ: typeastz.TypString, GoTyp: t.String()}}, nil
 
 	case reflect.Bool:
-		return &jstypez.Typedef{Head: &jstypez.Tuple{Typ: jstypez.TypBoolean, GoTyp: t.String()}}, nil
+		return &typeastz.Typedef{Head: &typeastz.Tuple{Typ: typeastz.TypBoolean, GoTyp: t.String()}}, nil
 
 	case reflect.Slice, reflect.Array:
-		var allTdfs jstypez.Typedefs
+		var allTdfs typeastz.Typedefs
 
 		elemType := val.Type().Elem()
 		elemZeroVal := reflect.Zero(elemType).Interface()
@@ -78,12 +78,12 @@ func (p *Parser) ParseAny(ctx context.Context, baseId string, v any) (*jstypez.T
 		allTdfs.ExtractFrom(eTdfs)
 		allTdfs.Add(elemTdf)
 
-		return &jstypez.Typedef{
-			Head: &jstypez.Tuple{Typ: fmt.Sprintf("Array<%s>", elemTdf.Head.Name)},
+		return &typeastz.Typedef{
+			Head: &typeastz.Tuple{Typ: fmt.Sprintf("Array<%s>", elemTdf.Head.Name)},
 		}, &allTdfs
 
 	case reflect.Map:
-		var allTdfs jstypez.Typedefs
+		var allTdfs typeastz.Typedefs
 
 		mapType := val.Type()
 		keyType := mapType.Key()
@@ -105,8 +105,8 @@ func (p *Parser) ParseAny(ctx context.Context, baseId string, v any) (*jstypez.T
 		allTdfs.ExtractFrom(vTdfs)
 		allTdfs.Add(keyTdf, valTdf)
 
-		return &jstypez.Typedef{
-			Head: &jstypez.Tuple{Typ: fmt.Sprintf("Record<%s, %s>", keyTdf.Head.Name, valTdf.Head.Name)},
+		return &typeastz.Typedef{
+			Head: &typeastz.Tuple{Typ: fmt.Sprintf("Record<%s, %s>", keyTdf.Head.Name, valTdf.Head.Name)},
 		}, &allTdfs
 
 	default:
@@ -114,7 +114,7 @@ func (p *Parser) ParseAny(ctx context.Context, baseId string, v any) (*jstypez.T
 	}
 }
 
-func (p *Parser) checkSchema(ctx context.Context, baseId string, val reflect.Value) (*jstypez.Typedef, *jstypez.Typedefs) {
+func (p *Parser) checkSchema(ctx context.Context, baseId string, val reflect.Value) (*typeastz.Typedef, *typeastz.Typedefs) {
 	type S interface {
 		Schema() *schemaz.Schema
 	}
@@ -139,7 +139,7 @@ func (p *Parser) checkSchema(ctx context.Context, baseId string, val reflect.Val
 	return a, b
 }
 
-func checkCustom(ctx context.Context, baseId string, val reflect.Value) (*jstypez.Typedef, *jstypez.Typedefs) {
+func checkCustom(ctx context.Context, baseId string, val reflect.Value) (*typeastz.Typedef, *typeastz.Typedefs) {
 	v := val.Interface()
 	if ret, tdfs := Resolve(v); ret != nil {
 		return ret, tdfs

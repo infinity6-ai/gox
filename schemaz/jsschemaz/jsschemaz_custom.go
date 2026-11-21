@@ -4,32 +4,46 @@ import (
 	"reflect"
 
 	"github.com/infinity6-ai/gox/commonz/validation/checker"
-	"github.com/infinity6-ai/gox/schemaz/jstypez"
+	"github.com/infinity6-ai/gox/schemaz/typeastz"
 )
 
-func Resolve(v any) (*jstypez.Typedef, *jstypez.Typedefs) {
-	if v, ok := v.(jstypez.CustomType); ok {
-		return validate(v.JSTypedef())
+func Resolve(v any) (*typeastz.Typedef, *typeastz.Typedefs) {
+	if ct, ok := v.(typeastz.CustomType); ok {
+		return validate(ct.CustomType())
 	}
+	if ct, ok := v.(typeastz.JSTypedef); ok {
+		return validate(ct.JSTypedef())
+	}
+
 	rv := reflect.ValueOf(v)
-	if v, ok := v.(jstypez.CustomTypeSimple); ok {
-		return &jstypez.Typedef{Head: &jstypez.Tuple{Typ: v.JSType(), GoTyp: rv.Type().String()}}, nil
+	if ct, ok := v.(typeastz.CustomTypeSimple); ok {
+		return &typeastz.Typedef{Head: &typeastz.Tuple{Typ: ct.CustomTypeSimple(), GoTyp: rv.Type().String()}}, nil
 	}
+	if ct, ok := v.(typeastz.JSType); ok {
+		return &typeastz.Typedef{Head: &typeastz.Tuple{Typ: ct.JSType(), GoTyp: rv.Type().String()}}, nil
+	}
+
 	if rv.IsValid() && rv.Kind() != reflect.Ptr {
 		ptr := reflect.New(rv.Type())
 		ptr.Elem().Set(rv)
-		if ct, ok := ptr.Interface().(jstypez.CustomType); ok {
+		if ct, ok := ptr.Interface().(typeastz.CustomType); ok {
+			return validate(ct.CustomType())
+		}
+		if ct, ok := ptr.Interface().(typeastz.JSTypedef); ok {
 			return validate(ct.JSTypedef())
 		}
-		if ct, ok := ptr.Interface().(jstypez.CustomTypeSimple); ok {
-			return &jstypez.Typedef{Head: &jstypez.Tuple{Typ: ct.JSType(), GoTyp: rv.Type().String()}}, nil
+		if ct, ok := ptr.Interface().(typeastz.CustomTypeSimple); ok {
+			return &typeastz.Typedef{Head: &typeastz.Tuple{Typ: ct.CustomTypeSimple(), GoTyp: rv.Type().String()}}, nil
+		}
+		if ct, ok := ptr.Interface().(typeastz.JSType); ok {
+			return &typeastz.Typedef{Head: &typeastz.Tuple{Typ: ct.JSType(), GoTyp: rv.Type().String()}}, nil
 		}
 	}
 
 	return nil, nil
 }
 
-func validate(typedef *jstypez.Typedef, typedefs *jstypez.Typedefs) (*jstypez.Typedef, *jstypez.Typedefs) {
+func validate(typedef *typeastz.Typedef, typedefs *typeastz.Typedefs) (*typeastz.Typedef, *typeastz.Typedefs) {
 	checker.StrNotEmpty(typedef.Head.GoTyp, "GoTyp is required")
 	return typedef, typedefs
 }

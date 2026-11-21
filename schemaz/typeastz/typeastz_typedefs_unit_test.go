@@ -1,19 +1,19 @@
-package jstypez_test
+package typeastz_test
 
 import (
 	"encoding/json"
 	"testing"
 
+	"github.com/infinity6-ai/gox/schemaz/typeastz"
 	"github.com/stretchr/testify/require"
-	"github.com/infinity6-ai/gox/schemaz/jstypez"
 )
 
 func TestUnitTuples(t *testing.T) {
 	type testScenario struct {
 		name       string
-		tuples     []jstypez.Tuple
+		tuples     []typeastz.Tuple
 		jsonInput  string
-		wantTuples []jstypez.Tuple
+		wantTuples []typeastz.Tuple
 		wantJSON   string
 	}
 
@@ -21,7 +21,7 @@ func TestUnitTuples(t *testing.T) {
 		t.Helper()
 
 		if s.tuples != nil {
-			tups := jstypez.NewTuples(s.tuples)
+			tups := typeastz.NewTuples(s.tuples)
 			require.Equal(t, s.wantTuples, tups.All())
 
 			data, err := json.Marshal(tups)
@@ -30,14 +30,14 @@ func TestUnitTuples(t *testing.T) {
 				require.JSONEq(t, s.wantJSON, string(data))
 			}
 
-			var unmarshaled jstypez.Tuples
+			var unmarshaled typeastz.Tuples
 			err = json.Unmarshal(data, &unmarshaled)
 			require.NoError(t, err)
 			require.Equal(t, s.wantTuples, unmarshaled.All())
 		}
 
 		if s.jsonInput != "" {
-			var unmarshaled jstypez.Tuples
+			var unmarshaled typeastz.Tuples
 			err := json.Unmarshal([]byte(s.jsonInput), &unmarshaled)
 			require.NoError(t, err)
 			require.Equal(t, s.wantTuples, unmarshaled.All())
@@ -46,13 +46,13 @@ func TestUnitTuples(t *testing.T) {
 
 	t.Run("tuples preserves fields through creation and serialization", func(t *testing.T) {
 		check(t, testScenario{
-			tuples: []jstypez.Tuple{
-				{Typ: jstypez.TypString, Name: "id", Summary: "Identifier"},
-				{Typ: jstypez.TypNumber, Name: "count", Summary: "Counter"},
+			tuples: []typeastz.Tuple{
+				{Typ: typeastz.TypString, Name: "id", Summary: "Identifier"},
+				{Typ: typeastz.TypNumber, Name: "count", Summary: "Counter"},
 			},
-			wantTuples: []jstypez.Tuple{
-				{Typ: jstypez.TypString, Name: "id", Summary: "Identifier"},
-				{Typ: jstypez.TypNumber, Name: "count", Summary: "Counter"},
+			wantTuples: []typeastz.Tuple{
+				{Typ: typeastz.TypString, Name: "id", Summary: "Identifier"},
+				{Typ: typeastz.TypNumber, Name: "count", Summary: "Counter"},
 			},
 			wantJSON: `[
 				{"typ":"string","name":"id","summary":"Identifier"},
@@ -66,45 +66,45 @@ func TestUnitTuples(t *testing.T) {
 			jsonInput: `[
 				{"typ":"object","name":"file","summary":"File stat"}
 			]`,
-			wantTuples: []jstypez.Tuple{
+			wantTuples: []typeastz.Tuple{
 				{Typ: "object", Name: "file", Summary: "File stat"},
 			},
 		})
 	})
 
 	t.Run("tuples skip identical duplicate tuple", func(t *testing.T) {
-		tups := jstypez.NewTuples([]jstypez.Tuple{
-			{Typ: jstypez.TypString, Name: "foo", Summary: "summary"},
+		tups := typeastz.NewTuples([]typeastz.Tuple{
+			{Typ: typeastz.TypString, Name: "foo", Summary: "summary"},
 		})
-		tups.Add(jstypez.Tuple{Typ: jstypez.TypString, Name: "foo", Summary: "summary"})
+		tups.Add(typeastz.Tuple{Typ: typeastz.TypString, Name: "foo", Summary: "summary"})
 		require.Len(t, tups.All(), 1)
 	})
 
 	t.Run("tuples panic on collision with different tuple fields", func(t *testing.T) {
-		tups := jstypez.NewTuples([]jstypez.Tuple{
-			{Typ: jstypez.TypNumber, Name: "field", Summary: "desc"},
+		tups := typeastz.NewTuples([]typeastz.Tuple{
+			{Typ: typeastz.TypNumber, Name: "field", Summary: "desc"},
 		})
 		require.Panics(t, func() {
-			tups.Add(jstypez.Tuple{Typ: jstypez.TypString, Name: "field", Summary: "desc"})
+			tups.Add(typeastz.Tuple{Typ: typeastz.TypString, Name: "field", Summary: "desc"})
 		})
 	})
 }
 
 func TestUnitTypedefs(t *testing.T) {
 	t.Run("typedef in Head and Properties", func(t *testing.T) {
-		td := &jstypez.Typedef{
-			Head: &jstypez.Tuple{
-				Typ:     jstypez.TypObject,
+		td := &typeastz.Typedef{
+			Head: &typeastz.Tuple{
+				Typ:     typeastz.TypObject,
 				Name:    "MyStruct",
 				Summary: "Sample struct",
 			},
-			Properties: jstypez.NewTuples([]jstypez.Tuple{
-				{Typ: jstypez.TypString, Name: "name", Summary: "Name"},
-				{Typ: jstypez.TypNumber, Name: "ratio", Summary: "Ratio"},
+			Properties: typeastz.NewTuples([]typeastz.Tuple{
+				{Typ: typeastz.TypString, Name: "name", Summary: "Name"},
+				{Typ: typeastz.TypNumber, Name: "ratio", Summary: "Ratio"},
 			}),
 		}
 
-		tds := jstypez.NewTypedefs([]*jstypez.Typedef{td})
+		tds := typeastz.NewTypedefs([]*typeastz.Typedef{td})
 		all := tds.All()
 		require.Len(t, all, 1)
 		require.Equal(t, "MyStruct", all[0].Head.Name)
@@ -117,7 +117,7 @@ func TestUnitTypedefs(t *testing.T) {
 		data, err := json.Marshal(&tds)
 		require.NoError(t, err)
 
-		var unmarshaled jstypez.Typedefs
+		var unmarshaled typeastz.Typedefs
 		err = json.Unmarshal(data, &unmarshaled)
 		require.NoError(t, err)
 
@@ -131,13 +131,13 @@ func TestUnitTypedefs(t *testing.T) {
 	})
 
 	t.Run("typedefs panic on collision with different tuple fields", func(t *testing.T) {
-		td1 := &jstypez.Typedef{
-			Head: &jstypez.Tuple{Typ: jstypez.TypObject, Name: "Item", Summary: "Summary A"},
+		td1 := &typeastz.Typedef{
+			Head: &typeastz.Tuple{Typ: typeastz.TypObject, Name: "Item", Summary: "Summary A"},
 		}
-		td2 := &jstypez.Typedef{
-			Head: &jstypez.Tuple{Typ: jstypez.TypObject, Name: "Item", Summary: "Summary B"},
+		td2 := &typeastz.Typedef{
+			Head: &typeastz.Tuple{Typ: typeastz.TypObject, Name: "Item", Summary: "Summary B"},
 		}
-		tds := jstypez.NewTypedefs([]*jstypez.Typedef{td1})
+		tds := typeastz.NewTypedefs([]*typeastz.Typedef{td1})
 		require.Panics(t, func() {
 			tds.Add(td2)
 		})

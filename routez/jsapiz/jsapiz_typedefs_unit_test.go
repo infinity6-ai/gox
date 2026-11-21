@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	"github.com/infinity6-ai/gox/routez/jsapiz"
-	"github.com/infinity6-ai/gox/schemaz/jstypez"
+	"github.com/infinity6-ai/gox/schemaz/typeastz"
 	"github.com/stretchr/testify/require"
 )
 
@@ -16,13 +16,13 @@ func TestUnitExtractTypedefs(t *testing.T) {
 			Path:    "/api/custom/action",
 		},
 		Req: jsapiz.Req{
-			Payload: jstypez.Typedef{
-				Head: &jstypez.Tuple{Typ: "apiCustomActionReqPayload", GoTyp: "models.CustomReq", Name: "payload"},
+			Payload: typeastz.Typedef{
+				Head: &typeastz.Tuple{Typ: "apiCustomActionReqPayload", GoTyp: "models.CustomReq", Name: "payload"},
 			},
 		},
 		Resp: jsapiz.Resp{
-			Payload: jstypez.Typedef{
-				Head: &jstypez.Tuple{Typ: "apiCustomActionRespPayload", GoTyp: "models.CustomResp", Name: "payload"},
+			Payload: typeastz.Typedef{
+				Head: &typeastz.Tuple{Typ: "apiCustomActionRespPayload", GoTyp: "models.CustomResp", Name: "payload"},
 			},
 		},
 	}
@@ -31,8 +31,8 @@ func TestUnitExtractTypedefs(t *testing.T) {
 	allTds := tds.All()
 	require.Len(t, allTds, 2)
 
-	var reqTd *jstypez.Typedef
-	var respTd *jstypez.Typedef
+	var reqTd *typeastz.Typedef
+	var respTd *typeastz.Typedef
 	for _, td := range allTds {
 		if td.Head.Name == "apiCustomActionReq" {
 			reqTd = td

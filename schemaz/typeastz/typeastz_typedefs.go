@@ -1,4 +1,4 @@
-package jstypez
+package typeastz
 
 import (
 	"encoding/json"
@@ -49,7 +49,6 @@ func (t Tuples) All() []Tuple {
 }
 
 func (t *Tuples) Add(tuples ...Tuple) {
-	// Lazy initialization of the map
 	if t.m == nil {
 		t.m = make(map[string]Tuple)
 	}
@@ -60,7 +59,6 @@ func (t *Tuples) Add(tuples ...Tuple) {
 			if old != n {
 				panic(fmt.Sprintf("collision, old: %#v, new: %#v", old, n))
 			}
-			// If it already exists and is identical, skip appending to avoid slice duplicates
 			continue
 		}
 
@@ -121,7 +119,6 @@ func (t *Typedefs) All() []*Typedef {
 }
 
 func (t *Typedefs) Add(typedefs ...*Typedef) {
-	// Lazy initialization of the map
 	if t.m == nil {
 		t.m = make(map[string]*Typedef)
 	}
@@ -130,15 +127,11 @@ func (t *Typedefs) Add(typedefs ...*Typedef) {
 		if n.Head.Name == "" {
 			panic(fmt.Sprintf("name is required: %#v", n))
 		}
-		// Using Head.Name as the unique key for the typedef
 		old, ok := t.m[n.Head.Name]
 		if ok {
-			// Typedef contains uncomparable fields (map and slice inside Tuples),
-			// so we must use reflect.DeepEqual to check if they are identical.
 			if !reflect.DeepEqual(old, n) {
 				panic(fmt.Sprintf("collision, old: %#v, new: %#v", old, n))
 			}
-			// If it already exists and is completely identical, skip adding
 			continue
 		}
 
@@ -147,9 +140,18 @@ func (t *Typedefs) Add(typedefs ...*Typedef) {
 }
 
 type CustomType interface {
-	JSTypedef() (*Typedef, *Typedefs)
+	CustomType() (*Typedef, *Typedefs)
 }
 
 type CustomTypeSimple interface {
+	CustomTypeSimple() string
+}
+
+// Backward compatibility interfaces
+type JSType interface {
 	JSType() string
+}
+
+type JSTypedef interface {
+	JSTypedef() (*Typedef, *Typedefs)
 }

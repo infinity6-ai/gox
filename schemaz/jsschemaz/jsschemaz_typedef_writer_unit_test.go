@@ -4,14 +4,14 @@ import (
 	"testing"
 
 	"github.com/infinity6-ai/gox/schemaz/jsschemaz"
-	"github.com/infinity6-ai/gox/schemaz/jstypez"
+	"github.com/infinity6-ai/gox/schemaz/typeastz"
 	"github.com/stretchr/testify/require"
 )
 
 func TestUnitFormatTypedefs(t *testing.T) {
 	type testScenario struct {
 		name string
-		in   jstypez.Typedefs
+		in   typeastz.Typedefs
 		want string
 	}
 
@@ -22,14 +22,14 @@ func TestUnitFormatTypedefs(t *testing.T) {
 	}
 
 	t.Run("basic object", func(t *testing.T) {
-		var tds jstypez.Typedefs
-		td := &jstypez.Typedef{
-			Head:       &jstypez.Tuple{Typ: jstypez.TypObject, Name: "MyType", Summary: "My summary"},
-			Properties: &jstypez.Tuples{},
+		var tds typeastz.Typedefs
+		td := &typeastz.Typedef{
+			Head:       &typeastz.Tuple{Typ: typeastz.TypObject, Name: "MyType", Summary: "My summary"},
+			Properties: &typeastz.Tuples{},
 		}
 		td.Properties.Add(
-			jstypez.Tuple{Typ: jstypez.TypString, Name: "foo"},
-			jstypez.Tuple{Typ: jstypez.TypNumber, Name: "bar", Summary: "bar summary"},
+			typeastz.Tuple{Typ: typeastz.TypString, Name: "foo"},
+			typeastz.Tuple{Typ: typeastz.TypNumber, Name: "bar", Summary: "bar summary"},
 		)
 		tds.Add(td)
 
@@ -41,15 +41,15 @@ func TestUnitFormatTypedefs(t *testing.T) {
 	})
 
 	t.Run("multiple typedefs", func(t *testing.T) {
-		var tds jstypez.Typedefs
-		td1 := &jstypez.Typedef{
-			Head: &jstypez.Tuple{Typ: jstypez.TypString, Name: "AliasType"},
+		var tds typeastz.Typedefs
+		td1 := &typeastz.Typedef{
+			Head: &typeastz.Tuple{Typ: typeastz.TypString, Name: "AliasType"},
 		}
-		td2 := &jstypez.Typedef{
-			Head:       &jstypez.Tuple{Typ: jstypez.TypObject, Name: "BType"},
-			Properties: &jstypez.Tuples{},
+		td2 := &typeastz.Typedef{
+			Head:       &typeastz.Tuple{Typ: typeastz.TypObject, Name: "BType"},
+			Properties: &typeastz.Tuples{},
 		}
-		td2.Properties.Add(jstypez.Tuple{Typ: jstypez.TypNumber, Name: "x"})
+		td2.Properties.Add(typeastz.Tuple{Typ: typeastz.TypNumber, Name: "x"})
 
 		tds.Add(td1, td2)
 
@@ -61,15 +61,15 @@ func TestUnitFormatTypedefs(t *testing.T) {
 	})
 
 	t.Run("various jstypes", func(t *testing.T) {
-		var tds jstypez.Typedefs
-		td := &jstypez.Typedef{
-			Head:       &jstypez.Tuple{Typ: jstypez.TypObject, Name: "ComplexType"},
-			Properties: &jstypez.Tuples{},
+		var tds typeastz.Typedefs
+		td := &typeastz.Typedef{
+			Head:       &typeastz.Tuple{Typ: typeastz.TypObject, Name: "ComplexType"},
+			Properties: &typeastz.Tuples{},
 		}
 		td.Properties.Add(
-			jstypez.Tuple{Typ: jstypez.TypBoolean, Name: "flag"},
-			jstypez.Tuple{Typ: "Array<boolean>", Name: "flags"},
-			jstypez.Tuple{Typ: "Record<string, object>", Name: "nested"},
+			typeastz.Tuple{Typ: typeastz.TypBoolean, Name: "flag"},
+			typeastz.Tuple{Typ: "Array<boolean>", Name: "flags"},
+			typeastz.Tuple{Typ: "Record<string, object>", Name: "nested"},
 		)
 		tds.Add(td)
 
@@ -81,17 +81,17 @@ func TestUnitFormatTypedefs(t *testing.T) {
 	})
 
 	t.Run("typedef and properties with gotyp comments", func(t *testing.T) {
-		var tds jstypez.Typedefs
-		td1 := &jstypez.Typedef{
-			Head: &jstypez.Tuple{Typ: jstypez.TypString, GoTyp: "time.Time", Name: "dszTime", Summary: "Timestamp"},
+		var tds typeastz.Typedefs
+		td1 := &typeastz.Typedef{
+			Head: &typeastz.Tuple{Typ: typeastz.TypString, GoTyp: "time.Time", Name: "dszTime", Summary: "Timestamp"},
 		}
-		td2 := &jstypez.Typedef{
-			Head:       &jstypez.Tuple{Typ: jstypez.TypObject, GoTyp: "models.User", Name: "UserType"},
-			Properties: &jstypez.Tuples{},
+		td2 := &typeastz.Typedef{
+			Head:       &typeastz.Tuple{Typ: typeastz.TypObject, GoTyp: "models.User", Name: "UserType"},
+			Properties: &typeastz.Tuples{},
 		}
 		td2.Properties.Add(
-			jstypez.Tuple{Typ: jstypez.TypString, GoTyp: "string", Name: "id"},
-			jstypez.Tuple{Typ: jstypez.TypNumber, GoTyp: "int64", Name: "age", Summary: "User age"},
+			typeastz.Tuple{Typ: typeastz.TypString, GoTyp: "string", Name: "id"},
+			typeastz.Tuple{Typ: typeastz.TypNumber, GoTyp: "int64", Name: "age", Summary: "User age"},
 		)
 		tds.Add(td1, td2)
 

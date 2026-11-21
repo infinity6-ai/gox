@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	"github.com/infinity6-ai/gox/schemaz/jsschemaz"
-	"github.com/infinity6-ai/gox/schemaz/jstypez"
+	"github.com/infinity6-ai/gox/schemaz/typeastz"
 	"github.com/infinity6-ai/gox/schemaz/schemaz"
 	"github.com/stretchr/testify/require"
 )
@@ -80,21 +80,21 @@ func TestUnitParseSchemaNestedObject(t *testing.T) {
 
 type sampleCustomEnum int
 
-func (sampleCustomEnum) JSTypedef() (*jstypez.Typedef, *jstypez.Typedefs) {
-	ref := &jstypez.Typedef{
-		Head: &jstypez.Tuple{
+func (sampleCustomEnum) JSTypedef() (*typeastz.Typedef, *typeastz.Typedefs) {
+	ref := &typeastz.Typedef{
+		Head: &typeastz.Tuple{
 			Typ:   "SampleCustomEnum",
 			GoTyp: "sampleCustomEnum",
 		},
 	}
-	def := &jstypez.Typedef{
-		Head: &jstypez.Tuple{
+	def := &typeastz.Typedef{
+		Head: &typeastz.Tuple{
 			Name:  "SampleCustomEnum",
 			Typ:   "1 | 2 | 4 | number",
 			GoTyp: "sampleCustomEnum",
 		},
 	}
-	tds := jstypez.NewTypedefs([]*jstypez.Typedef{def})
+	tds := typeastz.NewTypedefs([]*typeastz.Typedef{def})
 	return ref, &tds
 }
 

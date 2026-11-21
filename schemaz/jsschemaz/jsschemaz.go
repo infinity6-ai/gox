@@ -5,13 +5,13 @@ import (
 	"fmt"
 
 	"github.com/infinity6-ai/gox/commonz/validation/checker"
-	"github.com/infinity6-ai/gox/schemaz/jstypez"
+	"github.com/infinity6-ai/gox/schemaz/typeastz"
 	"github.com/infinity6-ai/gox/schemaz/schemaz"
 )
 
-func (p *Parser) ParseSchema(ctx context.Context, baseId string, schema *schemaz.Schema) (*jstypez.Typedef, *jstypez.Typedefs) {
-	var typedef *jstypez.Typedef
-	var typedefs *jstypez.Typedefs
+func (p *Parser) ParseSchema(ctx context.Context, baseId string, schema *schemaz.Schema) (*typeastz.Typedef, *typeastz.Typedefs) {
+	var typedef *typeastz.Typedef
+	var typedefs *typeastz.Typedefs
 	if schema.Object != nil {
 		s := schema.Object(false)
 		typedef, typedefs = p.ParseSchemaObject(ctx, baseId, s)

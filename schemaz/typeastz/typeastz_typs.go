@@ -1,4 +1,4 @@
-package jstypez
+package typeastz
 
 const (
 	TypString  = "string"

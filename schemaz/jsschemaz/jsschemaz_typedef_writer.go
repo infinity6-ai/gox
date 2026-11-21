@@ -4,10 +4,10 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/infinity6-ai/gox/schemaz/jstypez"
+	"github.com/infinity6-ai/gox/schemaz/typeastz"
 )
 
-func FormatTypedefs(pipedefs *jstypez.Typedefs) string {
+func FormatTypedefs(pipedefs *typeastz.Typedefs) string {
 	if pipedefs == nil {
 		return ""
 	}
