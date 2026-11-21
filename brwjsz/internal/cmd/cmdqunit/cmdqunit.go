@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"os"
 	"time"
 
 	"github.com/infinity6-ai/gox/brwjsz/brwclient"
@@ -25,9 +26,10 @@ type qunitOptions struct {
 	bin             string
 	disableHeadless bool
 	timeout         time.Duration
+	importMap       string
 }
 
-const discoveryRunnerJs = `async (suffix) => {
+const discoveryRunnerJs = `async (suffix, opts) => {
 	if (!suffix) {
 		suffix = '-test.js';
 	}
@@ -54,7 +56,7 @@ const discoveryRunnerJs = `async (suffix) => {
 		};
 	}
 
-	return await window.brwqunit.run(testUrls);
+	return await window.brwqunit.run(testUrls, opts);
 }`
 
 func formatReport(report *brwqunit.TestReport) error {
@@ -99,6 +101,24 @@ func formatReport(report *brwqunit.TestReport) error {
 	return fmt.Errorf("FAIL: %d/%d tests failed", report.Failed, report.Total)
 }
 
+func parseImportMap(raw string) any {
+	if raw == "" {
+		return nil
+	}
+	if content, err := os.ReadFile(raw); err == nil {
+		var parsed any
+		if err := json.Unmarshal(content, &parsed); err == nil {
+			return parsed
+		}
+		return string(content)
+	}
+	var parsed any
+	if err := json.Unmarshal([]byte(raw), &parsed); err == nil {
+		return parsed
+	}
+	return raw
+}
+
 // Prepare configures and attaches the qunit command to the parent cobra command.
 func Prepare(ctx context.Context, parent *cobra.Command) *cobra.Command {
 	opts := &qunitOptions{}
@@ -112,6 +132,11 @@ func Prepare(ctx context.Context, parent *cobra.Command) *cobra.Command {
 				suffix = "-test.js"
 			}
 
+			runOpts := map[string]any{}
+			if im := parseImportMap(opts.importMap); im != nil {
+				runOpts["importMap"] = im
+			}
+
 			// Mode A: Run against active server daemon
 			if opts.state != "" {
 				state, err := cmdserver.ReadState(opts.state)
@@ -121,7 +146,7 @@ func Prepare(ctx context.Context, parent *cobra.Command) *cobra.Command {
 
 				reqPayload, err := json.Marshal(handlers.ExecRequest{
 					Code: discoveryRunnerJs,
-					Args: []any{suffix},
+					Args: []any{suffix, runOpts},
 				})
 				if err != nil {
 					return fmt.Errorf("failed to marshal qunit payload: %w", err)
@@ -190,7 +215,7 @@ func Prepare(ctx context.Context, parent *cobra.Command) *cobra.Command {
 				return fmt.Errorf("failed to start browser: %w", err)
 			}
 
-			report, err := brwclient.Call[*brwqunit.TestReport](cmdCtx, b.Client(), discoveryRunnerJs, suffix)
+			report, err := brwclient.Call[*brwqunit.TestReport](cmdCtx, b.Client(), discoveryRunnerJs, suffix, runOpts)
 			if err != nil {
 				return fmt.Errorf("failed to execute qunit discovery runner: %w", err)
 			}
@@ -205,6 +230,7 @@ func Prepare(ctx context.Context, parent *cobra.Command) *cobra.Command {
 	cmd.Flags().StringVar(&opts.bin, "bin", "", "Browser binary path (defaults to auto-detect)")
 	cmd.Flags().BoolVar(&opts.disableHeadless, "disable-headless", false, "Disable headless browser mode")
 	cmd.Flags().DurationVar(&opts.timeout, "timeout", 30*time.Second, "Execution timeout")
+	cmd.Flags().StringVar(&opts.importMap, "importmap", "", "Import map JSON string or file path for bare module specifiers")
 
 	if parent != nil {
 		parent.AddCommand(cmd)

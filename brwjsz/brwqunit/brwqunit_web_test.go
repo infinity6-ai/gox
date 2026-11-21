@@ -83,3 +83,64 @@ func TestWebRunE2E(t *testing.T) {
 	require.NotEmpty(t, failReport.Tests[0].Errors)
 	require.Contains(t, failReport.Tests[0].Errors[0].Message, "deliberate mismatch")
 }
+
+func TestWebImportMap(t *testing.T) {
+	ctx, cancel := context.WithTimeout(t.Context(), 15*time.Second)
+	defer cancel()
+
+	opts := brwjsz.Options{}
+	opts.Chrome("", true, "")
+
+	b := brwjsz.New(ctx, opts)
+	defer b.Close()
+
+	// Register ES module providing a helper function
+	calcModuleJs := `
+		export function multiply(a, b) {
+			return a * b;
+		}
+	`
+	b.Server().AddHandler("GET", "/modules/calc.js", func(ctx context.Context, resp httpzserver.Resp, req *httpzrequest.Req, params map[string]string) {
+		headers := make(http.Header)
+		headers.Set("Content-Type", "application/javascript")
+		w := resp(http.StatusOK, headers)
+		_, _ = w.Write([]byte(calcModuleJs))
+	})
+
+	// Register QUnit test that imports bare specifier 'my-calc'
+	importMapTestJs := `
+		QUnit.module('ImportMapSuite', () => {
+			QUnit.test('resolves bare specifier via import map', async (assert) => {
+				const { multiply } = await import('my-calc');
+				assert.equal(multiply(6, 7), 42, 'bare specifier resolved and executed');
+			});
+		});
+	`
+	b.Server().AddHandler("GET", "/tests/importmap-test.js", func(ctx context.Context, resp httpzserver.Resp, req *httpzrequest.Req, params map[string]string) {
+		headers := make(http.Header)
+		headers.Set("Content-Type", "application/javascript")
+		w := resp(http.StatusOK, headers)
+		_, _ = w.Write([]byte(importMapTestJs))
+	})
+
+	err := b.Start(ctx)
+	require.NoError(t, err)
+
+	client := b.Client()
+
+	runOpts := brwqunit.Options{
+		TestUrls: []string{"/tests/importmap-test.js"},
+		ImportMap: map[string]string{
+			"my-calc": "/modules/calc.js",
+		},
+	}
+
+	report, err := brwqunit.RunWithOptions(ctx, client, runOpts)
+	require.NoError(t, err)
+	require.Equal(t, "passed", report.Status)
+	require.Equal(t, 1, report.Total)
+	require.Equal(t, 1, report.Passed)
+	require.Equal(t, 0, report.Failed)
+
+	brwqunit.TestWithOptions(t, client, runOpts)
+}

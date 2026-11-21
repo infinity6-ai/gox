@@ -219,6 +219,30 @@ EOF
   echo "  OK: qunit against running daemon"
 }
 
+function cmd_qunit_importmap() {
+  ensure_binary
+  echo "--- Testing: qunit with --importmap ---"
+  local test_site="$TMP_DIR/qunit_importmap_site"
+  mkdir -p "$test_site"
+  cat << 'EOF' > "$test_site/calc-lib.js"
+export function add(a, b) { return a + b; }
+EOF
+
+  cat << 'EOF' > "$test_site/calc-test.js"
+QUnit.module('ImportMapSuite', () => {
+  QUnit.test('add via bare specifier', async (assert) => {
+    const { add } = await import('my-calc');
+    assert.equal(add(10, 20), 30, '10 + 20 = 30');
+  });
+});
+EOF
+
+  local res
+  res="$($BIN qunit --site "$test_site" --importmap '{"my-calc": "/calc-lib.js"}')"
+  echo "$res" | grep -q "PASS: 1/1 tests passed" || { echo "qunit importmap failed: $res"; exit 1; }
+  echo "  OK: qunit with --importmap"
+}
+
 function cmd_all() {
   echo "=========================================="
   echo "Running all brwjsz CLI command tests"
@@ -237,6 +261,7 @@ function cmd_all() {
   cmd_server_lifecycle
   cmd_qunit_standalone
   cmd_qunit_state
+  cmd_qunit_importmap
   echo "=========================================="
   echo "All brwjsz CLI tests passed successfully!"
   echo "=========================================="

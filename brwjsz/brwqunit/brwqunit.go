@@ -38,8 +38,20 @@ type TestReport struct {
 	Tests   []TestResult `json:"tests"`
 }
 
+// Options configures the execution of QUnit tests in the browser.
+type Options struct {
+	TestUrls  []string          `json:"testUrls,omitempty"`
+	ImportMap map[string]string `json:"importMap,omitempty"`
+	Module    bool              `json:"module,omitempty"`
+}
+
 // Run executes the specified QUnit test files in the browser and returns the structured test report.
 func Run(ctx context.Context, c *brwclient.Client, testUrls ...string) (*TestReport, error) {
+	return RunWithOptions(ctx, c, Options{TestUrls: testUrls})
+}
+
+// RunWithOptions executes QUnit tests with the provided options in the browser.
+func RunWithOptions(ctx context.Context, c *brwclient.Client, opts Options) (*TestReport, error) {
 	if c == nil {
 		return nil, fmt.Errorf("client is nil")
 	}
@@ -52,7 +64,7 @@ func Run(ctx context.Context, c *brwclient.Client, testUrls ...string) (*TestRep
 		return nil, fmt.Errorf("failed to load qunit runner: %w", err)
 	}
 
-	report, err := brwclient.Call[*TestReport](ctx, c, `(urls) => window.brwqunit.run(urls)`, testUrls)
+	report, err := brwclient.Call[*TestReport](ctx, c, `(urls, opts) => window.brwqunit.run(urls, opts)`, opts.TestUrls, opts)
 	if err != nil {
 		return nil, fmt.Errorf("failed running qunit tests: %w", err)
 	}
@@ -66,10 +78,23 @@ func MustRun(ctx context.Context, c *brwclient.Client, testUrls ...string) *Test
 	return report
 }
 
+// MustRunWithOptions executes QUnit tests with options in the browser, panicking on failure.
+func MustRunWithOptions(ctx context.Context, c *brwclient.Client, opts Options) *TestReport {
+	report, err := RunWithOptions(ctx, c, opts)
+	errorz.Check(err)
+	return report
+}
+
 // Test executes the specified QUnit test files in the browser and maps each test to a Go sub-test (t.Run).
 func Test(t *testing.T, c *brwclient.Client, testUrls ...string) {
 	t.Helper()
-	report, err := Run(t.Context(), c, testUrls...)
+	TestWithOptions(t, c, Options{TestUrls: testUrls})
+}
+
+// TestWithOptions executes QUnit tests with options in the browser and maps each test to a Go sub-test (t.Run).
+func TestWithOptions(t *testing.T, c *brwclient.Client, opts Options) {
+	t.Helper()
+	report, err := RunWithOptions(t.Context(), c, opts)
 	if err != nil {
 		t.Fatalf("failed running QUnit tests: %v", err)
 	}
