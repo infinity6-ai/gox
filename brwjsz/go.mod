@@ -3,9 +3,9 @@ module github.com/infinity6-ai/gox/brwjsz
 go 1.26.1
 
 require (
-	github.com/infinity6-ai/gox/commonz v0.0.78
-	github.com/infinity6-ai/gox/httpz v0.0.78
-	github.com/infinity6-ai/gox/versionz v0.0.78
+	github.com/infinity6-ai/gox/commonz v0.0.79
+	github.com/infinity6-ai/gox/httpz v0.0.79
+	github.com/infinity6-ai/gox/versionz v0.0.79
 	github.com/spf13/cobra v1.10.2
 	github.com/stretchr/testify v1.12.1
 )
