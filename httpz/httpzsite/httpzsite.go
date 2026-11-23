@@ -1,20 +1,28 @@
 package httpzsite
 
 import (
+	"bytes"
 	"context"
+	"fmt"
+	"io"
 	"net"
+	"net/http"
 
+	"github.com/infinity6-ai/gox/commonz/errorz"
+	"github.com/infinity6-ai/gox/commonz/trokerz"
 	"github.com/infinity6-ai/gox/commonz/urlz"
+	"github.com/infinity6-ai/gox/httpz/httpzrequest"
 	"github.com/infinity6-ai/gox/httpz/httpzserver"
 	"github.com/infinity6-ai/gox/httpz/httpzserver/filters/httpzserverfilterauthbasic"
 	"github.com/infinity6-ai/gox/httpz/httpzserver/httpzserverstatic"
 )
 
 type Site struct {
-	Context      context.Context
-	LocalAddress string
-	Pack         any
-	BasicUsers   map[string]string
+	Context       context.Context
+	LocalAddress  string
+	Pack          any
+	BasicUsers    map[string]string
+	TrokerOptions []trokerz.Options
 
 	server *httpzserver.Server
 }
@@ -39,6 +47,35 @@ func (s *Site) AddHandlers() {
 				return expectedPass == pass, nil
 			},
 		}))
+	}
+	if len(s.TrokerOptions) > 0 {
+		s.server.AddFilter(func(ctx context.Context, resp httpzserver.Resp, req *httpzrequest.Req, next httpzserver.Handler) {
+			var buf bytes.Buffer
+			var origWriter io.Writer
+
+			nResp := func(status int, headers http.Header) io.Writer {
+				if headers != nil {
+					headers.Del("Content-Length")
+				}
+				origWriter = resp(status, headers)
+				return &buf
+			}
+
+			next(ctx, nResp, req)
+
+			if origWriter != nil {
+				content := buf.String()
+				var err error
+				for _, opt := range s.TrokerOptions {
+					content, err = trokerz.Troke(content, opt)
+					if err != nil {
+						errorz.Check(fmt.Errorf("failed to apply troker: %w", err))
+					}
+				}
+				_, err = origWriter.Write([]byte(content))
+				errorz.Check(err)
+			}
+		})
 	}
 	s.server.AddHandler("GET", "/*", httpzserverstatic.StaticHandler(s.Pack))
 }
