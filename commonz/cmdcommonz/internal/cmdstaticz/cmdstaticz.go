@@ -48,6 +48,12 @@ func prepareGenerateCmd(parent *cobra.Command) {
 				out = errorz.Check2(filepath.Abs(out))
 				logger.Info(ctx, "stfiles generation", map[string]any{"out": out, "size": buf.Len()})
 				errorz.Check(os.MkdirAll(filepath.Dir(out), 0o755))
+
+				existing, err := os.ReadFile(out)
+				if err == nil && bytes.Equal(existing, buf.Bytes()) {
+					return
+				}
+
 				f := errorz.Check2(os.Create(out))
 				defer f.Close()
 				w = f

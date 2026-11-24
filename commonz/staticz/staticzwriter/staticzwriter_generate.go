@@ -10,6 +10,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"time"
 
 	"github.com/infinity6-ai/gox/commonz/errorz"
 )
@@ -66,6 +67,20 @@ func CreateTarGz(srcDir string, out io.Writer) {
 		}
 
 		header.Name = filepath.ToSlash(relPath)
+		header.ModTime = time.Unix(0, 0)
+		header.AccessTime = time.Time{}
+		header.ChangeTime = time.Time{}
+		header.Uid = 0
+		header.Gid = 0
+		header.Uname = ""
+		header.Gname = ""
+		if info.IsDir() {
+			header.Mode = 0o755
+		} else if info.Mode()&0o111 != 0 {
+			header.Mode = 0o755
+		} else {
+			header.Mode = 0o644
+		}
 
 		err = tw.WriteHeader(header)
 		errorz.Check(err)

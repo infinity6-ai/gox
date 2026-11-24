@@ -12,6 +12,7 @@ import (
 	"regexp"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/require"
 )
@@ -106,6 +107,14 @@ func TestUnitCreateTarGz(t *testing.T) {
 	require.Equal(t, "file1.txt", hdr.Name)
 	require.False(t, hdr.FileInfo().IsDir())
 	require.Equal(t, int64(5), hdr.Size)
+	require.True(t, hdr.ModTime.Equal(time.Unix(0, 0)))
+	require.True(t, hdr.AccessTime.IsZero())
+	require.True(t, hdr.ChangeTime.IsZero())
+	require.Equal(t, 0, hdr.Uid)
+	require.Equal(t, 0, hdr.Gid)
+	require.Empty(t, hdr.Uname)
+	require.Empty(t, hdr.Gname)
+	require.Equal(t, int64(0o644), hdr.Mode)
 	file1Contents, err := io.ReadAll(tr)
 	require.NoError(t, err)
 	require.Equal(t, "hello", string(file1Contents))
@@ -115,6 +124,8 @@ func TestUnitCreateTarGz(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, "subdir", hdr.Name)
 	require.True(t, hdr.FileInfo().IsDir())
+	require.True(t, hdr.ModTime.Equal(time.Unix(0, 0)))
+	require.Equal(t, int64(0o755), hdr.Mode)
 
 	// Check subdir/file2.txt
 	hdr, err = tr.Next()
@@ -209,3 +220,59 @@ func TestUnitGenerate(t *testing.T) {
 		})
 	})
 }
+
+func TestUnitGenerateDeterministic(t *testing.T) {
+	tmpDir := t.TempDir()
+	stzDir := filepath.Join(tmpDir, "files_to_embed")
+	err := os.Mkdir(stzDir, 0755)
+	require.NoError(t, err)
+
+	filePath := filepath.Join(stzDir, "sample.txt")
+	err = os.WriteFile(filePath, []byte("deterministic content"), 0644)
+	require.NoError(t, err)
+
+	type testScenario struct {
+		mutate func()
+	}
+
+	check := func(t *testing.T, s testScenario) {
+		t.Helper()
+		var baseBuf bytes.Buffer
+		Generate(context.Background(), GenerateOptions{
+			Name: "TestFiles",
+			Dir:  stzDir,
+			Out:  &baseBuf,
+		})
+
+		s.mutate()
+
+		var mutatedBuf bytes.Buffer
+		Generate(context.Background(), GenerateOptions{
+			Name: "TestFiles",
+			Dir:  stzDir,
+			Out:  &mutatedBuf,
+		})
+
+		require.Equal(t, baseBuf.String(), mutatedBuf.String(), "generated code must be identical despite metadata changes")
+	}
+
+	t.Run("Modifying file mtime preserves identical output", func(t *testing.T) {
+		check(t, testScenario{
+			mutate: func() {
+				pastTime := time.Date(2020, 1, 1, 0, 0, 0, 0, time.UTC)
+				err := os.Chtimes(filePath, pastTime, pastTime)
+				require.NoError(t, err)
+			},
+		})
+	})
+
+	t.Run("Changing file permissions without executable bit preserves identical output", func(t *testing.T) {
+		check(t, testScenario{
+			mutate: func() {
+				err := os.Chmod(filePath, 0664)
+				require.NoError(t, err)
+			},
+		})
+	})
+}
+
