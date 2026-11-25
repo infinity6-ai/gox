@@ -28,11 +28,15 @@ type Api interface {
 	ApiDataRefs() *DataRefs
 }
 
-// UnimplementedDataRefs can be embedded into API structs to satisfy the ApiDataRefs
-// method of the Api interface prior to running code generation.
-type UnimplementedDataRefs struct{}
+// UnimplementedApi can be embedded into API structs to satisfy the Api interface
+// (both ApiSpec and ApiDataRefs) prior to running code generation.
+type UnimplementedApi struct{}
 
-func (UnimplementedDataRefs) ApiDataRefs() *DataRefs {
+func (UnimplementedApi) ApiSpec() ApiSpec {
+	panic("ApiSpec not implemented: run 'go generate ./...'")
+}
+
+func (UnimplementedApi) ApiDataRefs() *DataRefs {
 	panic("ApiDataRefs not implemented: run 'go generate ./...'")
 }
 

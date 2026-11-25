@@ -8,69 +8,69 @@ import (
 )
 
 type dummyApiWithUnimplemented struct {
-	apiz.UnimplementedDataRefs
+	apiz.UnimplementedApi
 }
 
-func (d *dummyApiWithUnimplemented) ApiSpec() apiz.ApiSpec {
-	return apiz.ApiSpec{
-		Id: "dummy-spec",
-	}
+type dummyApiWithShadowedMethods struct {
+	apiz.UnimplementedApi
 }
 
-type dummyApiWithShadowedMethod struct {
-	apiz.UnimplementedDataRefs
-}
-
-func (d *dummyApiWithShadowedMethod) ApiSpec() apiz.ApiSpec {
+func (d *dummyApiWithShadowedMethods) ApiSpec() apiz.ApiSpec {
 	return apiz.ApiSpec{
 		Id: "dummy-spec-shadowed",
 	}
 }
 
-func (d *dummyApiWithShadowedMethod) ApiDataRefs() *apiz.DataRefs {
+func (d *dummyApiWithShadowedMethods) ApiDataRefs() *apiz.DataRefs {
 	return &apiz.DataRefs{}
 }
 
-func TestUnitUnimplementedDataRefs(t *testing.T) {
+func TestUnitUnimplementedApi(t *testing.T) {
 	type testScenario struct {
-		name          string
-		api           apiz.Api
-		shouldPanic   bool
-		panicContains string
+		name              string
+		api               apiz.Api
+		shouldPanic       bool
+		specPanicContains string
+		refsPanicContains string
 	}
 
 	check := func(t *testing.T, s testScenario) {
 		t.Helper()
 
 		require.NotNil(t, s.api)
-		require.NotEmpty(t, s.api.ApiSpec().Id)
 
 		if s.shouldPanic {
-			require.PanicsWithValue(t, s.panicContains, func() {
+			require.PanicsWithValue(t, s.specPanicContains, func() {
+				s.api.ApiSpec()
+			})
+			require.PanicsWithValue(t, s.refsPanicContains, func() {
 				s.api.ApiDataRefs()
 			})
 			return
 		}
 
 		require.NotPanics(t, func() {
+			spec := s.api.ApiSpec()
+			require.Equal(t, "dummy-spec-shadowed", spec.Id)
 			refs := s.api.ApiDataRefs()
 			require.NotNil(t, refs)
 		})
 	}
 
-	t.Run("Panics when ApiDataRefs is not shadowed", func(t *testing.T) {
+	t.Run("Panics for both methods when not shadowed", func(t *testing.T) {
 		check(t, testScenario{
-			name:          "Panics when ApiDataRefs is not shadowed",
-			api:           &dummyApiWithUnimplemented{},
-			shouldPanic:   true,
-			panicContains: "ApiDataRefs not implemented: run 'go generate ./...'",
+			name:              "Panics for both methods when not shadowed",
+			api:               &dummyApiWithUnimplemented{},
+			shouldPanic:       true,
+			specPanicContains: "ApiSpec not implemented: run 'go generate ./...'",
+			refsPanicContains: "ApiDataRefs not implemented: run 'go generate ./...'",
 		})
 	})
 
-	t.Run("Dispatches to real method when shadowed", func(t *testing.T) {
+	t.Run("Dispatches to real methods when shadowed", func(t *testing.T) {
 		check(t, testScenario{
-			name:        "Dispatches to real method when shadowed",
-			api:         &dummyApiWithShadowedMethod{},
+			name:        "Dispatches to real methods when shadowed",
+			api:         &dummyApiWithShadowedMethods{},
 			shouldPanic: false,
 		})
 	})
