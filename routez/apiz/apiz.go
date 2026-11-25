@@ -28,6 +28,14 @@ type Api interface {
 	ApiDataRefs() *DataRefs
 }
 
+// UnimplementedDataRefs can be embedded into API structs to satisfy the ApiDataRefs
+// method of the Api interface prior to running code generation.
+type UnimplementedDataRefs struct{}
+
+func (UnimplementedDataRefs) ApiDataRefs() *DataRefs {
+	panic("ApiDataRefs not implemented: run 'go generate ./...'")
+}
+
 type Resp struct {
 	Status  int
 	Headers http.Header
