@@ -147,4 +147,30 @@ func TestUnitLoadRow(t *testing.T) {
 			},
 		})
 	})
+
+	t.Run("Map row to map destination", func(t *testing.T) {
+		var got map[string]bigquery.Value
+		err := bqzimpl.LoadRow(&got, schema, []bigquery.Value{
+			"abc",
+			int64(25),
+			3.14,
+			true,
+			nil,
+			nil,
+			nil,
+			nil,
+			nil,
+			[]bigquery.Value{"nested-struct"},
+			nil,
+			nil,
+			[]bigquery.Value{"a", "b", "c"},
+		})
+		require.NoError(t, err)
+		require.Equal(t, "abc", got["ignored_bq_id"])
+		require.Equal(t, int64(25), got["age"])
+		require.Equal(t, 3.14, got["score"])
+		require.Equal(t, true, got["is_active"])
+		require.Nil(t, got["null_str"])
+		require.Equal(t, []bigquery.Value{"a", "b", "c"}, got["repeated"])
+	})
 }

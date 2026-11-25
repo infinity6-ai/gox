@@ -9,7 +9,7 @@ import (
 	"cloud.google.com/go/bigquery"
 )
 
-// LoadRow maps a slice of bigquery.Value to a destination struct pointer v
+// LoadRow maps a slice of bigquery.Value to a destination struct pointer or map pointer v
 // based on the provided bigquery.Schema.
 func LoadRow(v any, schema bigquery.Schema, values []bigquery.Value) error {
 	rv := reflect.ValueOf(v)
@@ -18,8 +18,34 @@ func LoadRow(v any, schema bigquery.Schema, values []bigquery.Value) error {
 	}
 
 	elem := rv.Elem()
+	if elem.Kind() == reflect.Map {
+		if elem.Type().Key().Kind() != reflect.String {
+			return fmt.Errorf("map key must be string, got %s", elem.Type().Key().Kind())
+		}
+		if elem.IsNil() {
+			elem.Set(reflect.MakeMap(elem.Type()))
+		}
+
+		elemType := elem.Type().Elem()
+
+		for i, fs := range schema {
+			rawVal := values[i]
+			var valToSet reflect.Value
+			if rawVal == nil {
+				valToSet = reflect.Zero(elemType)
+			} else {
+				valToSet = reflect.ValueOf(rawVal)
+				if !valToSet.Type().AssignableTo(elemType) && valToSet.Type().ConvertibleTo(elemType) {
+					valToSet = valToSet.Convert(elemType)
+				}
+			}
+			elem.SetMapIndex(reflect.ValueOf(fs.Name), valToSet)
+		}
+		return nil
+	}
+
 	if elem.Kind() != reflect.Struct {
-		return fmt.Errorf("destination must be a pointer to a struct, got %T", v)
+		return fmt.Errorf("destination must be a pointer to a struct or map, got %T", v)
 	}
 
 	return loadStruct(elem, schema, values)
