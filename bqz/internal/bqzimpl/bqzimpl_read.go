@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"cloud.google.com/go/bigquery"
 	"google.golang.org/api/iterator"
 
 	"github.com/infinity6-ai/gox/bqz/bqz"
@@ -22,13 +23,22 @@ func (b *BqzServiceImpl) Read(ctx context.Context, job bqzjob.Job) (bqz.Iterator
 	}
 
 	return func(ctx context.Context, v any) (bool, error) {
-		err := it.Next(v)
+		// Read raw bigquery values instead of letting the default bigquery library load it,
+		// so that we can support custom Null types like dataz.NullString.
+		var values []bigquery.Value
+		err := it.Next(&values)
 		if err == iterator.Done {
 			return false, nil
 		}
 		if err != nil {
 			return false, fmt.Errorf("failed to read next row: %w", err)
 		}
+
+		// map []bigquery.Value to v using it.Schema
+		if err := LoadRow(v, it.Schema, values); err != nil {
+			return false, fmt.Errorf("failed to map bigquery row: %w", err)
+		}
+
 		return true, nil
 	}, nil
 }

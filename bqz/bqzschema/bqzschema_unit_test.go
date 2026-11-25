@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"cloud.google.com/go/bigquery"
+	"github.com/infinity6-ai/gox/commonz/dataz"
 	"github.com/stretchr/testify/require"
 )
 
@@ -24,6 +25,15 @@ type testRow struct {
 	Dataset   bigquery.NullString `bigquery:"dataset"`
 	Payload   *testPayload        `bigquery:"payload,nullable"`
 	CreatedAt time.Time           `bigquery:"created_at"`
+}
+
+type testRowCustomNull struct {
+	ID        string              `bigquery:"id"`
+	Dataset   dataz.NullString    `bigquery:"dataset"`
+	Count     dataz.NullInt64     `bigquery:"count"`
+	Rate      dataz.NullFloat64   `bigquery:"rate"`
+	Approved  dataz.NullBool      `bigquery:"approved"`
+	UpdatedAt dataz.NullTimestamp `bigquery:"updated_at"`
 }
 
 func TestUnitNativeTableJSON(t *testing.T) {
@@ -55,6 +65,20 @@ func TestUnitNativeTableJSON(t *testing.T) {
       {"name": "sku_id", "type": "STRING", "mode": "REQUIRED"}
     ]}
   ]}
+]`,
+		})
+	})
+
+	t.Run("Struct with custom dataz Null types", func(t *testing.T) {
+		check(t, testScenario{
+			input: testRowCustomNull{},
+			want: `[
+  {"name": "approved", "type": "BOOLEAN", "mode": "NULLABLE"},
+  {"name": "count", "type": "INTEGER", "mode": "NULLABLE"},
+  {"name": "dataset", "type": "STRING", "mode": "NULLABLE"},
+  {"name": "id", "type": "STRING", "mode": "REQUIRED"},
+  {"name": "rate", "type": "FLOAT64", "mode": "NULLABLE"},
+  {"name": "updated_at", "type": "TIMESTAMP", "mode": "NULLABLE"}
 ]`,
 		})
 	})

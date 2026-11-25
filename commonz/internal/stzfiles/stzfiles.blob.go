@@ -3,10 +3,10 @@ import "github.com/infinity6-ai/gox/commonz/staticz/staticzloader"
 func init() {
     staticzloader.SetCode(Name, func() string {
         return `
-H4sIAAAAAAAA/+yW3cqCQBCG5/i7Cm/gq5ndHed6JIwCzWg3EK8+jLXCKE/8IZzn5D1QcJ2XZ3RXlWV1
-amBKEBFFuE0SxtfsAGKLZJlEUkAyZBgSnvRUkasP2QUQD3n99b6h692LdPkjxP63Mf+92YQ6jPuMdh5p
-6j73T7bXvxNnIZlliNp/23vizd/SR1EW4M3/rDwX+bg7YNh/6fnPgk79n4OH//fedQesDR+a/bHI/fhf
-/SfD/vf//ywRq/9zEP1X8RVFUVbGLQAA//95nqMTABIAAA==
+H4sIAAAAAAAA/+yWQa6CMBCGu36n4AJPZwbKnIcYjCYgxtaEcHpTU9RgtJtSYphv8y9KQumfb+iua9vu
+NKg5AQBg1i6RNbzmiEJNBTMTYakACXNSmZ51V56rsdVFARzq/utzofXxQ8b8EXz/W5//hja2t3Hf4c6j
+LIvP/WM+6b9wy1mSQ5T+Xe+Zob+ltyIswJv/VXtu6rgzIOw/T/zXjCj+p+Dh/713mQFrw9hhf2xqE/+v
+/yTs//T+lyOR+J8C77+ILwiCsDJuAQAA//8gaNg1ABIAAA==
 `
     })
 }
