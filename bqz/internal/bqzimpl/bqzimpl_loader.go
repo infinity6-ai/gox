@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"cloud.google.com/go/bigquery"
-	"github.com/infinity6-ai/gox/commonz/dataz"
 )
 
 // LoadRow maps a slice of bigquery.Value to a destination struct pointer v
@@ -64,22 +63,28 @@ func buildFieldIndexMapRecursive(t reflect.Type, path []int, m map[string][]int)
 			continue
 		}
 
-		tag := f.Tag.Get("bigquery")
-		if tag == "-" {
+		jsonTag := f.Tag.Get("json")
+		bqTag := f.Tag.Get("bigquery")
+
+		if jsonTag == "-" || bqTag == "-" {
 			continue
 		}
 
 		currentPath := append(append([]int(nil), path...), i)
 
 		// Handle embedded structs
-		if f.Anonymous && f.Type.Kind() == reflect.Struct && tag == "" {
+		if f.Anonymous && f.Type.Kind() == reflect.Struct && jsonTag == "" && bqTag == "" {
 			buildFieldIndexMapRecursive(f.Type, currentPath, m)
 			continue
 		}
 
 		var name string
-		if tag != "" {
-			parts := strings.Split(tag, ",")
+		if bqTag != "" {
+			parts := strings.Split(bqTag, ",")
+			name = parts[0]
+		}
+		if name == "" && jsonTag != "" {
+			parts := strings.Split(jsonTag, ",")
 			name = parts[0]
 		}
 		if name == "" {
@@ -105,13 +110,6 @@ func setField(fv reflect.Value, fs *bigquery.FieldSchema, val any) error {
 
 	// Handle our custom and bigquery Null types first
 	switch fv.Type() {
-	case reflect.TypeOf(dataz.NullString{}):
-		str, ok := val.(string)
-		if !ok {
-			return fmt.Errorf("expected string for NullString, got %T", val)
-		}
-		fv.Set(reflect.ValueOf(dataz.NullString{StringVal: str, Valid: true}))
-		return nil
 	case reflect.TypeOf(bigquery.NullString{}):
 		str, ok := val.(string)
 		if !ok {
@@ -120,13 +118,6 @@ func setField(fv reflect.Value, fs *bigquery.FieldSchema, val any) error {
 		fv.Set(reflect.ValueOf(bigquery.NullString{StringVal: str, Valid: true}))
 		return nil
 
-	case reflect.TypeOf(dataz.NullInt64{}):
-		i, err := toInt64(val)
-		if err != nil {
-			return fmt.Errorf("failed to parse int64 for NullInt64: %w", err)
-		}
-		fv.Set(reflect.ValueOf(dataz.NullInt64{Int64: i, Valid: true}))
-		return nil
 	case reflect.TypeOf(bigquery.NullInt64{}):
 		i, err := toInt64(val)
 		if err != nil {
@@ -135,13 +126,6 @@ func setField(fv reflect.Value, fs *bigquery.FieldSchema, val any) error {
 		fv.Set(reflect.ValueOf(bigquery.NullInt64{Int64: i, Valid: true}))
 		return nil
 
-	case reflect.TypeOf(dataz.NullFloat64{}):
-		f, ok := val.(float64)
-		if !ok {
-			return fmt.Errorf("expected float64 for NullFloat64, got %T", val)
-		}
-		fv.Set(reflect.ValueOf(dataz.NullFloat64{Float64: f, Valid: true}))
-		return nil
 	case reflect.TypeOf(bigquery.NullFloat64{}):
 		f, ok := val.(float64)
 		if !ok {
@@ -150,13 +134,6 @@ func setField(fv reflect.Value, fs *bigquery.FieldSchema, val any) error {
 		fv.Set(reflect.ValueOf(bigquery.NullFloat64{Float64: f, Valid: true}))
 		return nil
 
-	case reflect.TypeOf(dataz.NullBool{}):
-		b, ok := val.(bool)
-		if !ok {
-			return fmt.Errorf("expected bool for NullBool, got %T", val)
-		}
-		fv.Set(reflect.ValueOf(dataz.NullBool{Bool: b, Valid: true}))
-		return nil
 	case reflect.TypeOf(bigquery.NullBool{}):
 		b, ok := val.(bool)
 		if !ok {
@@ -165,13 +142,6 @@ func setField(fv reflect.Value, fs *bigquery.FieldSchema, val any) error {
 		fv.Set(reflect.ValueOf(bigquery.NullBool{Bool: b, Valid: true}))
 		return nil
 
-	case reflect.TypeOf(dataz.NullTimestamp{}):
-		t, ok := val.(time.Time)
-		if !ok {
-			return fmt.Errorf("expected time.Time for NullTimestamp, got %T", val)
-		}
-		fv.Set(reflect.ValueOf(dataz.NullTimestamp{Timestamp: t, Valid: true}))
-		return nil
 	case reflect.TypeOf(bigquery.NullTimestamp{}):
 		t, ok := val.(time.Time)
 		if !ok {
@@ -285,24 +255,14 @@ func setNil(fv reflect.Value) error {
 
 	// Set null representations
 	switch fv.Type() {
-	case reflect.TypeOf(dataz.NullString{}):
-		fv.Set(reflect.ValueOf(dataz.NullString{Valid: false}))
 	case reflect.TypeOf(bigquery.NullString{}):
 		fv.Set(reflect.ValueOf(bigquery.NullString{Valid: false}))
-	case reflect.TypeOf(dataz.NullInt64{}):
-		fv.Set(reflect.ValueOf(dataz.NullInt64{Valid: false}))
 	case reflect.TypeOf(bigquery.NullInt64{}):
 		fv.Set(reflect.ValueOf(bigquery.NullInt64{Valid: false}))
-	case reflect.TypeOf(dataz.NullFloat64{}):
-		fv.Set(reflect.ValueOf(dataz.NullFloat64{Valid: false}))
 	case reflect.TypeOf(bigquery.NullFloat64{}):
 		fv.Set(reflect.ValueOf(bigquery.NullFloat64{Valid: false}))
-	case reflect.TypeOf(dataz.NullBool{}):
-		fv.Set(reflect.ValueOf(dataz.NullBool{Valid: false}))
 	case reflect.TypeOf(bigquery.NullBool{}):
 		fv.Set(reflect.ValueOf(bigquery.NullBool{Valid: false}))
-	case reflect.TypeOf(dataz.NullTimestamp{}):
-		fv.Set(reflect.ValueOf(dataz.NullTimestamp{Valid: false}))
 	case reflect.TypeOf(bigquery.NullTimestamp{}):
 		fv.Set(reflect.ValueOf(bigquery.NullTimestamp{Valid: false}))
 	default:

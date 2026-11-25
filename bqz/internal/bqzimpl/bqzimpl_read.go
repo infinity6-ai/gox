@@ -24,7 +24,7 @@ func (b *BqzServiceImpl) Read(ctx context.Context, job bqzjob.Job) (bqz.Iterator
 
 	return func(ctx context.Context, v any) (bool, error) {
 		// Read raw bigquery values instead of letting the default bigquery library load it,
-		// so that we can support custom Null types like dataz.NullString.
+		// so that we can support pointer types.
 		var values []bigquery.Value
 		err := it.Next(&values)
 		if err == iterator.Done {

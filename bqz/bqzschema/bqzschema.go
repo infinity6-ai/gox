@@ -9,7 +9,6 @@ import (
 	"time"
 
 	"cloud.google.com/go/bigquery"
-	"github.com/infinity6-ai/gox/commonz/dataz"
 )
 
 func fix(s bigquery.Schema) bigquery.Schema {
@@ -61,25 +60,34 @@ func inferStruct(t reflect.Type) (bigquery.Schema, error) {
 			continue
 		}
 
-		tag := f.Tag.Get("bigquery")
-		if tag == "-" {
+		jsonTag := f.Tag.Get("json")
+		bqTag := f.Tag.Get("bigquery")
+
+		if jsonTag == "-" || bqTag == "-" {
 			continue
 		}
 
 		var name string
-		var options []string
-		if tag != "" {
-			parts := strings.Split(tag, ",")
+		if bqTag != "" {
+			parts := strings.Split(bqTag, ",")
 			name = parts[0]
-			options = parts[1:]
 		}
-
+		if name == "" && jsonTag != "" {
+			parts := strings.Split(jsonTag, ",")
+			name = parts[0]
+		}
 		if name == "" {
 			name = f.Name
 		}
 
+		var options []string
+		if bqTag != "" {
+			parts := strings.Split(bqTag, ",")
+			options = parts[1:]
+		}
+
 		// Handle embedded structs
-		if f.Anonymous && f.Type.Kind() == reflect.Struct && tag == "" {
+		if f.Anonymous && f.Type.Kind() == reflect.Struct && jsonTag == "" && bqTag == "" {
 			embeddedSchema, err := inferStruct(f.Type)
 			if err != nil {
 				return nil, err
@@ -112,19 +120,19 @@ func inferStruct(t reflect.Type) (bigquery.Schema, error) {
 		var bqType bigquery.FieldType
 
 		switch ft {
-		case reflect.TypeOf(dataz.NullString{}), reflect.TypeOf(bigquery.NullString{}):
+		case reflect.TypeOf(bigquery.NullString{}):
 			bqType = bigquery.StringFieldType
 			isNullType = true
-		case reflect.TypeOf(dataz.NullInt64{}), reflect.TypeOf(bigquery.NullInt64{}):
+		case reflect.TypeOf(bigquery.NullInt64{}):
 			bqType = bigquery.IntegerFieldType
 			isNullType = true
-		case reflect.TypeOf(dataz.NullFloat64{}), reflect.TypeOf(bigquery.NullFloat64{}):
+		case reflect.TypeOf(bigquery.NullFloat64{}):
 			bqType = bigquery.FloatFieldType
 			isNullType = true
-		case reflect.TypeOf(dataz.NullBool{}), reflect.TypeOf(bigquery.NullBool{}):
+		case reflect.TypeOf(bigquery.NullBool{}):
 			bqType = bigquery.BooleanFieldType
 			isNullType = true
-		case reflect.TypeOf(dataz.NullTimestamp{}), reflect.TypeOf(bigquery.NullTimestamp{}):
+		case reflect.TypeOf(bigquery.NullTimestamp{}):
 			bqType = bigquery.TimestampFieldType
 			isNullType = true
 		case reflect.TypeOf(time.Time{}):

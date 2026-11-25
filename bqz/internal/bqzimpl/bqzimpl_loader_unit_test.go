@@ -6,7 +6,6 @@ import (
 
 	"cloud.google.com/go/bigquery"
 	"github.com/infinity6-ai/gox/bqz/internal/bqzimpl"
-	"github.com/infinity6-ai/gox/commonz/dataz"
 	"github.com/stretchr/testify/require"
 )
 
@@ -15,24 +14,24 @@ type innerTestStruct struct {
 }
 
 type testStruct struct {
-	ID        string              `bigquery:"id"`
-	Age       int                 `bigquery:"age"`
-	Score     float64             `bigquery:"score"`
-	IsActive  bool                `bigquery:"is_active"`
-	NullStr   dataz.NullString    `bigquery:"null_str"`
-	NullInt   dataz.NullInt64     `bigquery:"null_int"`
-	NullFlt   dataz.NullFloat64   `bigquery:"null_flt"`
-	NullBl    dataz.NullBool      `bigquery:"null_bl"`
-	NullTm    dataz.NullTimestamp `bigquery:"null_tm"`
-	Inner     innerTestStruct     `bigquery:"inner"`
-	InnerPtr  *innerTestStruct    `bigquery:"inner_ptr"`
-	StringPtr *string             `bigquery:"string_ptr"`
-	Repeated  []string            `bigquery:"repeated"`
+	ID        string           `json:"custom_id" bigquery:"ignored_bq_id"`
+	Age       int              `bigquery:"age"`
+	Score     float64          `bigquery:"score"`
+	IsActive  bool             `bigquery:"is_active"`
+	NullStr   *string          `bigquery:"null_str"`
+	NullInt   *int64           `bigquery:"null_int"`
+	NullFlt   *float64         `bigquery:"null_flt"`
+	NullBl    *bool            `bigquery:"null_bl"`
+	NullTm    *time.Time       `bigquery:"null_tm"`
+	Inner     innerTestStruct  `bigquery:"inner"`
+	InnerPtr  *innerTestStruct `bigquery:"inner_ptr"`
+	StringPtr *string          `bigquery:"string_ptr"`
+	Repeated  []string         `bigquery:"repeated"`
 }
 
 func TestUnitLoadRow(t *testing.T) {
 	schema := bigquery.Schema{
-		{Name: "id", Type: bigquery.StringFieldType},
+		{Name: "ignored_bq_id", Type: bigquery.StringFieldType},
 		{Name: "age", Type: bigquery.IntegerFieldType},
 		{Name: "score", Type: bigquery.FloatFieldType},
 		{Name: "is_active", Type: bigquery.BooleanFieldType},
@@ -76,6 +75,10 @@ func TestUnitLoadRow(t *testing.T) {
 
 	t.Run("Map row with fully populated valid values", func(t *testing.T) {
 		strPtr := "hello"
+		nullStr := "nullable-string"
+		nullInt := int64(42)
+		nullFlt := 1.23
+		nullBl := true
 		check(t, testScenario{
 			values: []bigquery.Value{
 				"abc",
@@ -97,11 +100,11 @@ func TestUnitLoadRow(t *testing.T) {
 				Age:       25,
 				Score:     3.14,
 				IsActive:  true,
-				NullStr:   dataz.NullString{StringVal: "nullable-string", Valid: true},
-				NullInt:   dataz.NullInt64{Int64: 42, Valid: true},
-				NullFlt:   dataz.NullFloat64{Float64: 1.23, Valid: true},
-				NullBl:    dataz.NullBool{Bool: true, Valid: true},
-				NullTm:    dataz.NullTimestamp{Timestamp: now, Valid: true},
+				NullStr:   &nullStr,
+				NullInt:   &nullInt,
+				NullFlt:   &nullFlt,
+				NullBl:    &nullBl,
+				NullTm:    &now,
 				Inner:     innerTestStruct{Name: "nested-struct"},
 				InnerPtr:  &innerTestStruct{Name: "nested-ptr-struct"},
 				StringPtr: &strPtr,
@@ -132,11 +135,11 @@ func TestUnitLoadRow(t *testing.T) {
 				Age:       25,
 				Score:     3.14,
 				IsActive:  true,
-				NullStr:   dataz.NullString{Valid: false},
-				NullInt:   dataz.NullInt64{Valid: false},
-				NullFlt:   dataz.NullFloat64{Valid: false},
-				NullBl:    dataz.NullBool{Valid: false},
-				NullTm:    dataz.NullTimestamp{Valid: false},
+				NullStr:   nil,
+				NullInt:   nil,
+				NullFlt:   nil,
+				NullBl:    nil,
+				NullTm:    nil,
 				Inner:     innerTestStruct{Name: "nested-struct"},
 				InnerPtr:  nil,
 				StringPtr: nil,

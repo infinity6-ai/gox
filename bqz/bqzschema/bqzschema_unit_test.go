@@ -5,7 +5,6 @@ import (
 	"time"
 
 	"cloud.google.com/go/bigquery"
-	"github.com/infinity6-ai/gox/commonz/dataz"
 	"github.com/stretchr/testify/require"
 )
 
@@ -28,12 +27,18 @@ type testRow struct {
 }
 
 type testRowCustomNull struct {
-	ID        string              `bigquery:"id"`
-	Dataset   dataz.NullString    `bigquery:"dataset"`
-	Count     dataz.NullInt64     `bigquery:"count"`
-	Rate      dataz.NullFloat64   `bigquery:"rate"`
-	Approved  dataz.NullBool      `bigquery:"approved"`
-	UpdatedAt dataz.NullTimestamp `bigquery:"updated_at"`
+	ID        string     `bigquery:"id"`
+	Dataset   *string    `bigquery:"dataset"`
+	Count     *int64     `bigquery:"count"`
+	Rate      *float64   `bigquery:"rate"`
+	Approved  *bool      `bigquery:"approved"`
+	UpdatedAt *time.Time `bigquery:"updated_at"`
+}
+
+type testRowJsonTags struct {
+	ID      string `json:"custom_id"`
+	Age     int    `json:"custom_age" bigquery:"ignored_bq_name"`
+	Ignored string `json:"-"`
 }
 
 func TestUnitNativeTableJSON(t *testing.T) {
@@ -69,7 +74,7 @@ func TestUnitNativeTableJSON(t *testing.T) {
 		})
 	})
 
-	t.Run("Struct with custom dataz Null types", func(t *testing.T) {
+	t.Run("Struct with custom basic pointer types", func(t *testing.T) {
 		check(t, testScenario{
 			input: testRowCustomNull{},
 			want: `[
@@ -79,6 +84,16 @@ func TestUnitNativeTableJSON(t *testing.T) {
   {"name": "id", "type": "STRING", "mode": "REQUIRED"},
   {"name": "rate", "type": "FLOAT64", "mode": "NULLABLE"},
   {"name": "updated_at", "type": "TIMESTAMP", "mode": "NULLABLE"}
+]`,
+		})
+	})
+
+	t.Run("Struct with BigQuery tags prioritised over JSON tags", func(t *testing.T) {
+		check(t, testScenario{
+			input: testRowJsonTags{},
+			want: `[
+  {"name": "custom_id", "type": "STRING", "mode": "REQUIRED"},
+  {"name": "ignored_bq_name", "type": "INTEGER", "mode": "REQUIRED"}
 ]`,
 		})
 	})
