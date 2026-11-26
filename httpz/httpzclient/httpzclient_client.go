@@ -160,19 +160,16 @@ func (c *Client) send(ctx context.Context, req *httpzrequest.Req) (*Resp, error)
 	}
 
 	if req.Headers != nil {
-		var clStr string
-		if v := req.Headers.Get("Content-Length"); v != "" {
-			clStr = v
-		} else {
-			for k, v := range req.Headers {
-				if strings.EqualFold(k, "Content-Length") && len(v) > 0 {
-					clStr = v[0]
-					break
+		if host := getHeader(req.Headers, "Host"); host != "" {
+			httpReq.Host = host
+			for k := range httpReq.Header {
+				if strings.EqualFold(k, "Host") {
+					delete(httpReq.Header, k)
 				}
 			}
 		}
 
-		if clStr != "" {
+		if clStr := getHeader(req.Headers, "Content-Length"); clStr != "" {
 			cl, err := strconv.ParseInt(clStr, 10, 64)
 			if err != nil {
 				return nil, fmt.Errorf("failed to parse Content-Length header %q: %w", clStr, err)
@@ -200,6 +197,18 @@ func (c *Client) send(ctx context.Context, req *httpzrequest.Req) (*Resp, error)
 
 	dfz.Detach()
 	return resp, nil
+}
+
+func getHeader(h http.Header, name string) string {
+	if v := h.Get(name); v != "" {
+		return v
+	}
+	for k, v := range h {
+		if strings.EqualFold(k, name) && len(v) > 0 {
+			return v[0]
+		}
+	}
+	return ""
 }
 
 func (c *Client) buildURL(req *httpzrequest.Req) (string, error) {
