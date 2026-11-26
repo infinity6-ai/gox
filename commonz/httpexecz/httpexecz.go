@@ -46,6 +46,12 @@ type Options struct {
 	// The directory is created automatically if it does not exist.
 	Trace string
 
+	// OutScript specifies an optional directory path where a runnable shell script (.sh)
+	// reproducing the curl command (split across lines with \) will be written.
+	// If the request has a body, the payload is also saved alongside it as .payload.
+	// The directory is created automatically if it does not exist.
+	OutScript string
+
 	// BeforeExec optionally inspects or mutates the executable binary and arguments
 	// before process execution. If it returns an error, the round-trip aborts immediately.
 	BeforeExec func(cmd string, args []string) (string, []string, error)
@@ -88,7 +94,9 @@ func (t *Transport) RoundTrip(req *http.Request) (*http.Response, error) {
 
 	hasBody := req.Body != nil && req.Body != http.NoBody
 
-	args, tracePath, err := t.buildArgs(req, hasBody)
+	baseName := generateDumpBaseName(req)
+
+	args, tracePath, err := t.buildArgs(req, hasBody, baseName)
 	if err != nil {
 		return nil, fmt.Errorf("httpexecz: failed to build command arguments: %w", err)
 	}
@@ -98,6 +106,21 @@ func (t *Transport) RoundTrip(req *http.Request) (*http.Response, error) {
 		command, args, err = t.opts.BeforeExec(command, args)
 		if err != nil {
 			return nil, fmt.Errorf("httpexecz: BeforeExec failed: %w", err)
+		}
+	}
+
+	var payloadPath string
+	if t.opts.OutScript != "" {
+		if err := os.MkdirAll(t.opts.OutScript, 0755); err != nil {
+			return nil, fmt.Errorf("httpexecz: failed to create out-script directory: %w", err)
+		}
+		scriptPath := filepath.Join(t.opts.OutScript, baseName+".sh")
+		if hasBody {
+			payloadPath = filepath.Join(t.opts.OutScript, baseName+".payload")
+		}
+		scriptContent := generateScriptContent(command, args, hasBody, baseName)
+		if err := os.WriteFile(scriptPath, []byte(scriptContent), 0755); err != nil {
+			return nil, fmt.Errorf("httpexecz: failed to write out-script file: %w", err)
 		}
 	}
 
@@ -130,10 +153,28 @@ func (t *Transport) RoundTrip(req *http.Request) (*http.Response, error) {
 			cancel()
 			return nil, fmt.Errorf("httpexecz: failed to create stdin pipe: %w", err)
 		}
+
+		var payloadWriter io.WriteCloser
+		if payloadPath != "" {
+			pf, err := os.Create(payloadPath)
+			if err != nil {
+				_ = stdoutPipe.Close()
+				cancel()
+				return nil, fmt.Errorf("httpexecz: failed to create payload file: %w", err)
+			}
+			payloadWriter = pf
+		}
+
 		go func() {
 			defer stdinPipe.Close()
-			_, _ = io.Copy(stdinPipe, req.Body)
-			_ = req.Body.Close()
+			defer req.Body.Close()
+			if payloadWriter != nil {
+				defer payloadWriter.Close()
+				tee := io.TeeReader(req.Body, payloadWriter)
+				_, _ = io.Copy(stdinPipe, tee)
+			} else {
+				_, _ = io.Copy(stdinPipe, req.Body)
+			}
 		}()
 	}
 
@@ -185,7 +226,7 @@ func (t *Transport) RoundTrip(req *http.Request) (*http.Response, error) {
 	return resp, nil
 }
 
-func (t *Transport) buildArgs(req *http.Request, hasBody bool) ([]string, string, error) {
+func (t *Transport) buildArgs(req *http.Request, hasBody bool, baseName string) ([]string, string, error) {
 	var args []string
 
 	args = append(args, "-s")
@@ -241,11 +282,10 @@ func (t *Transport) buildArgs(req *http.Request, hasBody bool) ([]string, string
 
 	var tracePath string
 	if t.opts.Trace != "" {
-		var err error
-		tracePath, err = generateTracePath(t.opts.Trace, req)
-		if err != nil {
-			return nil, "", fmt.Errorf("httpexecz: failed to prepare trace file: %w", err)
+		if err := os.MkdirAll(t.opts.Trace, 0755); err != nil {
+			return nil, "", fmt.Errorf("httpexecz: failed to create trace directory: %w", err)
 		}
+		tracePath = filepath.Join(t.opts.Trace, baseName+".log")
 		args = append(args, "--trace", tracePath)
 	}
 
@@ -273,11 +313,7 @@ func sanitizePrefix(s string, maxLen int) string {
 	return strings.TrimRight(res, "_-")
 }
 
-func generateTracePath(dir string, req *http.Request) (string, error) {
-	if err := os.MkdirAll(dir, 0755); err != nil {
-		return "", fmt.Errorf("httpexecz: failed to create trace directory: %w", err)
-	}
-
+func generateDumpBaseName(req *http.Request) string {
 	ts := datez.TimeFormatTZ(time.Now())
 
 	host := "nohost"
@@ -297,8 +333,56 @@ func generateTracePath(dir string, req *http.Request) (string, error) {
 	_, _ = rand.Read(b)
 	rnd := hex.EncodeToString(b)
 
-	filename := fmt.Sprintf("dump-%s-%s-%s-%s.log", ts, host, path, rnd)
-	return filepath.Join(dir, filename), nil
+	return fmt.Sprintf("dump-%s-%s-%s-%s", ts, host, path, rnd)
+}
+
+func quoteBashArg(arg string) string {
+	if arg == "" {
+		return `""`
+	}
+	safe := true
+	for _, r := range arg {
+		if !((r >= 'a' && r <= 'z') || (r >= 'A' && r <= 'Z') || (r >= '0' && r <= '9') || r == '-' || r == '_' || r == '.' || r == '/' || r == ':' || r == '=' || r == '@') {
+			safe = false
+			break
+		}
+	}
+	if safe {
+		return arg
+	}
+	escaped := strings.ReplaceAll(arg, `\`, `\\`)
+	escaped = strings.ReplaceAll(escaped, `"`, `\"`)
+	escaped = strings.ReplaceAll(escaped, `$`, `\$`)
+	escaped = strings.ReplaceAll(escaped, "`", "\\`")
+	return `"` + escaped + `"`
+}
+
+func generateScriptContent(command string, args []string, hasBody bool, baseName string) string {
+	var sb strings.Builder
+	sb.WriteString("#!/bin/bash\n")
+	sb.WriteString("set -e\n\n")
+	if hasBody {
+		sb.WriteString("DIR=\"$(cd \"$(dirname \"${BASH_SOURCE[0]}\")\" && pwd)\"\n\n")
+	}
+
+	sb.WriteString(quoteBashArg(command))
+
+	for i := 0; i < len(args); i++ {
+		arg := args[i]
+		if hasBody && arg == "--data-binary" && i+1 < len(args) && args[i+1] == "@-" {
+			sb.WriteString(" \\\n  --data-binary @\"$DIR/" + baseName + ".payload\"")
+			i++
+			continue
+		}
+		if (arg == "-X" || arg == "-H" || arg == "--trace" || arg == "--retry") && i+1 < len(args) {
+			sb.WriteString(" \\\n  " + arg + " " + quoteBashArg(args[i+1]))
+			i++
+			continue
+		}
+		sb.WriteString(" \\\n  " + quoteBashArg(arg))
+	}
+	sb.WriteString("\n")
+	return sb.String()
 }
 
 type safeBuffer struct {

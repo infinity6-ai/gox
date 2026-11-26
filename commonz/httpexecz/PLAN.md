@@ -126,6 +126,11 @@ type Options struct {
 	// via curl's --trace flag using the pattern dump-[ts]-[host]-[path]-[rnd].log.
 	Trace string
 
+	// OutScript specifies an optional directory path where a runnable shell script (.sh)
+	// reproducing the curl command (split across lines with \) will be written.
+	// If the request has a body, the payload is also saved alongside it as .payload.
+	OutScript string
+
 	// BeforeExec optionally inspects or mutates the executable binary and arguments
 	// before process execution. If it returns an error, the round-trip aborts immediately.
 	BeforeExec func(cmd string, args []string) (string, []string, error)

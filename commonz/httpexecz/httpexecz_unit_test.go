@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -42,7 +43,7 @@ func TestUnitHttpexeczBuildArgs(t *testing.T) {
 		req.Close = s.reqClose
 
 		tr := NewTransport(s.opts)
-		args, _, err := tr.buildArgs(req, s.hasBody)
+		args, _, err := tr.buildArgs(req, s.hasBody, "test-dump")
 		require.NoError(t, err)
 
 		if len(s.wantArgs) > 0 {
@@ -730,6 +731,157 @@ func TestUnitHttpexeczTrace(t *testing.T) {
 		check(t, testScenario{
 			failRequest:   true,
 			wantErrSubstr: "(trace: ",
+		})
+	})
+}
+
+func TestUnitHttpexeczOutScript(t *testing.T) {
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("X-Received-Method", r.Method)
+		if r.Body != nil {
+			b, err := io.ReadAll(r.Body)
+			if err == nil && len(b) > 0 {
+				w.WriteHeader(http.StatusOK)
+				_, _ = w.Write(b)
+				return
+			}
+		}
+		w.WriteHeader(http.StatusOK)
+		_, _ = w.Write([]byte("get response ok"))
+	}))
+	defer ts.Close()
+
+	type testScenario struct {
+		method          string
+		payload         string
+		headers         http.Header
+		wantInScript    []string
+		wantPayloadFile bool
+	}
+
+	check := func(t *testing.T, s testScenario) {
+		t.Helper()
+		scriptDir := t.TempDir()
+
+		tr := NewTransport(Options{
+			OutScript: scriptDir,
+		})
+
+		var bodyReader io.Reader
+		if s.payload != "" {
+			bodyReader = strings.NewReader(s.payload)
+		}
+
+		req, err := http.NewRequest(s.method, ts.URL+"/v1/resource", bodyReader)
+		require.NoError(t, err)
+		if s.headers != nil {
+			req.Header = s.headers
+		}
+
+		resp, err := tr.RoundTrip(req)
+		require.NoError(t, err)
+		defer resp.Body.Close()
+
+		respBody, err := io.ReadAll(resp.Body)
+		require.NoError(t, err)
+		if s.payload != "" {
+			require.Equal(t, s.payload, string(respBody))
+		} else {
+			require.Equal(t, "get response ok", string(respBody))
+		}
+
+		// Find generated .sh file and .payload file
+		entries, err := os.ReadDir(scriptDir)
+		require.NoError(t, err)
+
+		var shFileName string
+		var payloadFileName string
+		for _, e := range entries {
+			if strings.HasSuffix(e.Name(), ".sh") {
+				shFileName = e.Name()
+			}
+			if strings.HasSuffix(e.Name(), ".payload") {
+				payloadFileName = e.Name()
+			}
+		}
+
+		require.NotEmpty(t, shFileName, "expected .sh script file to be created")
+		require.True(t, strings.HasPrefix(shFileName, "dump-"), "script file should start with dump-")
+
+		shPath := filepath.Join(scriptDir, shFileName)
+		shContent, err := os.ReadFile(shPath)
+		require.NoError(t, err)
+
+		info, err := os.Stat(shPath)
+		require.NoError(t, err)
+		require.Equal(t, os.FileMode(0755), info.Mode().Perm(), "script should have 0755 executable permissions")
+
+		for _, sub := range s.wantInScript {
+			require.Contains(t, string(shContent), sub)
+		}
+
+		if s.wantPayloadFile {
+			require.NotEmpty(t, payloadFileName, "expected .payload file to be created")
+			payloadPath := filepath.Join(scriptDir, payloadFileName)
+			payloadContent, err := os.ReadFile(payloadPath)
+			require.NoError(t, err)
+			require.Equal(t, s.payload, string(payloadContent))
+		} else {
+			require.Empty(t, payloadFileName, "did not expect .payload file for request without body")
+		}
+
+		// Empirically execute the generated script and verify output
+		cmd := exec.Command("bash", shPath)
+		out, err := cmd.CombinedOutput()
+		require.NoError(t, err, "generated shell script execution failed: %s", string(out))
+		if s.payload != "" {
+			require.Contains(t, string(out), s.payload)
+		} else {
+			require.Contains(t, string(out), "get response ok")
+		}
+	}
+
+	t.Run("GET request generates executable script without payload file", func(t *testing.T) {
+		check(t, testScenario{
+			method: "GET",
+			headers: http.Header{
+				"X-Custom-Header": []string{"my-token"},
+			},
+			wantInScript: []string{
+				"#!/bin/bash",
+				"set -e",
+				"curl \\",
+				"-s \\",
+				"--http1.1 \\",
+				"-i \\",
+				"-H \"X-Custom-Header: my-token\" \\",
+				ts.URL + "/v1/resource",
+			},
+			wantPayloadFile: false,
+		})
+	})
+
+	t.Run("POST request with body generates script referencing .payload file", func(t *testing.T) {
+		check(t, testScenario{
+			method:  "POST",
+			payload: `{"action":"create_test_item","count":42}`,
+			headers: http.Header{
+				"Content-Type": []string{"application/json"},
+			},
+			wantInScript: []string{
+				"#!/bin/bash",
+				"set -e",
+				"DIR=\"$(cd \"$(dirname \"${BASH_SOURCE[0]}\")\" && pwd)\"",
+				"curl \\",
+				"-s \\",
+				"--http1.1 \\",
+				"-i \\",
+				"-X POST \\",
+				"-H \"Content-Type: application/json\" \\",
+				"--data-binary @\"$DIR/",
+				ts.URL + "/v1/resource",
+			},
+			wantPayloadFile: true,
 		})
 	})
 }
