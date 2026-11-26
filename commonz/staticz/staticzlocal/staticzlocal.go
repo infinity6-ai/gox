@@ -104,6 +104,9 @@ func Lookup(ctx context.Context, name any, p *pathz.Path) (staticzentry.Entry, e
 		}
 		return nil, fmt.Errorf("%w: error looking for file: %s", err, p)
 	}
+	if fileInfo.IsDir() {
+		return nil, nil
+	}
 	ret := newEntry(ctx, name, dir, p, fileInfo.Size())
 	return ret, nil
 }

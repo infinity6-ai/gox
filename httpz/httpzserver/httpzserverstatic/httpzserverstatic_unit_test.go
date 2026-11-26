@@ -156,6 +156,37 @@ func TestUnitStaticHandler(t *testing.T) {
 		})
 	})
 
+	t.Run("Directory request without trailing slash serves index.html", func(t *testing.T) {
+		check(t, testScenario{
+			method:         http.MethodGet,
+			path:           "/sub",
+			expectedStatus: http.StatusOK,
+			expectedBody:   "<html><body>Sub</body></html>",
+			expectedCType:  "text/html",
+		})
+	})
+
+	t.Run("Directory request without trailing slash with Prefix serves index.html", func(t *testing.T) {
+		check(t, testScenario{
+			method:         http.MethodGet,
+			path:           "/static/sub",
+			mountPath:      "/static/*",
+			options:        []httpzserverstatic.Options{{Prefix: "/static"}},
+			expectedStatus: http.StatusOK,
+			expectedBody:   "<html><body>Sub</body></html>",
+			expectedCType:  "text/html",
+		})
+	})
+
+	t.Run("Directory request without trailing slash and without index.html returns 404", func(t *testing.T) {
+		check(t, testScenario{
+			method:         http.MethodGet,
+			path:           "/deep",
+			expectedStatus: http.StatusNotFound,
+			expectedBody:   "Not Found",
+		})
+	})
+
 	t.Run("Serve with Prefix specified", func(t *testing.T) {
 		check(t, testScenario{
 			method:         http.MethodGet,

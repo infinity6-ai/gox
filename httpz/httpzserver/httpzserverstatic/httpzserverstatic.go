@@ -13,6 +13,7 @@ import (
 	"github.com/infinity6-ai/gox/commonz/errorz"
 	"github.com/infinity6-ai/gox/commonz/pathz"
 	"github.com/infinity6-ai/gox/commonz/staticz"
+	"github.com/infinity6-ai/gox/commonz/staticz/staticzentry"
 	"github.com/infinity6-ai/gox/httpz/httpzrequest"
 	"github.com/infinity6-ai/gox/httpz/httpzserver"
 )
@@ -109,7 +110,19 @@ func StaticHandler(name any, opts ...Options) httpzserver.HandlerPattern {
 			}
 		}
 
-		entry, err := staticz.Lookup(ctx, name, relPath)
+		var entry staticzentry.Entry
+		if indexPath != nil && !relPath.HasEndingSlash() && relPath.PartsLen() > 0 {
+			if joinedPath, errJoin := relPath.Join(indexPath); errJoin == nil {
+				if e, errLookup := staticz.Lookup(ctx, name, joinedPath); errLookup == nil && e != nil {
+					entry = e
+				}
+			}
+		}
+
+		var err error
+		if entry == nil {
+			entry, err = staticz.Lookup(ctx, name, relPath)
+		}
 		if err != nil || entry == nil {
 			w := resp(http.StatusNotFound, nil)
 			_, err = w.Write([]byte("Not Found"))
