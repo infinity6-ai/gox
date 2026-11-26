@@ -30,11 +30,6 @@ type Options struct {
 	// with net/http.ReadResponse.
 	DisableHTTP11 bool
 
-	// FollowRedirects specifies whether curl should follow redirects internally (defaults to false).
-	// When false (default), 3xx responses are returned directly to the caller,
-	// conforming to standard http.RoundTripper semantics.
-	FollowRedirects bool
-
 	// Timeout specifies an optional process execution timeout if the request context has no deadline.
 	Timeout time.Duration
 
@@ -129,18 +124,8 @@ func (t *Transport) RoundTrip(req *http.Request) (*http.Response, error) {
 	bufReader := bufio.NewReader(stdoutPipe)
 	var resp *http.Response
 	for {
-		readReq := req
-		if t.opts.FollowRedirects {
-			peekBytes, _ := bufReader.Peek(12)
-			if len(peekBytes) >= 12 && strings.HasPrefix(string(peekBytes), "HTTP/") && peekBytes[9] == '3' {
-				// Intermediate redirect headers in curl -L -i do not include response bodies.
-				// Using HEAD semantics ensures ReadResponse only reads the headers up to \r\n\r\n.
-				readReq = &http.Request{Method: http.MethodHead}
-			}
-		}
-
 		var readErr error
-		resp, readErr = http.ReadResponse(bufReader, readReq)
+		resp, readErr = http.ReadResponse(bufReader, req)
 		if readErr != nil {
 			_ = stdoutPipe.Close()
 			waitErr := cmd.Wait()
@@ -157,10 +142,6 @@ func (t *Transport) RoundTrip(req *http.Request) (*http.Response, error) {
 		}
 		if resp.StatusCode < 200 {
 			// Skip 1xx informational responses (e.g. 100 Continue)
-			continue
-		}
-		if t.opts.FollowRedirects && resp.StatusCode >= 300 && resp.StatusCode < 400 {
-			// Skip intermediate redirect response headers
 			continue
 		}
 		break
@@ -184,10 +165,6 @@ func (t *Transport) buildArgs(req *http.Request, hasBody bool) ([]string, error)
 
 	if !t.opts.DisableHTTP11 {
 		args = append(args, "--http1.1")
-	}
-
-	if t.opts.FollowRedirects {
-		args = append(args, "-L")
 	}
 
 	method := strings.ToUpper(req.Method)

@@ -74,11 +74,10 @@
 ### 6. Redirect Handling Strategy
 * **Standard `http.RoundTripper` Contract:**
   * A `RoundTripper` must execute a single HTTP transaction and return the exact response received, including `3xx` redirect responses, leaving redirect policy to `http.Client.CheckRedirect`.
-* **Curl Default Behavior:**
-  * By default, `curl` does not follow redirects unless `-L / --location` is passed.
 * **Decision:**
-  * Omit `-L` by default so `RoundTrip` conforms to the standard Go HTTP model.
-  * Provide an option `FollowRedirects bool` in case the user wants curl to follow redirects directly inside the CLI execution.
+  * Always omit `-L`.
+  * Curl returns the raw 3xx redirect response to `RoundTrip`.
+  * If the caller uses `http.Client`, Go's standard redirect logic (or custom `CheckRedirect`) manages following redirects as desired.
 
 ---
 

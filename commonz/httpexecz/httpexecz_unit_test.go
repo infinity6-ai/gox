@@ -88,16 +88,6 @@ func TestUnitHttpexeczBuildArgs(t *testing.T) {
 		})
 	})
 
-	t.Run("FollowRedirects adds -L flag", func(t *testing.T) {
-		check(t, testScenario{
-			method:   "GET",
-			url:      "http://example.com/api",
-			hasBody:  false,
-			opts:     Options{FollowRedirects: true},
-			wantArgs: []string{"-s", "--http1.1", "-L", "-i", "http://example.com/api"},
-		})
-	})
-
 	t.Run("Custom headers and Host", func(t *testing.T) {
 		check(t, testScenario{
 			method:  "GET",
@@ -357,20 +347,43 @@ func TestUnitHttpexeczRedirects(t *testing.T) {
 	defer ts.Close()
 
 	type testScenario struct {
-		followRedirects bool
-		wantStatus      int
-		wantBody        string
-		wantLocation    string
+		useClient    bool
+		stopRedirect bool
+		wantStatus   int
+		wantBody     string
+		wantLocation string
 	}
 
 	check := func(t *testing.T, s testScenario) {
 		t.Helper()
+		if s.useClient {
+			client := NewClient(Options{})
+			if s.stopRedirect {
+				client.CheckRedirect = func(req *http.Request, via []*http.Request) error {
+					return http.ErrUseLastResponse
+				}
+			}
+			resp, err := client.Get(ts.URL + "/redirect")
+			require.NoError(t, err)
+			defer resp.Body.Close()
+
+			require.Equal(t, s.wantStatus, resp.StatusCode)
+			body, err := io.ReadAll(resp.Body)
+			require.NoError(t, err)
+
+			if s.wantBody != "" {
+				require.Equal(t, s.wantBody, string(body))
+			}
+			if s.wantLocation != "" {
+				require.Equal(t, s.wantLocation, resp.Header.Get("Location"))
+			}
+			return
+		}
+
 		req, err := http.NewRequest("GET", ts.URL+"/redirect", nil)
 		require.NoError(t, err)
 
-		tr := NewTransport(Options{
-			FollowRedirects: s.followRedirects,
-		})
+		tr := NewTransport(Options{})
 		resp, err := tr.RoundTrip(req)
 		require.NoError(t, err)
 		defer resp.Body.Close()
@@ -387,19 +400,28 @@ func TestUnitHttpexeczRedirects(t *testing.T) {
 		}
 	}
 
-	t.Run("FollowRedirects false returns 302 with Location", func(t *testing.T) {
+	t.Run("RoundTrip returns 302 Found directly with Location header", func(t *testing.T) {
 		check(t, testScenario{
-			followRedirects: false,
-			wantStatus:      http.StatusFound,
-			wantLocation:    "/target",
+			useClient:    false,
+			wantStatus:   http.StatusFound,
+			wantLocation: "/target",
 		})
 	})
 
-	t.Run("FollowRedirects true follows location to 200", func(t *testing.T) {
+	t.Run("Standard http.Client follows redirect to 200 OK via Go redirect handler", func(t *testing.T) {
 		check(t, testScenario{
-			followRedirects: true,
-			wantStatus:      http.StatusOK,
-			wantBody:        "redirected content",
+			useClient:  true,
+			wantStatus: http.StatusOK,
+			wantBody:   "redirected content",
+		})
+	})
+
+	t.Run("Client with custom CheckRedirect halts redirect and returns 302", func(t *testing.T) {
+		check(t, testScenario{
+			useClient:    true,
+			stopRedirect: true,
+			wantStatus:   http.StatusFound,
+			wantLocation: "/target",
 		})
 	})
 }
