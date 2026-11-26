@@ -569,3 +569,72 @@ func TestUnitHttpexeczNewClient(t *testing.T) {
 		})
 	})
 }
+
+func TestUnitHttpexeczBeforeExec(t *testing.T) {
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("X-Injected", r.Header.Get("X-Injected"))
+		w.WriteHeader(http.StatusOK)
+		_, _ = w.Write([]byte("hook ok"))
+	}))
+	defer ts.Close()
+
+	type testScenario struct {
+		beforeExec   func(cmd string, args []string) (string, []string, error)
+		wantErr      string
+		wantInjected string
+	}
+
+	check := func(t *testing.T, s testScenario) {
+		t.Helper()
+		tr := NewTransport(Options{
+			BeforeExec: s.beforeExec,
+		})
+		req, err := http.NewRequest("GET", ts.URL, nil)
+		require.NoError(t, err)
+
+		resp, err := tr.RoundTrip(req)
+		if s.wantErr != "" {
+			require.Error(t, err)
+			require.Contains(t, err.Error(), s.wantErr)
+			return
+		}
+
+		require.NoError(t, err)
+		defer resp.Body.Close()
+
+		require.Equal(t, s.wantInjected, resp.Header.Get("X-Injected"))
+		body, err := io.ReadAll(resp.Body)
+		require.NoError(t, err)
+		require.Equal(t, "hook ok", string(body))
+	}
+
+	t.Run("BeforeExec injects argument successfully", func(t *testing.T) {
+		check(t, testScenario{
+			beforeExec: func(cmd string, args []string) (string, []string, error) {
+				// Inject header before the last argument (URL)
+				urlArg := args[len(args)-1]
+				newArgs := append(args[:len(args)-1], "-H", "X-Injected: from-hook", urlArg)
+				return cmd, newArgs, nil
+			},
+			wantInjected: "from-hook",
+		})
+	})
+
+	t.Run("BeforeExec error aborts round-trip", func(t *testing.T) {
+		check(t, testScenario{
+			beforeExec: func(cmd string, args []string) (string, []string, error) {
+				return "", nil, fmt.Errorf("blocked by security policy")
+			},
+			wantErr: "BeforeExec failed: blocked by security policy",
+		})
+	})
+
+	t.Run("BeforeExec can mutate command binary", func(t *testing.T) {
+		check(t, testScenario{
+			beforeExec: func(cmd string, args []string) (string, []string, error) {
+				return "non_existent_binary_from_hook", args, nil
+			},
+			wantErr: "failed to start command \"non_existent_binary_from_hook\"",
+		})
+	})
+}

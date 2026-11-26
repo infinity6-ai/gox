@@ -35,6 +35,10 @@ type Options struct {
 
 	// Env specifies additional environment variables for the command execution.
 	Env []string
+
+	// BeforeExec optionally inspects or mutates the executable binary and arguments
+	// before process execution. If it returns an error, the round-trip aborts immediately.
+	BeforeExec func(cmd string, args []string) (string, []string, error)
 }
 
 func (o *Options) fix() {
@@ -79,6 +83,14 @@ func (t *Transport) RoundTrip(req *http.Request) (*http.Response, error) {
 		return nil, fmt.Errorf("httpexecz: failed to build command arguments: %w", err)
 	}
 
+	command := t.opts.Command
+	if t.opts.BeforeExec != nil {
+		command, args, err = t.opts.BeforeExec(command, args)
+		if err != nil {
+			return nil, fmt.Errorf("httpexecz: BeforeExec failed: %w", err)
+		}
+	}
+
 	ctx := req.Context()
 	var cancel context.CancelFunc
 	if t.opts.Timeout > 0 {
@@ -87,7 +99,7 @@ func (t *Transport) RoundTrip(req *http.Request) (*http.Response, error) {
 		ctx, cancel = context.WithCancel(ctx)
 	}
 
-	cmd := exec.CommandContext(ctx, t.opts.Command, args...)
+	cmd := exec.CommandContext(ctx, command, args...)
 	if len(t.opts.Env) > 0 {
 		cmd.Env = append(os.Environ(), t.opts.Env...)
 	}
@@ -118,7 +130,7 @@ func (t *Transport) RoundTrip(req *http.Request) (*http.Response, error) {
 	if err := cmd.Start(); err != nil {
 		_ = stdoutPipe.Close()
 		cancel()
-		return nil, fmt.Errorf("httpexecz: failed to start command %q: %w", t.opts.Command, err)
+		return nil, fmt.Errorf("httpexecz: failed to start command %q: %w", command, err)
 	}
 
 	bufReader := bufio.NewReader(stdoutPipe)
@@ -133,12 +145,12 @@ func (t *Transport) RoundTrip(req *http.Request) (*http.Response, error) {
 
 			stderrStr := strings.TrimSpace(stderrBuf.String())
 			if stderrStr != "" {
-				return nil, fmt.Errorf("httpexecz: %s: %s (exit: %v): %w", t.opts.Command, stderrStr, waitErr, readErr)
+				return nil, fmt.Errorf("httpexecz: %s: %s (exit: %v): %w", command, stderrStr, waitErr, readErr)
 			}
 			if waitErr != nil {
-				return nil, fmt.Errorf("httpexecz: %s failed (%v): %w", t.opts.Command, waitErr, readErr)
+				return nil, fmt.Errorf("httpexecz: %s failed (%v): %w", command, waitErr, readErr)
 			}
-			return nil, fmt.Errorf("httpexecz: failed to read HTTP response from %s: %w", t.opts.Command, readErr)
+			return nil, fmt.Errorf("httpexecz: failed to read HTTP response from %s: %w", command, readErr)
 		}
 		if resp.StatusCode < 200 {
 			// Skip 1xx informational responses (e.g. 100 Continue)
