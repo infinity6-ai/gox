@@ -18,6 +18,8 @@ import (
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/infinity6-ai/gox/commonz/datez"
 )
 
 // Options configures an exec-based HTTP Transport.
@@ -276,7 +278,7 @@ func generateTracePath(dir string, req *http.Request) (string, error) {
 		return "", fmt.Errorf("httpexecz: failed to create trace directory: %w", err)
 	}
 
-	ts := time.Now().UTC().Format("20060102-150405.000")
+	ts := datez.TimeFormatTZ(time.Now())
 
 	host := "nohost"
 	if req.URL != nil && req.URL.Hostname() != "" {
