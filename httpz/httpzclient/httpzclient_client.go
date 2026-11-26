@@ -8,6 +8,8 @@ import (
 	"maps"
 	"net/http"
 	"net/url"
+	"strconv"
+	"strings"
 	"time"
 
 	"github.com/infinity6-ai/gox/commonz/deferz"
@@ -155,6 +157,37 @@ func (c *Client) send(ctx context.Context, req *httpzrequest.Req) (*Resp, error)
 
 	for k, v := range req.Headers {
 		httpReq.Header[k] = v
+	}
+
+	if req.Headers != nil {
+		var clStr string
+		if v := req.Headers.Get("Content-Length"); v != "" {
+			clStr = v
+		} else {
+			for k, v := range req.Headers {
+				if strings.EqualFold(k, "Content-Length") && len(v) > 0 {
+					clStr = v[0]
+					break
+				}
+			}
+		}
+
+		if clStr != "" {
+			cl, err := strconv.ParseInt(clStr, 10, 64)
+			if err != nil {
+				return nil, fmt.Errorf("failed to parse Content-Length header %q: %w", clStr, err)
+			}
+			if cl < 0 {
+				return nil, fmt.Errorf("invalid negative Content-Length header %q", clStr)
+			}
+			httpReq.ContentLength = cl
+			if cl == 0 {
+				if httpReq.Body != nil {
+					_ = httpReq.Body.Close()
+				}
+				httpReq.Body = http.NoBody
+			}
+		}
 	}
 
 	httpResp, err := c.client.Do(httpReq)
