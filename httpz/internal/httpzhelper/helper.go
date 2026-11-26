@@ -20,5 +20,13 @@ func FromHttpRequest(ctx context.Context, input *http.Request, output *httpzrequ
 	checker.True(output.Path.IsAbsolute(), "must be absolute: %s", output.Path)
 	output.Query = input.URL.Query()
 	output.Headers = input.Header
+	if input.Host != "" {
+		if output.Headers == nil {
+			output.Headers = make(http.Header)
+		}
+		if output.Headers.Get("Host") == "" {
+			output.Headers.Set("Host", input.Host)
+		}
+	}
 	output.Body = input.Body
 }

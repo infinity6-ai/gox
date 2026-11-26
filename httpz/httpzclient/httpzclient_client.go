@@ -8,6 +8,8 @@ import (
 	"maps"
 	"net/http"
 	"net/url"
+	"strconv"
+	"strings"
 	"time"
 
 	"github.com/infinity6-ai/gox/commonz/deferz"
@@ -157,6 +159,34 @@ func (c *Client) send(ctx context.Context, req *httpzrequest.Req) (*Resp, error)
 		httpReq.Header[k] = v
 	}
 
+	if req.Headers != nil {
+		if host := getHeader(req.Headers, "Host"); host != "" {
+			httpReq.Host = host
+			for k := range httpReq.Header {
+				if strings.EqualFold(k, "Host") {
+					delete(httpReq.Header, k)
+				}
+			}
+		}
+
+		if clStr := getHeader(req.Headers, "Content-Length"); clStr != "" {
+			cl, err := strconv.ParseInt(clStr, 10, 64)
+			if err != nil {
+				return nil, fmt.Errorf("failed to parse Content-Length header %q: %w", clStr, err)
+			}
+			if cl < 0 {
+				return nil, fmt.Errorf("invalid negative Content-Length header %q", clStr)
+			}
+			httpReq.ContentLength = cl
+			if cl == 0 {
+				if httpReq.Body != nil {
+					_ = httpReq.Body.Close()
+				}
+				httpReq.Body = http.NoBody
+			}
+		}
+	}
+
 	httpResp, err := c.client.Do(httpReq)
 	if err != nil {
 		return nil, fmt.Errorf("failed to execute request: %w", err)
@@ -167,6 +197,18 @@ func (c *Client) send(ctx context.Context, req *httpzrequest.Req) (*Resp, error)
 
 	dfz.Detach()
 	return resp, nil
+}
+
+func getHeader(h http.Header, name string) string {
+	if v := h.Get(name); v != "" {
+		return v
+	}
+	for k, v := range h {
+		if strings.EqualFold(k, name) && len(v) > 0 {
+			return v[0]
+		}
+	}
+	return ""
 }
 
 func (c *Client) buildURL(req *httpzrequest.Req) (string, error) {
