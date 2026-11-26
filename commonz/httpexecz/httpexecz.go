@@ -6,11 +6,14 @@ import (
 	"bufio"
 	"bytes"
 	"context"
+	"crypto/rand"
+	"encoding/hex"
 	"fmt"
 	"io"
 	"net/http"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"sort"
 	"strings"
 	"sync"
@@ -35,6 +38,11 @@ type Options struct {
 
 	// Env specifies additional environment variables for the command execution.
 	Env []string
+
+	// Trace specifies an optional directory path where wire trace logs will be written.
+	// When non-empty, curl is invoked with --trace <dir>/dump-[ts]-[host]-[path]-[rnd].log.
+	// The directory is created automatically if it does not exist.
+	Trace string
 
 	// BeforeExec optionally inspects or mutates the executable binary and arguments
 	// before process execution. If it returns an error, the round-trip aborts immediately.
@@ -78,7 +86,7 @@ func (t *Transport) RoundTrip(req *http.Request) (*http.Response, error) {
 
 	hasBody := req.Body != nil && req.Body != http.NoBody
 
-	args, err := t.buildArgs(req, hasBody)
+	args, tracePath, err := t.buildArgs(req, hasBody)
 	if err != nil {
 		return nil, fmt.Errorf("httpexecz: failed to build command arguments: %w", err)
 	}
@@ -144,13 +152,17 @@ func (t *Transport) RoundTrip(req *http.Request) (*http.Response, error) {
 			cancel()
 
 			stderrStr := strings.TrimSpace(stderrBuf.String())
+			var traceInfo string
+			if tracePath != "" {
+				traceInfo = fmt.Sprintf(" (trace: %s)", tracePath)
+			}
 			if stderrStr != "" {
-				return nil, fmt.Errorf("httpexecz: %s: %s (exit: %v): %w", command, stderrStr, waitErr, readErr)
+				return nil, fmt.Errorf("httpexecz: %s: %s (exit: %v)%s: %w", command, stderrStr, waitErr, traceInfo, readErr)
 			}
 			if waitErr != nil {
-				return nil, fmt.Errorf("httpexecz: %s failed (%v): %w", command, waitErr, readErr)
+				return nil, fmt.Errorf("httpexecz: %s failed (%v)%s: %w", command, waitErr, traceInfo, readErr)
 			}
-			return nil, fmt.Errorf("httpexecz: failed to read HTTP response from %s: %w", command, readErr)
+			return nil, fmt.Errorf("httpexecz: failed to read HTTP response from %s%s: %w", command, traceInfo, readErr)
 		}
 		if resp.StatusCode < 200 {
 			// Skip 1xx informational responses (e.g. 100 Continue)
@@ -160,17 +172,18 @@ func (t *Transport) RoundTrip(req *http.Request) (*http.Response, error) {
 	}
 
 	resp.Body = &responseBody{
-		reader: resp.Body,
-		stdout: stdoutPipe,
-		cmd:    cmd,
-		stderr: &stderrBuf,
-		cancel: cancel,
+		reader:    resp.Body,
+		stdout:    stdoutPipe,
+		cmd:       cmd,
+		stderr:    &stderrBuf,
+		tracePath: tracePath,
+		cancel:    cancel,
 	}
 
 	return resp, nil
 }
 
-func (t *Transport) buildArgs(req *http.Request, hasBody bool) ([]string, error) {
+func (t *Transport) buildArgs(req *http.Request, hasBody bool) ([]string, string, error) {
 	var args []string
 
 	args = append(args, "-s")
@@ -224,9 +237,66 @@ func (t *Transport) buildArgs(req *http.Request, hasBody bool) ([]string, error)
 		args = append(args, t.opts.ExtraArgs...)
 	}
 
+	var tracePath string
+	if t.opts.Trace != "" {
+		var err error
+		tracePath, err = generateTracePath(t.opts.Trace, req)
+		if err != nil {
+			return nil, "", fmt.Errorf("httpexecz: failed to prepare trace file: %w", err)
+		}
+		args = append(args, "--trace", tracePath)
+	}
+
 	args = append(args, req.URL.String())
 
-	return args, nil
+	return args, tracePath, nil
+}
+
+func sanitizePrefix(s string, maxLen int) string {
+	var sb strings.Builder
+	for _, r := range s {
+		if (r >= 'a' && r <= 'z') || (r >= 'A' && r <= 'Z') || (r >= '0' && r <= '9') || r == '-' {
+			sb.WriteRune(r)
+		} else {
+			sb.WriteRune('_')
+		}
+	}
+	res := strings.Trim(sb.String(), "_")
+	if res == "" {
+		return "none"
+	}
+	if len(res) > maxLen {
+		res = res[:maxLen]
+	}
+	return strings.TrimRight(res, "_-")
+}
+
+func generateTracePath(dir string, req *http.Request) (string, error) {
+	if err := os.MkdirAll(dir, 0755); err != nil {
+		return "", fmt.Errorf("httpexecz: failed to create trace directory: %w", err)
+	}
+
+	ts := time.Now().UTC().Format("20060102-150405.000")
+
+	host := "nohost"
+	if req.URL != nil && req.URL.Hostname() != "" {
+		host = sanitizePrefix(req.URL.Hostname(), 24)
+	}
+
+	path := "root"
+	if req.URL != nil && req.URL.Path != "" {
+		p := strings.TrimPrefix(req.URL.Path, "/")
+		if p != "" {
+			path = sanitizePrefix(p, 24)
+		}
+	}
+
+	b := make([]byte, 2)
+	_, _ = rand.Read(b)
+	rnd := hex.EncodeToString(b)
+
+	filename := fmt.Sprintf("dump-%s-%s-%s-%s.log", ts, host, path, rnd)
+	return filepath.Join(dir, filename), nil
 }
 
 type safeBuffer struct {
@@ -251,6 +321,7 @@ type responseBody struct {
 	stdout    io.Closer
 	cmd       *exec.Cmd
 	stderr    *safeBuffer
+	tracePath string
 	cancel    context.CancelFunc
 	closeOnce sync.Once
 	closeErr  error
@@ -279,10 +350,14 @@ func (b *responseBody) Close() error {
 
 		if waitErr != nil {
 			stderrStr := strings.TrimSpace(b.stderr.String())
+			var traceInfo string
+			if b.tracePath != "" {
+				traceInfo = fmt.Sprintf(" (trace: %s)", b.tracePath)
+			}
 			if stderrStr != "" {
-				b.closeErr = fmt.Errorf("httpexecz: command %s failed: %w: %s", b.cmd.Path, waitErr, stderrStr)
+				b.closeErr = fmt.Errorf("httpexecz: command %s failed%s: %w: %s", b.cmd.Path, traceInfo, waitErr, stderrStr)
 			} else {
-				b.closeErr = fmt.Errorf("httpexecz: command %s failed: %w", b.cmd.Path, waitErr)
+				b.closeErr = fmt.Errorf("httpexecz: command %s failed%s: %w", b.cmd.Path, traceInfo, waitErr)
 			}
 			return
 		}

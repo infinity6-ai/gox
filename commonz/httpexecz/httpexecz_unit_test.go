@@ -6,6 +6,8 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 	"time"
@@ -40,7 +42,7 @@ func TestUnitHttpexeczBuildArgs(t *testing.T) {
 		req.Close = s.reqClose
 
 		tr := NewTransport(s.opts)
-		args, err := tr.buildArgs(req, s.hasBody)
+		args, _, err := tr.buildArgs(req, s.hasBody)
 		require.NoError(t, err)
 
 		if len(s.wantArgs) > 0 {
@@ -123,6 +125,16 @@ func TestUnitHttpexeczBuildArgs(t *testing.T) {
 			hasBody:  false,
 			opts:     Options{ExtraArgs: []string{"--retry", "3"}},
 			wantArgs: []string{"-s", "--http1.1", "-i", "--retry", "3", "http://example.com/api"},
+		})
+	})
+
+	t.Run("Trace adds --trace flag", func(t *testing.T) {
+		check(t, testScenario{
+			method:     "GET",
+			url:        "http://example.com/api",
+			hasBody:    false,
+			opts:       Options{Trace: "/tmp/traces"},
+			wantSubstr: []string{"--trace"},
 		})
 	})
 }
@@ -635,6 +647,89 @@ func TestUnitHttpexeczBeforeExec(t *testing.T) {
 				return "non_existent_binary_from_hook", args, nil
 			},
 			wantErr: "failed to start command \"non_existent_binary_from_hook\"",
+		})
+	})
+}
+
+func TestUnitHttpexeczTrace(t *testing.T) {
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("X-Trace-Response", "pong")
+		w.WriteHeader(http.StatusOK)
+		_, _ = w.Write([]byte("trace body ok"))
+	}))
+	defer ts.Close()
+
+	type testScenario struct {
+		failRequest   bool
+		urlPath       string
+		wantBody      string
+		wantInTrace   []string
+		wantErrSubstr string
+	}
+
+	check := func(t *testing.T, s testScenario) {
+		t.Helper()
+		traceDir := t.TempDir()
+
+		tr := NewTransport(Options{
+			Trace:   traceDir,
+			Timeout: 2 * time.Second,
+		})
+
+		targetURL := ts.URL + s.urlPath
+		if s.failRequest {
+			targetURL = "http://127.0.0.1:49151/fail"
+		}
+
+		req, err := http.NewRequest("GET", targetURL, nil)
+		require.NoError(t, err)
+
+		resp, err := tr.RoundTrip(req)
+		if s.wantErrSubstr != "" {
+			require.Error(t, err)
+			require.Contains(t, err.Error(), s.wantErrSubstr)
+			require.Contains(t, err.Error(), traceDir)
+		} else {
+			require.NoError(t, err)
+			defer resp.Body.Close()
+
+			body, readErr := io.ReadAll(resp.Body)
+			require.NoError(t, readErr)
+			require.Equal(t, s.wantBody, string(body))
+		}
+
+		entries, err := os.ReadDir(traceDir)
+		require.NoError(t, err)
+		require.Len(t, entries, 1)
+
+		filename := entries[0].Name()
+		require.True(t, strings.HasPrefix(filename, "dump-"), "filename should start with dump-")
+		require.True(t, strings.HasSuffix(filename, ".log"), "filename should end with .log")
+
+		content, err := os.ReadFile(filepath.Join(traceDir, filename))
+		require.NoError(t, err)
+		require.NotEmpty(t, content)
+
+		for _, sub := range s.wantInTrace {
+			require.Contains(t, string(content), sub)
+		}
+	}
+
+	t.Run("Successful request writes trace dump file with wire headers and body", func(t *testing.T) {
+		check(t, testScenario{
+			urlPath:  "/api/users",
+			wantBody: "trace body ok",
+			wantInTrace: []string{
+				"X-Trace-Response",
+				"trace body ok",
+			},
+		})
+	})
+
+	t.Run("Failed request writes trace dump file and includes path in error message", func(t *testing.T) {
+		check(t, testScenario{
+			failRequest:   true,
+			wantErrSubstr: "(trace: ",
 		})
 	})
 }

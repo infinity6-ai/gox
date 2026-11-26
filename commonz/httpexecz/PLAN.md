@@ -121,6 +121,14 @@ type Options struct {
 
 	// Env specifies additional environment variables for the command execution.
 	Env []string
+
+	// Trace specifies an optional directory path where wire trace logs will be dumped
+	// via curl's --trace flag using the pattern dump-[ts]-[host]-[path]-[rnd].log.
+	Trace string
+
+	// BeforeExec optionally inspects or mutates the executable binary and arguments
+	// before process execution. If it returns an error, the round-trip aborts immediately.
+	BeforeExec func(cmd string, args []string) (string, []string, error)
 }
 
 // Transport implements http.RoundTripper using an external process.
