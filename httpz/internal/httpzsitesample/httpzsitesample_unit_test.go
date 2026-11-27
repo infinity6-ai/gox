@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/infinity6-ai/gox/commonz/pathz"
+	"github.com/infinity6-ai/gox/httpz/httpzsite"
 	"github.com/infinity6-ai/gox/httpz/internal/httpzsitesample"
 	"github.com/stretchr/testify/require"
 )
@@ -18,7 +19,9 @@ func TestUnitSampleSite(t *testing.T) {
 
 	t.Run("Extract sample site pack", func(t *testing.T) {
 		tempDir := t.TempDir()
-		err := site.ExtractTo(t.Context(), pathz.MustParse(tempDir))
+		err := site.ExtractTo(t.Context(), httpzsite.ExtractOptions{
+			Path: pathz.MustParse(tempDir),
+		})
 		require.NoError(t, err)
 
 		content, err := os.ReadFile(filepath.Join(tempDir, "index.html"))

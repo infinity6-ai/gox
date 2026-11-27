@@ -9,6 +9,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/infinity6-ai/gox/commonz/trokerz"
 	"github.com/infinity6-ai/gox/httpz/httpzsite"
 	"github.com/stretchr/testify/require"
 )
@@ -45,6 +46,34 @@ func TestUnitSiteCmd(t *testing.T) {
 		content, err := os.ReadFile(filepath.Join(tempDir, "index.html"))
 		require.NoError(t, err)
 		require.Equal(t, "<html><body>Home</body></html>", string(content))
+	})
+
+	t.Run("Cmd extract subcommand with --troke applies replacements", func(t *testing.T) {
+		site := &httpzsite.Site{
+			Pack: testTemplatePackName,
+			TrokerOptions: []trokerz.Options{
+				{
+					Begin: "{{",
+					End:   "}}",
+					Get: func(k string) (string, bool, error) {
+						if k == "title" {
+							return "CLI Title", true, nil
+						}
+						return "", false, nil
+					},
+				},
+			},
+		}
+		tempDir := t.TempDir()
+
+		cmd := site.Cmd("sample")
+		cmd.SetArgs([]string{"extract", "--out", tempDir, "--troke"})
+		err := cmd.ExecuteContext(ctx)
+		require.NoError(t, err)
+
+		content, err := os.ReadFile(filepath.Join(tempDir, "index.html"))
+		require.NoError(t, err)
+		require.Equal(t, "<!DOCTYPE html><html><body>CLI Title</body></html>", string(content))
 	})
 
 	t.Run("Cmd extract fails when out is empty", func(t *testing.T) {

@@ -67,6 +67,7 @@ func (s *Site) Cmd(use ...string) *cobra.Command {
 	serveCmd.Flags().StringArrayVar(&users, "user", nil, "Basic auth user in user:password format")
 
 	var out string
+	var troke bool
 	extractCmd := &cobra.Command{
 		Use:   "extract",
 		Short: "Extract site assets to directory",
@@ -75,7 +76,10 @@ func (s *Site) Cmd(use ...string) *cobra.Command {
 				return fmt.Errorf("--out directory is required")
 			}
 			dest := pathz.MustParse(out)
-			err := s.ExtractTo(cmd.Context(), dest)
+			err := s.ExtractTo(cmd.Context(), ExtractOptions{
+				Path:  dest,
+				Troke: troke,
+			})
 			if err != nil {
 				return fmt.Errorf("failed to extract: %w", err)
 			}
@@ -83,6 +87,7 @@ func (s *Site) Cmd(use ...string) *cobra.Command {
 		},
 	}
 	extractCmd.Flags().StringVar(&out, "out", "", "Destination directory to extract files into")
+	extractCmd.Flags().BoolVar(&troke, "troke", false, "Apply troker template replacements during extraction")
 	_ = extractCmd.MarkFlagRequired("out")
 
 	cmd.AddCommand(serveCmd, extractCmd)

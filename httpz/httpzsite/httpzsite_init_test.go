@@ -11,7 +11,10 @@ import (
 
 type tpack string
 
-const testPackName tpack = "test-pack-site"
+const (
+	testPackName         tpack = "test-pack-site"
+	testTemplatePackName tpack = "test-pack-site-template"
+)
 
 func createSampleTgz(files map[string]string) func() string {
 	var buf bytes.Buffer
@@ -45,4 +48,11 @@ func init() {
 		"deep/nested/a.txt": "deep-content",
 	})
 	staticzloader.SetCode(testPackName, sampleTgz)
+
+	templateTgz := createSampleTgz(map[string]string{
+		"index.html": "<!DOCTYPE html><html><body>{{title}}</body></html>",
+		"config.js":  "const api = '{{API_URL}}';",
+		"raw.bin":    string([]byte{0xff, 0xfe, 0xfd, 0x00}),
+	})
+	staticzloader.SetCode(testTemplatePackName, templateTgz)
 }
