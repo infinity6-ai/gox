@@ -89,7 +89,9 @@ func Troke(original string, opts Options) (string, error) {
 
 		endIdx := strings.Index(afterBegin, opts.End)
 		if endIdx == -1 {
-			return "", fmt.Errorf("%w: missing %q", ErrUnclosedPlaceholder, opts.End)
+			// return "", fmt.Errorf("%w: missing %q", ErrUnclosedPlaceholder, opts.End)
+			remaining = afterBegin
+			continue
 		}
 
 		if opts.Begin != opts.End {
