@@ -122,6 +122,75 @@ func TestUnitTroke(t *testing.T) {
 		})
 	})
 
+	t.Run("IgnoreUnclosed preserves trailing unclosed placeholder as literal text", func(t *testing.T) {
+		check(t, testScenario{
+			original: "hello {{unclosed placeholder",
+			opts: trokerz.Options{
+				Begin:          "{{",
+				End:            "}}",
+				IgnoreUnclosed: true,
+				Get: func(v string) (string, bool, error) {
+					return "replaced", true, nil
+				},
+			},
+			want: "hello {{unclosed placeholder",
+		})
+	})
+
+	t.Run("IgnoreUnclosed preserves interleaved unclosed opening delimiter and replaces valid placeholder", func(t *testing.T) {
+		check(t, testScenario{
+			original: "hello {{ unclosed {{first}} and {{last}}!",
+			opts: trokerz.Options{
+				Begin:          "{{",
+				End:            "}}",
+				IgnoreUnclosed: true,
+				Get: func(v string) (string, bool, error) {
+					if v == "first" {
+						return "1", true, nil
+					}
+					if v == "last" {
+						return "2", true, nil
+					}
+					return "", false, nil
+				},
+			},
+			want: "hello {{ unclosed 1 and 2!",
+		})
+	})
+
+	t.Run("IgnoreUnclosed preserves nested unclosed delimiter and replaces inner placeholder", func(t *testing.T) {
+		check(t, testScenario{
+			original: "{{ {{first}} }}",
+			opts: trokerz.Options{
+				Begin:          "{{",
+				End:            "}}",
+				IgnoreUnclosed: true,
+				Get: func(v string) (string, bool, error) {
+					if v == "first" {
+						return "inner", true, nil
+					}
+					return "", false, nil
+				},
+			},
+			want: "{{ inner }}",
+		})
+	})
+
+	t.Run("IgnoreUnclosed preserves symmetric unclosed delimiter", func(t *testing.T) {
+		check(t, testScenario{
+			original: "hello @unclosed",
+			opts: trokerz.Options{
+				Begin:          "@",
+				End:            "@",
+				IgnoreUnclosed: true,
+				Get: func(v string) (string, bool, error) {
+					return "replaced", true, nil
+				},
+			},
+			want: "hello @unclosed",
+		})
+	})
+
 	t.Run("Unmatched closing delimiter is preserved as literal text", func(t *testing.T) {
 		check(t, testScenario{
 			original: "hello }} world",
@@ -453,6 +522,21 @@ func TestUnitMustTroke(t *testing.T) {
 				},
 			},
 			expectPanic: true,
+		})
+	})
+
+	t.Run("Does not panic on unclosed placeholder when IgnoreUnclosed is true", func(t *testing.T) {
+		check(t, testScenario{
+			original: "hello {{name",
+			opts: trokerz.Options{
+				Begin:          "{{",
+				End:            "}}",
+				IgnoreUnclosed: true,
+				Get: func(k string) (string, bool, error) {
+					return "world", true, nil
+				},
+			},
+			want: "hello {{name",
 		})
 	})
 }

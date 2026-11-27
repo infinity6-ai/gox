@@ -17,10 +17,11 @@ var ErrInvalidOptions = errors.New("begin, end and get are required")
 var ErrUnclosedPlaceholder = errors.New("unclosed placeholder")
 
 type Options struct {
-	Ctx   context.Context
-	Begin string
-	End   string
-	Get   func(k string) (string, bool, error)
+	Ctx            context.Context
+	Begin          string
+	End            string
+	Get            func(k string) (string, bool, error)
+	IgnoreUnclosed bool
 }
 
 func MustTroke(original string, opts Options) string {
@@ -89,13 +90,21 @@ func Troke(original string, opts Options) (string, error) {
 
 		endIdx := strings.Index(afterBegin, opts.End)
 		if endIdx == -1 {
+			if opts.IgnoreUnclosed {
+				builder.WriteString(opts.Begin)
+				builder.WriteString(afterBegin)
+				break
+			}
 			return "", fmt.Errorf("%w: missing %q", ErrUnclosedPlaceholder, opts.End)
-			// remaining = afterBegin
-			// continue
 		}
 
 		if opts.Begin != opts.End {
 			if strings.Contains(afterBegin[:endIdx], opts.Begin) {
+				if opts.IgnoreUnclosed {
+					builder.WriteString(opts.Begin)
+					remaining = afterBegin
+					continue
+				}
 				return "", fmt.Errorf("%w: unclosed %q before %q", ErrUnclosedPlaceholder, opts.Begin, opts.End)
 			}
 		}
